@@ -107,6 +107,54 @@
     ]
   },
 
+  "ni": {
+    "name": "Ni-H₂O",
+    "note": "Simplified diagram. Ksp(Ni(OH)₂) = 10⁻¹⁵·⁸ (Stumm & Morgan 1996). E°(Ni²⁺/Ni) = −0.257 V (Bard 1985).",
+    "excluded_species": ["NiO (bunsenite; Ni(OH)₂ used)", "NiOOH (nickel oxyhydroxide)", "HNiO₂⁻ (amphoteric)"],
+    "couples": {
+      "ni2ni": { "ox": "Ni²⁺", "red": "Ni(s)", "E0": -0.257, "n": 2 }
+    },
+    "solids": {
+      "nioh2": { "species": "Ni(OH)₂", "ion": "Ni²⁺", "z": 2, "pKsp": 15.8 }
+    },
+    "boundaries": [
+      { "id": "b_ni2ni",    "kind": "deposition",         "couple": "ni2ni", "color": "#15803d", "clip_max": "nioh2" },
+      { "id": "v_nioh2",    "kind": "precipitation",      "solid": "nioh2",  "color": "#16a34a", "E_min_ref": "b_ni2ni" },
+      { "id": "b_nioh2_ni", "kind": "ox_solid_red_metal", "couple": "ni2ni", "ox_solid": "nioh2", "color": "#14532d", "clip_min": "nioh2" }
+    ],
+    "regions": [
+      { "name": "Ni²⁺",    "color": "rgba(21,128,61,0.12)",  "pH": ["half", "nioh2"],       "E": 0.0 },
+      { "name": "Ni(OH)₂", "color": "rgba(22,163,74,0.12)",  "pH": ["after", "nioh2", 1.5], "E": 0.2 },
+      { "name": "Ni(s)",   "color": "rgba(20,83,45,0.12)",   "pH": ["after", "nioh2", 1.5], "E": -0.65 }
+    ]
+  },
+
+  "pb": {
+    "name": "Pb-H₂O",
+    "note": "E°(Pb²⁺/Pb) = −0.126 V; E°(PbO₂/Pb²⁺) = 1.455 V, 4H⁺ (Bard 1985). Ksp(Pb(OH)₂) = 10⁻²⁰·² (Stumm & Morgan 1996).",
+    "excluded_species": ["PbO (litharge)", "Pb₃O₄ (minium)", "HPbO₂⁻ (amphoteric)"],
+    "couples": {
+      "pb2pb":   { "ox": "Pb²⁺", "red": "Pb(s)", "E0": -0.126, "n": 2 },
+      "pbo2pb2": { "ox": "PbO₂", "red": "Pb²⁺", "E0": 1.455, "n": 2, "m_H": 4, "ox_solid_oxide": true }
+    },
+    "solids": {
+      "pboh2": { "species": "Pb(OH)₂", "ion": "Pb²⁺", "z": 2, "pKsp": 20.2 }
+    },
+    "boundaries": [
+      { "id": "b_pb2pb",       "kind": "deposition",            "couple": "pb2pb",   "color": "#475569", "clip_max": "pboh2" },
+      { "id": "b_pbo2pb2",     "kind": "oxide_ion",             "couple": "pbo2pb2", "color": "#64748b", "clip_max": "pboh2" },
+      { "id": "v_pboh2",       "kind": "precipitation",         "solid": "pboh2",    "color": "#94a3b8", "E_min_ref": "b_pb2pb", "E_max_ref": "b_pbo2pb2" },
+      { "id": "b_pbo2_pboh2",  "kind": "oxide_solid_hydroxide", "couple": "pbo2pb2", "red_solid": "pboh2", "color": "#334155", "clip_min": "pboh2" },
+      { "id": "b_pboh2_pb",    "kind": "ox_solid_red_metal",    "couple": "pb2pb",   "ox_solid": "pboh2", "color": "#1e293b", "clip_min": "pboh2" }
+    ],
+    "regions": [
+      { "name": "Pb²⁺",    "color": "rgba(71,85,105,0.12)",  "pH": ["half", "pboh2"],       "E": 0.4 },
+      { "name": "PbO₂",    "color": "rgba(100,116,139,0.12)","pH": ["fixed", 7.0],           "E": 1.6 },
+      { "name": "Pb(OH)₂", "color": "rgba(148,163,184,0.12)","pH": ["after", "pboh2", 2.0], "E": 0.4 },
+      { "name": "Pb(s)",   "color": "rgba(30,41,59,0.12)",   "pH": ["after", "pboh2", 2.0], "E": -0.5 }
+    ]
+  },
+
   "cr": {
     "name": "Cr-H₂O",
     "note": "Includes the Cr(VI) field (S1.5) using the monomeric couple HCrO₄⁻ + 7H⁺ + 3e⁻ → Cr³⁺ + 4H₂O, E° = 1.350 V (Pourbaix 1966). Chromate protonation steps (pKa ≈ 0.7, 6.45) and the Cr₂O₇²⁻ dimer are neglected. Cr(III) boundaries derived from E° + Ksp(Cr(OH)₃)=10⁻³⁰.",

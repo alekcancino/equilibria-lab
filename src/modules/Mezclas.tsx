@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
+import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, ResultCard, SelectControl, Slider, Toggle } from '../components/Controls';
 import { ACIDS } from '../lib/database';
 import { solvePH, alphaFractions, type AcidBaseComponent } from '../lib/equilibrium';
@@ -119,6 +120,33 @@ export default function Mezclas() {
     return data;
   }, [curve, showDerivative]);
 
+  const bufferCurve = useMemo(() => {
+    const PH_POINTS = 400;
+    const Kw = 1e-14;
+    const pHs: number[] = [];
+    const betas: number[] = [];
+    for (let i = 0; i <= PH_POINTS; i++) {
+      const pH = (14 * i) / PH_POINTS;
+      const h = Math.pow(10, -pH);
+      let beta = 2.303 * (Kw / h + h);
+      for (const r of rows) {
+        const preset = ACIDS.find((a) => a.id === r.acidId)!;
+        const alphas = alphaFractions(h, preset.pKas);
+        let variance = 0;
+        for (let ii = 0; ii < alphas.length; ii++) {
+          for (let jj = ii + 1; jj < alphas.length; jj++) {
+            variance += (jj - ii) ** 2 * alphas[ii] * alphas[jj];
+          }
+        }
+        beta += 2.303 * r.conc * variance;
+      }
+      pHs.push(pH);
+      betas.push(beta);
+    }
+    return { pHs, betas };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows]);
+
   const titrantName = titrantIsAcid ? 'HCl' : 'NaOH';
 
   return (
@@ -195,21 +223,61 @@ export default function Mezclas() {
         </InfoBox>
       </aside>
       <section className="plot-area">
-        {titrate && curve ? (
-          <Chart
-            data={traces}
-            xTitle={`Volumen de ${titrantName} agregado (mL)`}
-            yTitle="pH"
-            xRange={[0, curve.vMax]}
-            yRange={[0, 14]}
-            exportName="quimeq-mezcla-titulacion"
-          />
-        ) : (
-          <div className="empty-plot">
-            <p>pH de la mezcla: <strong>{pHMix.toFixed(2)}</strong></p>
-            <p className="hint">Activa la curva de titulación para ver la gráfica.</p>
-          </div>
-        )}
+        <DiagramTabs tabs={[
+          {
+            id: 'titulacion',
+            label: 'Titulación',
+            node: titrate && curve ? (
+              <Chart
+                data={traces}
+                xTitle={`Volumen de ${titrantName} agregado (mL)`}
+                yTitle="pH"
+                xRange={[0, curve.vMax]}
+                yRange={[0, 14]}
+                exportName="quimeq-mezcla-titulacion"
+              />
+            ) : (
+              <div className="empty-plot">
+                <p>pH de la mezcla: <strong>{pHMix.toFixed(2)}</strong></p>
+                <p className="hint">Activa la curva de titulación para ver la gráfica.</p>
+              </div>
+            ),
+          },
+          {
+            id: 'beta',
+            label: 'Capacidad buffer β',
+            node: (
+              <Chart
+                data={[{
+                  x: bufferCurve.pHs,
+                  y: bufferCurve.betas,
+                  type: 'scatter',
+                  mode: 'lines',
+                  name: 'β (mezcla)',
+                  line: { width: 2.5, color: '#7c3aed' },
+                  hovertemplate: 'pH = %{x:.2f}<br>β = %{y:.4f} mol/L·pH<extra></extra>',
+                }]}
+                xTitle="pH"
+                yTitle="β (mol L⁻¹ pH⁻¹)"
+                xRange={[0, 14]}
+                shapes={[{
+                  type: 'line',
+                  x0: pHMix, x1: pHMix,
+                  y0: 0, y1: 1, yref: 'paper',
+                  line: { color: '#0072B2', width: 1.5, dash: 'dot' },
+                }]}
+                annotations={[{
+                  x: pHMix, y: 0.97, yref: 'paper',
+                  text: `pH = ${pHMix.toFixed(2)}`,
+                  showarrow: false,
+                  font: { color: '#0072B2', size: 11 },
+                  xanchor: 'left',
+                }]}
+                exportName="quimeq-mezcla-buffer"
+              />
+            ),
+          },
+        ]} />
       </section>
     </div>
   );
