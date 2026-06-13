@@ -15,7 +15,7 @@ import { firstDerivative, granPlot, secondDerivative, titrationCurve, titratable
 import { alphaY4, edtaTitrationCurve } from '../lib/edta';
 import { redoxTitrationCurve } from '../lib/redox';
 import {
-  precipTitrationCurve, mohrEndpointPAg, PRECIP_ANALYTES,
+  precipTitrationCurve, mohrEndpointPAg,
 } from '../lib/precipTitration';
 
 type Mode = 'acidobase' | 'edta' | 'redox' | 'precip' | 'potenciometrica';
@@ -396,24 +396,42 @@ function RedoxTitration() {
   );
 }
 
-/* ───────────────────────── Precipitación (argentométrica) ───────────────────────── */
+/* ───────────────────────── Precipitación ─────────────────────────────────── */
+
+// Presets extendidos: pares 1:1 de precipitación variados
+const PRECIP_PRESETS = [
+  { id: 'cl',   cation: 'Ag⁺',  anion: 'Cl⁻',    formula: 'AgCl',      pKsp: 9.74,  isAg: true  },
+  { id: 'br',   cation: 'Ag⁺',  anion: 'Br⁻',    formula: 'AgBr',      pKsp: 12.30, isAg: true  },
+  { id: 'i',    cation: 'Ag⁺',  anion: 'I⁻',     formula: 'AgI',       pKsp: 16.07, isAg: true  },
+  { id: 'scn',  cation: 'Ag⁺',  anion: 'SCN⁻',   formula: 'AgSCN',     pKsp: 12.00, isAg: true  },
+  { id: 'so4',  cation: 'Ba²⁺', anion: 'SO₄²⁻',  formula: 'BaSO₄',     pKsp: 9.97,  isAg: false },
+  { id: 'ox',   cation: 'Ca²⁺', anion: 'C₂O₄²⁻', formula: 'CaC₂O₄',   pKsp: 8.64,  isAg: false },
+  { id: 'pbso4',cation: 'Pb²⁺', anion: 'SO₄²⁻',  formula: 'PbSO₄',     pKsp: 7.79,  isAg: false },
+];
 
 function PrecipTitration() {
-  const [analyteId, setAnalyteId] = useState('cl');
+  const [presetId, setPresetId] = useState('cl');
   const [pKsp, setPKsp] = useState(9.74);
+  const [cationName, setCationName] = useState('Ag⁺');
+  const [anionName, setAnionName] = useState('Cl⁻');
+  const [saltFormula, setSaltFormula] = useState('AgCl');
+  const [isAgSystem, setIsAgSystem] = useState(true);
   const [cAnalyte, setCAnalyte] = useState(0.1);
   const [vAnalyte, setVAnalyte] = useState(25);
   const [cTitrant, setCTitrant] = useState(0.1);
-  const [showPAg, setShowPAg] = useState(true);
+  const [showPCation, setShowPCation] = useState(false);
   const [showMohr, setShowMohr] = useState(true);
   const [showDerivative, setShowDerivative] = useState(false);
 
-  function reset() {
-    setAnalyteId('cl'); setPKsp(9.74); setCAnalyte(0.1); setVAnalyte(25);
-    setCTitrant(0.1); setShowPAg(true); setShowMohr(true); setShowDerivative(false);
+  function loadPreset(id: string) {
+    const p = PRECIP_PRESETS.find((x) => x.id === id)!;
+    setPresetId(id); setPKsp(p.pKsp);
+    setCationName(p.cation); setAnionName(p.anion); setSaltFormula(p.formula);
+    setIsAgSystem(p.isAg);
+    if (!p.isAg) { setShowMohr(false); setShowPCation(false); }
   }
 
-  const analyte = PRECIP_ANALYTES.find((a) => a.id === analyteId)!;
+  function reset() { loadPreset('cl'); setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1); setShowDerivative(false); }
 
   const vEq0 = (cAnalyte * vAnalyte) / cTitrant;
   const vMax = vEq0 * 1.6;
@@ -424,17 +442,23 @@ function PrecipTitration() {
   );
 
   const mohrPAg = mohrEndpointPAg(0.005);
-  const yVals = showPAg ? curve.pAgs : curve.pXs;
-  const yLabel = showPAg ? 'pAg (−log[Ag⁺])' : `p${analyte.label.replace('⁻', '')} (−log[X⁻])`;
+
+  // showPCation: true → eje en p(catión)=pAg, false → p(anión)=pX
+  const yVals = showPCation ? curve.pAgs : curve.pXs;
+  const pCatLabel = `p${cationName.replace(/[⁺²³⁴⁻]/g, '')}`;
+  const pAniLabel = `p${anionName.replace(/[⁺²³⁴⁻]/g, '')}`;
+  const yLabel = showPCation
+    ? `${pCatLabel} (−log[${cationName}])`
+    : `${pAniLabel} (−log[${anionName}])`;
   const yMax = Math.ceil(Math.max(...yVals.filter(Number.isFinite), curve.pAgEq * 1.2));
 
   const traces = useMemo<Data[]>(() => {
-    const y = showPAg ? curve.pAgs : curve.pXs;
+    const y = showPCation ? curve.pAgs : curve.pXs;
     const data: Data[] = [{
       x: curve.volumes, y, type: 'scatter', mode: 'lines',
-      name: showPAg ? 'pAg' : 'pX',
+      name: showPCation ? pCatLabel : pAniLabel,
       line: { width: 3, color: '#8E44AD' },
-      hovertemplate: 'V = %{x:.2f} mL<br>p = %{y:.2f}<extra></extra>',
+      hovertemplate: `V = %{x:.2f} mL<br>p = %{y:.2f}<extra></extra>`,
     }];
     if (showDerivative) {
       const der = firstDerivative(curve.volumes, y);
@@ -447,39 +471,38 @@ function PrecipTitration() {
       });
     }
     return data;
-  }, [curve, showPAg, showDerivative]);
+  }, [curve, showPCation, showDerivative, pCatLabel, pAniLabel]);
 
   const shapes = useMemo<Partial<Shape>[]>(() => {
     const list: Partial<Shape>[] = [{
       type: 'line', x0: curve.vEq, x1: curve.vEq, y0: 0, y1: yMax,
       line: { color: '#009E73', width: 1.5, dash: 'dash' },
     }];
-    if (showMohr && showPAg) {
+    if (showMohr && showPCation && isAgSystem) {
       list.push({
         type: 'line', x0: 0, x1: vMax, y0: mohrPAg, y1: mohrPAg,
         line: { color: '#E69F00', width: 1.5, dash: 'dot' },
       });
     }
     return list;
-  }, [curve.vEq, showMohr, showPAg, mohrPAg, vMax, yMax]);
+  }, [curve.vEq, showMohr, showPCation, isAgSystem, mohrPAg, vMax, yMax]);
 
   const annotations = useMemo<Partial<Annotations>[]>(() => {
     const list: Partial<Annotations>[] = [{
       x: curve.vEq, y: yMax, text: 'P.E.', showarrow: false,
       font: { color: '#009E73', size: 12 },
     }];
-    if (showMohr && showPAg) {
+    if (showMohr && showPCation && isAgSystem) {
       list.push({
         x: vMax * 0.05, y: mohrPAg + 0.3,
-        text: `Mohr: pAg = ${mohrPAg.toFixed(1)}`,
+        text: `Mohr: ${pCatLabel} = ${mohrPAg.toFixed(1)}`,
         showarrow: false, font: { color: '#E69F00', size: 11 },
         xanchor: 'left',
       });
     }
     return list;
-  }, [curve.vEq, showMohr, showPAg, mohrPAg, vMax, yMax]);
+  }, [curve.vEq, showMohr, showPCation, isAgSystem, mohrPAg, vMax, yMax, pCatLabel]);
 
-  const saltName = analyte?.formula ?? 'AgX';
   const sharpness = pKsp >= 6;
 
   return (
@@ -489,56 +512,80 @@ function PrecipTitration() {
           <h2>Titulación por precipitación</h2>
           <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
         </div>
-        <p className="hint">Argentometría: Ag⁺ + X⁻ → {saltName}↓</p>
-        <h3>Analito</h3>
-        <SelectControl
-          label="Especie a titular"
-          value={analyteId}
-          options={PRECIP_ANALYTES.map((a) => ({ value: a.id, label: `${a.label} → ${a.formula} (pKps ${a.pKsp})` }))}
-          onChange={(id) => {
-            setAnalyteId(id);
-            const found = PRECIP_ANALYTES.find((a) => a.id === id);
-            if (found) setPKsp(found.pKsp);
-          }}
-        />
-        <Slider label="pKps del precipitado" value={pKsp} min={4} max={22} step={0.01} onChange={setPKsp} decimals={2} />
+
+        <h3>Sistema</h3>
+        <p className="hint">{cationName} + {anionName} → {saltFormula}↓</p>
+
+        {/* Presets */}
+        <div className="preset-chip-row" style={{ marginBottom: 8 }}>
+          {PRECIP_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              className={`preset-chip${presetId === p.id ? ' active' : ''}`}
+              onClick={() => loadPreset(p.id)}
+            >
+              {p.formula}
+            </button>
+          ))}
+        </div>
+
+        {/* Campos editables */}
+        <div className="editor">
+          <LabelField label="Catión titulante" value={cationName} onChange={setCationName} />
+          <LabelField label="Anión analito" value={anionName} onChange={setAnionName} />
+          <LabelField label="Fórmula del precipitado" value={saltFormula} onChange={setSaltFormula} />
+          <Slider label="pKps del precipitado" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
+        </div>
+
         <h3>Condiciones</h3>
-        <ConcSlider label={`Concentración de ${analyte?.label ?? 'X⁻'}`} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
+        <ConcSlider label={`Concentración de ${anionName}`} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
         <Slider label="Volumen de la muestra" value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
-        <ConcSlider label="Concentración de AgNO₃" value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
+        <ConcSlider label={`Concentración de ${cationName}`} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
+
         <h3>Visualización</h3>
-        <Toggle label="Mostrar pAg (en lugar de pX)" checked={showPAg} onChange={setShowPAg} />
-        <Toggle label="Marcador indicador Mohr ([CrO₄²⁻]=5 mM)" checked={showMohr} onChange={setShowMohr} />
+        <Toggle label={`Eje en p(${cationName}) en lugar de p(${anionName})`} checked={showPCation} onChange={setShowPCation} />
+        {isAgSystem && showPCation && (
+          <Toggle label="Marcador indicador Mohr ([CrO₄²⁻] = 5 mM)" checked={showMohr} onChange={setShowMohr} />
+        )}
         <Toggle label="Mostrar derivada dp/dV" checked={showDerivative} onChange={setShowDerivative} />
+
         <ResultCard items={[
           { label: 'Volumen de equivalencia', value: `${curve.vEq.toFixed(2)} mL` },
-          { label: `pAg en equivalencia (½ pKps)`, value: curve.pAgEq.toFixed(2) },
-          { label: 'pAg indicador Mohr', value: `${mohrPAg.toFixed(2)} (Δ = ${(mohrPAg - curve.pAgEq).toFixed(2)})` },
+          { label: `p en equivalencia (½ pKps)`, value: curve.pAgEq.toFixed(2) },
+          ...(isAgSystem && showPCation ? [{
+            label: 'Indicador Mohr',
+            value: `pAg = ${mohrPAg.toFixed(2)} (Δ = ${(mohrPAg - curve.pAgEq).toFixed(2)})`,
+          }] : []),
         ]} />
         <p className={sharpness ? 'badge ok' : 'badge warn'}>
           {sharpness
             ? `✓ Salto nítido esperado (pKps = ${pKsp.toFixed(2)} ≥ 6)`
             : `⚠ pKps < 6: el salto puede ser difuso`}
         </p>
-        <InfoBox title="Métodos argentométricos">
+
+        <InfoBox title="Métodos de detección del punto final">
           <p>
-            <strong>Mohr</strong>: indicador K₂CrO₄; el Ag₂CrO₄ rojo precipita al superar
-            el punto de equivalencia del AgX. Funciona bien para Cl⁻ y Br⁻ en medio neutro.
+            <strong>Mohr</strong> (solo Ag⁺): indicador K₂CrO₄; el Ag₂CrO₄ rojo precipita
+            al superar la equivalencia. Válido para Cl⁻ y Br⁻ en medio neutro.
           </p>
           <p>
-            <strong>Volhard</strong>: retrotitulación con SCN⁻ y Fe³⁺ como indicador; se usa
-            para Cl⁻, Br⁻, I⁻ y SCN⁻, incluso en medio ácido.
+            <strong>Volhard</strong>: retrotitulación con SCN⁻ y Fe³⁺; funciona en
+            medio ácido para Cl⁻, Br⁻, I⁻ y SCN⁻.
           </p>
           <p>
-            <strong>Fajans</strong>: indicador de adsorción (fluoresceína, diclorofluoresceína);
-            el coloide del precipitado cambia de color en el punto de equivalencia.
+            <strong>Fajans</strong>: indicador de adsorción (fluoresceína); el cambio de
+            color ocurre en la superficie del precipitado en el punto de equivalencia.
+          </p>
+          <p>
+            <strong>Otros sistemas</strong>: BaSO₄, CaC₂O₄, PbSO₄ se titulan por
+            potenciometría directa o por retrogravimetría.
           </p>
         </InfoBox>
       </aside>
       <section className="plot-area">
         <Chart
           data={traces}
-          xTitle="Volumen de AgNO₃ agregado (mL)"
+          xTitle={`Volumen de ${cationName} agregado (mL)`}
           yTitle={yLabel}
           xRange={[0, vMax]}
           yRange={[0, yMax]}
