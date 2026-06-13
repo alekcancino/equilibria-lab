@@ -1,15 +1,13 @@
 // Titulaciones complejométricas con EDTA: constante condicional y curva pM vs volumen.
 
-import { alphaFractions } from './equilibrium';
+import { alphaH } from './conditional';
 
-/** pKas del EDTA (H4Y); para alfa_Y4- solo importan las 4 últimas desprotonaciones */
+/** pKas del EDTA (H4Y) */
 export const EDTA_PKAS = [2.0, 2.69, 6.13, 10.37];
 
-/** Fracción alfa de Y⁴⁻ (forma totalmente desprotonada del EDTA) a un pH dado */
+/** α_Y(H) del EDTA a un pH dado — delega en conditional.ts */
 export function alphaY4(pH: number): number {
-  const h = Math.pow(10, -pH);
-  const alphas = alphaFractions(h, EDTA_PKAS);
-  return alphas[alphas.length - 1];
+  return alphaH(EDTA_PKAS, pH);
 }
 
 export interface EdtaTitrationParams {

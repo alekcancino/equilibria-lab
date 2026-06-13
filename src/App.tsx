@@ -5,6 +5,7 @@ import Redox from './modules/Redox';
 import Solubilidad from './modules/Solubilidad';
 import Pourbaix from './modules/Pourbaix';
 import Mezclas from './modules/Mezclas';
+import ConstantesCondicionales from './modules/ConstantesCondicionales';
 import Titulacion from './modules/Titulacion';
 import './App.css';
 
@@ -26,6 +27,7 @@ const SECTIONS: Section[] = [
     tabs: [
       { id: 'pourbaix', label: 'Redox–pH (Pourbaix)', component: Pourbaix },
       { id: 'mezclas', label: 'Mezclas ácido-base', component: Mezclas },
+      { id: 'condicionalesedta', label: 'Constantes condicionales', component: ConstantesCondicionales },
     ],
   },
   {

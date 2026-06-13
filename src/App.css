@@ -690,6 +690,46 @@ select {
 
 .adv-panel summary:hover { color: var(--accent); }
 
+/* ---------- Constantes condicionales — elementos del panel --------- */
+.section-collapse {
+  margin: 4px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.section-collapse-title {
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  user-select: none;
+  font-weight: 600;
+  background: #f9fafb;
+}
+
+.section-collapse-title:hover { color: var(--accent); }
+
+.section-collapse > *:not(summary) {
+  padding: 8px 10px 4px;
+}
+
+.hint {
+  margin: 4px 0 10px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.mask-section {
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 800px) {
   .module { flex-direction: column; }
