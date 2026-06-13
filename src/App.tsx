@@ -9,6 +9,7 @@ import ConstantesCondicionales from './modules/ConstantesCondicionales';
 import SolubilidadCondicional from './modules/SolubilidadCondicional';
 import PotencialCondicional from './modules/PotencialCondicional';
 import ExtraccionLiquido from './modules/ExtraccionLiquido';
+import SolubilidadSal from './modules/SolubilidadSal';
 import Titulacion from './modules/Titulacion';
 import './App.css';
 
@@ -34,6 +35,7 @@ const SECTIONS: Section[] = [
       { id: 'solcond', label: 'Precipitación selectiva', component: SolubilidadCondicional },
       { id: 'potencialcond', label: 'Potencial condicional', component: PotencialCondicional },
       { id: 'extraccion', label: 'Extracción líquido-líquido', component: ExtraccionLiquido },
+      { id: 'solsal', label: 'Solubilidad y pH', component: SolubilidadSal },
     ],
   },
   {

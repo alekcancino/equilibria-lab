@@ -756,6 +756,8 @@ select {
   white-space: nowrap;
 }
 .preset-chip:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.preset-chip.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.preset-chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 800px) {
