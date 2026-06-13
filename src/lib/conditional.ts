@@ -142,3 +142,72 @@ export function condLogKCurve(
 
   return { pHs, logKs, logAlphaH, logAlphaOH, logAlphaL };
 }
+
+/**
+ * Curva log s = f(pH) para la sal M(OH)_n.
+ *
+ * Modelo completo (no solo línea recta): incluye complejos hidroxo solubles.
+ *   [M^n+] = Ksp / [OH⁻]^n
+ *   [M]_total = [M^n+] × α_M(OH)  (donde α_M(OH) incluye todos los M(OH)_i solubles)
+ *   log s = −pKsp + n·(14−pH) + log α_M(OH)
+ *
+ * Para metales anfotéricos (Al, Zn, Pb, Cr), logBetasOH debe incluir los
+ * complejos aniónicos (Al(OH)₄⁻, Zn(OH)₄²⁻, etc.) → la curva tiene forma de U.
+ *
+ * @param pKsp       −log Ksp de M(OH)_n
+ * @param n          estequiometría de OH⁻
+ * @param logBetasOH log β globales de complejos M(OH)_i solubles (puede ser [])
+ * @param pHRange    rango de pH del barrido
+ * @param points     número de puntos
+ */
+export function hydroxideSolCurve(
+  pKsp: number,
+  n: number,
+  logBetasOH: number[],
+  pHRange: [number, number] = [0, 14],
+  points = 500
+): { pHs: number[]; logS: number[] } {
+  const [pHmin, pHmax] = pHRange;
+  const pHs: number[] = [];
+  const logS: number[] = [];
+
+  for (let i = 0; i <= points; i++) {
+    const pH = pHmin + ((pHmax - pHmin) * i) / points;
+    const logFreeMetal = -pKsp + n * (14 - pH);
+    const aOH = alphaOH(logBetasOH, pH);
+    pHs.push(pH);
+    logS.push(logFreeMetal + Math.log10(aOH));
+  }
+
+  return { pHs, logS };
+}
+
+/**
+ * pH donde la solubilidad del hidróxido cruza un umbral dado (bisección).
+ * Devuelve null si nunca cruza el umbral en [pHmin, pHmax].
+ * direction: 'rising' busca el primer cruce ascendente (logS cruza hacia arriba),
+ *            'falling' busca el primer cruce descendente.
+ */
+export function precipitationPH(
+  pKsp: number,
+  n: number,
+  logBetasOH: number[],
+  logSThreshold: number,
+  pHRange: [number, number] = [0, 14],
+  direction: 'falling' | 'rising' = 'falling'
+): number | null {
+  const { pHs, logS } = hydroxideSolCurve(pKsp, n, logBetasOH, pHRange, 1000);
+  // Busca la primera transición
+  for (let i = 1; i < pHs.length; i++) {
+    const crossed =
+      direction === 'falling'
+        ? logS[i - 1] > logSThreshold && logS[i] <= logSThreshold
+        : logS[i - 1] <= logSThreshold && logS[i] > logSThreshold;
+    if (crossed) {
+      // Interpolación lineal
+      const t = (logSThreshold - logS[i - 1]) / (logS[i] - logS[i - 1]);
+      return pHs[i - 1] + t * (pHs[i] - pHs[i - 1]);
+    }
+  }
+  return null;
+}
