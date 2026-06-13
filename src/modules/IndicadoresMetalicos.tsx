@@ -18,32 +18,9 @@ import DiagramTabs from '../components/DiagramTabs';
 import { Slider, DbPanel, InfoBox, ResultCard } from '../components/Controls';
 import { EDTA_PKAS } from '../lib/edta';
 import { condLogKCurve, feasibilityWindow, alphaH, alphaOH } from '../lib/conditional';
-import { METAL_INDICATORS } from '../lib/indicatorDatabase';
+import { METAL_INDICATORS, EDTA_METAL_PRESETS } from '../lib/indicatorDatabase';
 
-// ── EDTA presets (mismo conjunto que ConstantesCondicionales) ─────────────────
-
-interface EdtaPreset {
-  id: string;
-  metal: string;
-  logKf: number;
-  logBetasOH: number[];
-  group: string;
-}
-
-const EDTA_PRESETS: EdtaPreset[] = [
-  { id: 'ca',  metal: 'Ca²⁺', logKf: 10.65, logBetasOH: [], group: 'M²⁺' },
-  { id: 'mg',  metal: 'Mg²⁺', logKf:  8.64, logBetasOH: [], group: 'M²⁺' },
-  { id: 'mn',  metal: 'Mn²⁺', logKf: 13.81, logBetasOH: [3.4], group: 'M²⁺' },
-  { id: 'zn',  metal: 'Zn²⁺', logKf: 16.50, logBetasOH: [5.04, 10.43, 13.7, 15.2], group: 'M²⁺' },
-  { id: 'cu',  metal: 'Cu²⁺', logKf: 18.80, logBetasOH: [6.0, 11.8], group: 'M²⁺' },
-  { id: 'ni',  metal: 'Ni²⁺', logKf: 18.56, logBetasOH: [4.97, 8.55], group: 'M²⁺' },
-  { id: 'pb',  metal: 'Pb²⁺', logKf: 18.04, logBetasOH: [6.29, 10.89], group: 'M²⁺' },
-  { id: 'hg',  metal: 'Hg²⁺', logKf: 21.70, logBetasOH: [10.60], group: 'M²⁺' },
-  { id: 'cd',  metal: 'Cd²⁺', logKf: 16.46, logBetasOH: [3.9, 7.7], group: 'M²⁺' },
-  { id: 'co',  metal: 'Co²⁺', logKf: 16.31, logBetasOH: [4.35, 8.4], group: 'M²⁺' },
-  { id: 'fe3', metal: 'Fe³⁺', logKf: 25.10, logBetasOH: [11.81, 21.68, 30.67], group: 'M³⁺' },
-  { id: 'al',  metal: 'Al³⁺', logKf: 16.13, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'M³⁺' },
-];
+// EDTA_METAL_PRESETS importado de indicatorDatabase (compartido con Titulacion.tsx)
 
 // ── Colores paleta Okabe-Ito ─────────────────────────────────────────────────
 
@@ -74,7 +51,7 @@ export default function IndicadoresMetalicos() {
   function reset() { setSt(defaultState()); }
 
   function applyPreset(id: string) {
-    const p = EDTA_PRESETS.find((x) => x.id === id);
+    const p = EDTA_METAL_PRESETS.find((x) => x.id === id);
     if (!p) return;
     setSt((prev) => ({ ...prev, metalId: p.id, metalLabel: p.metal, logKf: p.logKf, logBetasOH: [...p.logBetasOH] }));
   }
@@ -201,7 +178,7 @@ export default function IndicadoresMetalicos() {
 
   // ── DB items ──────────────────────────────────────────────────────────────
 
-  const dbItems = EDTA_PRESETS.map((p) => ({
+  const dbItems = EDTA_METAL_PRESETS.map((p) => ({
     id: p.id, label: p.metal,
     detail: `log Kf = ${p.logKf.toFixed(2)}`,
     group: p.group === 'M²⁺' ? 'Metales bivalentes' : 'Metales trivalentes',

@@ -10,15 +10,144 @@ import {
   type AcidSystem, type CoupleState,
 } from '../components/Editors';
 import DiagramTabs from '../components/DiagramTabs';
-import { INDICATORS, METALS } from '../lib/database';
+import { INDICATORS } from '../lib/database';
 import { firstDerivative, granPlot, secondDerivative, titrationCurve, titratableProtons } from '../lib/titration';
-import { alphaY4, edtaTitrationCurve } from '../lib/edta';
+import { alphaY4, edtaTitrationCurve, EDTA_PKAS } from '../lib/edta';
 import { redoxTitrationCurve } from '../lib/redox';
-import {
-  precipTitrationCurve, mohrEndpointPAg,
-} from '../lib/precipTitration';
+import { precipTitrationCurve, mohrEndpointPAg } from '../lib/precipTitration';
+import { condLogKCurve, alphaH, alphaOH } from '../lib/conditional';
+import { METAL_INDICATORS, EDTA_METAL_PRESETS, type MetalIndicator } from '../lib/indicatorDatabase';
 
 type Mode = 'acidobase' | 'edta' | 'redox' | 'precip' | 'potenciometrica';
+
+/* ─────────────── Panel de indicadores metalocrómicos (embebido) ──────────── */
+
+const IND_PANEL_COLORS = ['#0072B2', '#D55E00', '#009E73', '#CC79A7'];
+
+interface IndResult {
+  ind: MetalIndicator;
+  logKprimeMIn: number;
+  deltaLogK: number;
+  badge: 'ok' | 'marginal' | 'blocked' | 'weak';
+}
+
+const IND_BADGE_LABEL: Record<string, string> = { ok: '✅ Apto', marginal: '🟡 Marginal', blocked: '⚠ Bloqueado', weak: '✗ Débil' };
+const IND_BADGE_CLS: Record<string, string>   = { ok: 'badge ok', marginal: 'badge warn', blocked: 'badge warn', weak: 'badge warn' };
+
+/** Badges de indicadores — va en el panel lateral. */
+function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
+  metalId: string; logBetasOH: number[]; pH: number; logKMY_pH: number;
+}) {
+  const results = useMemo((): IndResult[] =>
+    METAL_INDICATORS.flatMap((ind) => {
+      const entry = ind.metals.find((m) => m.metalId === metalId);
+      if (!entry) return [];
+      const lAIn  = Math.log10(alphaH(ind.pKas, pH));
+      const lAMOH = Math.log10(alphaOH(logBetasOH, pH));
+      const logKp = entry.logKMIn - lAIn - lAMOH;
+      const dK    = logKMY_pH - logKp;
+      const badge: IndResult['badge'] =
+        logKp < 4 ? 'weak' : dK < 2 ? 'blocked' : dK < 5 ? 'marginal' : 'ok';
+      return [{ ind, logKprimeMIn: logKp, deltaLogK: dK, badge }];
+    }),
+    [metalId, logBetasOH, pH, logKMY_pH],
+  );
+
+  if (results.length === 0) {
+    return <p className="hint" style={{ marginTop: 6 }}>Sin datos de indicadores para este metal.</p>;
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {results.map(({ ind, logKprimeMIn, deltaLogK, badge }) => (
+        <div key={ind.id} style={{ background: 'var(--bg-alt)', borderRadius: 8, padding: '8px 10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+            <span style={{ fontWeight: 600, fontSize: 13 }}>{ind.abbrev} — {ind.name}</span>
+            <span className={IND_BADGE_CLS[badge]} style={{ fontSize: 11 }}>{IND_BADGE_LABEL[badge]}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--text-muted)', marginBottom: 5 }}>
+            <span>log K′(MIn) = <strong style={{ color: 'var(--text)' }}>{logKprimeMIn.toFixed(1)}</strong></span>
+            <span>ΔlogK = <strong style={{ color: 'var(--text)' }}>{deltaLogK.toFixed(1)}</strong></span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorFree, border: '1px solid #ccc' }} title="Color libre" />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>→</span>
+            <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorMIn, border: '1px solid #ccc' }} title="Color M-In" />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>pH {ind.pHRange[0]}–{ind.pHRange[1]}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Gráfica log K′ = f(pH) de indicadores — va en DiagramTabs. */
+function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
+  metalId: string; logKf: number; logBetasOH: number[]; pH: number;
+}) {
+  const curveMY = useMemo(() =>
+    condLogKCurve(logKf, EDTA_PKAS, logBetasOH, [], 0, [1, 14], 400),
+    [logKf, logBetasOH],
+  );
+
+  const indCurves = useMemo(() => {
+    const out: { ind: MetalIndicator; pHs: number[]; logKs: number[] }[] = [];
+    for (const ind of METAL_INDICATORS) {
+      const entry = ind.metals.find((m) => m.metalId === metalId);
+      if (!entry) continue;
+      const pHs: number[] = [], logKs: number[] = [];
+      for (let i = 0; i <= 400; i++) {
+        const p = 1 + 13 * i / 400;
+        pHs.push(p);
+        logKs.push(entry.logKMIn - Math.log10(alphaH(ind.pKas, p)) - Math.log10(alphaOH(logBetasOH, p)));
+      }
+      out.push({ ind, pHs, logKs });
+    }
+    return out;
+  }, [metalId, logBetasOH]);
+
+  const chartTraces = useMemo<Data[]>(() => [
+    {
+      x: curveMY.pHs, y: curveMY.logKs, type: 'scatter', mode: 'lines',
+      name: "log K′(M-EDTA)", line: { width: 3, color: '#2c3e50' },
+      hovertemplate: "log K′(MY) = %{y:.2f}<extra>M-EDTA</extra>",
+    },
+    ...indCurves.map((c, i) => ({
+      x: c.pHs, y: c.logKs, type: 'scatter' as const, mode: 'lines' as const,
+      name: `log K′(M-${c.ind.abbrev})`,
+      line: { width: 2, color: IND_PANEL_COLORS[i % IND_PANEL_COLORS.length] },
+      hovertemplate: `log K′(M-${c.ind.abbrev}) = %{y:.2f}<extra>${c.ind.abbrev}</extra>`,
+    })),
+  ], [curveMY, indCurves]);
+
+  const allY = [...curveMY.logKs, ...indCurves.flatMap((c) => c.logKs)];
+  const yMin = Math.max(Math.floor(Math.min(...allY)) - 1, -5);
+  const yMax = Math.ceil(logKf) + 2;
+
+  const shapes = useMemo<Partial<Shape>[]>(() => [
+    { type: 'line', x0: pH, x1: pH, y0: yMin - 99, y1: yMax + 99, line: { color: '#CC79A7', width: 1.5, dash: 'dashdot' } },
+  ], [pH, yMin, yMax]);
+
+  if (indCurves.length === 0) {
+    return (
+      <div className="empty-plot">
+        <p>Sin datos de indicadores para este metal en la base de datos.</p>
+        <p className="hint">Selecciona un metal del panel para ver los indicadores disponibles.</p>
+      </div>
+    );
+  }
+
+  return (
+    <Chart
+      data={chartTraces}
+      xTitle="pH"
+      yTitle="log K′"
+      xRange={[1, 14]}
+      yRange={[yMin, yMax]}
+      shapes={shapes}
+      exportName="quimeq-indicadores-edta"
+    />
+  );
+}
 
 /* ───────────────────────── Ácido-base ───────────────────────── */
 
@@ -116,7 +245,7 @@ function AcidBaseTitration() {
           value={titrantIsAcid ? 'acid' : 'base'}
           onChange={(v) => setTitrantIsAcid(v === 'acid')}
         />
-        <AcidSystemEditor system={system} onChange={setSystem} />
+        <AcidSystemEditor system={system} onChange={setSystem} includeStrong />
         <h3>Condiciones</h3>
         <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
         <Slider label="Volumen de la muestra" value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
@@ -165,8 +294,11 @@ function AcidBaseTitration() {
 /* ───────────────────────── Complejométrica (EDTA) ───────────────────────── */
 
 function EdtaTitration() {
-  const [label, setLabel] = useState('Calcio (Ca²⁺)');
-  const [logKf, setLogKf] = useState(10.69);
+  const defaultPreset = EDTA_METAL_PRESETS[0]; // Ca²⁺
+  const [metalId, setMetalId] = useState(defaultPreset.id);
+  const [label, setLabel] = useState(`${defaultPreset.metal}`);
+  const [logKf, setLogKf] = useState(defaultPreset.logKf);
+  const [logBetasOH, setLogBetasOH] = useState<number[]>(defaultPreset.logBetasOH);
   const [edtaInFlask, setEdtaInFlask] = useState(false);
   const [pH, setPH] = useState(10);
   const [cFlask, setCFlask] = useState(0.01);
@@ -174,8 +306,16 @@ function EdtaTitration() {
   const [cBuret, setCBuret] = useState(0.01);
 
   function reset() {
-    setLabel('Calcio (Ca²⁺)'); setLogKf(10.69); setEdtaInFlask(false);
-    setPH(10); setCFlask(0.01); setVFlask(50); setCBuret(0.01);
+    setMetalId(defaultPreset.id); setLabel(defaultPreset.metal);
+    setLogKf(defaultPreset.logKf); setLogBetasOH([...defaultPreset.logBetasOH]);
+    setEdtaInFlask(false); setPH(10); setCFlask(0.01); setVFlask(50); setCBuret(0.01);
+  }
+
+  function applyPreset(id: string) {
+    const p = EDTA_METAL_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    setMetalId(p.id); setLabel(p.metal);
+    setLogKf(p.logKf); setLogBetasOH([...p.logBetasOH]);
   }
 
   const vMax = ((cFlask * vFlask) / cBuret) * 1.8;
@@ -184,13 +324,16 @@ function EdtaTitration() {
     [logKf, pH, cFlask, vFlask, cBuret, vMax, edtaInFlask],
   );
 
-  const traces = useMemo<Data[]>(() => [{
+  // log K'(MY) al pH actual para el panel de indicadores
+  const logKMY_pH = useMemo(() => curve.logKfCond, [curve.logKfCond]);
+
+  const titTraces = useMemo<Data[]>(() => [{
     x: curve.volumes, y: curve.pMs, type: 'scatter', mode: 'lines', name: 'pM',
     line: { width: 3, color: '#009E73' },
     hovertemplate: 'V = %{x:.2f} mL<br>pM = %{y:.2f}<extra></extra>',
   }], [curve]);
 
-  const shapes = useMemo<Partial<Shape>[]>(() => [{
+  const titShapes = useMemo<Partial<Shape>[]>(() => [{
     type: 'line', x0: curve.vEq, x1: curve.vEq, y0: 0, y1: Math.max(...curve.pMs) + 1,
     line: { color: '#009E73', width: 1.5, dash: 'dash' },
   }], [curve]);
@@ -199,6 +342,35 @@ function EdtaTitration() {
   const feasible = curve.logKfCond >= 8;
   const buretName = edtaInFlask ? label : 'EDTA';
   const flaskName = edtaInFlask ? 'EDTA' : label;
+
+  const diagrams = useMemo(() => [
+    {
+      id: 'tit',
+      label: 'Curva de titulación',
+      node: (
+        <Chart
+          data={titTraces}
+          xTitle={`Volumen de ${buretName} agregado (mL)`}
+          yTitle="pM (−log[M])"
+          xRange={[0, vMax]}
+          shapes={titShapes}
+          exportName="quimeq-titulacion-edta"
+        />
+      ),
+    },
+    {
+      id: 'ind',
+      label: 'Indicadores',
+      node: (
+        <IndicadorChart
+          metalId={metalId}
+          logKf={logKf}
+          logBetasOH={logBetasOH}
+          pH={pH}
+        />
+      ),
+    },
+  ], [titTraces, titShapes, buretName, vMax, metalId, logKf, logBetasOH, pH]);
 
   return (
     <>
@@ -219,20 +391,18 @@ function EdtaTitration() {
           <LabelField label="Ion metálico (nombre libre)" value={label} onChange={setLabel} />
           <Slider
             label="log Kf del complejo M–EDTA"
-            value={logKf} min={6} max={28} step={0.01}
+            value={logKf} min={1} max={28} step={0.01}
             onChange={(v) => setLogKf(v)}
           />
           <DbPanel
-            items={METALS.map((m) => ({
-              id: m.id,
-              label: m.symbol,
-              detail: `${m.name} · log Kf = ${m.logKf}`,
+            title="Metales (base de datos)"
+            items={EDTA_METAL_PRESETS.map((p) => ({
+              id: p.id,
+              label: p.metal,
+              detail: `log Kf = ${p.logKf.toFixed(2)}`,
+              group: p.group === 'M²⁺' ? 'Metales bivalentes' : 'Metales trivalentes',
             }))}
-            onSelect={(id) => {
-              const m = METALS.find((x) => x.id === id)!;
-              setLabel(`${m.name} (${m.symbol})`);
-              setLogKf(m.logKf);
-            }}
+            onSelect={applyPreset}
           />
         </div>
         <h3>Condiciones</h3>
@@ -248,25 +418,31 @@ function EdtaTitration() {
         <p className={feasible ? 'badge ok' : 'badge warn'}>
           {feasible
             ? "✓ Titulación factible (log K′f ≥ 8): salto nítido"
-            : "⚠ log K′f < 8: salto pobre. Sube el pH o usa un metal con Kf mayor"}
+            : "⚠ log K′f < 8: salto pobre. Sube el pH o elige un metal con Kf mayor"}
         </p>
+
+        <details className="section-collapse" style={{ marginTop: 12 }}>
+          <summary className="section-collapse-title">Indicadores metalocrómicos a pH {pH.toFixed(1)}</summary>
+          <div style={{ padding: '8px 10px 10px' }}>
+            <IndicadorBadges
+              metalId={metalId}
+              logBetasOH={logBetasOH}
+              pH={pH}
+              logKMY_pH={logKMY_pH}
+            />
+          </div>
+        </details>
+
         <InfoBox title="Método de cálculo">
           <p>
-            Constante condicional K′f = α(Y⁴⁻)·Kf al pH del tampón. La cuadrática del
-            balance de masas da [M] exacto en cada punto. Retrotitulación: el EDTA en
-            exceso queda en el matraz y se titula con el ion metálico.
+            K′f = α(Y⁴⁻)·Kf al pH del tampón. Balance de masas cuadrático exacto en
+            cada punto. Retro: EDTA en exceso en el matraz, se titula con el metal.
+            La pestaña <em>Indicadores</em> muestra el criterio ΔlogK ≥ 5 (Harris).
           </p>
         </InfoBox>
       </aside>
       <section className="plot-area">
-        <Chart
-          data={traces}
-          xTitle={`Volumen de ${buretName} agregado (mL)`}
-          yTitle="pM (−log[M])"
-          xRange={[0, vMax]}
-          shapes={shapes}
-          exportName="quimeq-titulacion-edta"
-        />
+        <DiagramTabs tabs={diagrams} />
       </section>
     </>
   );
@@ -802,7 +978,7 @@ function PotenciometricaTitration() {
           value={titrantIsAcid ? 'acid' : 'base'}
           onChange={(v) => setTitrantIsAcid(v === 'acid')}
         />
-        <AcidSystemEditor system={system} onChange={setSystem} />
+        <AcidSystemEditor system={system} onChange={setSystem} includeStrong />
         <h3>Condiciones</h3>
         <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
         <Slider label="Volumen de la muestra" value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
