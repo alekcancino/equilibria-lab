@@ -1,0 +1,140 @@
+{
+  "_comment": "Pourbaix system definitions (S1.4/S1.5). Only PRIMITIVE data live here: E0 of base couples (Bard, Parsons & Jordan 1985; Pourbaix 1966 for Cu2O dissolution), pKsp (Stumm & Morgan 1996). All solid-phase boundary potentials are DERIVED by Hess's law in pourbaix_core.py -> triple points close by construction (audit P0-4). Clip references: 'clip_min'/'clip_max' accept a solid id (vertical precipitation pH) or {'line': boundary_id} (intersection pH of the two affine lines). Verticals accept 'E_min_ref'/'E_max_ref' (line ids evaluated at the vertical's pH). 'excluded_species' lists deliberate simplifications shown to the user (S1.5).",
+
+  "fe": {
+    "name": "Fe-H₂O",
+    "note": "Simplified diagram. Solid-phase boundary potentials derived from E° + Ksp. Ksp(Fe(OH)₃)=10⁻³⁹, Ksp(Fe(OH)₂)=10⁻¹⁵.",
+    "excluded_species": ["FeO₄²⁻ (ferrate)", "Fe(OH)₄⁻ (amphoteric)", "Fe₃O₄ (magnetite)"],
+    "couples": {
+      "fe3fe2": { "ox": "Fe³⁺", "red": "Fe²⁺", "E0": 0.771, "n": 1 },
+      "fe2fe":  { "ox": "Fe²⁺", "red": "Fe(s)", "E0": -0.44, "n": 2 }
+    },
+    "solids": {
+      "feoh3": { "species": "Fe(OH)₃", "ion": "Fe³⁺", "z": 3, "pKsp": 39.0 },
+      "feoh2": { "species": "Fe(OH)₂", "ion": "Fe²⁺", "z": 2, "pKsp": 15.0 }
+    },
+    "boundaries": [
+      { "id": "b_fe3fe2",      "kind": "aqueous",            "couple": "fe3fe2", "color": "#dc2626", "clip_max": "feoh3" },
+      { "id": "b_fe2fe",       "kind": "deposition",         "couple": "fe2fe",  "color": "#92400e", "clip_max": "feoh2" },
+      { "id": "v_feoh3",       "kind": "precipitation",      "solid": "feoh3",   "color": "#b45309", "E_min_ref": "b_fe3fe2" },
+      { "id": "v_feoh2",       "kind": "precipitation",      "solid": "feoh2",   "color": "#854d0e", "E_min_ref": "b_fe2fe", "E_max_ref": "b_feoh3_fe2" },
+      { "id": "b_feoh3_fe2",   "kind": "ox_solid_red_ion",   "couple": "fe3fe2", "ox_solid": "feoh3", "color": "#d97706", "clip_min": "feoh3", "clip_max": "feoh2" },
+      { "id": "b_feoh3_feoh2", "kind": "both_hydroxides",    "couple": "fe3fe2", "ox_solid": "feoh3", "red_solid": "feoh2", "color": "#ea580c", "clip_min": "feoh2" },
+      { "id": "b_feoh2_fe",    "kind": "ox_solid_red_metal", "couple": "fe2fe",  "ox_solid": "feoh2", "color": "#78350f", "clip_min": "feoh2" }
+    ],
+    "regions": [
+      { "name": "Fe³⁺",    "color": "rgba(220,38,38,0.12)",  "pH": ["half", "feoh3"],        "E": 1.2 },
+      { "name": "Fe²⁺",    "color": "rgba(217,119,6,0.12)",  "pH": ["mid", "feoh3", "feoh2"], "E": 0.15 },
+      { "name": "Fe(OH)₃", "color": "rgba(251,146,60,0.12)", "pH": ["after", "feoh2", 2.0],  "E": 0.7 },
+      { "name": "Fe(OH)₂", "color": "rgba(120,53,15,0.12)",  "pH": ["after", "feoh2", 2.0],  "E": -0.45 },
+      { "name": "Fe(s)",   "color": "rgba(55,65,81,0.12)",   "pH": ["after", "feoh2", 2.0],  "E": -0.9 }
+    ]
+  },
+
+  "cu": {
+    "name": "Cu-H₂O",
+    "note": "Includes the Cu₂O field (S1.5). Dissolution of cuprite: ½Cu₂O + H⁺ ⇌ Cu⁺ + ½H₂O, log K = −0.84 (Pourbaix 1966). All boundaries derived from E°(Cu²⁺/Cu⁺)=0.153 V, E°(Cu⁺/Cu)=0.521 V, Ksp(Cu(OH)₂)=10⁻¹⁹·⁵.",
+    "excluded_species": ["CuO (tenorite; Cu(OH)₂ used)", "CuO₂²⁻ / HCuO₂⁻ (amphoteric)"],
+    "couples": {
+      "cu2cu":  { "ox": "Cu²⁺", "red": "Cu(s)", "E0": 0.337, "n": 2 },
+      "cu2cu1": { "ox": "Cu²⁺", "red": "Cu⁺", "E0": 0.153, "n": 1 },
+      "cu1cu":  { "ox": "Cu⁺", "red": "Cu(s)", "E0": 0.521, "n": 1 }
+    },
+    "solids": {
+      "cuoh2": { "species": "Cu(OH)₂", "ion": "Cu²⁺", "z": 2, "pKsp": 19.5 },
+      "cu2o":  { "species": "Cu₂O", "type": "oxide1", "ion": "Cu⁺", "pKd": 0.84 }
+    },
+    "boundaries": [
+      { "id": "b_cu2cu",       "kind": "deposition",        "couple": "cu2cu",  "color": "#0369a1", "clip_max": { "line": "b_cu2_cu2o" } },
+      { "id": "b_cu2_cu2o",    "kind": "ion_oxide1",        "couple": "cu2cu1", "oxide": "cu2o", "color": "#0ea5e9", "clip_min": { "line": "b_cu2cu" }, "clip_max": "cuoh2" },
+      { "id": "b_cu2o_cu",     "kind": "oxide1_metal",      "couple": "cu1cu",  "oxide": "cu2o", "color": "#0c4a6e", "clip_min": { "line": "b_cu2cu" } },
+      { "id": "b_cuoh2_cu2o",  "kind": "hydroxide_oxide1",  "couple": "cu2cu1", "ox_solid": "cuoh2", "oxide": "cu2o", "color": "#38bdf8", "clip_min": "cuoh2" },
+      { "id": "v_cuoh2",       "kind": "precipitation",     "solid": "cuoh2",   "color": "#0284c7", "E_min_ref": "b_cu2_cu2o" }
+    ],
+    "regions": [
+      { "name": "Cu²⁺",    "color": "rgba(3,105,161,0.12)",  "pH": ["half", "cuoh2"],       "E": 0.6 },
+      { "name": "Cu(OH)₂", "color": "rgba(2,132,199,0.12)",  "pH": ["after", "cuoh2", 1.5], "E": 0.5 },
+      { "name": "Cu₂O",    "color": "rgba(14,165,233,0.12)", "pH": ["after", "cuoh2", 3.0], "E": 0.05 },
+      { "name": "Cu(s)",   "color": "rgba(12,74,110,0.12)",  "pH": ["after", "cuoh2", 1.5], "E": -0.4 }
+    ]
+  },
+
+  "mn": {
+    "name": "Mn-H₂O",
+    "note": "Simplified diagram. MnO₂/Mn(OH)₂ and Mn(OH)₂/Mn boundaries derived from E° + Ksp. Ksp(Mn(OH)₂)=10⁻¹³.",
+    "excluded_species": ["MnO₄⁻ / MnO₄²⁻ (permanganate/manganate)", "Mn₂O₃", "Mn₃O₄"],
+    "couples": {
+      "mn2mn":   { "ox": "Mn²⁺", "red": "Mn(s)", "E0": -1.179, "n": 2 },
+      "mno2mn2": { "ox": "MnO₂", "red": "Mn²⁺", "E0": 1.228, "n": 2, "m_H": 4, "ox_solid_oxide": true }
+    },
+    "solids": {
+      "mnoh2": { "species": "Mn(OH)₂", "ion": "Mn²⁺", "z": 2, "pKsp": 13.0 }
+    },
+    "boundaries": [
+      { "id": "b_mn2mn",        "kind": "deposition",            "couple": "mn2mn",   "color": "#7e22ce", "clip_max": "mnoh2" },
+      { "id": "b_mno2mn2",      "kind": "oxide_ion",             "couple": "mno2mn2", "color": "#6d28d9", "clip_max": "mnoh2" },
+      { "id": "v_mnoh2",        "kind": "precipitation",         "solid": "mnoh2",    "color": "#a855f7", "E_min_ref": "b_mn2mn", "E_max_ref": "b_mno2mn2" },
+      { "id": "b_mno2_mnoh2",   "kind": "oxide_solid_hydroxide", "couple": "mno2mn2", "red_solid": "mnoh2", "color": "#9333ea", "clip_min": "mnoh2" },
+      { "id": "b_mnoh2_mn",     "kind": "ox_solid_red_metal",    "couple": "mn2mn",   "ox_solid": "mnoh2", "color": "#581c87", "clip_min": "mnoh2" }
+    ],
+    "regions": [
+      { "name": "Mn²⁺",    "color": "rgba(126,34,206,0.12)", "pH": ["half", "mnoh2"],       "E": 0.4 },
+      { "name": "MnO₂",    "color": "rgba(109,40,217,0.12)", "pH": ["fixed", 7.0],          "E": 1.5 },
+      { "name": "Mn(OH)₂", "color": "rgba(168,85,247,0.12)", "pH": ["after", "mnoh2", 2.0], "E": -0.4 },
+      { "name": "Mn(s)",   "color": "rgba(88,28,135,0.12)",  "pH": ["fixed", 7.0],          "E": -1.6 }
+    ]
+  },
+
+  "zn": {
+    "name": "Zn-H₂O",
+    "note": "Simplified diagram. Zn(OH)₂/Zn derived: E°′ = −0.437 V. Ksp(Zn(OH)₂)=10⁻¹⁷.",
+    "excluded_species": ["Zn(OH)₄²⁻ (zincate, amphoteric)", "ZnO"],
+    "couples": {
+      "zn2zn": { "ox": "Zn²⁺", "red": "Zn(s)", "E0": -0.762, "n": 2 }
+    },
+    "solids": {
+      "znoh2": { "species": "Zn(OH)₂", "ion": "Zn²⁺", "z": 2, "pKsp": 17.0 }
+    },
+    "boundaries": [
+      { "id": "b_zn2zn",   "kind": "deposition",         "couple": "zn2zn", "color": "#0f766e", "clip_max": "znoh2" },
+      { "id": "v_znoh2",   "kind": "precipitation",      "solid": "znoh2",  "color": "#0d9488", "E_min_ref": "b_zn2zn" },
+      { "id": "b_znoh2_zn","kind": "ox_solid_red_metal", "couple": "zn2zn", "ox_solid": "znoh2", "color": "#134e4a", "clip_min": "znoh2" }
+    ],
+    "regions": [
+      { "name": "Zn²⁺",    "color": "rgba(15,118,110,0.12)", "pH": ["half", "znoh2"],       "E": 0.0 },
+      { "name": "Zn(OH)₂", "color": "rgba(13,148,136,0.12)", "pH": ["after", "znoh2", 1.5], "E": 0.2 },
+      { "name": "Zn(s)",   "color": "rgba(19,78,74,0.12)",   "pH": ["after", "znoh2", 1.5], "E": -1.2 }
+    ]
+  },
+
+  "cr": {
+    "name": "Cr-H₂O",
+    "note": "Includes the Cr(VI) field (S1.5) using the monomeric couple HCrO₄⁻ + 7H⁺ + 3e⁻ → Cr³⁺ + 4H₂O, E° = 1.350 V (Pourbaix 1966). Chromate protonation steps (pKa ≈ 0.7, 6.45) and the Cr₂O₇²⁻ dimer are neglected. Cr(III) boundaries derived from E° + Ksp(Cr(OH)₃)=10⁻³⁰.",
+    "excluded_species": ["Cr₂O₇²⁻ (dimer; HCrO₄⁻ used)", "CrO₄²⁻ branch (pKa 6.45 neglected)", "Cr(OH)₄⁻ (amphoteric)"],
+    "couples": {
+      "cr3cr2": { "ox": "Cr³⁺", "red": "Cr²⁺", "E0": -0.407, "n": 1 },
+      "cr2cr":  { "ox": "Cr²⁺", "red": "Cr(s)", "E0": -0.913, "n": 2 },
+      "cr3cr":  { "ox": "Cr³⁺", "red": "Cr(s)", "E0": -0.744, "n": 3 },
+      "cr6cr3": { "ox": "HCrO₄⁻", "red": "Cr³⁺", "E0": 1.35, "n": 3, "m_H": 7 }
+    },
+    "solids": {
+      "croh3": { "species": "Cr(OH)₃", "ion": "Cr³⁺", "z": 3, "pKsp": 30.0 }
+    },
+    "boundaries": [
+      { "id": "b_cr6cr3",    "kind": "aqueous_mH",         "couple": "cr6cr3", "color": "#f59e0b", "clip_max": "croh3" },
+      { "id": "b_cr6_croh3", "kind": "oxyanion_red_solid", "couple": "cr6cr3", "red_solid": "croh3", "color": "#d97706", "clip_min": "croh3" },
+      { "id": "b_cr3cr2",    "kind": "aqueous",            "couple": "cr3cr2", "color": "#7c3aed", "clip_max": "croh3" },
+      { "id": "b_cr2cr",     "kind": "deposition",         "couple": "cr2cr",  "color": "#5b21b6" },
+      { "id": "v_croh3",     "kind": "precipitation",      "solid": "croh3",   "color": "#6d28d9", "E_min_ref": "b_cr3cr2", "E_max_ref": "b_cr6cr3" },
+      { "id": "b_croh3_cr2", "kind": "ox_solid_red_ion",   "couple": "cr3cr2", "ox_solid": "croh3", "color": "#8b5cf6", "clip_min": "croh3" },
+      { "id": "b_croh3_cr",  "kind": "ox_solid_red_metal", "couple": "cr3cr",  "ox_solid": "croh3", "color": "#4c1d95", "clip_min": "croh3" }
+    ],
+    "regions": [
+      { "name": "HCrO₄⁻",  "color": "rgba(245,158,11,0.12)", "pH": ["fixed", 3.0],          "E": 1.6 },
+      { "name": "Cr³⁺",    "color": "rgba(124,58,237,0.12)", "pH": ["half", "croh3"],       "E": 0.1 },
+      { "name": "Cr²⁺",    "color": "rgba(109,40,217,0.12)", "pH": ["half", "croh3"],       "E": -0.6 },
+      { "name": "Cr(OH)₃", "color": "rgba(139,92,246,0.12)", "pH": ["after", "croh3", 2.0], "E": 0.0 },
+      { "name": "Cr(s)",   "color": "rgba(76,29,149,0.12)",  "pH": ["after", "croh3", 2.0], "E": -1.2 }
+    ]
+  }
+}
