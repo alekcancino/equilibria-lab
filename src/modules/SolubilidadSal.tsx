@@ -209,7 +209,7 @@ export default function SolubilidadSal() {
       hovertemplate: `pH=%{x:.2f}<br>log S=%{y:.2f}<extra>${sal2.name}</extra>`,
     });
     return out;
-  }, [curve1, curve2, sal1, sal2, showP2]);
+  }, [curve1, curve2, sal1, sal2]);
 
   const alphaTraces = useMemo<Data[]>(() => {
     const n = sal1.pKas.length + 1;

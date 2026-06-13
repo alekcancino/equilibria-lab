@@ -143,7 +143,6 @@ export default function Mezclas() {
       betas.push(beta);
     }
     return { pHs, betas };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows]);
 
   const titrantName = titrantIsAcid ? 'HCl' : 'NaOH';

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 /** Campo numérico editable que tolera estados intermedios al teclear. */
 function NumberField({
@@ -9,23 +9,25 @@ function NumberField({
   step?: number;
   width?: number;
 }) {
-  const [text, setText] = useState(String(value));
+  const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    setText((prev) => (parseFloat(prev) === value ? prev : String(value)));
+    if (inputRef.current && parseFloat(inputRef.current.value) !== value) {
+      inputRef.current.value = String(value);
+    }
   }, [value]);
   return (
     <input
+      ref={inputRef}
       type="number"
       className="num-field"
       style={{ width }}
-      value={text}
+      defaultValue={value}
       step={step ?? 'any'}
       onChange={(e) => {
-        setText(e.target.value);
         const v = parseFloat(e.target.value);
         if (Number.isFinite(v)) onCommit(v);
       }}
-      onBlur={() => setText(String(value))}
+      onBlur={(e) => { e.target.value = String(value); }}
     />
   );
 }

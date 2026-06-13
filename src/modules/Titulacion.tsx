@@ -6,9 +6,9 @@ import {
   ModelBadge, RefBadge, SelectControl, Slider, Toggle,
 } from '../components/Controls';
 import {
-  AcidSystemEditor, CoupleEditor, coupleFromPreset,
-  strongAcidSystem, type AcidSystem, type CoupleState,
+  AcidSystemEditor, CoupleEditor,
 } from '../components/Editors';
+import { coupleFromPreset, strongAcidSystem, type AcidSystem, type CoupleState } from '../lib/editorModels';
 import DiagramTabs from '../components/DiagramTabs';
 import { INDICATORS } from '../lib/database';
 import { firstDerivative, granPlot, secondDerivative, titrationCurve, titratableProtons } from '../lib/titration';
@@ -967,7 +967,6 @@ function PotenciometricaTitration() {
   const granShapes = useMemo<Partial<Shape>[]>(
     () => curve.equivalenceVolumes.map((veq) => ({
       type: 'line', x0: veq, x1: veq, y0: 0, y1: 1,
-      // @ts-ignore
       yref: 'paper', xref: 'x',
       line: { color: '#009E73', width: 1.5, dash: 'dash' },
     })),

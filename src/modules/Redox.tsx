@@ -3,7 +3,8 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
 import { InfoBox, ModelBadge, ResultCard, Slider } from '../components/Controls';
-import { CoupleEditor, coupleFromPreset, type CoupleState } from '../components/Editors';
+import { CoupleEditor } from '../components/Editors';
+import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
 import { alphaRedox, peConditional, NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
 

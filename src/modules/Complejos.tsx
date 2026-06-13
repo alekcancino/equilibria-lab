@@ -123,7 +123,6 @@ export default function Complejos() {
   const logCTraces = useMemo<Data[]>(() => {
     const pls: number[] = [];
     const series: number[][] = Array.from({ length: n + 1 }, () => []);
-    const logCM = Math.log10(cM);
     for (let i = 0; i <= PL_POINTS; i++) {
       const pL = (pLmax * i) / PL_POINTS;
       pls.push(pL);
@@ -137,8 +136,6 @@ export default function Complejos() {
       line: { width: 3, color: SPECIES_COLORS[j % SPECIES_COLORS.length] },
       hovertemplate: `log C = %{y:.2f}<extra>${labels[j] ?? ''}</extra>`,
     }));
-    // supress unused warning
-    void logCM;
   }, [sys.logBetas, labels, n, pLmax, cM]);
 
   // DUZP

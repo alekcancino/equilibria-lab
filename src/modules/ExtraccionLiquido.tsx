@@ -134,6 +134,124 @@ function defaultState() {
   };
 }
 
+function AnalyteEditor({ a, color, additions, onChange }: {
+  a: AnalyteState;
+  color: string;
+  additions: Array<string | false>;
+  onChange: (patch: Partial<AnalyteState>) => void;
+}) {
+  const acidPresets = PRESETS.filter((p) => p.type === 'acid');
+  const chelatePresets = PRESETS.filter((p) => p.type === 'chelate');
+  return (
+    <div style={{ borderLeft: `3px solid ${color}`, paddingLeft: 10, marginBottom: 12 }}>
+      <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
+        Nombre / fórmula
+      </label>
+      <input
+        className="text-input"
+        value={a.label}
+        onChange={(e) => onChange({ label: e.target.value })}
+        style={{ width: '100%', marginBottom: 8 }}
+      />
+
+      <div className="control" style={{ marginBottom: 6 }}>
+        <div className="control-header">
+          <span className="control-label">Tipo</span>
+        </div>
+        <div className="segmented" style={{ marginTop: 4 }}>
+          {(['acid', 'chelate'] as const).map((t) => (
+            <button
+              key={t}
+              className={a.type === t ? 'seg-btn active' : 'seg-btn'}
+              onClick={() => onChange({ type: t })}
+            >
+              {t === 'acid' ? 'Ácido / neutral' : 'Quelato metálico'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <ModelBadge
+        model={a.type === 'chelate'
+          ? `extracción de quelato metálico (${a.n}:1)`
+          : a.pKas.length === 0
+            ? 'reparto simple de soluto no ionizable'
+            : a.pKas.length === 1
+              ? 'reparto condicionado por una ionización'
+              : `reparto condicionado por ${a.pKas.length} ionizaciones`}
+        additions={additions}
+      />
+
+      <p className="hint" style={{ marginBottom: 6 }}>
+        {a.type === 'acid'
+          ? 'Presets ácidos:'
+          : 'Presets quelatos (D = K_ex · [HL]^n · 10^(n·pH)):'}
+      </p>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+        {(a.type === 'acid' ? acidPresets : chelatePresets).map((p) => (
+          <button
+            key={p.id}
+            className="preset-chip"
+            title={`${p.system}  logKd=${p.logKd}`}
+            onClick={() => onChange({
+              label: p.label, type: p.type, logKd: p.logKd,
+              pKas: [...p.pKas], neutralIdx: p.neutralIdx,
+              n: p.n ?? 2, logCHL: p.logCHL ?? -1,
+            })}
+          >
+            {p.formula}
+          </button>
+        ))}
+      </div>
+
+      {a.type === 'acid' ? (
+        <>
+          <Slider label="log Kd" value={a.logKd} min={-2} max={6} step={0.05} onChange={(v) => onChange({ logKd: v })} decimals={2} />
+          <ConstantList
+            prefix="pKa"
+            values={a.pKas}
+            onChange={(v) => onChange({ pKas: v })}
+            min={0}
+            max={14}
+            maxItems={4}
+            minItems={0}
+            initialValue={4.76}
+          />
+          {a.pKas.length > 1 && (
+            <p className="hint">Índice de la forma neutra (0 = más protonada): {a.neutralIdx}
+              {' '}
+              <button
+                style={{ fontSize: 11, background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', padding: '1px 6px' }}
+                onClick={() => onChange({ neutralIdx: (a.neutralIdx + 1) % (a.pKas.length + 1) })}
+              >
+                +1
+              </button>
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <Slider label="log K_ex" value={a.logKd} min={-2} max={20} step={0.1} onChange={(v) => onChange({ logKd: v })} decimals={2} />
+          <div className="control">
+            <div className="control-header">
+              <span className="control-label">n (carga del metal)</span>
+              <span className="control-value">{a.n}</span>
+            </div>
+            <div className="segmented" style={{ marginTop: 4 }}>
+              {[1, 2, 3].map((n) => (
+                <button key={n} className={a.n === n ? 'seg-btn active' : 'seg-btn'} onClick={() => onChange({ n })}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <Slider label="log[HL]_org" value={a.logCHL} min={-4} max={0} step={0.1} onChange={(v) => onChange({ logCHL: v })} decimals={1} />
+          <p className="hint">D = 10^(log K_ex + n·log[HL] + n·pH) → sube con el pH</p>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export default function ExtraccionLiquido() {
@@ -295,125 +413,6 @@ export default function ExtraccionLiquido() {
     },
   ];
 
-  // ── Panel de edición de analito ────────────────────────────────────────────
-
-  function AnalyteEditor({ a, color, onChange }: {
-    a: AnalyteState;
-    color: string;
-    onChange: (patch: Partial<AnalyteState>) => void;
-  }) {
-    const acidPresets = PRESETS.filter((p) => p.type === 'acid');
-    const chelatePresets = PRESETS.filter((p) => p.type === 'chelate');
-    return (
-      <div style={{ borderLeft: `3px solid ${color}`, paddingLeft: 10, marginBottom: 12 }}>
-        <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
-          Nombre / fórmula
-        </label>
-        <input
-          className="text-input"
-          value={a.label}
-          onChange={(e) => onChange({ label: e.target.value })}
-          style={{ width: '100%', marginBottom: 8 }}
-        />
-
-        <div className="control" style={{ marginBottom: 6 }}>
-          <div className="control-header">
-            <span className="control-label">Tipo</span>
-          </div>
-          <div className="segmented" style={{ marginTop: 4 }}>
-            {(['acid', 'chelate'] as const).map((t) => (
-              <button
-                key={t}
-                className={a.type === t ? 'seg-btn active' : 'seg-btn'}
-                onClick={() => onChange({ type: t })}
-              >
-                {t === 'acid' ? 'Ácido / neutral' : 'Quelato metálico'}
-              </button>
-            ))}
-          </div>
-        </div>
-        <ModelBadge
-          model={a.type === 'chelate'
-            ? `extracción de quelato metálico (${a.n}:1)`
-            : a.pKas.length === 0
-              ? 'reparto simple de soluto no ionizable'
-              : a.pKas.length === 1
-                ? 'reparto condicionado por una ionización'
-                : `reparto condicionado por ${a.pKas.length} ionizaciones`}
-          additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
-        />
-
-        <p className="hint" style={{ marginBottom: 6 }}>
-          {a.type === 'acid'
-            ? 'Presets ácidos:'
-            : 'Presets quelatos (D = K_ex · [HL]^n · 10^(n·pH)):'}
-        </p>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-          {(a.type === 'acid' ? acidPresets : chelatePresets).map((p) => (
-            <button
-              key={p.id}
-              className="preset-chip"
-              title={`${p.system}  logKd=${p.logKd}`}
-              onClick={() => onChange({
-                label: p.label, type: p.type, logKd: p.logKd,
-                pKas: [...p.pKas], neutralIdx: p.neutralIdx,
-                n: p.n ?? 2, logCHL: p.logCHL ?? -1,
-              })}
-            >
-              {p.formula}
-            </button>
-          ))}
-        </div>
-
-        {a.type === 'acid' ? (
-          <>
-            <Slider label="log Kd" value={a.logKd} min={-2} max={6} step={0.05} onChange={(v) => onChange({ logKd: v })} decimals={2} />
-            <ConstantList
-              prefix="pKa"
-              values={a.pKas}
-              onChange={(v) => onChange({ pKas: v })}
-              min={0}
-              max={14}
-              maxItems={4}
-              minItems={0}
-              initialValue={4.76}
-            />
-            {a.pKas.length > 1 && (
-              <p className="hint">Índice de la forma neutra (0 = más protonada): {a.neutralIdx}
-                {' '}
-                <button
-                  style={{ fontSize: 11, background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', padding: '1px 6px' }}
-                  onClick={() => onChange({ neutralIdx: (a.neutralIdx + 1) % (a.pKas.length + 1) })}
-                >
-                  +1
-                </button>
-              </p>
-            )}
-          </>
-        ) : (
-          <>
-            <Slider label="log K_ex" value={a.logKd} min={-2} max={20} step={0.1} onChange={(v) => onChange({ logKd: v })} decimals={2} />
-            <div className="control">
-              <div className="control-header">
-                <span className="control-label">n (carga del metal)</span>
-                <span className="control-value">{a.n}</span>
-              </div>
-              <div className="segmented" style={{ marginTop: 4 }}>
-                {[1, 2, 3].map((n) => (
-                  <button key={n} className={a.n === n ? 'seg-btn active' : 'seg-btn'} onClick={() => onChange({ n })}>
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Slider label="log[HL]_org" value={a.logCHL} min={-4} max={0} step={0.1} onChange={(v) => onChange({ logCHL: v })} decimals={1} />
-            <p className="hint">D = 10^(log K_ex + n·log[HL] + n·pH) → sube con el pH</p>
-          </>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="module">
       <aside className="panel">
@@ -423,13 +422,23 @@ export default function ExtraccionLiquido() {
         </div>
 
         <h3>Analito 1</h3>
-        <AnalyteEditor a={st.a1} color={C1} onChange={(p) => set('a1', { ...st.a1, ...p })} />
+        <AnalyteEditor
+          a={st.a1}
+          color={C1}
+          additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
+          onChange={(p) => set('a1', { ...st.a1, ...p })}
+        />
 
         <Toggle label="Comparar con 2.º analito" checked={st.showA2} onChange={(v) => set('showA2', v)} />
         {st.showA2 && (
           <div className="mask-section">
             <h3>Analito 2</h3>
-            <AnalyteEditor a={st.a2} color={C2} onChange={(p) => set('a2', { ...st.a2, ...p })} />
+            <AnalyteEditor
+              a={st.a2}
+              color={C2}
+              additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
+              onChange={(p) => set('a2', { ...st.a2, ...p })}
+            />
           </div>
         )}
 

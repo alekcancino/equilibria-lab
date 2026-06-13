@@ -166,7 +166,6 @@ export default function IndicadoresMetalicos() {
       out.push({
         type: 'rect', x0: feasWin[0], x1: feasWin[1], y0: yMin - 99, y1: yMax + 99,
         fillcolor: 'rgba(41,128,185,0.08)', line: { width: 0 },
-        // @ts-ignore
         layer: 'below',
       });
     }

@@ -94,8 +94,8 @@ usuario edite un dato, la UI debe indicar que ya es un valor personalizado.
 ## Calidad técnica
 
 - `npm run build`: pasa.
-- `npm run lint`: falla con 13 errores y 2 advertencias al momento de la
-  auditoría.
+- `npm run lint`: pasa sin errores ni advertencias después de la limpieza
+  técnica posterior a la auditoría.
 - No hay comando `test`, archivos de prueba ni validación automatizada.
 - El bundle principal supera 1.4 MB minificado; conviene dividir módulos y
   cargar Plotly bajo demanda.
@@ -105,7 +105,7 @@ usuario edite un dato, la UI debe indicar que ya es un valor personalizado.
 ### P0 — confianza y reproducibilidad
 
 1. Crear pruebas unitarias para cada motor con casos publicados y tolerancias.
-2. Corregir lint y agregar `npm run check` que ejecute build, lint y tests.
+2. Agregar `npm run check` que ejecute build, lint y tests.
 3. Normalizar la procedencia bibliográfica por registro.
 4. Mantener `COBERTURA-TEMARIO.md` sincronizado con las capacidades reales.
 

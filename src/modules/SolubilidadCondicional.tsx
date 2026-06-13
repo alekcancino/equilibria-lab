@@ -150,7 +150,6 @@ export default function SolubilidadCondicional() {
         x0: selectiveWindow[0], x1: selectiveWindow[1],
         y0: yMin - 99, y1: yMax + 99,
         fillcolor: C_WIN, line: { width: 0 },
-        // @ts-ignore
         layer: 'below',
       });
     }
