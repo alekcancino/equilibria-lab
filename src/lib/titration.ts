@@ -82,3 +82,36 @@ export function firstDerivative(volumes: number[], pHs: number[]): { v: number[]
   }
   return { v, d };
 }
+
+/** Segunda derivada — aplica diferencias centrales dos veces. */
+export function secondDerivative(volumes: number[], ys: number[]): { v: number[]; d: number[] } {
+  const first = firstDerivative(volumes, ys);
+  return firstDerivative(first.v, first.d);
+}
+
+/**
+ * Función linealizada de Gran para detectar V_eq con mayor precisión.
+ * Antes del P.E.:  F₁ = (V₀ + V) · 10^−pH  (proporcional a [H⁺] total)
+ * Después del P.E.: F₂ = (V₀ + V) · 10^(pH − 14)  (proporcional a [OH⁻] exceso)
+ * Cada segmento es lineal y su extrapolación al eje-x da V_eq.
+ */
+export function granPlot(
+  volumes: number[],
+  pHs: number[],
+  vAnalyte: number,
+): { v1: number[]; F1: number[]; v2: number[]; F2: number[] } {
+  const v1: number[] = [], F1: number[] = [];
+  const v2: number[] = [], F2: number[] = [];
+  for (let i = 0; i < volumes.length; i++) {
+    const pH = pHs[i];
+    const V = volumes[i];
+    if (!Number.isFinite(pH)) continue;
+    const pHc = Math.min(14, Math.max(0, pH)); // clamp numérico
+    const Vtot = vAnalyte + V;
+    v1.push(V);
+    F1.push(Vtot * Math.pow(10, -pHc));
+    v2.push(V);
+    F2.push(Vtot * Math.pow(10, pHc - 14));
+  }
+  return { v1, F1, v2, F2 };
+}

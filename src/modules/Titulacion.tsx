@@ -9,15 +9,16 @@ import {
   AcidSystemEditor, CoupleEditor, coupleFromPreset, defaultAcidSystem,
   type AcidSystem, type CoupleState,
 } from '../components/Editors';
+import DiagramTabs from '../components/DiagramTabs';
 import { INDICATORS, METALS } from '../lib/database';
-import { firstDerivative, titrationCurve, titratableProtons } from '../lib/titration';
+import { firstDerivative, granPlot, secondDerivative, titrationCurve, titratableProtons } from '../lib/titration';
 import { alphaY4, edtaTitrationCurve } from '../lib/edta';
 import { redoxTitrationCurve } from '../lib/redox';
 import {
   precipTitrationCurve, mohrEndpointPAg, PRECIP_ANALYTES,
 } from '../lib/precipTitration';
 
-type Mode = 'acidobase' | 'edta' | 'redox' | 'precip';
+type Mode = 'acidobase' | 'edta' | 'redox' | 'precip' | 'potenciometrica';
 
 /* ───────────────────────── Ácido-base ───────────────────────── */
 
@@ -550,6 +551,255 @@ function PrecipTitration() {
   );
 }
 
+/* ───────────────────────── Potenciométrica ───────────────────────── */
+
+// Factor de Nernst a 25 °C para electrodo de vidrio: S = 59.16 mV/pH.
+// E_celda = K_ref − S · pH   (donde K_ref engloba E_referencia + E_junta)
+const S_POT = 59.16; // mV / pH
+
+function PotenciometricaTitration() {
+  const [system, setSystem] = useState<AcidSystem>(defaultAcidSystem());
+  const [titrantIsAcid, setTitrantIsAcid] = useState(false);
+  const [cAnalyte, setCAnalyte] = useState(0.1);
+  const [vAnalyte, setVAnalyte] = useState(25);
+  const [cTitrant, setCTitrant] = useState(0.1);
+  const [Kref, setKref] = useState(400);      // mV
+  const [showDeriv1, setShowDeriv1] = useState(false);
+  const [showDeriv2, setShowDeriv2] = useState(true);
+
+  function reset() {
+    setSystem(defaultAcidSystem()); setTitrantIsAcid(false);
+    setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
+    setKref(400); setShowDeriv1(false); setShowDeriv2(true);
+  }
+
+  const titrantName = titrantIsAcid ? 'HCl' : 'NaOH';
+  const nProtons = titratableProtons(system.pKas);
+  const vEqLast = (nProtons * cAnalyte * vAnalyte) / cTitrant;
+  const vMax = vEqLast * 1.6;
+
+  const curve = useMemo(
+    () => titrationCurve({
+      analyte: { z0: system.z0, pKas: system.pKas },
+      titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax,
+    }),
+    [system, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax],
+  );
+
+  // pH → E (mV)
+  const Es = useMemo(
+    () => curve.pHs.map((pH) => (Number.isFinite(pH) ? Kref - S_POT * pH : NaN)),
+    [curve.pHs, Kref],
+  );
+
+  // Derivadas
+  const d1 = useMemo(() => firstDerivative(curve.volumes, Es), [curve.volumes, Es]);
+  const d2 = useMemo(() => secondDerivative(d1.v, d1.d), [d1]);
+
+  // Cruce por cero de d²E/dV² — selecciona el cruce donde |dE/dV| es máximo
+  // (el punto de inflexión real), descartando cruces espurios en los extremos.
+  const zeroCrossing = useMemo(() => {
+    if (d2.v.length < 3) return null;
+    const maxD1 = Math.max(...d1.d.map(Math.abs), 1e-9);
+    let bestV: number | null = null;
+    let bestWeight = 0;
+    for (let i = 1; i < d2.v.length; i++) {
+      if (d2.d[i - 1] * d2.d[i] >= 0) continue;
+      const midV = (d2.v[i - 1] + d2.v[i]) / 2;
+      const j = d1.v.findIndex((v) => v >= midV);
+      const weight = j >= 0 ? Math.abs(d1.d[j]) / maxD1 : 0;
+      if (weight > bestWeight) {
+        bestWeight = weight;
+        const t = -d2.d[i - 1] / (d2.d[i] - d2.d[i - 1]);
+        bestV = d2.v[i - 1] + t * (d2.v[i] - d2.v[i - 1]);
+      }
+    }
+    return bestV;
+  }, [d2, d1]);
+
+  // Escala dE/dV y d²E/dV² para la gráfica superpuesta
+  const eMin = Math.min(...Es.filter(Number.isFinite));
+  const eMax = Math.max(...Es.filter(Number.isFinite));
+  const eSpan = eMax - eMin;
+
+  const d1Scaled = useMemo(() => {
+    const maxD = Math.max(...d1.d.map(Math.abs), 1e-9);
+    return d1.d.map((d) => eMin + (Math.abs(d) / maxD) * eSpan * 0.8);
+  }, [d1, eMin, eSpan]);
+
+  const d2Max = useMemo(() => Math.max(...d2.d.map(Math.abs), 1e-9), [d2]);
+  const d2Scaled = useMemo(
+    () => d2.d.map((d) => (d / d2Max) * eSpan * 0.4 + (eMax + eMin) / 2),
+    [d2, d2Max, eSpan, eMax, eMin],
+  );
+
+  // Trazas E = f(V)
+  const efVTraces = useMemo<Data[]>(() => {
+    const t: Data[] = [{
+      x: curve.volumes, y: Es, type: 'scatter', mode: 'lines', name: 'E (mV)',
+      line: { width: 3, color: '#0072B2' },
+      hovertemplate: 'V = %{x:.2f} mL<br>E = %{y:.1f} mV<extra></extra>',
+    }];
+    if (showDeriv1) t.push({
+      x: d1.v, y: d1Scaled, type: 'scatter', mode: 'lines',
+      name: '|dE/dV| (escalada)', line: { width: 2, color: '#E69F00' }, hoverinfo: 'skip',
+    });
+    if (showDeriv2) t.push({
+      x: d2.v, y: d2Scaled, type: 'scatter', mode: 'lines',
+      name: 'd²E/dV² (escalada)', line: { width: 2, color: '#D55E00', dash: 'dash' }, hoverinfo: 'skip',
+    });
+    return t;
+  }, [curve.volumes, Es, showDeriv1, showDeriv2, d1, d1Scaled, d2, d2Scaled]);
+
+  const efVShapes = useMemo<Partial<Shape>[]>(() => {
+    const s: Partial<Shape>[] = curve.equivalenceVolumes.map((veq) => ({
+      type: 'line', x0: veq, x1: veq, y0: eMin - 50, y1: eMax + 50,
+      line: { color: '#009E73', width: 1.5, dash: 'dash' },
+    }));
+    if (zeroCrossing !== null) s.push({
+      type: 'line', x0: zeroCrossing, x1: zeroCrossing, y0: eMin - 50, y1: eMax + 50,
+      line: { color: '#D55E00', width: 1, dash: 'dot' },
+    });
+    return s;
+  }, [curve.equivalenceVolumes, zeroCrossing, eMin, eMax]);
+
+  const efVAnnotations = useMemo<Partial<Annotations>[]>(() => {
+    const a: Partial<Annotations>[] = curve.equivalenceVolumes.map((veq) => ({
+      x: veq, y: eMax, text: 'P.E.', showarrow: false, font: { color: '#009E73', size: 12 },
+    }));
+    if (zeroCrossing !== null) a.push({
+      x: zeroCrossing, y: eMin + eSpan * 0.1,
+      text: `d²E/dV²=0<br>${zeroCrossing.toFixed(2)} mL`,
+      showarrow: false, font: { color: '#D55E00', size: 10 },
+    });
+    return a;
+  }, [curve.equivalenceVolumes, zeroCrossing, eMax, eMin, eSpan]);
+
+  // Gran plot
+  const gran = useMemo(
+    () => granPlot(curve.volumes, curve.pHs, vAnalyte),
+    [curve.volumes, curve.pHs, vAnalyte],
+  );
+
+  const granTraces = useMemo<Data[]>(() => [
+    {
+      x: gran.v1, y: gran.F1, type: 'scatter', mode: 'lines', name: 'F₁ (antes del P.E.)',
+      line: { width: 2.5, color: '#0072B2' },
+      hovertemplate: 'V = %{x:.2f} mL<br>F₁ = %{y:.2e}<extra>Antes P.E.</extra>',
+    },
+    {
+      x: gran.v2, y: gran.F2, type: 'scatter', mode: 'lines', name: 'F₂ (después del P.E.)',
+      line: { width: 2.5, color: '#D55E00', dash: 'dash' },
+      hovertemplate: 'V = %{x:.2f} mL<br>F₂ = %{y:.2e}<extra>Después P.E.</extra>',
+    },
+  ], [gran]);
+
+  const granShapes = useMemo<Partial<Shape>[]>(
+    () => curve.equivalenceVolumes.map((veq) => ({
+      type: 'line', x0: veq, x1: veq, y0: 0, y1: 1,
+      // @ts-ignore
+      yref: 'paper', xref: 'x',
+      line: { color: '#009E73', width: 1.5, dash: 'dash' },
+    })),
+    [curve.equivalenceVolumes],
+  );
+
+  const diagrams = [
+    {
+      id: 'efV',
+      label: 'E = f(V)',
+      node: (
+        <Chart
+          data={efVTraces}
+          xTitle={`Volumen de ${titrantName} (mL)`}
+          yTitle="E (mV)"
+          xRange={[0, vMax]}
+          yRange={[eMin - 20, eMax + 20]}
+          shapes={efVShapes}
+          annotations={efVAnnotations}
+          exportName="quimeq-potenciometrica-efV"
+        />
+      ),
+    },
+    {
+      id: 'gran',
+      label: 'Gráfica de Gran',
+      node: (
+        <Chart
+          data={granTraces}
+          xTitle={`Volumen de ${titrantName} (mL)`}
+          yTitle="Función de Gran F"
+          xRange={[0, vMax]}
+          shapes={granShapes}
+          exportName="quimeq-gran"
+        />
+      ),
+    },
+  ];
+
+  const veqFromZero = zeroCrossing;
+  const veqFromCurve = curve.equivalenceVolumes[curve.equivalenceVolumes.length - 1];
+
+  return (
+    <>
+      <aside className="panel">
+        <div className="panel-header">
+          <h2>Titulación potenciométrica</h2>
+          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
+        </div>
+        <Segmented
+          options={[
+            { value: 'base', label: 'Alcalimetría (NaOH)' },
+            { value: 'acid', label: 'Acidimetría (HCl)' },
+          ]}
+          value={titrantIsAcid ? 'acid' : 'base'}
+          onChange={(v) => setTitrantIsAcid(v === 'acid')}
+        />
+        <AcidSystemEditor system={system} onChange={setSystem} />
+        <h3>Condiciones</h3>
+        <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
+        <Slider label="Volumen de la muestra" value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
+        <ConcSlider label={`Concentración de ${titrantName}`} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
+        <h3>Electrodo de vidrio</h3>
+        <Slider
+          label="K_ref (constante del electrodo, mV)"
+          value={Kref} min={0} max={800} step={10}
+          onChange={setKref} decimals={0}
+        />
+        <p className="hint">E = K_ref − 59.16·pH · S ≈ 59 mV/pH a 25 °C (factor de Nernst)</p>
+        <Toggle label="Mostrar |dE/dV| (1.ª derivada)" checked={showDeriv1} onChange={setShowDeriv1} />
+        <Toggle label="Mostrar d²E/dV² (2.ª derivada)" checked={showDeriv2} onChange={setShowDeriv2} />
+        <ResultCard items={[
+          { label: 'V_eq (del balance exacto)', value: `${veqFromCurve?.toFixed(2) ?? '—'} mL` },
+          { label: 'V_eq (cruce d²E/dV² = 0)', value: veqFromZero !== null ? `${veqFromZero.toFixed(2)} mL` : '—' },
+          { label: 'E en el P.E.', value: veqFromCurve !== undefined ? (() => {
+              const idx = curve.volumes.findIndex((v) => v >= veqFromCurve);
+              return idx > 0 ? `${Es[idx].toFixed(1)} mV (pH ${curve.pHs[idx].toFixed(2)})` : '—';
+            })() : '—' },
+        ]} />
+        <InfoBox title="Métodos de localización del P.E.">
+          <p>
+            <strong>1.ª derivada</strong>: el máximo de |dE/dV| señala el punto de inflexión
+            (punto de equivalencia). Ambiguo si el salto es asimétrico.
+          </p>
+          <p>
+            <strong>2.ª derivada</strong>: el cruce por cero de d²E/dV² es más preciso y no
+            depende de la simetría del salto. Es el estándar en instrumentación moderna.
+          </p>
+          <p>
+            <strong>Gráfica de Gran</strong>: linealiza el segmento pre- y post-equivalencia.
+            F₁ = (V₀+V)·[H⁺] cae a cero en V_eq; F₂ = (V₀+V)·[OH⁻] sube desde cero.
+            Excelente para detectar P.E. con <strong>poco salto</strong>.
+          </p>
+        </InfoBox>
+      </aside>
+      <section className="plot-area">
+        <DiagramTabs tabs={diagrams} initialId="efV" />
+      </section>
+    </>
+  );
+}
+
 /* ───────────────────────── Contenedor ───────────────────────── */
 
 const MODES: { value: Mode; label: string }[] = [
@@ -557,6 +807,7 @@ const MODES: { value: Mode; label: string }[] = [
   { value: 'edta', label: 'Complejométrica' },
   { value: 'redox', label: 'Redox' },
   { value: 'precip', label: 'Precipitación' },
+  { value: 'potenciometrica', label: 'Potenciométrica' },
 ];
 
 export default function Titulacion() {
@@ -579,6 +830,7 @@ export default function Titulacion() {
         {mode === 'edta' && <EdtaTitration />}
         {mode === 'redox' && <RedoxTitration />}
         {mode === 'precip' && <PrecipTitration />}
+        {mode === 'potenciometrica' && <PotenciometricaTitration />}
       </div>
     </div>
   );
