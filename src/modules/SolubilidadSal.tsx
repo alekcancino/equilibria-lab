@@ -3,7 +3,7 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConstantList, InfoBox, LabelField, ResultCard, Slider, Toggle,
+  ConstantList, InfoBox, LabelField, ModelBadge, ResultCard, Slider, Toggle,
 } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
 
@@ -50,7 +50,7 @@ function fromPreset(id: string): SalState {
   return { name: p.name, anionName: p.anionName, pKsp: p.pKsp, p: p.p, q: p.q, pKas: [...p.pKas], color: p.color };
 }
 
-const DEFAULT1 = 'caco3';
+const DEFAULT1 = 'agcl';
 const DEFAULT2 = 'ca3po4';
 
 // ── Funciones de cálculo ───────────────────────────────────────────────────────
@@ -155,9 +155,9 @@ function SalEditor({ title, color, sal, onChange }: {
 
       <ConstantList
         prefix="pKa (anión)"
-        values={sal.pKas.length > 0 ? sal.pKas : [7.0]}
+        values={sal.pKas}
         onChange={(pKas) => onChange({ pKas })}
-        min={0} max={14} maxItems={4}
+        min={0} max={14} maxItems={4} minItems={0} initialValue={7}
       />
       {sal.pKas.length > 0 && (
         <button className="mini-btn" style={{ marginTop: 2 }} onClick={() => onChange({ pKas: [] })}>
@@ -174,13 +174,13 @@ const ALPHA_COLORS = ['#e74c3c', '#e67e22', '#27ae60', '#2980b9', '#8e44ad'];
 
 export default function SolubilidadSal() {
   const [sal1, setSal1] = useState<SalState>(fromPreset(DEFAULT1));
-  const [showP2, setShowP2] = useState(true);
+  const [showP2, setShowP2] = useState(false);
   const [sal2, setSal2] = useState<SalState>(fromPreset(DEFAULT2));
 
   function reset() {
     setSal1(fromPreset(DEFAULT1));
     setSal2(fromPreset(DEFAULT2));
-    setShowP2(true);
+    setShowP2(false);
   }
 
   const curve1 = useMemo(() => buildCurve(sal1), [sal1]);
@@ -234,6 +234,10 @@ export default function SolubilidadSal() {
           <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
         </div>
 
+        <ModelBadge
+          model={sal1.pKas.length === 0 ? 'solubilidad intrínseca' : 'solubilidad condicionada por pH'}
+          additions={[showP2 && 'comparación entre sistemas']}
+        />
         <SalEditor title="Sistema 1" color={sal1.color} sal={sal1} onChange={(p) => setSal1((s) => ({ ...s, ...p }))} />
 
         <Toggle label="Comparar con 2.º sistema" checked={showP2} onChange={setShowP2} />

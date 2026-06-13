@@ -15,9 +15,9 @@ const PH_POINTS = 400;
 export default function AcidoBase() {
   const [system, setSystem] = useState<AcidSystem>(defaultAcidSystem());
   const [conc, setConc] = useState(0.1);
-  const [showSystemPH, setShowSystemPH] = useState(true);
+  const [showSystemPH, setShowSystemPH] = useState(false);
 
-  function reset() { setSystem(defaultAcidSystem()); setConc(0.1); setShowSystemPH(true); }
+  function reset() { setSystem(defaultAcidSystem()); setConc(0.1); setShowSystemPH(false); }
 
   const labels = systemLabels(system);
   const logCtotal = Math.log10(conc);

@@ -18,7 +18,7 @@ import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
-import { InfoBox, ResultCard, Slider, Toggle, ConstantList } from '../components/Controls';
+import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
 import { SPECIES_COLORS } from '../lib/database';
 
@@ -124,12 +124,12 @@ function presetState(id: string): AnalyteState {
 
 function defaultState() {
   return {
-    a1: presetState('benzoico'),
+    a1: presetState('I2'),
     a2: presetState('8hq'),
     showA2: false,
     Vaq: 10,        // mL
     Vorg: 10,       // mL
-    nMax: 3,        // extracciones a mostrar en la 3.ª pestaña
+    nMax: 1,        // extracciones a mostrar en la 3.ª pestaña
     pH: 5,          // cursor
   };
 }
@@ -332,6 +332,16 @@ export default function ExtraccionLiquido() {
             ))}
           </div>
         </div>
+        <ModelBadge
+          model={a.type === 'chelate'
+            ? `extracción de quelato metálico (${a.n}:1)`
+            : a.pKas.length === 0
+              ? 'reparto simple de soluto no ionizable'
+              : a.pKas.length === 1
+                ? 'reparto condicionado por una ionización'
+                : `reparto condicionado por ${a.pKas.length} ionizaciones`}
+          additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
+        />
 
         <p className="hint" style={{ marginBottom: 6 }}>
           {a.type === 'acid'
@@ -365,6 +375,8 @@ export default function ExtraccionLiquido() {
               min={0}
               max={14}
               maxItems={4}
+              minItems={0}
+              initialValue={4.76}
             />
             {a.pKas.length > 1 && (
               <p className="hint">Índice de la forma neutra (0 = más protonada): {a.neutralIdx}

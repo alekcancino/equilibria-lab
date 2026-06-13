@@ -12,7 +12,7 @@ import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
-import { InfoBox, ResultCard, Slider, Toggle, ConstantList, LabelField } from '../components/Controls';
+import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, LabelField } from '../components/Controls';
 import { CoupleEditor, coupleFromPreset, type CoupleState } from '../components/Editors';
 import { NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
@@ -330,6 +330,10 @@ export default function PotencialCondicional() {
           <h2>Potencial condicional</h2>
           <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
         </div>
+        <ModelBadge
+          model="comparación E°′ = f(pH) entre dos pares"
+          additions={[st.showCouple3 && 'Latimer y dismutación', st.showPX && 'efecto de ligando X']}
+        />
 
         <CoupleEditor title="Par 1" couple={st.couple1} onChange={(c) => set('couple1', c)} />
         <CoupleEditor title="Par 2" couple={st.couple2} onChange={(c) => set('couple2', c)} />

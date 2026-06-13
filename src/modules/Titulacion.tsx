@@ -3,11 +3,11 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import {
   ConcSlider, DbPanel, InfoBox, LabelField, ResultCard, Segmented,
-  SelectControl, Slider, Toggle,
+  ModelBadge, RefBadge, SelectControl, Slider, Toggle,
 } from '../components/Controls';
 import {
-  AcidSystemEditor, CoupleEditor, coupleFromPreset, defaultAcidSystem,
-  type AcidSystem, type CoupleState,
+  AcidSystemEditor, CoupleEditor, coupleFromPreset,
+  strongAcidSystem, type AcidSystem, type CoupleState,
 } from '../components/Editors';
 import DiagramTabs from '../components/DiagramTabs';
 import { INDICATORS } from '../lib/database';
@@ -152,33 +152,36 @@ function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
 /* ───────────────────────── Ácido-base ───────────────────────── */
 
 function AcidBaseTitration() {
-  const [system, setSystem] = useState<AcidSystem>(defaultAcidSystem());
+  const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem());
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cAnalyte, setCAnalyte] = useState(0.1);
   const [vAnalyte, setVAnalyte] = useState(25);
   const [cTitrant, setCTitrant] = useState(0.1);
   const [indicatorId, setIndicatorId] = useState('phenolphthalein');
-  const [showIndicator, setShowIndicator] = useState(true);
+  const [showIndicator, setShowIndicator] = useState(false);
   const [showDerivative, setShowDerivative] = useState(false);
 
   function reset() {
-    setSystem(defaultAcidSystem()); setTitrantIsAcid(false);
+    setSystem(strongAcidSystem()); setTitrantIsAcid(false);
     setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
-    setIndicatorId('phenolphthalein'); setShowIndicator(true); setShowDerivative(false);
+    setIndicatorId('phenolphthalein'); setShowIndicator(false); setShowDerivative(false);
   }
 
   const indicator = INDICATORS.find((i) => i.id === indicatorId)!;
   const titrantName = titrantIsAcid ? 'HCl' : 'NaOH';
-  const nProtons = titratableProtons(system.pKas);
+  const analyteKind = system.pKas.length > 0
+    ? 'equilibrium' as const
+    : system.z0 > 0 ? 'strong-base' as const : 'strong-acid' as const;
+  const nProtons = analyteKind === 'equilibrium' ? titratableProtons(system.pKas) : 1;
   const vEqLast = (nProtons * cAnalyte * vAnalyte) / cTitrant;
   const vMax = vEqLast * 1.6;
 
   const curve = useMemo(
     () => titrationCurve({
-      analyte: { z0: system.z0, pKas: system.pKas },
+      analyte: { z0: system.z0, pKas: system.pKas, kind: analyteKind },
       titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax,
     }),
-    [system, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax],
+    [system, analyteKind, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax],
   );
 
   const { traces, shapes, annotations, eqInfo } = useMemo(() => {
@@ -243,9 +246,21 @@ function AcidBaseTitration() {
             { value: 'acid', label: 'Acidimetría (HCl)' },
           ]}
           value={titrantIsAcid ? 'acid' : 'base'}
-          onChange={(v) => setTitrantIsAcid(v === 'acid')}
+          onChange={(v) => {
+            const nextIsAcid = v === 'acid';
+            setTitrantIsAcid(nextIsAcid);
+            if (system.pKas.length === 0) setSystem(strongAcidSystem(nextIsAcid));
+          }}
         />
-        <AcidSystemEditor system={system} onChange={setSystem} includeStrong />
+        <ModelBadge
+          model={`titulación ${titrantIsAcid ? 'acidimétrica' : 'alcalimétrica'} de ${
+            analyteKind === 'equilibrium'
+              ? system.pKas.length > 1 ? 'sistema poliprótico' : 'sistema débil'
+              : analyteKind === 'strong-base' ? 'base fuerte' : 'ácido fuerte'
+          }`}
+          additions={[showIndicator && 'indicador visual', showDerivative && 'derivada']}
+        />
+        <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} />
         <h3>Condiciones</h3>
         <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
         <Slider label="Volumen de la muestra" value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
@@ -270,8 +285,9 @@ function AcidBaseTitration() {
         <InfoBox title="Método de cálculo">
           <p>
             Balance de cargas exacto resuelto por bisección con dilución incluida —
-            válido para ácidos y bases fuertes, débiles y polipróticos en cualquier
-            dirección. Define tu propio sistema con los pKa o elige uno de la base de datos.
+            válido para ácidos y bases fuertes, débiles y polipróticos. Sin pKa el
+            analito se trata como electrolito fuerte; al agregar constantes, el modelo
+            cambia automáticamente a un equilibrio débil.
           </p>
         </InfoBox>
       </aside>
@@ -342,6 +358,11 @@ function EdtaTitration() {
   const feasible = curve.logKfCond >= 8;
   const buretName = edtaInFlask ? label : 'EDTA';
   const flaskName = edtaInFlask ? 'EDTA' : label;
+  const loadedMetal = EDTA_METAL_PRESETS.find((p) => p.id === metalId);
+  const presetIsUnedited = loadedMetal !== undefined
+    && label === loadedMetal.metal
+    && logKf === loadedMetal.logKf
+    && JSON.stringify(logBetasOH) === JSON.stringify(loadedMetal.logBetasOH);
 
   const diagrams = useMemo(() => [
     {
@@ -387,6 +408,10 @@ function EdtaTitration() {
           value={edtaInFlask ? 'inverse' : 'direct'}
           onChange={(v) => setEdtaInFlask(v === 'inverse')}
         />
+        <ModelBadge
+          model={edtaInFlask ? 'titulación complejométrica por retroceso' : 'titulación complejométrica directa'}
+          additions={[logBetasOH.length > 0 && 'hidrólisis en selección de indicador']}
+        />
         <div className="editor">
           <LabelField label="Ion metálico (nombre libre)" value={label} onChange={setLabel} />
           <Slider
@@ -404,6 +429,7 @@ function EdtaTitration() {
             }))}
             onSelect={applyPreset}
           />
+          <RefBadge reference={presetIsUnedited ? 'Harris, QCA 9.ª ed., tabla 12-1; Ringbom.' : undefined} />
         </div>
         <h3>Condiciones</h3>
         <Slider label="pH del tampón" value={pH} min={1} max={13} step={0.1} onChange={setPH} decimals={1} />
@@ -522,6 +548,10 @@ function RedoxTitration() {
           value={direction}
           onChange={(v) => setDirection(v as 'oxidante' | 'reductor')}
         />
+        <ModelBadge
+          model={direction === 'oxidante' ? 'titulación por oxidimetría' : 'titulación por reductimetría'}
+          additions={[pHDependent && 'potencial condicionado por pH', usePe && 'eje pe', showDerivative && 'derivada']}
+        />
         <p className="hint">
           {direction === 'oxidante'
             ? `Analito inicia como ${analyte.red}; titulante: ${titrant.ox}.`
@@ -596,7 +626,7 @@ function PrecipTitration() {
   const [vAnalyte, setVAnalyte] = useState(25);
   const [cTitrant, setCTitrant] = useState(0.1);
   const [showPCation, setShowPCation] = useState(false);
-  const [showMohr, setShowMohr] = useState(true);
+  const [showMohr, setShowMohr] = useState(false);
   const [showDerivative, setShowDerivative] = useState(false);
 
   function loadPreset(id: string) {
@@ -607,7 +637,10 @@ function PrecipTitration() {
     if (!p.isAg) { setShowMohr(false); setShowPCation(false); }
   }
 
-  function reset() { loadPreset('cl'); setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1); setShowDerivative(false); }
+  function reset() {
+    loadPreset('cl'); setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
+    setShowMohr(false); setShowPCation(false); setShowDerivative(false);
+  }
 
   const vEq0 = (cAnalyte * vAnalyte) / cTitrant;
   const vMax = vEq0 * 1.6;
@@ -680,6 +713,12 @@ function PrecipTitration() {
   }, [curve.vEq, showMohr, showPCation, isAgSystem, mohrPAg, vMax, yMax, pCatLabel]);
 
   const sharpness = pKsp >= 6;
+  const loadedPrecip = PRECIP_PRESETS.find((p) => p.id === presetId);
+  const presetIsUnedited = loadedPrecip !== undefined
+    && pKsp === loadedPrecip.pKsp
+    && cationName === loadedPrecip.cation
+    && anionName === loadedPrecip.anion
+    && saltFormula === loadedPrecip.formula;
 
   return (
     <>
@@ -690,6 +729,10 @@ function PrecipTitration() {
         </div>
 
         <h3>Sistema</h3>
+        <ModelBadge
+          model="titulación por precipitación 1:1"
+          additions={[showPCation && `eje p(${cationName})`, showMohr && showPCation && 'indicador Mohr', showDerivative && 'derivada']}
+        />
         <p className="hint">{cationName} + {anionName} → {saltFormula}↓</p>
 
         {/* Presets */}
@@ -711,6 +754,7 @@ function PrecipTitration() {
           <LabelField label="Anión analito" value={anionName} onChange={setAnionName} />
           <LabelField label="Fórmula del precipitado" value={saltFormula} onChange={setSaltFormula} />
           <Slider label="pKps del precipitado" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
+          <RefBadge reference={presetIsUnedited ? 'Harris, QCA 9.ª ed., cap. 16; Skoog, Fundamentos de Química Analítica.' : undefined} />
         </div>
 
         <h3>Condiciones</h3>
@@ -781,32 +825,35 @@ function PrecipTitration() {
 const S_POT = 59.16; // mV / pH
 
 function PotenciometricaTitration() {
-  const [system, setSystem] = useState<AcidSystem>(defaultAcidSystem());
+  const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem());
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cAnalyte, setCAnalyte] = useState(0.1);
   const [vAnalyte, setVAnalyte] = useState(25);
   const [cTitrant, setCTitrant] = useState(0.1);
   const [Kref, setKref] = useState(400);      // mV
   const [showDeriv1, setShowDeriv1] = useState(false);
-  const [showDeriv2, setShowDeriv2] = useState(true);
+  const [showDeriv2, setShowDeriv2] = useState(false);
 
   function reset() {
-    setSystem(defaultAcidSystem()); setTitrantIsAcid(false);
+    setSystem(strongAcidSystem()); setTitrantIsAcid(false);
     setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
-    setKref(400); setShowDeriv1(false); setShowDeriv2(true);
+    setKref(400); setShowDeriv1(false); setShowDeriv2(false);
   }
 
   const titrantName = titrantIsAcid ? 'HCl' : 'NaOH';
-  const nProtons = titratableProtons(system.pKas);
+  const analyteKind = system.pKas.length > 0
+    ? 'equilibrium' as const
+    : system.z0 > 0 ? 'strong-base' as const : 'strong-acid' as const;
+  const nProtons = analyteKind === 'equilibrium' ? titratableProtons(system.pKas) : 1;
   const vEqLast = (nProtons * cAnalyte * vAnalyte) / cTitrant;
   const vMax = vEqLast * 1.6;
 
   const curve = useMemo(
     () => titrationCurve({
-      analyte: { z0: system.z0, pKas: system.pKas },
+      analyte: { z0: system.z0, pKas: system.pKas, kind: analyteKind },
       titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax,
     }),
-    [system, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax],
+    [system, analyteKind, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax],
   );
 
   // pH → E (mV)
@@ -879,24 +926,24 @@ function PotenciometricaTitration() {
       type: 'line', x0: veq, x1: veq, y0: eMin - 50, y1: eMax + 50,
       line: { color: '#009E73', width: 1.5, dash: 'dash' },
     }));
-    if (zeroCrossing !== null) s.push({
+    if (showDeriv2 && zeroCrossing !== null) s.push({
       type: 'line', x0: zeroCrossing, x1: zeroCrossing, y0: eMin - 50, y1: eMax + 50,
       line: { color: '#D55E00', width: 1, dash: 'dot' },
     });
     return s;
-  }, [curve.equivalenceVolumes, zeroCrossing, eMin, eMax]);
+  }, [curve.equivalenceVolumes, showDeriv2, zeroCrossing, eMin, eMax]);
 
   const efVAnnotations = useMemo<Partial<Annotations>[]>(() => {
     const a: Partial<Annotations>[] = curve.equivalenceVolumes.map((veq) => ({
       x: veq, y: eMax, text: 'P.E.', showarrow: false, font: { color: '#009E73', size: 12 },
     }));
-    if (zeroCrossing !== null) a.push({
+    if (showDeriv2 && zeroCrossing !== null) a.push({
       x: zeroCrossing, y: eMin + eSpan * 0.1,
       text: `d²E/dV²=0<br>${zeroCrossing.toFixed(2)} mL`,
       showarrow: false, font: { color: '#D55E00', size: 10 },
     });
     return a;
-  }, [curve.equivalenceVolumes, zeroCrossing, eMax, eMin, eSpan]);
+  }, [curve.equivalenceVolumes, showDeriv2, zeroCrossing, eMax, eMin, eSpan]);
 
   // Gran plot
   const gran = useMemo(
@@ -976,9 +1023,21 @@ function PotenciometricaTitration() {
             { value: 'acid', label: 'Acidimetría (HCl)' },
           ]}
           value={titrantIsAcid ? 'acid' : 'base'}
-          onChange={(v) => setTitrantIsAcid(v === 'acid')}
+          onChange={(v) => {
+            const nextIsAcid = v === 'acid';
+            setTitrantIsAcid(nextIsAcid);
+            if (system.pKas.length === 0) setSystem(strongAcidSystem(nextIsAcid));
+          }}
         />
-        <AcidSystemEditor system={system} onChange={setSystem} includeStrong />
+        <ModelBadge
+          model={`titulación potenciométrica de ${
+            analyteKind === 'equilibrium'
+              ? system.pKas.length > 1 ? 'sistema poliprótico' : 'sistema débil'
+              : analyteKind === 'strong-base' ? 'base fuerte' : 'ácido fuerte'
+          }`}
+          additions={[showDeriv1 && 'primera derivada', showDeriv2 && 'segunda derivada']}
+        />
+        <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} />
         <h3>Condiciones</h3>
         <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
         <Slider label="Volumen de la muestra" value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
@@ -994,7 +1053,10 @@ function PotenciometricaTitration() {
         <Toggle label="Mostrar d²E/dV² (2.ª derivada)" checked={showDeriv2} onChange={setShowDeriv2} />
         <ResultCard items={[
           { label: 'V_eq (del balance exacto)', value: `${veqFromCurve?.toFixed(2) ?? '—'} mL` },
-          { label: 'V_eq (cruce d²E/dV² = 0)', value: veqFromZero !== null ? `${veqFromZero.toFixed(2)} mL` : '—' },
+          ...(showDeriv2 ? [{
+            label: 'V_eq (cruce d²E/dV² = 0)',
+            value: veqFromZero !== null ? `${veqFromZero.toFixed(2)} mL` : '—',
+          }] : []),
           { label: 'E en el P.E.', value: veqFromCurve !== undefined ? (() => {
               const idx = curve.volumes.findIndex((v) => v >= veqFromCurve);
               return idx > 0 ? `${Es[idx].toFixed(1)} mV (pH ${curve.pHs[idx].toFixed(2)})` : '—';

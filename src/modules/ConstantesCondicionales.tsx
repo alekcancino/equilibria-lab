@@ -7,9 +7,8 @@ import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  Slider, ConstantList, ConcSlider, DbPanel, InfoBox, LabelField, ResultCard, Toggle,
+  Slider, ConstantList, ConcSlider, DbPanel, InfoBox, LabelField, ModelBadge, ResultCard, Toggle,
 } from '../components/Controls';
-import { EDTA_PKAS } from '../lib/edta';
 import { condLogKCurve, feasibilityWindow } from '../lib/conditional';
 import { COMPLEX_PRESETS } from '../lib/complexDatabase';
 
@@ -61,9 +60,9 @@ interface CondState {
 
 function defaultState(): CondState {
   return {
-    metalLabel: 'Ca²⁺',
-    logKf: 10.65,
-    pKasY: [...EDTA_PKAS],
+    metalLabel: 'M',
+    logKf: 10,
+    pKasY: [],
     logBetasOH: [],
     showOH: false,
     showAux: false,
@@ -319,9 +318,18 @@ export default function ConstantesCondicionales() {
         />
 
         <h3>Metal y ligante</h3>
+        <ModelBadge
+          model="equilibrio principal M–Y"
+          additions={[
+            s.pKasY.length > 0 && 'protonación del ligante',
+            s.showOH && 'hidrólisis del metal',
+            s.showAux && 'ligando auxiliar',
+            s.showMask && 'competencia entre metales',
+          ]}
+        />
         <LabelField label="Metal (M)" value={s.metalLabel} onChange={(v) => set('metalLabel', v)} />
         <Slider
-          label="log Kf (M–EDTA)"
+          label="log Kf (M–Y)"
           value={s.logKf}
           min={1}
           max={30}
@@ -339,6 +347,8 @@ export default function ConstantesCondicionales() {
             min={0}
             max={14}
             maxItems={8}
+            minItems={0}
+            initialValue={4.76}
           />
         </details>
 
@@ -347,7 +357,7 @@ export default function ConstantesCondicionales() {
           <summary className="section-collapse-title">Hidrólisis del metal α_M(OH)</summary>
           <ConstantList
             prefix="log β(OH)"
-            values={s.logBetasOH.length > 0 ? s.logBetasOH : [5.0]}
+            values={s.logBetasOH}
             onChange={(v) => {
               set('logBetasOH', v);
               if (!s.showOH) set('showOH', true);
@@ -355,6 +365,8 @@ export default function ConstantesCondicionales() {
             min={0}
             max={40}
             maxItems={6}
+            minItems={0}
+            initialValue={5}
           />
         </details>
 

@@ -7,7 +7,7 @@ import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  Slider, ConstantList, DbPanel, InfoBox, LabelField, ResultCard, Toggle,
+  Slider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, ResultCard, Toggle,
 } from '../components/Controls';
 import { hydroxideSolCurve, precipitationPH, alphaOH } from '../lib/conditional';
 
@@ -68,9 +68,9 @@ interface State {
 
 function defaultState(): State {
   return {
-    m1: fromPreset('fe3oh'),
+    m1: { label: 'M²⁺', formula: 'M(OH)₂', n: 2, pKsp: 15, logBetasOH: [] },
     m2: fromPreset('ni2oh'),
-    showM2: true,
+    showM2: false,
     logSThreshold: -5,
   };
 }
@@ -305,6 +305,12 @@ export default function SolubilidadCondicional() {
 
         {/* ── Metal 1 ── */}
         <h3 style={{ color: C1 }}>Metal 1 (precipitar)</h3>
+        <ModelBadge
+          model={s.m1.logBetasOH.length === 0
+            ? 'precipitación simple del hidróxido'
+            : `precipitación con ${s.m1.logBetasOH.length} complejo(s) hidroxo soluble(s)`}
+          additions={[s.showM2 && 'separación selectiva entre dos metales']}
+        />
         <DbPanel items={dbItems} onSelect={(id) => setM1({ ...fromPreset(id) })} title="Presets M(OH)n" />
         <LabelField label="Metal" value={s.m1.label} onChange={(v) => setM1({ label: v })} />
         <LabelField label="Fórmula" value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
@@ -330,9 +336,9 @@ export default function SolubilidadCondicional() {
           <summary className="section-collapse-title">Complejos hidroxo de M1 (log β)</summary>
           <ConstantList
             prefix="log β(OH)"
-            values={s.m1.logBetasOH.length > 0 ? s.m1.logBetasOH : [5.0]}
+            values={s.m1.logBetasOH}
             onChange={(v) => setM1({ logBetasOH: v })}
-            min={0} max={40} maxItems={5}
+            min={0} max={40} maxItems={5} minItems={0} initialValue={5}
           />
           <p className="hint">Incluir formas anfotéricas (β₄ para M(OH)₄⁻) da forma de U a la curva.</p>
         </details>

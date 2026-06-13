@@ -46,15 +46,15 @@ src/
 | `Mezclas.tsx` | Mezclas ácido-base | logC mezcla, pH de mezcla, capacidad buffer β=f(pH). |
 | `ConstantesCondicionales.tsx` | Constantes condicionales | log K'=f(pH), coeficientes α, enmascaramiento, ventana de factibilidad (Ringbom). |
 | `SolubilidadCondicional.tsx` | Precipitación selectiva | log s=f(pH) para M(OH)_n, hidroxocomplejos anfotéricos, ventana selectiva. |
-| `PotencialCondicional.tsx` | Potencial condicional | E°'=f(pH), cruce de pares, dismutación (Latimer), escala condicional. |
-| `ExtraccionLiquido.tsx` | Extracción líquido-líquido | log D=f(pH), %E=f(pH), extracciones múltiples, factor de separación. |
+| `PotencialCondicional.tsx` | Potencial condicional | E°'=f(pH), cruce de pares, dismutación (Latimer), E°'=f(pX), escala condicional. |
+| `ExtraccionLiquido.tsx` | Extracción líquido-líquido | Reparto simple/ácido-base, quelatos, log D=f(pH), extracciones múltiples y factor de separación. |
 | `SolubilidadSal.tsx` | Solubilidad y pH | log S=f(pH) para sales con anión ácido débil, distribución α. |
 
 ### Sección — Titulaciones
 
 | Módulo | Tab | Descripción |
 |---|---|---|
-| `Titulacion.tsx` | Titulaciones | 4 tipos: ácido-base, EDTA directa/inversa, redox, precipitación argentométrica (Mohr). + Titulación potenciométrica (Gran plot, 2.ª derivada). |
+| `Titulacion.tsx` | Titulaciones | 5 tipos: ácido-base, EDTA directa/inversa, redox, precipitación y potenciométrica (Gran plot y derivadas). |
 
 ## Motores de cálculo (`src/lib/`)
 
@@ -91,9 +91,19 @@ pedagógico UNAM.
 
 ## Patrones de UI
 
+- **Complejidad progresiva por variables.** El estado inicial es el modelo físico
+  mínimo válido. Añadir constantes, componentes, reacciones parásitas o sistemas
+  de comparación amplía el modelo automáticamente; la UI muestra el modelo
+  inferido y evita pedir una clasificación redundante al usuario.
+- **`ModelBadge` transversal.** Todos los módulos declaran el modelo base
+  inferido y muestran como etiquetas únicamente las capas adicionales activas
+  (protonación, hidrólisis, comparación, indicador, derivada, etc.).
+- **Capas secundarias apagadas al iniciar.** Marcadores, derivadas, indicadores,
+  comparaciones y líneas auxiliares se activan explícitamente cuando el usuario
+  las necesita; no alteran ni saturan la lectura inicial.
 - **Editor primario + DB colapsable.** El usuario edita nombre libre y constantes
   con ±; la DB es un atajo opcional (`DbPanel`). Las referencias bibliográficas se
-  retiraron de la UI por decisión de diseño (v4).
+  muestran mientras los valores del preset no hayan sido editados.
 - **DiagramTabs** uniforme: Ácido-base, Complejos, Redox y módulos de Equilibrios
   múltiples comparten el layout de pestañas de diagrama.
 - **Botón ↺ Restablecer** en cada módulo (cabecera del panel, `panel-header`).

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
-import { InfoBox, ResultCard, Slider } from '../components/Controls';
+import { InfoBox, ModelBadge, ResultCard, Slider } from '../components/Controls';
 import { CoupleEditor, coupleFromPreset, type CoupleState } from '../components/Editors';
 import { alphaRedox, peConditional, NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
@@ -127,6 +127,10 @@ export default function Redox() {
           <h2>Equilibrio redox</h2>
           <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
         </div>
+        <ModelBadge
+          model="predicción de reacción entre dos pares redox"
+          additions={[(couple1.mH > 0 || couple2.mH > 0) && 'potencial condicionado por pH']}
+        />
         <CoupleEditor title="Par 1" couple={couple1} onChange={setCouple1} />
         <CoupleEditor title="Par 2" couple={couple2} onChange={setCouple2} />
         <h3>Condiciones</h3>

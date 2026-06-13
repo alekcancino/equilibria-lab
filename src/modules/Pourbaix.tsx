@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
-import { InfoBox, LabelField, SelectControl, Slider, Toggle } from '../components/Controls';
+import { InfoBox, LabelField, ModelBadge, SelectControl, Slider, Toggle } from '../components/Controls';
 import { availableSystems, buildSystem, waterLines, S_NERNST } from '../lib/pourbaix';
 
 // ── Sistema simple custom (M^n+ / M + M(OH)n) ─────────────────────────────────
@@ -62,13 +62,21 @@ function buildSimpleDiagram(p: SimpleCustom, logC: number): { data: Data[]; anno
 export default function Pourbaix() {
   const systems = availableSystems();
   const [systemId, setSystemId] = useState('fe');
-  const [useCustom, setUseCustom] = useState(false);
+  const [useCustom, setUseCustom] = useState(true);
   const [logC, setLogC] = useState(-2);
-  const [showWater, setShowWater] = useState(true);
+  const [showWater, setShowWater] = useState(false);
   const [custom, setCustom] = useState<SimpleCustom>({
     ionName: 'M²⁺', metalName: 'M', hydroxide: 'M(OH)₂',
     E0: -0.257, n: 2, pKsp: 15.8,
   });
+
+  function reset() {
+    setSystemId('fe');
+    setUseCustom(true);
+    setLogC(-2);
+    setShowWater(false);
+    setCustom({ ionName: 'M²⁺', metalName: 'M', hydroxide: 'M(OH)₂', E0: -0.257, n: 2, pKsp: 15.8 });
+  }
 
   const diagram = useMemo(
     () => (!useCustom ? buildSystem(systemId, logC) : null),
@@ -117,7 +125,14 @@ export default function Pourbaix() {
   return (
     <div className="module">
       <aside className="panel">
-        <h2>Diagrama de Pourbaix</h2>
+        <div className="panel-header">
+          <h2>Diagrama de Pourbaix</h2>
+          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
+        </div>
+        <ModelBadge
+          model={useCustom ? 'sistema simple Mⁿ⁺ / M / M(OH)ₙ' : 'sistema metal–agua de múltiples especies'}
+          additions={[!useCustom && 'especies de base de datos', showWater && 'estabilidad del agua']}
+        />
 
         <Toggle label="Modo personalizado (sistema propio)" checked={useCustom} onChange={setUseCustom} />
 

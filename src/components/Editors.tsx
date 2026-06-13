@@ -2,7 +2,7 @@
 // PRIMARIO = etiqueta libre + constantes editables con ± .
 // SECUNDARIO = base de datos colapsable que autocompleta y se cierra.
 
-import { ConstantList, DbPanel, LabelField, RefBadge, SelectControl, Slider } from './Controls';
+import { ConstantList, DbPanel, LabelField, ModelBadge, RefBadge, SelectControl, Slider } from './Controls';
 import { ACIDS } from '../lib/database';
 import { REDOX_COUPLES } from '../lib/redoxDatabase';
 import type { RedoxCouple } from '../lib/redox';
@@ -28,13 +28,40 @@ export function defaultAcidSystem(): AcidSystem {
   };
 }
 
-export function acidSystemFromPreset(id: string): AcidSystem {
+export function acidSystemFromPreset(id: string, strongWithoutPKa = false): AcidSystem {
   const p = ACIDS.find((a) => a.id === id)!;
   return {
-    label: p.name, z0: p.z0, pKas: [...p.pKas],
-    speciesLabels: [...p.speciesLabels],
+    label: p.name,
+    z0: strongWithoutPKa && p.strong ? (p.isBase ? 1 : 0) : p.z0,
+    pKas: strongWithoutPKa && p.strong ? [] : [...p.pKas],
+    speciesLabels: strongWithoutPKa && p.strong ? null : [...p.speciesLabels],
     reference: 'Harris, Quantitative Chemical Analysis, 9.ª ed.',
   };
+}
+
+export function strongAcidSystem(isBase = false): AcidSystem {
+  return {
+    label: isBase ? 'Base fuerte' : 'Ácido fuerte',
+    z0: isBase ? 1 : 0,
+    pKas: [],
+    speciesLabels: null,
+    reference: null,
+  };
+}
+
+function inferredSystemLabel(z0: number, pKas: number[]): string {
+  const isBase = z0 > 0;
+  if (pKas.length === 0) return isBase ? 'Base fuerte' : 'Ácido fuerte';
+  if (pKas.length === 1) return isBase ? 'Base débil' : 'Ácido débil';
+  return isBase ? 'Base poliprótica' : 'Ácido poliprótico';
+}
+
+function isGenericSystemLabel(label: string): boolean {
+  return [
+    'Ácido fuerte', 'Base fuerte',
+    'Ácido débil', 'Base débil',
+    'Ácido poliprótico', 'Base poliprótica',
+  ].includes(label);
 }
 
 /** Etiquetas efectivas del sistema (de BD si siguen siendo válidas, genéricas si no). */
@@ -46,13 +73,21 @@ export function systemLabels(sys: AcidSystem): string[] {
 }
 
 export function AcidSystemEditor({
-  system, onChange, includeStrong = false,
+  system, onChange, includeStrong = false, allowNoConstants = false, showModel = true,
 }: {
   system: AcidSystem;
   onChange: (s: AcidSystem) => void;
   includeStrong?: boolean;
+  allowNoConstants?: boolean;
+  showModel?: boolean;
 }) {
   const presets = ACIDS.filter((a) => includeStrong || !a.strong);
+  const role = system.z0 > 0 ? 'base' : 'ácido';
+  const classification = system.pKas.length === 0
+    ? `${role} fuerte`
+    : system.pKas.length === 1
+      ? `${role} débil`
+      : `${role} poliprótico (${system.pKas.length} etapas)`;
   return (
     <div className="editor">
       <LabelField
@@ -60,18 +95,30 @@ export function AcidSystemEditor({
         value={system.label}
         onChange={(label) => onChange({ ...system, label })}
       />
+      {showModel && <ModelBadge model={classification} />}
+      {allowNoConstants && system.pKas.length === 0 && (
+        <p className="hint">
+          Sin pKa: disociación completa. Agrega un pKa para modelar un sistema débil.
+        </p>
+      )}
       <ConstantList
         prefix="pKa"
         values={system.pKas}
         min={-2}
         max={16}
-        onChange={(pKas) => onChange({
-          ...system,
-          pKas,
-          // si cambió el número de constantes, las etiquetas de BD ya no aplican
-          speciesLabels: pKas.length === system.pKas.length ? system.speciesLabels : null,
-          reference: null,
-        })}
+        minItems={allowNoConstants ? 0 : 1}
+        initialValue={system.z0 > 0 ? 9.25 : 4.76}
+        onChange={(pKas) => {
+          const shouldRename = allowNoConstants && isGenericSystemLabel(system.label);
+          onChange({
+            ...system,
+            label: shouldRename ? inferredSystemLabel(system.z0, pKas) : system.label,
+            pKas,
+            // si cambió el número de constantes, las etiquetas de BD ya no aplican
+            speciesLabels: pKas.length === system.pKas.length ? system.speciesLabels : null,
+            reference: null,
+          });
+        }}
       />
       <details className="adv-panel">
         <summary>Avanzado</summary>
@@ -83,7 +130,18 @@ export function AcidSystemEditor({
             { value: '1', label: '+1 — base protonada (BH⁺)' },
             { value: '2', label: '+2 — diamina protonada (BH₂²⁺)' },
           ]}
-          onChange={(v) => onChange({ ...system, z0: parseInt(v, 10), speciesLabels: null, reference: null })}
+          onChange={(v) => {
+            const z0 = parseInt(v, 10);
+            onChange({
+              ...system,
+              z0,
+              label: allowNoConstants && isGenericSystemLabel(system.label)
+                ? inferredSystemLabel(z0, system.pKas)
+                : system.label,
+              speciesLabels: null,
+              reference: null,
+            });
+          }}
         />
       </details>
       <RefBadge reference={system.reference ?? undefined} />
@@ -91,10 +149,12 @@ export function AcidSystemEditor({
         items={presets.map((a) => ({
           id: a.id,
           label: a.formula,
-          detail: `${a.name.split(' (')[0]} · pKa ${a.pKas.map((k) => k.toFixed(2)).join(', ')}`,
-          group: a.isBase ? 'Bases' : a.pKas.length > 1 ? 'Polipróticos' : 'Monopróticos',
+          detail: a.strong
+            ? `${a.name.split(' (')[0]} · disociación completa`
+            : `${a.name.split(' (')[0]} · pKa ${a.pKas.map((k) => k.toFixed(2)).join(', ')}`,
+          group: a.strong ? 'Fuertes' : a.isBase ? 'Bases' : a.pKas.length > 1 ? 'Polipróticos' : 'Monopróticos',
         }))}
-        onSelect={(id) => onChange(acidSystemFromPreset(id))}
+        onSelect={(id) => onChange(acidSystemFromPreset(id, allowNoConstants))}
       />
     </div>
   );

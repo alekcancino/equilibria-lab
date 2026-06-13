@@ -192,7 +192,7 @@ export function LabelField({
  * Cada fila: slider + campo numérico + quitar.
  */
 export function ConstantList({
-  prefix, values, onChange, min, max, maxItems = 6,
+  prefix, values, onChange, min, max, maxItems = 6, minItems = 1, initialValue = 7,
 }: {
   prefix: string;
   values: number[];
@@ -200,6 +200,8 @@ export function ConstantList({
   min: number;
   max: number;
   maxItems?: number;
+  minItems?: number;
+  initialValue?: number;
 }) {
   return (
     <div className="constant-list">
@@ -219,7 +221,7 @@ export function ConstantList({
             className="mini-btn"
             title="Quitar constante"
             onClick={() => onChange(values.filter((_, j) => j !== i))}
-            disabled={values.length <= 1}
+            disabled={values.length <= minItems}
           >
             −
           </button>
@@ -228,7 +230,12 @@ export function ConstantList({
       {values.length < maxItems && (
         <button
           className="add-btn"
-          onClick={() => onChange([...values, Math.min((values[values.length - 1] ?? 7) + 3, max)])}
+          onClick={() => onChange([
+            ...values,
+            values.length === 0
+              ? initialValue
+              : Math.min((values[values.length - 1] ?? initialValue) + 3, max),
+          ])}
         >
           + Agregar {prefix}
         </button>
@@ -291,10 +298,34 @@ export function DbPanel({
   );
 }
 
-/** @deprecated Referencias eliminadas de la UI por decisión de diseño. */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function RefBadge(_: { reference?: string }) {
-  return null;
+/** Declara el modelo inferido y las capas opcionales activas. */
+export function ModelBadge({
+  model, additions = [],
+}: {
+  model: string;
+  additions?: Array<string | false | null | undefined>;
+}) {
+  const active = additions.filter((item): item is string => typeof item === 'string' && item.length > 0);
+  return (
+    <div className="system-classification">
+      <span><strong>Modelo detectado:</strong> {model}</span>
+      {active.length > 0 && (
+        <span className="model-additions">
+          {active.map((item) => <span key={item} className="model-chip">+ {item}</span>)}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Fuente del dato cargado desde la base; desaparece al editarlo manualmente. */
+export function RefBadge({ reference }: { reference?: string }) {
+  if (!reference) return null;
+  return (
+    <p className="ref-badge">
+      <strong>Fuente del dato:</strong> {reference}
+    </p>
+  );
 }
 
 /** Tarjeta de resultado numérico destacado (ej. pH en equivalencia). */

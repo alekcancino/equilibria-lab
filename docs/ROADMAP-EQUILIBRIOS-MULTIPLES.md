@@ -68,10 +68,11 @@ precipitationPH(...)           // pH donde log s cruza el umbral
 **Módulo:** `ExtraccionLiquido.tsx` · **Cubre:** QA II.6 + QA III.3 (parcial)
 
 - log D = f(pH), %E = f(pH), extracciones múltiples (n=1..5)
-- 7 presets: ácido benzoico, salicílico, aspirina, acético, 8-HQ, ditizona, I₂
+- Presets de reparto ácido-base, no ionizables y quelatos metálicos
 - Comparación con 2.º analito; factor de separación D₁/D₂
-- **Pendiente:** quelatos metálicos — `log D = log K_ex + n·log[HL] + n·pH`
-  (pendiente +n en escala log, muy distinta a la curva ácido-base)
+- Quelatos metálicos: `log D = log K_ex + n·log[HL] + n·pH`
+- **Pendiente:** polimerización, preconcentración y validación bibliográfica
+  exhaustiva de constantes de extracción
 
 ---
 
@@ -89,16 +90,16 @@ tabs log S + distribución α, 10 presets).
 
 ---
 
-## ④ Potencial condicional ✅ IMPLEMENTADO (parcial)
+## ④ Potencial condicional ✅ IMPLEMENTADO
 
-**Módulo:** `PotencialCondicional.tsx` · **Cubre:** QA II.3 ✅ · QA II.4 🟡
+**Módulo:** `PotencialCondicional.tsx` · **Cubre:** QA II.3 + QA II.4
 
 - E°' = f(pH) — rectas con pendiente −59.16·mH/n mV/pH
 - Cruce de pares (pH donde se invierte la espontaneidad)
 - Dismutación (diagrama de Latimer con 3.er par)
 - Escala condicional al cursor
-- **Pendiente:** E°'=f(pX) — efecto de ligandos sobre E°':
-  `E°'= E° + (0.05916/n)·log(α_Ox/α_Red)`, donde α se toman de `conditional.ts`
+- E°'=f(pX) — efecto de ligandos sobre E°':
+  `E°'= E° + (0.05916/n)·log(α_Ox/α_Red)`
 
 ---
 
@@ -113,10 +114,9 @@ tabs log S + distribución α, 10 presets).
 
 ## Mejoras transversales identificadas
 
-- **E°'=f(pX) en PotencialCondicional** — nueva pestaña, usa `conditional.ts/alphaOH`
-  + `complexation.ts/complexFractions` para α_Ox y α_Red.
-- **Quelatos metálicos en ExtraccionLiquido** — nuevo selector de tipo de analito
-  ("ácido" / "quelato"), motor `log D = log K_ex + n·pH` para la fase orgánica.
+- **Actividad, fuerza iónica y Debye-Hückel** como capa transversal.
+- **log s=f(pX), pureza y redisolución selectiva** en solubilidad.
+- **Polimerización y preconcentración** en extracción líquido-líquido.
 - **Diagramas 2D de zonas de predominio** (pM–pH, pL–pH) generalizando el motor
   de Pourbaix a otras partículas.
 
@@ -124,7 +124,8 @@ tabs log S + distribución α, 10 presets).
 
 ## Orden de implementación sugerido (pendientes)
 
-1. E°'=f(pX) en PotencialCondicional (pequeño, alto valor pedagógico)
-2. Quelatos en ExtraccionLiquido (mediano, completa QA III.3)
-3. ⑤ Intercambio iónico (módulo nuevo, Tier 3)
-4. ⑥ Disolventes no acuosos (módulo nuevo, Tier 3)
+1. ⑤ Intercambio iónico (módulo nuevo, Tier 3)
+2. Actividad, fuerza iónica y Debye-Hückel
+3. log s=f(pX), pureza y redisolución selectiva
+4. Polimerización y preconcentración en extracción
+5. ⑥ Disolventes no acuosos (módulo nuevo, Tier 3)

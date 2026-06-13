@@ -6,7 +6,11 @@ import { solvePH, type AcidBaseComponent } from './equilibrium';
 
 export interface TitrationParams {
   /** Sistema analito (cualquier HnA/B con sus pKa) */
-  analyte: { z0: number; pKas: number[] };
+  analyte: {
+    z0: number;
+    pKas: number[];
+    kind?: 'equilibrium' | 'strong-acid' | 'strong-base';
+  };
   /** true: el titulante fuerte es HCl; false: es NaOH */
   titrantIsAcid: boolean;
   /** Concentración del analito (M) */
@@ -47,20 +51,28 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
   for (let i = 0; i <= points; i++) {
     const vb = (vMax * i) / points;
     const vTotal = vAnalyte + vb;
-    const comp: AcidBaseComponent = {
-      c: (cAnalyte * vAnalyte) / vTotal,
-      z0: analyte.z0,
-      pKas: analyte.pKas,
-    };
+    const analyteConc = (cAnalyte * vAnalyte) / vTotal;
+    const components: AcidBaseComponent[] = [];
+    let extraCations = 0;
+    let extraAnions = 0;
+    if (analyte.kind === 'strong-acid') {
+      extraAnions += analyteConc;
+    } else if (analyte.kind === 'strong-base') {
+      extraCations += analyteConc;
+    } else {
+      components.push({ c: analyteConc, z0: analyte.z0, pKas: analyte.pKas });
+    }
     const titrantConc = (cTitrant * vb) / vTotal;
-    const pH = titrantIsAcid
-      ? solvePH([comp], 0, titrantConc) // HCl → Cl⁻ espectador
-      : solvePH([comp], titrantConc, 0); // NaOH → Na⁺ espectador
+    if (titrantIsAcid) extraAnions += titrantConc;
+    else extraCations += titrantConc;
+    const pH = solvePH(components, extraCations, extraAnions);
     volumes.push(vb);
     pHs.push(pH);
   }
 
-  const nProtons = titratableProtons(analyte.pKas);
+  const nProtons = analyte.kind === 'strong-acid' || analyte.kind === 'strong-base'
+    ? 1
+    : titratableProtons(analyte.pKas);
   const equivalenceVolumes: number[] = [];
   for (let k = 1; k <= nProtons; k++) {
     const veq = (k * cAnalyte * vAnalyte) / cTitrant;

@@ -14,6 +14,13 @@ constantes editables con ±, campos numéricos) y una BD colapsable que
 autocompleta. Cada módulo trae un botón **↺ Restablecer** a los valores por
 defecto.
 
+**La interfaz parte del modelo físico mínimo y aumenta su complejidad con las
+variables que define el usuario.** Agregar una constante, especie, reacción
+parásita, componente o comparación activa el modelo correspondiente; la
+interfaz indica el modelo detectado sin obligar al usuario a escoger primero una
+categoría teórica. Por ejemplo, una titulación sin pKa se interpreta como
+ácido/base fuerte y al agregar pKa pasa automáticamente a débil o poliprótica.
+
 ## Secciones y módulos
 
 ### Equilibrios simples (QA I)
@@ -27,18 +34,21 @@ defecto.
 ### Equilibrios múltiples (QA II / III)
 | Módulo | Qué hace |
 |---|---|
-| **Pourbaix** | Diagramas E–pH de Fe, Cu, Mn, Zn y Cr derivados por ley de Hess desde E° y pKsp primitivos; los puntos triples cierran por construcción |
+| **Pourbaix** | Sistema genérico Mⁿ⁺/M/M(OH)ₙ y diagramas E–pH de Fe, Cu, Mn, Zn y Cr derivados por ley de Hess |
 | **Mezclas ácido-base** | Hasta 4 sistemas ácido-base coexistiendo (incl. sales como NaHCO₃ o NH₄Cl): pH global, especies dominantes y titulación de la mezcla |
-
-> El roadmap de esta sección (constantes condicionales, extracción L-L, etc.)
-> está en [`docs/ROADMAP-EQUILIBRIOS-MULTIPLES.md`](docs/ROADMAP-EQUILIBRIOS-MULTIPLES.md).
+| **Constantes condicionales** | log K′=f(pH), coeficientes α, reacciones parásitas, enmascaramiento y factibilidad |
+| **Precipitación selectiva** | log s=f(pH), hidroxocomplejos y ventanas de separación entre metales |
+| **Potencial condicional** | E°′=f(pH), dismutación y E°′=f(pX) por complejación |
+| **Extracción líquido-líquido** | Reparto simple, ionización, quelatos, extracciones sucesivas y factor de separación |
+| **Solubilidad y pH** | Solubilidad condicional de sales y comparación entre sistemas |
 
 ### Titulaciones (QA I / II)
-Cuatro tipos en un módulo unificado:
+Cinco tipos en un módulo unificado:
 - **Ácido-base** (alcalimetría/acidimetría, balance de cargas exacto)
 - **Complejométrica** (metal+EDTA o EDTA+metal, K'f condicional)
 - **Redox** (oxidimetría/reductimetría, balance de electrones, pe°′ condicional al pH)
 - **Precipitación** (argentometría Ag⁺+X⁻, curva pAg/pX, indicador Mohr)
+- **Potenciométrica** (electrodo de vidrio, derivadas y gráfica de Gran)
 
 ## Motor de cálculo
 
@@ -60,6 +70,7 @@ redox del dataset auditado del proyecto EquilibriaLab.
 
 - [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) — stack, motores de cálculo, componentes, validación matemática
 - [`docs/COBERTURA-TEMARIO.md`](docs/COBERTURA-TEMARIO.md) — mapa de cobertura contra los temarios UNAM QA I/II/III
+- [`docs/AUDITORIA-ACADEMICA-UX-2026-06-13.md`](docs/AUDITORIA-ACADEMICA-UX-2026-06-13.md) — auditoría académica, bibliográfica, técnica y de interfaz
 - [`docs/ROADMAP-EQUILIBRIOS-MULTIPLES.md`](docs/ROADMAP-EQUILIBRIOS-MULTIPLES.md) — propuesta de módulos para predicción de equilibrios complejos
 
 ## Desarrollo

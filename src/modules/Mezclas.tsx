@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, ResultCard, SelectControl, Slider, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, ModelBadge, ResultCard, SelectControl, Slider, Toggle } from '../components/Controls';
 import { ACIDS } from '../lib/database';
 import { solvePH, alphaFractions, type AcidBaseComponent } from '../lib/equilibrium';
 import { firstDerivative } from '../lib/titration';
@@ -19,10 +19,9 @@ const MAX_ROWS = 4;
 /** Mezclas multicomponente: pH de la mezcla y su curva de titulación. */
 export default function Mezclas() {
   const [rows, setRows] = useState<MixRow[]>([
-    { acidId: 'carbonic', conc: 0.05, saltLevel: 0 },
-    { acidId: 'ammonium', conc: 0.05, saltLevel: 0 },
+    { acidId: 'acetic', conc: 0.05, saltLevel: 0 },
   ]);
-  const [titrate, setTitrate] = useState(true);
+  const [titrate, setTitrate] = useState(false);
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cTitrant, setCTitrant] = useState(0.1);
   const [vSample, setVSample] = useState(25);
@@ -153,6 +152,12 @@ export default function Mezclas() {
     <div className="module">
       <aside className="panel">
         <h2>Mezclas multicomponente</h2>
+        <ModelBadge
+          model={rows.length === 1
+            ? 'un sistema ácido-base'
+            : `mezcla de ${rows.length} sistemas ácido-base`}
+          additions={[titrate && 'titulación', titrate && showDerivative && 'derivada']}
+        />
         {rows.map((r, i) => {
           const preset = ACIDS.find((a) => a.id === r.acidId)!;
           const maxSalt = preset.z0 === 0 ? preset.pKas.length : 1;

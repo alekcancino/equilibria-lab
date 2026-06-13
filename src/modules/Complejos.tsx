@@ -5,7 +5,7 @@ import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, DbPanel, InfoBox, LabelField,
-  RefBadge, ResultCard, Toggle,
+  ModelBadge, RefBadge, ResultCard, Toggle,
 } from '../components/Controls';
 import { SPECIES_COLORS } from '../lib/database';
 import { predominanceZones } from '../lib/ladder';
@@ -27,13 +27,12 @@ interface ComplexState {
 }
 
 function defaultState(): ComplexState {
-  const p = COMPLEX_PRESETS.find((x) => x.id === 'cu_nh3')!;
   return {
-    metalLabel: p.metalLabel,
-    ligandLabel: p.ligandLabel,
-    logBetas: [...p.logBetas],
-    speciesLabels: [...p.speciesLabels],
-    reference: p.reference,
+    metalLabel: 'M',
+    ligandLabel: 'L',
+    logBetas: [8],
+    speciesLabels: null,
+    reference: null,
   };
 }
 
@@ -59,9 +58,9 @@ export default function Complejos() {
   const [sys, setSys] = useState<ComplexState>(defaultState);
   const [cM, setCM] = useState(0.01);
   const [cL, setCL] = useState(0.04);
-  const [showEquil, setShowEquil] = useState(true);
+  const [showEquil, setShowEquil] = useState(false);
 
-  function reset() { setSys(defaultState()); setCM(0.01); setCL(0.04); setShowEquil(true); }
+  function reset() { setSys(defaultState()); setCM(0.01); setCL(0.04); setShowEquil(false); }
 
   const labels = effectiveLabels(sys);
   const n = sys.logBetas.length;
@@ -236,6 +235,12 @@ export default function Complejos() {
         </div>
 
         <div className="editor">
+          <ModelBadge
+            model={sys.logBetas.length === 1
+              ? 'complejo 1:1 (ML)'
+              : `complejación sucesiva hasta ML${sys.logBetas.length}`}
+            additions={[showEquil && 'balance de masa y pL de equilibrio']}
+          />
           <LabelField
             label="Metal (nombre libre)"
             value={sys.metalLabel}

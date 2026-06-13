@@ -15,7 +15,7 @@ import { useMemo, useState } from 'react';
 import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
-import { Slider, DbPanel, InfoBox, ResultCard } from '../components/Controls';
+import { Slider, DbPanel, InfoBox, ModelBadge, ResultCard } from '../components/Controls';
 import { EDTA_PKAS } from '../lib/edta';
 import { condLogKCurve, feasibilityWindow, alphaH, alphaOH } from '../lib/conditional';
 import { METAL_INDICATORS, EDTA_METAL_PRESETS } from '../lib/indicatorDatabase';
@@ -209,6 +209,10 @@ export default function IndicadoresMetalicos() {
           <h2>Indicadores metalocrómicos</h2>
           <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
         </div>
+        <ModelBadge
+          model="selección de indicador para titulación M–EDTA"
+          additions={[st.logBetasOH.length > 0 && 'hidrólisis del metal']}
+        />
 
         <DbPanel items={dbItems} onSelect={applyPreset} title="Presets M–EDTA" />
 

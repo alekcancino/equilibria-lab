@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import {
-  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, RefBadge, ResultCard,
+  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, RefBadge, ResultCard,
   SelectControl, Slider, Toggle,
 } from '../components/Controls';
 import { SALTS, type SaltPreset } from '../lib/database';
@@ -34,7 +34,7 @@ function saltFromPreset(p: SaltPreset): SaltState {
   };
 }
 
-const DEFAULT_SALT_ID = 'caco3';
+const DEFAULT_SALT_ID = 'agcl';
 
 /** Solubilidad de sales poco solubles: efecto del pH y del ion común. */
 export default function Solubilidad() {
@@ -96,6 +96,10 @@ export default function Solubilidad() {
           <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
         </div>
         <div className="editor">
+          <ModelBadge
+            model={salt.anionPKas.length === 0 ? 'solubilidad intrínseca' : 'solubilidad condicionada por pH'}
+            additions={[useCommon && 'ion común']}
+          />
           <LabelField label="Sal (nombre libre)" value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
           <Slider label="pKps" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
           <SelectControl
