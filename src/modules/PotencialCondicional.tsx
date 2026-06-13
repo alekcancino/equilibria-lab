@@ -12,10 +12,11 @@ import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
-import { InfoBox, ResultCard, Slider, Toggle } from '../components/Controls';
+import { InfoBox, ResultCard, Slider, Toggle, ConstantList, LabelField } from '../components/Controls';
 import { CoupleEditor, coupleFromPreset, type CoupleState } from '../components/Editors';
 import { NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
+import { alphaL } from '../lib/conditional';
 
 const S = NERNST_S;     // 0.05916 V
 const PH_POINTS = 400;
@@ -53,8 +54,17 @@ function defaultState() {
     couple1: coupleFromPreset('mno4'),
     couple2: coupleFromPreset('fe'),
     showCouple3: false,
-    couple3: coupleFromPreset('cu1'), // Cu²⁺/Cu⁺ — ejemplo de Latimer
+    couple3: coupleFromPreset('cu1'),
     pH: 2,
+    // E°' = f(pX): efecto del ligando X sobre el potencial de un par
+    pxE0: 0.771,          // E° Fe³⁺/Fe²⁺ por defecto
+    pxN: 1,
+    pxOxLabel: 'Fe³⁺',
+    pxRedLabel: 'Fe²⁺',
+    pxLigandLabel: 'F⁻',
+    pxLogBetasOx: [5.28, 9.30, 12.06],   // FeF²⁺, FeF₂⁺, FeF₃
+    pxLogBetasRed: [1.0],                  // FeF⁺ (débil)
+    showPX: false,
   };
 }
 
@@ -229,6 +239,27 @@ export default function PotencialCondicional() {
     [escalaN, escalaPeMin, escalaPeMax],
   );
 
+  // ── E°'=f(pX) ─────────────────────────────────────────────────────────────
+
+  const PX_POINTS = 400;
+  const pXs = useMemo(() => Array.from({ length: PX_POINTS + 1 }, (_, i) => 14 * i / PX_POINTS), []);
+
+  const EpxCurve = useMemo(() => pXs.map((pX) => {
+    const X = Math.pow(10, -pX);
+    const aOx = alphaL(st.pxLogBetasOx, X);
+    const aRed = alphaL(st.pxLogBetasRed, X);
+    // E°' = E° + (S/n) · log(α_Red / α_Ox)
+    return st.pxE0 + (S / st.pxN) * Math.log10(aRed / aOx);
+  }), [pXs, st.pxE0, st.pxN, st.pxLogBetasOx, st.pxLogBetasRed]);
+
+  const EpxMin = Math.min(...EpxCurve) - 0.1;
+  const EpxMax = st.pxE0 + 0.05;
+
+  const pxShapes = useMemo<Partial<import('plotly.js').Shape>[]>(() => [{
+    type: 'line', x0: 0, x1: 14, y0: st.pxE0, y1: st.pxE0,
+    line: { color: '#aaaaaa', width: 1.5, dash: 'dot' },
+  }], [st.pxE0]);
+
   // ── Diagrams ──────────────────────────────────────────────────────────────
 
   const diagrams = [
@@ -245,6 +276,31 @@ export default function PotencialCondicional() {
           shapes={logKShapes}
           annotations={logKAnnotations}
           exportName="quimeq-eprime-ph"
+        />
+      ),
+    },
+    {
+      id: 'epx',
+      label: "E°'=f(pX)",
+      node: (
+        <Chart
+          data={[{
+            x: pXs, y: EpxCurve, type: 'scatter', mode: 'lines',
+            name: `E°'(${st.pxOxLabel}/${st.pxRedLabel})`,
+            line: { width: 3, color: C3 },
+            hovertemplate: `E°' = %{y:.3f} V<extra>pX=%{x:.1f}</extra>`,
+          }]}
+          xTitle={`p[${st.pxLigandLabel}]`}
+          yTitle="E°' (V vs ENH)"
+          xRange={[0, 14]}
+          yRange={[EpxMin, EpxMax]}
+          shapes={pxShapes}
+          annotations={[{
+            x: 13, y: st.pxE0 + 0.02,
+            text: `E° = ${st.pxE0.toFixed(3)} V`,
+            showarrow: false, font: { size: 11, color: '#888' },
+          }]}
+          exportName="quimeq-eprime-px"
         />
       ),
     },
@@ -328,6 +384,44 @@ export default function PotencialCondicional() {
             value: `${strongest.c.ox} + ${weakest.c.red} · log K' = ${logKcur.toFixed(1)}`,
           },
         ]} />
+
+        {/* E°'=f(pX) */}
+        <Toggle
+          label="E°'=f(pX) — efecto de un ligando"
+          checked={st.showPX}
+          onChange={(v) => set('showPX', v)}
+        />
+        {st.showPX && (
+          <div className="mask-section">
+            <h3>Par redox con ligando X</h3>
+            <LabelField label="Forma oxidada (Ox)" value={st.pxOxLabel} onChange={(v) => set('pxOxLabel', v)} />
+            <LabelField label="Forma reducida (Red)" value={st.pxRedLabel} onChange={(v) => set('pxRedLabel', v)} />
+            <LabelField label="Ligando X" value={st.pxLigandLabel} onChange={(v) => set('pxLigandLabel', v)} />
+            <Slider label="E° del par (V)" value={st.pxE0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('pxE0', v)} decimals={3} />
+            <div className="control">
+              <div className="control-header">
+                <span className="control-label">n (electrones)</span>
+                <span className="control-value">{st.pxN}</span>
+              </div>
+              <div className="segmented" style={{ marginTop: 4 }}>
+                {[1, 2, 3].map((n) => (
+                  <button key={n} className={st.pxN === n ? 'seg-btn active' : 'seg-btn'} onClick={() => set('pxN', n)}>{n}</button>
+                ))}
+              </div>
+            </div>
+            <details className="section-collapse">
+              <summary className="section-collapse-title">log β de Ox con X</summary>
+              <ConstantList prefix="log β(Ox)" values={st.pxLogBetasOx} onChange={(v) => set('pxLogBetasOx', v)} min={0} max={35} maxItems={6} />
+            </details>
+            <details className="section-collapse">
+              <summary className="section-collapse-title">log β de Red con X</summary>
+              <ConstantList prefix="log β(Red)" values={st.pxLogBetasRed} onChange={(v) => set('pxLogBetasRed', v)} min={0} max={35} maxItems={6} />
+            </details>
+            <p className="hint">
+              Preset: Fe³⁺/Fe²⁺ + F⁻ · E° = +0.771 V · log β(Fe³⁺) = [5.28, 9.30, 12.06] · log β(Fe²⁺) = [1.0]
+            </p>
+          </div>
+        )}
 
         <InfoBox title="E°' = f(pH): efecto del protón">
           <p>

@@ -109,7 +109,7 @@ export default function Complejos() {
     stepwise.forEach((lk, i) => {
       const nAtK = bjerrumNumber(lk, sys.logBetas);
       trace.push({
-        x: [lk], y: [nAtK], type: 'scatter', mode: 'markers+text',
+        x: [lk], y: [nAtK], type: 'scatter', mode: 'text+markers',
         text: [`log K${i + 1}`], textposition: 'top center',
         marker: { size: 8, color: SPECIES_COLORS[i % SPECIES_COLORS.length] },
         name: `log K${i + 1} = ${lk.toFixed(2)}`,

@@ -22,7 +22,6 @@ function buildSimpleDiagram(p: SimpleCustom, logC: number): { data: Data[]; anno
   const E0_sol = p.E0 + S * (14 - p.pKsp / p.n);             // standard potential M(OH)n/M
   const E_sol = (pH: number) => E0_sol - S * pH;              // solid boundary vs pH
 
-  const PH = [0, 14];
   const COLOR_AQ = '#2980b9';
   const COLOR_V  = '#8e44ad';
   const COLOR_SO = '#16a085';

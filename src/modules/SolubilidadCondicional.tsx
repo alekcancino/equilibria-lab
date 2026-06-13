@@ -9,7 +9,7 @@ import DiagramTabs from '../components/DiagramTabs';
 import {
   Slider, ConstantList, DbPanel, InfoBox, LabelField, ResultCard, Toggle,
 } from '../components/Controls';
-import { hydroxideSolCurve, precipitationPH } from '../lib/conditional';
+import { hydroxideSolCurve, precipitationPH, alphaOH } from '../lib/conditional';
 
 // ── Base de datos de hidróxidos metálicos ─────────────────────────────────────
 
@@ -82,11 +82,6 @@ const C2 = '#D55E00';               // naranja — metal 2
 const C_WIN = 'rgba(39,174,96,0.12)'; // ventana selectiva (verde suave)
 const C_THRESH = 'rgba(127,140,141,0.9)'; // umbral
 
-// ── Utilidad ──────────────────────────────────────────────────────────────────
-
-function stoichLabel(n: number) {
-  return n === 1 ? 'MX (1:1)' : n === 2 ? 'M(OH)₂ (1:2)' : 'M(OH)₃ (1:3)';
-}
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
@@ -202,6 +197,70 @@ export default function SolubilidadCondicional() {
     id: p.id, label: p.formula, detail: `${p.metal} · pKps ${p.pKsp}`, group: p.group,
   }));
 
+  // ── Curva pKsp' = f(pH) ───────────────────────────────────────────────────
+
+  const pKspCurve1 = useMemo(() => {
+    const N = 300;
+    const pHs: number[] = [];
+    const pKsps: number[] = [];
+    for (let i = 0; i <= N; i++) {
+      const pH = 14 * i / N;
+      const logA = Math.log10(alphaOH(s.m1.logBetasOH, pH));
+      pHs.push(pH);
+      pKsps.push(s.m1.pKsp - logA);
+    }
+    return { pHs, pKsps };
+  }, [s.m1.pKsp, s.m1.logBetasOH]);
+
+  const pKspCurve2 = useMemo(() => {
+    if (!s.showM2) return null;
+    const N = 300;
+    const pHs: number[] = [];
+    const pKsps: number[] = [];
+    for (let i = 0; i <= N; i++) {
+      const pH = 14 * i / N;
+      const logA = Math.log10(alphaOH(s.m2.logBetasOH, pH));
+      pHs.push(pH);
+      pKsps.push(s.m2.pKsp - logA);
+    }
+    return { pHs, pKsps };
+  }, [s.showM2, s.m2.pKsp, s.m2.logBetasOH]);
+
+  const pKspTraces = useMemo(() => {
+    const out: import('plotly.js').Data[] = [
+      {
+        x: pKspCurve1.pHs, y: pKspCurve1.pKsps,
+        type: 'scatter', mode: 'lines',
+        name: `pKsp' (${s.m1.formula})`,
+        line: { width: 3, color: C1 },
+        hovertemplate: `pKsp' = %{y:.2f}<extra>${s.m1.formula}</extra>`,
+      },
+      {
+        x: pKspCurve1.pHs, y: pKspCurve1.pHs.map(() => s.m1.pKsp),
+        type: 'scatter', mode: 'lines',
+        name: `pKsp termodinámico (${s.m1.formula})`,
+        line: { width: 1.5, color: C1, dash: 'dot' },
+        hovertemplate: `pKsp = ${s.m1.pKsp}<extra>referencia</extra>`,
+      },
+    ];
+    if (pKspCurve2) {
+      out.push({
+        x: pKspCurve2.pHs, y: pKspCurve2.pKsps,
+        type: 'scatter', mode: 'lines',
+        name: `pKsp' (${s.m2.formula})`,
+        line: { width: 2.5, color: C2, dash: 'dot' },
+        hovertemplate: `pKsp' = %{y:.2f}<extra>${s.m2.formula}</extra>`,
+      });
+    }
+    return out;
+  }, [pKspCurve1, pKspCurve2, s.m1.formula, s.m1.pKsp, s.m2.formula]);
+
+  const pKspYMin = useMemo(() => {
+    const all = [...pKspCurve1.pKsps, ...(pKspCurve2?.pKsps ?? [])].filter(Number.isFinite);
+    return Math.max(Math.floor(Math.min(...all)) - 1, 0);
+  }, [pKspCurve1, pKspCurve2]);
+  const pKspYMax = Math.max(s.m1.pKsp, s.showM2 ? s.m2.pKsp : 0) + 3;
+
   // ── Diagrama ──────────────────────────────────────────────────────────────
 
   const tabs = [
@@ -217,6 +276,20 @@ export default function SolubilidadCondicional() {
           yRange={[yMin, yMax]}
           shapes={shapes}
           exportName="quimeq-sol-cond"
+        />
+      ),
+    },
+    {
+      id: 'pksp',
+      label: "pKsp' = f(pH)",
+      node: (
+        <Chart
+          data={pKspTraces}
+          xTitle="pH"
+          yTitle="pKsp' (producto de solubilidad condicional)"
+          xRange={[0, 14]}
+          yRange={[pKspYMin, pKspYMax]}
+          exportName="quimeq-pksp-cond"
         />
       ),
     },

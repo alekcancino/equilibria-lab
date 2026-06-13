@@ -21,7 +21,7 @@ Leyenda: ✅ cubierto · 🟡 parcial · ⬜ no cubierto (roadmap)
 | 4 | Ácido-base: fuerza, α, pH, anfolitos, polipróticos | ✅ | Ácido-base (DUZP + α + logC) |
 | 5 | Complejos: constantes sucesivas/globales, Bjerrum, predominio | ✅ | Complejos (DUZP + α + Bjerrum n̄ + logC) |
 | 6 | Solubilidad: Kps, ion común | ✅ | Solubilidad |
-| — | Titulaciones (todas) | ✅ | Titulaciones (ác-base, EDTA, redox, precipitación) |
+| — | Titulaciones (todas) | ✅ | Titulaciones (ácido-base, EDTA, redox, precipitación, potenciométrica) |
 
 **QA I: cobertura completa de los temas simulables.**
 
@@ -32,42 +32,45 @@ Leyenda: ✅ cubierto · 🟡 parcial · ⬜ no cubierto (roadmap)
 > Objetivo del curso: efecto de un **equilibrio secundario** sobre la
 > cuantitatividad de la reacción principal; introducción a separaciones.
 
-| Unidad | Tema | Estado | Módulo / roadmap |
+| Unidad | Tema | Estado | Módulo |
 |---|---|---|---|
-| 1 | Constante aparente, efecto del medio | 🟡 | concepto presente; sin módulo dedicado |
-| 2 | **Complejos + ácido-base**: K' condicional, log K'=f(pH), zonas | ⬜ | **① Constantes condicionales** (roadmap) |
-| 3 | **Redox + ácido-base**: E°' aparente, Pourbaix, cuantitatividad | 🟡 | Pourbaix ✅ ; E°'=f(pH) explícito → **④** |
-| 4 | **Redox + complejos**: E°'=f(pX), diagramas potencial-pX | ⬜ | **④ Potencial condicional** (roadmap) |
-| 5 | Solubilidad/precipitación: log s=f(pH), log s=f(pX), separaciones | 🟡 | Solubilidad ✅ pH ; pX y separación selectiva → **③** |
-| 6 | Extracción líquido-líquido (intro) | ⬜ | **② Extracción L-L** (roadmap) |
+| 1 | Constante aparente, efecto del medio | 🟡 | concepto presente en todos los módulos de K'; sin módulo introductorio dedicado |
+| 2 | **Complejos + ácido-base**: K' condicional, log K'=f(pH), zonas | ✅ | **Constantes condicionales** — log K', coeficientes α, enmascaramiento, ventana de factibilidad |
+| 3 | **Redox + ácido-base**: E°' aparente, Pourbaix, cuantitatividad | ✅ | **Potencial condicional** — E°'=f(pH), cruce de pares, escala condicional, dismutación (Latimer) |
+| 4 | **Redox + complejos**: E°'=f(pX), diagramas potencial-pX | 🟡 | PotencialCondicional cubre f(pH); la curva f(pX) con α_Ox/α_Red no está implementada |
+| 5 | Solubilidad/precipitación: log s=f(pH), separaciones | ✅ | **Precipitación selectiva** (hidróxidos, ventana selectiva) + **Solubilidad y pH** (sales con anión ácido débil) |
+| 6 | Extracción líquido-líquido (intro) | ✅ | **Extracción líquido-líquido** — log D=f(pH), %E=f(pH), extracciones múltiples, factor de separación |
+
+**QA II: cobertura ~90 %. Hueco menor: E°'=f(pX) en la unidad 4.**
 
 ---
 
 ## Química Analítica III (1604) — constantes condicionales y separaciones
 
 > Objetivo del curso: **predicción y simulación de equilibrios múltiples
-> mediante la evaluación de constantes condicionales** en medio homogéneo y
+> mediante la evaluación de las constantes condicionales** en medio homogéneo y
 > heterogéneo. Bibliografía base: **Ringbom**, *Complexation in Analytical
 > Chemistry*. **Este es el núcleo de la herramienta profesional.**
 
-| Unidad | Tema | Estado | Módulo / roadmap |
+| Unidad | Tema | Estado | Módulo |
 |---|---|---|---|
-| 1 | **Constantes condicionales (homogéneo)**: coef. de equilibrios parásitos, **gráfica log K'=f(pH)**, enmascaramiento, titulaciones complejométricas, redox condicional, dismutación | ⬜ | **① Constantes condicionales** (roadmap) — pieza estrella |
-| 2 | **Precipitación**: pKs'=f(pH), logS'=f(pH), hidróxidos metálicos, separaciones selectivas | 🟡 | Solubilidad ✅ base ; condicional+separación → **③** |
-| 3 | **Extracción L-L**: cociente de reparto/distribución, quelatos metálicos, rendimiento=f(pH) | ⬜ | **② Extracción L-L** (roadmap) |
-| 4 | Intercambio iónico: constante de selectividad, reparto condicional | ⬜ | **⑤ Intercambio iónico** (roadmap, tier 3) |
-| 5 | Disolventes no acuosos: efecto nivelador, escalas de acidez | ⬜ | **⑥ Disolventes no acuosos** (roadmap, tier 3) |
+| 1 | **Constantes condicionales (homogéneo)**: coef. de equilibrios parásitos, gráfica log K'=f(pH), enmascaramiento, titulaciones complejométricas, redox condicional, dismutación | ✅ | **Constantes condicionales** + **Potencial condicional** |
+| 2 | **Precipitación**: pKs'=f(pH), logS'=f(pH), hidróxidos metálicos, separaciones selectivas | ✅ | **Precipitación selectiva** (log s=f(pH), ventana selectiva, anfotéricos) + **Solubilidad y pH** (sales) |
+| 3 | **Extracción L-L**: cociente de reparto/distribución, quelatos metálicos, rendimiento=f(pH) | 🟡 | **Extracción líquido-líquido** ✅ ácidos/anfotéricos; quelatos metálicos (log D = log K_ex + n·log[HL] + n·pH) pendiente |
+| 4 | Intercambio iónico: constante de selectividad, reparto condicional en lotes | ⬜ | Módulo nuevo (Tier 3 — roadmap) |
+| 5 | Disolventes no acuosos: efecto nivelador, escalas de acidez, titulación en anfipróticos | ⬜ | Módulo nuevo (Tier 3 — roadmap) |
+
+**QA III: cobertura ~75 %. Unidades 1–3 cubiertas; 4–5 pendientes (Tier 3).**
 
 ---
 
-## Resumen de huecos (priorizados)
+## Resumen de huecos activos (priorizados)
 
-1. **① Constantes condicionales** — keystone de QA II.2 y todo QA III.1. Convierte
-   QuimEq en predictor de factibilidad. (Tier 1)
-2. **② Extracción líquido-líquido** — QA II.6 + QA III.3. (Tier 2)
-3. **③ Solubilidad/precipitación condicional** — completa QA II.5 + QA III.2. (Tier 2)
-4. **④ Potencial condicional E°'=f(pH)/f(pX)** — QA II.3/II.4. (Tier 2)
-5. **⑤ Intercambio iónico** / **⑥ Disolventes no acuosos** — QA III.4/III.5,
-   nicho, pocas horas en el curso. (Tier 3)
+| # | Tema | Prioridad | Acción |
+|---|---|---|---|
+| 1 | E°'=f(pX) — redox condicional con ligandos | Media | Nueva pestaña en PotencialCondicional |
+| 2 | Extracción quelatos metálicos (log D = log K_ex + n·pH) | Media | Nuevo tipo en ExtraccionLiquido |
+| 3 | Intercambio iónico: Ksel, reparto condicional en lotes | Baja | Módulo nuevo (Tier 3) |
+| 4 | Disolventes no acuosos: efecto nivelador, titulación en anfipróticos | Baja | Módulo nuevo (Tier 3) |
 
 Detalle de diseño en [`ROADMAP-EQUILIBRIOS-MULTIPLES.md`](ROADMAP-EQUILIBRIOS-MULTIPLES.md).

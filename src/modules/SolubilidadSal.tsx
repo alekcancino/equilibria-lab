@@ -3,7 +3,7 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConstantList, InfoBox, LabelField, ResultCard, Segmented, Slider, Toggle,
+  ConstantList, InfoBox, LabelField, ResultCard, Slider, Toggle,
 } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
 

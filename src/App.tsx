@@ -11,6 +11,7 @@ import PotencialCondicional from './modules/PotencialCondicional';
 import ExtraccionLiquido from './modules/ExtraccionLiquido';
 import SolubilidadSal from './modules/SolubilidadSal';
 import Titulacion from './modules/Titulacion';
+import IndicadoresMetalicos from './modules/IndicadoresMetalicos';
 import './App.css';
 
 interface Tab { id: string; label: string; component: ComponentType }
@@ -42,6 +43,7 @@ const SECTIONS: Section[] = [
     id: 'titulaciones', label: 'Titulaciones',
     tabs: [
       { id: 'titulacion', label: 'Titulaciones', component: Titulacion },
+      { id: 'indicadores', label: 'Indicadores metalocrómicos', component: IndicadoresMetalicos },
     ],
   },
 ];

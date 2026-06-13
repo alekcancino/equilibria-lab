@@ -11,6 +11,7 @@ import {
 } from '../components/Controls';
 import { EDTA_PKAS } from '../lib/edta';
 import { condLogKCurve, feasibilityWindow } from '../lib/conditional';
+import { COMPLEX_PRESETS } from '../lib/complexDatabase';
 
 // ── Base de datos de complejos M–EDTA ───────────────────────────────────────
 
@@ -360,6 +361,26 @@ export default function ConstantesCondicionales() {
         {/* Ligando auxiliar */}
         <details className="section-collapse" open={s.showAux} onToggle={(e) => set('showAux', (e.target as HTMLDetailsElement).open)}>
           <summary className="section-collapse-title">Ligando auxiliar α_M(L)</summary>
+          <p className="hint" style={{ marginBottom: 6 }}>Presets (metal + ligando):</p>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+            {COMPLEX_PRESETS.map((cp) => (
+              <button
+                key={cp.id}
+                className="preset-chip"
+                title={`log β: [${cp.logBetas.join(', ')}]`}
+                onClick={() => {
+                  setS((prev) => ({
+                    ...prev,
+                    auxLabel: cp.ligandLabel,
+                    logBetasAux: [...cp.logBetas],
+                    showAux: true,
+                  }));
+                }}
+              >
+                {cp.metalLabel}/{cp.ligandLabel}
+              </button>
+            ))}
+          </div>
           <LabelField label="Ligando auxiliar" value={s.auxLabel} onChange={(v) => set('auxLabel', v)} />
           <ConstantList
             prefix="log β"
