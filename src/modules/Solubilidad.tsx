@@ -34,12 +34,21 @@ function saltFromPreset(p: SaltPreset): SaltState {
   };
 }
 
+const DEFAULT_SALT_ID = 'caco3';
+
 /** Solubilidad de sales poco solubles: efecto del pH y del ion común. */
 export default function Solubilidad() {
-  const [salt, setSalt] = useState<SaltState>(saltFromPreset(SALTS.find((s) => s.id === 'caco3')!));
+  const [salt, setSalt] = useState<SaltState>(saltFromPreset(SALTS.find((s) => s.id === DEFAULT_SALT_ID)!));
   const [useCommon, setUseCommon] = useState(false);
   const [cCommon, setCCommon] = useState(0.01);
   const [pHPoint, setPHPoint] = useState(7);
+
+  function reset() {
+    setSalt(saltFromPreset(SALTS.find((s) => s.id === DEFAULT_SALT_ID)!));
+    setUseCommon(false);
+    setCCommon(0.01);
+    setPHPoint(7);
+  }
 
   const common = useCommon ? cCommon : 0;
   const edited = (patch: Partial<SaltState>) => setSalt({ ...salt, ...patch, reference: null });
@@ -82,7 +91,10 @@ export default function Solubilidad() {
   return (
     <div className="module">
       <aside className="panel">
-        <h2>Solubilidad (K<sub>ps</sub>)</h2>
+        <div className="panel-header">
+          <h2>Solubilidad (K<sub>ps</sub>)</h2>
+          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
+        </div>
         <div className="editor">
           <LabelField label="Sal (nombre libre)" value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
           <Slider label="pKps" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />

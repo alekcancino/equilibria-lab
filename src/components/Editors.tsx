@@ -60,16 +60,6 @@ export function AcidSystemEditor({
         value={system.label}
         onChange={(label) => onChange({ ...system, label })}
       />
-      <SelectControl
-        label="Carga de la forma más protonada (z₀)"
-        value={String(system.z0)}
-        options={[
-          { value: '0', label: '0 — ácido neutro (HnA)' },
-          { value: '1', label: '+1 — base protonada (BH⁺)' },
-          { value: '2', label: '+2 — diamina protonada (BH₂²⁺)' },
-        ]}
-        onChange={(v) => onChange({ ...system, z0: parseInt(v, 10), speciesLabels: null, reference: null })}
-      />
       <ConstantList
         prefix="pKa"
         values={system.pKas}
@@ -83,12 +73,26 @@ export function AcidSystemEditor({
           reference: null,
         })}
       />
+      <details className="adv-panel">
+        <summary>Avanzado</summary>
+        <SelectControl
+          label="Carga de la forma más protonada (z₀)"
+          value={String(system.z0)}
+          options={[
+            { value: '0', label: '0 — ácido neutro (HnA)' },
+            { value: '1', label: '+1 — base protonada (BH⁺)' },
+            { value: '2', label: '+2 — diamina protonada (BH₂²⁺)' },
+          ]}
+          onChange={(v) => onChange({ ...system, z0: parseInt(v, 10), speciesLabels: null, reference: null })}
+        />
+      </details>
       <RefBadge reference={system.reference ?? undefined} />
       <DbPanel
         items={presets.map((a) => ({
           id: a.id,
           label: a.formula,
           detail: `${a.name.split(' (')[0]} · pKa ${a.pKas.map((k) => k.toFixed(2)).join(', ')}`,
+          group: a.isBase ? 'Bases' : a.pKas.length > 1 ? 'Polipróticos' : 'Monopróticos',
         }))}
         onSelect={(id) => onChange(acidSystemFromPreset(id))}
       />

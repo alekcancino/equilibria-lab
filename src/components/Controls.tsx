@@ -241,40 +241,60 @@ export function ConstantList({
  * Base de datos colapsable (patrón secundario): cerrada por defecto,
  * al elegir un registro se autocompletan los controles y se cierra.
  */
+export interface DbItem {
+  id: string;
+  label: string;
+  detail: string;
+  /** Grupo opcional para agrupar visualmente (ej. "Monopróticos") */
+  group?: string;
+}
+
 export function DbPanel({
-  items, onSelect, title = 'Usar valores de la base de datos',
+  items, onSelect, title = 'Ejemplos de la base de datos',
 }: {
-  items: { id: string; label: string; detail: string }[];
+  items: DbItem[];
   onSelect: (id: string) => void;
   title?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const hasGroups = items.some((it) => it.group);
+  const groups = hasGroups
+    ? [...new Set(items.map((it) => it.group ?? 'Otros'))]
+    : [null];
+
+  const renderItem = (it: DbItem) => (
+    <button
+      key={it.id}
+      className="db-item"
+      onClick={() => {
+        onSelect(it.id);
+        setOpen(false);
+      }}
+    >
+      <span className="db-item-label">{it.label}</span>
+      <span className="db-item-detail">{it.detail}</span>
+    </button>
+  );
+
   return (
     <details className="db-panel" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary>{title}</summary>
-      <div className="db-grid">
-        {items.map((it) => (
-          <button
-            key={it.id}
-            className="db-item"
-            onClick={() => {
-              onSelect(it.id);
-              setOpen(false);
-            }}
-          >
-            <span className="db-item-label">{it.label}</span>
-            <span className="db-item-detail">{it.detail}</span>
-          </button>
-        ))}
-      </div>
+      {groups.map((g) => (
+        <div key={g ?? 'all'}>
+          {g && <p className="db-group-title">{g}</p>}
+          <div className="db-grid">
+            {items.filter((it) => (g ? (it.group ?? 'Otros') === g : true)).map(renderItem)}
+          </div>
+        </div>
+      ))}
     </details>
   );
 }
 
-/** Referencia bibliográfica — solo visible cuando los valores vienen de la BD. */
-export function RefBadge({ reference }: { reference?: string }) {
-  if (!reference) return null;
-  return <p className="ref-badge">📖 {reference}</p>;
+/** @deprecated Referencias eliminadas de la UI por decisión de diseño. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function RefBadge(_: { reference?: string }) {
+  return null;
 }
 
 /** Tarjeta de resultado numérico destacado (ej. pH en equivalencia). */

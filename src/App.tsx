@@ -1,24 +1,52 @@
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import AcidoBase from './modules/AcidoBase';
-import Titulacion from './modules/Titulacion';
-import Solubilidad from './modules/Solubilidad';
+import Complejos from './modules/Complejos';
 import Redox from './modules/Redox';
+import Solubilidad from './modules/Solubilidad';
 import Pourbaix from './modules/Pourbaix';
 import Mezclas from './modules/Mezclas';
+import Titulacion from './modules/Titulacion';
 import './App.css';
 
-const MODULES = [
-  { id: 'acidobase', label: 'Ácido-base', icon: '◔', component: AcidoBase },
-  { id: 'titulacion', label: 'Titulaciones', icon: '⚗', component: Titulacion },
-  { id: 'mezclas', label: 'Mezclas', icon: '⊕', component: Mezclas },
-  { id: 'solubilidad', label: 'Solubilidad', icon: '◆', component: Solubilidad },
-  { id: 'redox', label: 'Redox', icon: '⇄', component: Redox },
-  { id: 'pourbaix', label: 'Pourbaix', icon: '▦', component: Pourbaix },
+interface Tab { id: string; label: string; component: ComponentType }
+interface Section { id: string; label: string; tabs: Tab[] }
+
+const SECTIONS: Section[] = [
+  {
+    id: 'simples', label: 'Equilibrios simples',
+    tabs: [
+      { id: 'acidobase', label: 'Ácido-base', component: AcidoBase },
+      { id: 'complejos', label: 'Complejos', component: Complejos },
+      { id: 'redox', label: 'Redox', component: Redox },
+      { id: 'solubilidad', label: 'Solubilidad', component: Solubilidad },
+    ],
+  },
+  {
+    id: 'multiples', label: 'Equilibrios múltiples',
+    tabs: [
+      { id: 'pourbaix', label: 'Redox–pH (Pourbaix)', component: Pourbaix },
+      { id: 'mezclas', label: 'Mezclas ácido-base', component: Mezclas },
+    ],
+  },
+  {
+    id: 'titulaciones', label: 'Titulaciones',
+    tabs: [
+      { id: 'titulacion', label: 'Titulaciones', component: Titulacion },
+    ],
+  },
 ];
 
 export default function App() {
-  const [active, setActive] = useState('acidobase');
-  const ActiveModule = MODULES.find((m) => m.id === active)!.component;
+  const [sectionId, setSectionId] = useState('simples');
+  const [tabBySection, setTabBySection] = useState<Record<string, string>>(
+    Object.fromEntries(SECTIONS.map((s) => [s.id, s.tabs[0].id])),
+  );
+
+  const section = SECTIONS.find((s) => s.id === sectionId)!;
+  const tabId = tabBySection[sectionId];
+  const tab = section.tabs.find((t) => t.id === tabId) ?? section.tabs[0];
+  const ActiveModule = tab.component;
+  const showSubTabs = section.tabs.length > 1;
 
   return (
     <div className="app">
@@ -28,22 +56,39 @@ export default function App() {
           <h1>QuimEq</h1>
           <span className="brand-sub">Laboratorio de Equilibrio Químico</span>
         </div>
-        <nav className="tabs">
-          {MODULES.map((m) => (
+        <nav className="sections">
+          {SECTIONS.map((s) => (
             <button
-              key={m.id}
-              className={active === m.id ? 'tab active' : 'tab'}
-              onClick={() => setActive(m.id)}
+              key={s.id}
+              className={sectionId === s.id ? 'section-btn active' : 'section-btn'}
+              onClick={() => setSectionId(s.id)}
             >
-              <span className="tab-icon">{m.icon}</span>
-              {m.label}
+              {s.label}
             </button>
           ))}
         </nav>
       </header>
+
+      {showSubTabs && (
+        <div className="subnav">
+          <div className="subnav-tabs">
+            {section.tabs.map((t) => (
+              <button
+                key={t.id}
+                className={tabId === t.id ? 'subnav-tab active' : 'subnav-tab'}
+                onClick={() => setTabBySection({ ...tabBySection, [sectionId]: t.id })}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <main className="content">
         <ActiveModule />
       </main>
+
       <footer className="assumptions">
         Supuestos: T = 25 °C · actividades ≈ concentraciones · Kw = 10⁻¹⁴ ·
         constantes de Harris, Skoog, Bard 1985 y Stumm &amp; Morgan 1996 ·

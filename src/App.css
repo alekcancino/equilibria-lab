@@ -58,6 +58,77 @@ html, body, #root {
   color: var(--text-muted);
 }
 
+/* ---------- Navegación de secciones (nivel 1) ---------- */
+.sections {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.section-btn {
+  padding: 16px 18px;
+  border: none;
+  background: none;
+  font-size: 14.5px;
+  font-family: inherit;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.section-btn:hover { color: var(--text); }
+
+.section-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---------- Sub-navegación (nivel 2) ---------- */
+.subnav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 20px;
+  background: #f0f3f6;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.subnav-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.subnav-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 auto;
+}
+
+.subnav-tab {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.subnav-tab:hover { color: var(--text); }
+
+.subnav-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
 .tabs {
   display: flex;
   gap: 4px;
@@ -513,6 +584,111 @@ select {
   color: var(--text-muted);
   flex-shrink: 0;
 }
+
+/* ---------- DiagramTabs (DUZP / α / logC) ---------- */
+.diagram-tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.diagram-tab-bar {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-bottom: 8px;
+}
+
+.diagram-tab {
+  padding: 7px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.diagram-tab:hover { color: var(--text); }
+
+.diagram-tab.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.diagram-tab-body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ---------- DUZP (zonas de predominio, SVG) ---------- */
+.duzp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 16px;
+}
+
+.duzp svg { max-height: 340px; }
+
+/* ---------- Grupos de la base de datos ---------- */
+.db-group-title {
+  margin: 8px 8px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+/* ---------- Botón restablecer + cabecera de panel ---------- */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 16px;
+}
+
+.panel-header h2 { margin: 0; }
+
+.reset-btn {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.reset-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---------- Panel "Avanzado" ---------- */
+.adv-panel {
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+
+.adv-panel summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  user-select: none;
+  padding: 4px 0;
+}
+
+.adv-panel summary:hover { color: var(--accent); }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 800px) {

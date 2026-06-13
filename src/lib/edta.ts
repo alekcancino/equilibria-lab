@@ -62,10 +62,17 @@ export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
     const cY = edtaInFlask ? flask : buret;
 
     // K'[M]² + (K'(cY − cM) + 1)[M] − cM = 0
+    // Cuando kCond << 1 la cuadrática degenera: usamos la rama estabilizada.
     const a = kCond;
     const b = kCond * (cY - cM) + 1;
     const c = -cM;
-    const m = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
+    let m: number;
+    if (kCond < 1e-8) {
+      // Régimen de ligando muy débil: [M] ≈ cM (sin complejo significativo)
+      m = cM;
+    } else {
+      m = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
+    }
 
     volumes.push(v);
     pMs.push(-Math.log10(Math.max(m, 1e-30)));
