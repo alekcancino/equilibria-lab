@@ -8,6 +8,7 @@ import Mezclas from './modules/Mezclas';
 import ConstantesCondicionales from './modules/ConstantesCondicionales';
 import SolubilidadCondicional from './modules/SolubilidadCondicional';
 import PotencialCondicional from './modules/PotencialCondicional';
+import ExtraccionLiquido from './modules/ExtraccionLiquido';
 import Titulacion from './modules/Titulacion';
 import './App.css';
 
@@ -32,6 +33,7 @@ const SECTIONS: Section[] = [
       { id: 'condicionalesedta', label: 'Constantes condicionales', component: ConstantesCondicionales },
       { id: 'solcond', label: 'Precipitación selectiva', component: SolubilidadCondicional },
       { id: 'potencialcond', label: 'Potencial condicional', component: PotencialCondicional },
+      { id: 'extraccion', label: 'Extracción líquido-líquido', component: ExtraccionLiquido },
     ],
   },
   {
