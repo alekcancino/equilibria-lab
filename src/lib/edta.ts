@@ -32,7 +32,7 @@ export interface EdtaCurve {
   volumes: number[];
   pMs: number[];
   vEq: number;
-  /** Constante condicional K'f = alfa_Y4 * Kf */
+  /** Constante condicional K'f = Kf / αY(H) = Kf · α[Y4-] */
   logKfCond: number;
 }
 
@@ -44,8 +44,8 @@ export interface EdtaCurve {
 export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
   const { logKf, pH, cMetal, vMetal, cEdta, vMax, edtaInFlask = false } = params;
   const points = params.points ?? 500;
-  const aY = alphaY4(pH);
-  const kCond = aY * Math.pow(10, logKf);
+  const aY = alphaY4(pH);           // αY(H) = 1/α[Y4-] ≥ 1
+  const kCond = Math.pow(10, logKf) / aY;  // K'f = Kf / αY(H)
 
   const volumes: number[] = [];
   const pMs: number[] = [];

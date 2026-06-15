@@ -1,17 +1,18 @@
-import { useState, type ComponentType } from 'react';
-import AcidoBase from './modules/AcidoBase';
-import Complejos from './modules/Complejos';
-import Redox from './modules/Redox';
-import Solubilidad from './modules/Solubilidad';
-import Pourbaix from './modules/Pourbaix';
-import Mezclas from './modules/Mezclas';
-import ConstantesCondicionales from './modules/ConstantesCondicionales';
-import SolubilidadCondicional from './modules/SolubilidadCondicional';
-import PotencialCondicional from './modules/PotencialCondicional';
-import ExtraccionLiquido from './modules/ExtraccionLiquido';
-import SolubilidadSal from './modules/SolubilidadSal';
-import Titulacion from './modules/Titulacion';
+import { lazy, Suspense, useState, type ComponentType } from 'react';
 import './App.css';
+
+const AcidoBase              = lazy(() => import('./modules/AcidoBase'));
+const Complejos              = lazy(() => import('./modules/Complejos'));
+const Redox                  = lazy(() => import('./modules/Redox'));
+const Solubilidad            = lazy(() => import('./modules/Solubilidad'));
+const Pourbaix               = lazy(() => import('./modules/Pourbaix'));
+const Mezclas                = lazy(() => import('./modules/Mezclas'));
+const ConstantesCondicionales = lazy(() => import('./modules/ConstantesCondicionales'));
+const SolubilidadCondicional = lazy(() => import('./modules/SolubilidadCondicional'));
+const PotencialCondicional   = lazy(() => import('./modules/PotencialCondicional'));
+const ExtraccionLiquido      = lazy(() => import('./modules/ExtraccionLiquido'));
+const SolubilidadSal         = lazy(() => import('./modules/SolubilidadSal'));
+const Titulacion             = lazy(() => import('./modules/Titulacion'));
 
 interface Tab { id: string; label: string; component: ComponentType }
 interface Section { id: string; label: string; tabs: Tab[] }
@@ -96,7 +97,9 @@ export default function App() {
       )}
 
       <main className="content">
-        <ActiveModule />
+        <Suspense fallback={<div className="module-loading">Cargando…</div>}>
+          <ActiveModule />
+        </Suspense>
       </main>
 
       <footer className="assumptions">

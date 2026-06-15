@@ -26,6 +26,15 @@ html, body, #root {
   height: 100vh;
 }
 
+.module-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
 /* ---------- Barra superior ---------- */
 .topbar {
   display: flex;
@@ -660,7 +669,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  height: auto;
   width: 100%;
   background: #fff;
   border: 1px solid var(--border);
@@ -668,7 +677,7 @@ select {
   padding: 8px 16px;
 }
 
-.duzp svg { max-height: 340px; }
+.duzp svg { display: block; width: 100%; height: auto; max-height: 240px; }
 
 /* ---------- Grupos de la base de datos ---------- */
 .db-group-title {
@@ -805,13 +814,32 @@ select {
     width: 100%;
     margin-left: 0;
     overflow-x: auto;
+    scrollbar-width: none;
   }
-  .section-btn { flex: 1 0 auto; padding: 10px 12px; }
+  .sections::-webkit-scrollbar { display: none; }
+  /* Buttons don't grow — they scroll horizontally at natural width */
+  .section-btn { flex: 0 0 auto; padding: 10px 10px; font-size: 13px; white-space: nowrap; }
+  /* Subnav scroll with right-fade indicator */
+  .subnav {
+    position: relative;
+  }
+  .subnav::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 28px;
+    background: linear-gradient(to right, transparent, #f0f3f6);
+    pointer-events: none;
+  }
   .subnav-tabs {
     flex-wrap: nowrap;
     justify-content: flex-start;
     overflow-x: auto;
+    scrollbar-width: none;
   }
+  .subnav-tabs::-webkit-scrollbar { display: none; }
   .subnav-tab { flex: 0 0 auto; }
   .tabs { margin-left: 0; overflow-x: auto; width: 100%; }
 }

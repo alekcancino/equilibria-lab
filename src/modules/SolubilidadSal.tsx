@@ -123,7 +123,7 @@ function SalEditor({ title, color, sal, onChange }: {
 
       <LabelField label="Nombre del sólido" value={sal.name} onChange={(name) => onChange({ name })} />
       <LabelField label="Nombre del anión" value={sal.anionName} onChange={(anionName) => onChange({ anionName })} />
-      <Slider label="pKps" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
+      <Slider label="pKsp" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
 
       <div className="control">
         <div className="control-header">

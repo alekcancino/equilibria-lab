@@ -193,7 +193,7 @@ export default function SolubilidadCondicional() {
   // ── DB items ──────────────────────────────────────────────────────────────
 
   const dbItems = OH_PRESETS.map((p) => ({
-    id: p.id, label: p.formula, detail: `${p.metal} · pKps ${p.pKsp}`, group: p.group,
+    id: p.id, label: p.formula, detail: `${p.metal} · pKsp ${p.pKsp}`, group: p.group,
   }));
 
   // ── Curva pKsp' = f(pH) ───────────────────────────────────────────────────
@@ -313,7 +313,7 @@ export default function SolubilidadCondicional() {
         <DbPanel items={dbItems} onSelect={(id) => setM1({ ...fromPreset(id) })} title="Presets M(OH)n" />
         <LabelField label="Metal" value={s.m1.label} onChange={(v) => setM1({ label: v })} />
         <LabelField label="Fórmula" value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
-        <Slider label="pKps" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
+        <Slider label="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
         <div className="control">
           <div className="control-header">
             <span className="control-label">Estequiometría n (M(OH)_n)</span>
@@ -349,7 +349,7 @@ export default function SolubilidadCondicional() {
             <DbPanel items={dbItems} onSelect={(id) => setM2({ ...fromPreset(id) })} title="Presets M2" />
             <LabelField label="2.º metal" value={s.m2.label} onChange={(v) => setM2({ label: v })} />
             <LabelField label="Fórmula" value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
-            <Slider label="pKps" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
+            <Slider label="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
             <div className="control">
               <div className="control-header">
                 <span className="control-label">Estequiometría n</span>
@@ -406,8 +406,8 @@ export default function SolubilidadCondicional() {
 
         <InfoBox title="Separación selectiva de hidróxidos">
           <p>
-            La solubilidad de M(OH)_n sigue <code>log s = −pKps + n·pOH</code> (pendiente −n
-            por unidad de pH). Los metales con mayor pKps o menor n precipitan a pH más alto.
+            La solubilidad de M(OH)_n sigue <code>log s = −pKsp + n·pOH</code> (pendiente −n
+            por unidad de pH). Los metales con mayor pKsp o menor n precipitan a pH más alto.
             Controlando el pH se puede <strong>precipitar selectivamente</strong> un metal sin
             afectar al otro.
           </p>

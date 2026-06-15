@@ -62,7 +62,7 @@ function buildSimpleDiagram(p: SimpleCustom, logC: number): { data: Data[]; anno
 export default function Pourbaix() {
   const systems = availableSystems();
   const [systemId, setSystemId] = useState('fe');
-  const [useCustom, setUseCustom] = useState(true);
+  const [useCustom, setUseCustom] = useState(false);
   const [logC, setLogC] = useState(-2);
   const [showWater, setShowWater] = useState(false);
   const [custom, setCustom] = useState<SimpleCustom>({
@@ -72,7 +72,7 @@ export default function Pourbaix() {
 
   function reset() {
     setSystemId('fe');
-    setUseCustom(true);
+    setUseCustom(false);
     setLogC(-2);
     setShowWater(false);
     setCustom({ ionName: 'M²⁺', metalName: 'M', hydroxide: 'M(OH)₂', E0: -0.257, n: 2, pKsp: 15.8 });
@@ -176,7 +176,7 @@ export default function Pourbaix() {
                 ))}
               </div>
             </div>
-            <Slider label={`pKps M(OH)ₙ = ${custom.pKsp.toFixed(1)}`}
+            <Slider label={`pKsp M(OH)ₙ = ${custom.pKsp.toFixed(1)}`}
               value={custom.pKsp} min={5} max={40} step={0.1}
               onChange={(pKsp) => setCustom((c) => ({ ...c, pKsp }))} decimals={1} />
           </div>

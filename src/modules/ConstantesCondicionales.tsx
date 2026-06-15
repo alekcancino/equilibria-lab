@@ -60,9 +60,9 @@ interface CondState {
 
 function defaultState(): CondState {
   return {
-    metalLabel: 'M',
-    logKf: 10,
-    pKasY: [],
+    metalLabel: 'Ca²⁺',
+    logKf: 10.65,
+    pKasY: [2.0, 2.69, 6.13, 10.37],
     logBetasOH: [],
     showOH: false,
     showAux: false,

@@ -437,7 +437,7 @@ function EdtaTitration() {
         <Slider label="Volumen del matraz" value={vFlask} min={5} max={100} step={1} onChange={setVFlask} unit="mL" decimals={0} />
         <ConcSlider label={`Concentración del titulante (${buretName})`} value={cBuret} onChange={setCBuret} min={-4} max={-1} />
         <ResultCard items={[
-          { label: 'α(Y⁴⁻) a este pH', value: aY.toExponential(2) },
+          { label: 'α(Y⁴⁻) a este pH', value: (1 / aY).toExponential(3) },
           { label: "log K′f condicional", value: curve.logKfCond.toFixed(2) },
           { label: 'Volumen de equivalencia', value: `${curve.vEq.toFixed(2)} mL` },
         ]} />
@@ -753,7 +753,7 @@ function PrecipTitration() {
           <LabelField label="Catión titulante" value={cationName} onChange={setCationName} />
           <LabelField label="Anión analito" value={anionName} onChange={setAnionName} />
           <LabelField label="Fórmula del precipitado" value={saltFormula} onChange={setSaltFormula} />
-          <Slider label="pKps del precipitado" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
+          <Slider label="pKsp del precipitado" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
           <RefBadge reference={presetIsUnedited ? 'Harris, QCA 9.ª ed., cap. 16; Skoog, Fundamentos de Química Analítica.' : undefined} />
         </div>
 
@@ -771,7 +771,7 @@ function PrecipTitration() {
 
         <ResultCard items={[
           { label: 'Volumen de equivalencia', value: `${curve.vEq.toFixed(2)} mL` },
-          { label: `p en equivalencia (½ pKps)`, value: curve.pAgEq.toFixed(2) },
+          { label: `p en equivalencia (½ pKsp)`, value: curve.pAgEq.toFixed(2) },
           ...(isAgSystem && showPCation ? [{
             label: 'Indicador Mohr',
             value: `pAg = ${mohrPAg.toFixed(2)} (Δ = ${(mohrPAg - curve.pAgEq).toFixed(2)})`,
@@ -779,8 +779,8 @@ function PrecipTitration() {
         ]} />
         <p className={sharpness ? 'badge ok' : 'badge warn'}>
           {sharpness
-            ? `✓ Salto nítido esperado (pKps = ${pKsp.toFixed(2)} ≥ 6)`
-            : `⚠ pKps < 6: el salto puede ser difuso`}
+            ? `✓ Salto nítido esperado (pKsp = ${pKsp.toFixed(2)} ≥ 6)`
+            : `⚠ pKsp < 6: el salto puede ser difuso`}
         </p>
 
         <InfoBox title="Métodos de detección del punto final">
@@ -994,14 +994,21 @@ function PotenciometricaTitration() {
       id: 'gran',
       label: 'Gráfica de Gran',
       node: (
-        <Chart
-          data={granTraces}
-          xTitle={`Volumen de ${titrantName} (mL)`}
-          yTitle="Función de Gran F"
-          xRange={[0, vMax]}
-          shapes={granShapes}
-          exportName="quimeq-gran"
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <Chart
+              data={granTraces}
+              xTitle={`Volumen de ${titrantName} (mL)`}
+              yTitle="Función de Gran F"
+              xRange={[0, vMax]}
+              shapes={granShapes}
+              exportName="quimeq-gran"
+            />
+          </div>
+          <p className="hint" style={{ margin: '4px 8px 2px' }}>
+            F₁ es lineal solo <em>antes</em> del P.E.; F₂ es lineal solo <em>después</em>. Las colas curvas son artefacto — extrapolando el segmento lineal hasta F=0 se obtiene V<sub>eq</sub>.
+          </p>
+        </div>
       ),
     },
   ];

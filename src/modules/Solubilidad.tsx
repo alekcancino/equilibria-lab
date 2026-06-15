@@ -101,7 +101,7 @@ export default function Solubilidad() {
             additions={[useCommon && 'ion común']}
           />
           <LabelField label="Sal (nombre libre)" value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
-          <Slider label="pKps" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
+          <Slider label="pKsp" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
           <SelectControl
             label="Estequiometría MmXx"
             value={`${salt.m},${salt.x}`}
@@ -126,9 +126,14 @@ export default function Solubilidad() {
               onChange={(anionPKas) => edited({ anionPKas })}
             />
           ) : (
-            <button className="add-btn" onClick={() => edited({ anionPKas: [7] })}>
-              + El anión es básico (agregar pKa)
-            </button>
+            <>
+              <button className="add-btn" onClick={() => edited({ anionPKas: [7] })}>
+                + El anión es básico (agregar pKa)
+              </button>
+              <p className="hint">
+                Sin pKa: el anión no reacciona con H⁺ y el pH no cambia la solubilidad — la curva es horizontal. Agrega un pKa para ver el efecto del pH.
+              </p>
+            </>
           )}
           {salt.anionPKas.length > 0 && (
             <button className="add-btn" onClick={() => edited({ anionPKas: [] })}>
@@ -140,7 +145,7 @@ export default function Solubilidad() {
             items={SALTS.map((s) => ({
               id: s.id,
               label: s.formula,
-              detail: `${s.name} · pKps ${s.pKsp}`,
+              detail: `${s.name} · pKsp ${s.pKsp}`,
             }))}
             onSelect={(id) => setSalt(saltFromPreset(SALTS.find((s) => s.id === id)!))}
           />

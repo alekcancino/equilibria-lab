@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
+import DUZP from '../components/DUZP';
 import { InfoBox, ModelBadge, ResultCard, Slider } from '../components/Controls';
 import { CoupleEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
 import { alphaRedox, peConditional, NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
+import type { Zone } from '../lib/ladder';
 
 const PE_POINTS = 400;
 
@@ -85,7 +87,32 @@ export default function Redox() {
   const strong = pe01 > pe02 ? { ox: couple1, red: couple2 } : { ox: couple2, red: couple1 };
   const logK = strong.ox.n * strong.red.n * Math.abs(pe01 - pe02);
 
+  // DUZP: 3 zonas basadas en los dos pe°′ condicionales
+  const duzpZones = useMemo<Zone[]>(() => {
+    const c1 = { pe0: pe01, ox: couple1.ox, red: couple1.red, color: SPECIES_COLORS[0] };
+    const c2 = { pe0: pe02, ox: couple2.ox, red: couple2.red, color: SPECIES_COLORS[2] };
+    const [lo, hi] = c1.pe0 <= c2.pe0 ? [c1, c2] : [c2, c1];
+    return [
+      { pStart: peMin, pEnd: lo.pe0,  label: `${lo.red} · ${hi.red}`,  index: 0, color: SPECIES_COLORS[0] },
+      { pStart: lo.pe0, pEnd: hi.pe0, label: `${lo.ox} · ${hi.red}`,   index: 1, color: SPECIES_COLORS[1] },
+      { pStart: hi.pe0, pEnd: peMax,  label: `${lo.ox} · ${hi.ox}`,    index: 2, color: SPECIES_COLORS[2] },
+    ];
+  }, [pe01, pe02, couple1, couple2, peMin, peMax]);
+
   const diagrams = [
+    {
+      id: 'duzp',
+      label: 'DUZP',
+      node: (
+        <DUZP
+          zones={duzpZones}
+          pMin={peMin}
+          pMax={peMax}
+          pLabel="pe"
+          caption="Zonas de predominio (pe°′ condicional)"
+        />
+      ),
+    },
     {
       id: 'alpha',
       label: 'Distribución α',
