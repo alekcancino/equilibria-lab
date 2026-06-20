@@ -10,7 +10,7 @@ Simulador web interactivo de equilibrio químico: gráficas en tiempo real, cont
 
 | | Español | English |
 |---|---|---|
-| **Web** | Abre **[quimeq.vercel.app](https://quimeq.vercel.app)** en el navegador (sin instalar nada). | Open **[quimeq.vercel.app](https://quimeq.vercel.app)** in your browser — no install required. |
+| **Web** | Abre **[equilibria-lab.vercel.app](https://equilibria-lab.vercel.app)** en el navegador (sin instalar nada). | Open **[equilibria-lab.vercel.app](https://equilibria-lab.vercel.app)** in your browser — no install required. |
 | **Local** | Clona el repo, instala dependencias y arranca el servidor de desarrollo (ver abajo). | Clone the repo, install dependencies, and run the dev server (see below). |
 
 Todo el cálculo ocurre en el navegador; no hay backend ni cuenta de usuario.
