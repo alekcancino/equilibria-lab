@@ -1,110 +1,57 @@
-# Equilibria Lab — Design System
+# Equilibria Lab — Web Design System
 
-Source of truth for visual and interaction decisions. Aesthetic: [Distill](https://distill.pub/) (editorial science). Interaction: [GeoGebra Calculator](https://www.geogebra.org/calculator) (graph-first exploration).
+Source of truth for the **web simulator**. Historical PPTX tokens live in [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md) (not used by the app UI).
 
 ## Principles
 
-1. **Figure first** — The plot is the article; controls are marginal notes (sidebar / bottom sheet).
-2. **Editorial calm** — Warm white surfaces, serif for reading, sans for UI chrome. No ALL CAPS section labels.
-3. **Restrained color** — Brand gradient (violet → blue, teal → blue) only in logo and primary actions.
-4. **Progressive density** — Desktop shows full sidebar; mobile defaults to chart-only with one-tap access to variables.
-5. **Scientific legibility** — Minimum 13px body (14px mobile). Tabular nums for values. WCAG AA contrast.
-
-## Typography
-
-| Role | Family | Weight | Size |
-|------|--------|--------|------|
-| UI / controls | Source Sans 3 | 400–600 | 13–15px |
-| Headings (h2) | Source Sans 3 | 600 | 17–18px |
-| Section labels (h3) | Source Sans 3 | 600 | 12px, sentence case |
-| Prose / InfoBox | Source Serif 4 | 400 | 14px, line-height 1.55 |
-| Footer / meta | Source Sans 3 | 400 | 12px |
-| Plotly | Source Sans 3 | 400 | 12–13px |
-
-Load via Google Fonts in `index.html`. Never reference Inter without loading it.
+1. **Figure first** — Plot is the focus; controls are sidebar / bottom sheet (GeoGebra pattern).
+2. **Modern app chrome** — Slate neutrals, indigo accent, subtle elevation — not clinical teal or slide-deck typography.
+3. **Safe data colors** — Okabe-Ito palette for chart traces (colorblind-safe); brand indigo only in UI chrome.
+4. **Progressive density** — Desktop sidebar; mobile chart-first + FAB.
+5. **Legibility** — 14px body, 12px minimum on interactive labels; tabular nums for values.
 
 ## Color
 
-```css
---bg:           #FAFAF8;   /* warm page */
---surface:      #FFFFFF;   /* panels, topbar */
---surface-alt:  #F5F3EF;   /* subnav, subtle fills */
---border:       #E4DFD6;   /* warm border */
---text:         #1F2933;   /* primary */
---text-muted:   #5C6770;   /* secondary — AA on white */
---accent:       #2563EB;   /* primary action */
---accent-violet:#7C3AED;   /* brand, links hover */
---accent-soft:  #EFF6FF;   /* hover fills */
---accent-teal:  #14B8A6;   /* secondary accent (logo) */
---ok:           #059669;
---warn:         #D97706;
-```
+| Token | Hex | Use |
+|-------|-----|-----|
+| `--bg` | `#F8FAFC` | Page background |
+| `--surface` | `#FFFFFF` | Topbar, panel, cards |
+| `--surface-alt` | `#F1F5F9` | Subnav, subtle fills |
+| `--border` | `#E2E8F0` | Borders |
+| `--text` | `#0F172A` | Primary text |
+| `--text-muted` | `#64748B` | Secondary (meta, hints) |
+| `--accent` | `#6366F1` | Primary action, active tabs |
+| `--accent-hover` | `#4F46E5` | Hover |
+| `--accent-soft` | `#EEF2FF` | Hover fills |
 
-Plot traces keep module-specific colors; chrome uses tokens above.
+Runtime: [src/styles/tokens.css](src/styles/tokens.css)
 
-## Spacing & layout
+## Typography
 
-- Base unit: 4px. Common gaps: 8, 12, 16, 24.
-- Panel width (desktop): 320px, collapsible to 0.
-- Breakpoints: mobile ≤800px, tablet 801–1024px, desktop >1024px.
-- Touch targets: min 44×44px on mobile.
+| Role | Family | Size |
+|------|--------|------|
+| UI / controls | Inter | 14px |
+| Headings (brand, h2) | Inter 600 | 17–18px |
+| Section labels (h3) | Inter 600 | 12px |
+| InfoBox prose | Georgia (optional) | 14px |
+| Plotly | Inter | 12–13px |
 
-### Desktop (GeoGebra)
+Load Inter via Google Fonts in `index.html`.
 
-```
-[ Topbar: brand | sections ]
-[ Subnav: module pills (if >1) ]
-[ Panel 320px | Plot area flex:1 ]
-[ Footer: assumptions (collapsible) ]
-```
+## Chart colors (Okabe-Ito)
 
-### Mobile
+Defined in `src/lib/database.ts` as `SPECIES_COLORS`. System markers (pH, pe): `#CC79A7`.
 
-```
-[ Topbar: brand | MobileNav select ]
-[ Plot area ≥55vh — default full focus ]
-[ FAB: Variables ]
-[ Bottom sheet 50–70vh when open ]
-[ Footer: collapsed details ]
-```
+## Layout
 
-## Components
+- Panel width: 320px (desktop, collapsible)
+- Breakpoint mobile: ≤800px
+- Touch targets: ≥44px on mobile
 
-### Topbar
-Height ~52px. White surface, bottom border. Section tabs: underline active state, no heavy backgrounds.
-
-### PanelShell
-- **Desktop:** Left aside, collapse handle on right edge. Default open.
-- **Mobile:** Bottom sheet + FAB. Default **closed**. Overlay dims plot slightly.
-- Header: h2 title + ↺ Restablecer.
-
-### PlotToolbar
-Floating stack bottom-right of chart: reset zoom, export PNG. Compact icon buttons with title tooltips.
-
-### Controls
-- Slider: label left, editable value right (tabular nums).
-- Segmented: horizontal desktop; vertical stack or native `<select>` on mobile when labels >12 chars.
-- InfoBox / DbPanel: `<details>` with Distill-style summary (serif optional for long help text).
-
-### Tabs (subnav, diagram, chart)
-Pills on warm `--surface-alt`. Active: white bg + accent underline. Horizontal scroll on narrow screens.
-
-## Motion
-
-- Transitions: 150–200ms ease-out (panel collapse, sheet slide).
-- `@media (prefers-reduced-motion: reduce)`: disable sheet animation; instant open/close.
+See prior GeoGebra shell docs: PanelShell, MobileNav, PlotToolbar — unchanged.
 
 ## Accessibility
 
-- Focus visible on all interactive elements.
-- Sheet: `role="dialog"`, `aria-modal`, focus trap optional (lightweight).
-- Contrast: `--text-muted` on `--surface` ≥ 4.5:1.
-
-## Do / Don't
-
-**Do:** Keep plot visible when adjusting one slider on mobile (sheet partial height).  
-**Don't:** Stack panel above plot at 45vh on mobile (old pattern).  
-**Do:** Use sentence-case h3 ("Constantes del sistema").  
-**Don't:** Uppercase h3 with 0.5px letter-spacing.  
-**Do:** Load Source Sans / Source Serif explicitly.  
-**Don't:** Rely on `'Inter', system-ui` without `@font-face`.
+- Focus ring: indigo `box-shadow` on inputs/buttons
+- `--text-muted` for non-critical meta only; controls use `--text` at ≥12px
+- `prefers-reduced-motion`: disable sheet animation

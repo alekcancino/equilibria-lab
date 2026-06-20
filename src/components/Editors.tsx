@@ -115,7 +115,7 @@ export function CoupleEditor({
         value={couple.name}
         onChange={(name) => onChange({ ...couple, name })}
       />
-      <Slider label="E° (V vs ENH)" value={couple.E0} min={-1} max={2} step={0.001} onChange={(E0) => edited({ E0 })} decimals={3} unit="V" />
+      <Slider label="E° (V vs ENH)" value={couple.E0} min={-1} max={2} step={0.01} onChange={(E0) => edited({ E0 })} decimals={2} unit="V" />
       <Slider label="n (electrones)" value={couple.n} min={1} max={6} step={1} onChange={(n) => edited({ n })} decimals={0} />
       <Slider label="m H⁺ (protones en la semirreacción)" value={couple.mH} min={0} max={14} step={1} onChange={(mH) => edited({ mH })} decimals={0} />
       <RefBadge reference={couple.reference || undefined} />

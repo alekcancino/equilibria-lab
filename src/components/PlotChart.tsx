@@ -27,10 +27,10 @@ export default function PlotChart({
   const mobile = useIsMobile();
 
   const layout: Partial<Layout> = useMemo(() => {
-    const fontFamily = plotToken('--font-ui', 'Source Sans 3, system-ui, sans-serif');
-    const textColor = plotToken('--text', '#1F2933');
-    const gridColor = plotToken('--plot-grid', '#E8E4DC');
-    const axisColor = plotToken('--plot-axis', '#C9C2B8');
+    const fontFamily = plotToken('--font-ui', 'Inter, system-ui, sans-serif');
+    const textColor = plotToken('--text', '#0F172A');
+    const gridColor = plotToken('--plot-grid', '#E2E8F0');
+    const axisColor = plotToken('--plot-axis', '#CBD5E1');
     const plotBg = plotToken('--plot-bg', '#ffffff');
     const fontSize = mobile
       ? parseInt(plotToken('--plot-font-size-mobile', '12'), 10)
@@ -65,7 +65,7 @@ export default function PlotChart({
       legend: {
         orientation: 'h',
         y: mobile ? -0.22 : -0.18,
-        font: { size: fontSize - 1, family: fontFamily },
+        font: { size: fontSize, family: fontFamily },
       },
       hovermode: mobile ? 'closest' : 'x unified',
       shapes,

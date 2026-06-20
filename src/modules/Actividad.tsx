@@ -66,7 +66,7 @@ export default function Actividad() {
             type: 'line', x0: I, x1: I, y0: 0, y1: 1,
             line: { color: '#CC79A7', width: 2, dash: 'dashdot' },
           }] : []}
-          exportName="quimeq-actividad-gamma"
+          exportName="equilibria-actividad-gamma"
         />
       ),
     },

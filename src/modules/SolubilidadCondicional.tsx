@@ -90,7 +90,7 @@ function defaultState(): State {
 // ── Colores ───────────────────────────────────────────────────────────────────
 
 const C1 = '#0072B2';               // azul — metal 1
-const C2 = '#D55E00';               // naranja — metal 2
+const C2 = '#D55E00';
 const C_WIN = 'rgba(39,174,96,0.12)'; // ventana selectiva (verde suave)
 const C_THRESH = 'rgba(127,140,141,0.9)'; // umbral
 
@@ -195,7 +195,7 @@ export default function SolubilidadCondicional() {
     if (redissolutionPH !== null) {
       out.push({
         type: 'line', x0: redissolutionPH, x1: redissolutionPH, y0: yMin - 99, y1: yMax + 99,
-        line: { color: '#E69F00', width: 1.5, dash: 'dot' },
+        line: { color: '#7F8C8D', width: 1.5, dash: 'dot' },
       });
     }
     return out;
@@ -351,7 +351,7 @@ export default function SolubilidadCondicional() {
           xRange={[0, 14]}
           yRange={[yMin, yMax]}
           shapes={shapes}
-          exportName="quimeq-sol-cond"
+          exportName="equilibria-sol-cond"
         />
       ),
     },
@@ -365,7 +365,7 @@ export default function SolubilidadCondicional() {
           yTitle="pKsp' (producto de solubilidad condicional)"
           xRange={[0, 14]}
           yRange={[pKspYMin, pKspYMax]}
-          exportName="quimeq-pksp-cond"
+          exportName="equilibria-pksp-cond"
         />
       ),
     },
@@ -383,7 +383,7 @@ export default function SolubilidadCondicional() {
           yTitle="log s (solubilidad molar)"
           xRange={[0, 14]}
           yRange={[yMin, yMax]}
-          exportName="quimeq-sol-px"
+          exportName="equilibria-sol-px"
         />
       ),
     }] : []),

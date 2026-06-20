@@ -7,7 +7,7 @@ import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, ResultCard, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
-import { SPECIES_COLORS } from '../lib/database';
+import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
 import { ladderFractions, ladderLogC, predominanceZones } from '../lib/ladder';
 import { solvePH } from '../lib/equilibrium';
 import { useActivityNote } from '../context/ActivityContext';
@@ -82,7 +82,7 @@ export default function AcidoBase() {
 
   const systemShape = useMemo<Partial<Shape>[]>(() => {
     if (!showSystemPH) return [];
-    return [{ type: 'line', x0: pHSystem, x1: pHSystem, y0: -14, y1: 1.02, line: { color: '#CC79A7', width: 2, dash: 'dashdot' } }];
+    return [{ type: 'line', x0: pHSystem, x1: pHSystem, y0: -14, y1: 1.02, line: { color: MARKER_COLOR, width: 2, dash: 'dashdot' } }];
   }, [showSystemPH, pHSystem]);
 
   const alphasAtPH = Number.isFinite(pHSystem)
@@ -110,8 +110,8 @@ export default function AcidoBase() {
       label: 'Distribución α',
       node: (
         <Chart data={alphaTraces} xTitle="pH" yTitle="Fracción α" xRange={[0, 14]} yRange={[0, 1.02]}
-          shapes={showSystemPH ? [{ type: 'line', x0: pHSystem, x1: pHSystem, y0: 0, y1: 1.02, line: { color: '#CC79A7', width: 2, dash: 'dashdot' } }] : []}
-          exportName="quimeq-acidobase-alfa" />
+          shapes={showSystemPH ? [{ type: 'line', x0: pHSystem, x1: pHSystem, y0: 0, y1: 1.02, line: { color: MARKER_COLOR, width: 2, dash: 'dashdot' } }] : []}
+          exportName="equilibria-acidobase-alfa" />
       ),
     },
     {
@@ -119,7 +119,7 @@ export default function AcidoBase() {
       label: 'log C',
       node: (
         <Chart data={logCTraces} xTitle="pH" yTitle="log C" xRange={[0, 14]} yRange={[-12, 0.5]}
-          shapes={systemShape} exportName="quimeq-acidobase-logc" />
+          shapes={systemShape} exportName="equilibria-acidobase-logc" />
       ),
     },
   ];

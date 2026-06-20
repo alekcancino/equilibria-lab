@@ -48,9 +48,9 @@ _All computation runs in the browser; there is no backend or user account._
 
 Un módulo unificado con cinco modos:
 
-- **Ácido-base · Acid–base** — alcalimetría / acidimetría, balance de cargas exacto.
+- **Ácido-base · Acid–base** — titulante ácido o básico, balance de cargas exacto.
 - **Complejométrica · Complexometric** — metal + EDTA o EDTA + metal, *K*′f condicional.
-- **Redox** — oxidimetría / reductimetría, balance de electrones, pe°′ condicional al pH.
+- **Redox** — oxidación o reducción del analito, balance de electrones, pe°′ condicional al pH.
 - **Precipitación · Precipitation** — argentometría Ag⁺ + X⁻, curvas pAg / pX, indicador Mohr.
 - **Potenciométrica · Potentiometric** — electrodo de vidrio, derivadas y gráfica de Gran.
 

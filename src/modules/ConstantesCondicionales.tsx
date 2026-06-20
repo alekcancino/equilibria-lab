@@ -56,11 +56,11 @@ function defaultState(): CondState {
 
 // ── Colores ──────────────────────────────────────────────────────────────────
 
-const C_PRIMARY  = '#0072B2'; // azul — metal principal
-const C_MASK     = '#D55E00'; // naranja — 2.º metal / enmascarante
-const C_ALPHA_H  = '#CC79A7'; // rosa — α_Y(H)
-const C_ALPHA_OH = '#009E73'; // verde — α_M(OH)
-const C_ALPHA_L  = '#E69F00'; // ámbar — α_M(L)
+const C_PRIMARY  = '#0072B2';
+const C_MASK     = '#D55E00';
+const C_ALPHA_H  = '#CC79A7';
+const C_ALPHA_OH = '#009E73';
+const C_ALPHA_L  = '#E69F00';
 const C_THRESH   = 'rgba(230, 126, 34, 0.85)'; // umbral
 
 // ── Componente principal ─────────────────────────────────────────────────────
@@ -259,7 +259,7 @@ export default function ConstantesCondicionales() {
           xRange={[PH_MIN, PH_MAX]}
           yRange={[yMin, yMax]}
           shapes={logKShapes}
-          exportName="quimeq-cond-logk"
+          exportName="equilibria-cond-logk"
         />
       ),
     },
@@ -272,7 +272,7 @@ export default function ConstantesCondicionales() {
           xTitle="pH"
           yTitle="log α"
           xRange={[PH_MIN, PH_MAX]}
-          exportName="quimeq-cond-alpha"
+          exportName="equilibria-cond-alpha"
         />
       ),
     },

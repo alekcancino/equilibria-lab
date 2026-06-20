@@ -54,8 +54,8 @@ export interface RedoxTitrationParams {
   /** Par del titulante */
   titrant: RedoxCouple;
   /**
-   * 'oxidante': analito inicia reducido, titulante se agrega oxidado (oxidimetría).
-   * 'reductor': analito inicia oxidado, titulante se agrega reducido (reductimetría).
+   * 'oxidante': analito inicia reducido, titulante se agrega oxidado (oxidación del analito).
+   * 'reductor': analito inicia oxidado, titulante se agrega reducido (reducción del analito).
    */
   direction?: 'oxidante' | 'reductor';
   /** pH amortiguado del medio */
@@ -83,9 +83,9 @@ export interface RedoxCurve {
 /**
  * Curva de titulación redox resuelta por BALANCE DE ELECTRONES exacto:
  * los electrones cedidos por la especie que se oxida igualan los aceptados
- * por la que se reduce. En oxidimetría:
+ * por la que se reduce. En titulación por oxidación:
  *   f(pe) = n_a·N_a·α_ox,a(pe) − n_t·N_t·α_red,t(pe) = 0
- * (en reductimetría los papeles se invierten). f es estrictamente monótona
+ * (en titulación por reducción los papeles se invierten). f es estrictamente monótona
  * en pe → bisección robusta. La estequiometría n_a ≠ n_t queda correcta
  * automáticamente (V_eq = n_a·C_a·V_a / (n_t·C_t)).
  */
@@ -134,7 +134,7 @@ export function redoxTitrationCurve(params: RedoxTitrationParams): RedoxCurve {
 
   const peEq = solvePe(cAnalyte * vAnalyte, cTitrant * vEq);
 
-  // Reacción balanceada: intercambia n_a·n_t electrones; en reductimetría
+  // Reacción balanceada: intercambia n_a·n_t electrones; en titulación por reducción
   // el oxidante es el analito, así que el signo se invierte.
   const logK = direction === 'oxidante'
     ? analyte.n * titrant.n * (pe0t - pe0a)

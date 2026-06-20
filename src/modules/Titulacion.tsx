@@ -63,7 +63,7 @@ function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
         <div key={ind.id} style={{ background: 'var(--bg-alt)', borderRadius: 8, padding: '8px 10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
             <span style={{ fontWeight: 600, fontSize: 13 }}>{ind.abbrev} — {ind.name}</span>
-            <span className={IND_BADGE_CLS[badge]} style={{ fontSize: 11 }}>{IND_BADGE_LABEL[badge]}</span>
+            <span className={IND_BADGE_CLS[badge]} style={{ fontSize: 12 }}>{IND_BADGE_LABEL[badge]}</span>
           </div>
           <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--text-muted)', marginBottom: 5 }}>
             <span>log K′(MIn) = <strong style={{ color: 'var(--text)' }}>{logKprimeMIn.toFixed(1)}</strong></span>
@@ -71,9 +71,9 @@ function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorFree, border: '1px solid #ccc' }} title="Color libre" />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>→</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>→</span>
             <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorMIn, border: '1px solid #ccc' }} title="Color M-In" />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>pH {ind.pHRange[0]}–{ind.pHRange[1]}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>pH {ind.pHRange[0]}–{ind.pHRange[1]}</span>
           </div>
         </div>
       ))}
@@ -145,7 +145,7 @@ function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
       xRange={[1, 14]}
       yRange={[yMin, yMax]}
       shapes={shapes}
-      exportName="quimeq-indicadores-edta"
+      exportName="equilibria-indicadores-edta"
     />
   );
 }
@@ -197,7 +197,7 @@ function AcidBaseTitration() {
       data.push({
         x: der.v, y: der.d.map((d) => (Math.abs(d) / maxD) * 14),
         type: 'scatter', mode: 'lines', name: '|dpH/dV| (escalada)',
-        line: { width: 2, color: '#E69F00' }, hoverinfo: 'skip',
+        line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
       });
     }
     const shapeList: Partial<Shape>[] = [];
@@ -212,14 +212,14 @@ function AcidBaseTitration() {
     curve.equivalenceVolumes.forEach((veq, k) => {
       shapeList.push({
         type: 'line', x0: veq, x1: veq, y0: 0, y1: 14,
-        line: { color: '#009E73', width: 1.5, dash: 'dash' },
+        line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
       });
       const idx = curve.volumes.findIndex((v) => v >= veq);
       const pHeq = idx > 0 ? curve.pHs[idx] : NaN;
       annList.push({
         x: veq, y: 13.5,
         text: `P.E.${curve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
-        showarrow: false, font: { color: '#009E73', size: 12 },
+        showarrow: false, font: { color: '#2C3E50', size: 12 },
       });
       info.push({
         label: `Equivalencia${curve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
@@ -239,8 +239,8 @@ function AcidBaseTitration() {
       <PanelShell title="Titulación ácido-base" onReset={reset}>
         <Segmented
           options={[
-            { value: 'base', label: 'Alcalimetría (NaOH)' },
-            { value: 'acid', label: 'Acidimetría (HCl)' },
+            { value: 'base', label: 'Titulante básico' },
+            { value: 'acid', label: 'Titulante ácido' },
           ]}
           value={titrantIsAcid ? 'acid' : 'base'}
           onChange={(v) => {
@@ -250,7 +250,7 @@ function AcidBaseTitration() {
           }}
         />
         <ModelBadge
-          model={`titulación ${titrantIsAcid ? 'acidimétrica' : 'alcalimétrica'} de ${
+          model={`titulación ácido-base (titulante ${titrantIsAcid ? 'ácido' : 'básico'}) de ${
             analyteKind === 'equilibrium'
               ? system.pKas.length > 1 ? 'sistema poliprótico' : 'sistema débil'
               : analyteKind === 'strong-base' ? 'base fuerte' : 'ácido fuerte'
@@ -297,7 +297,7 @@ function AcidBaseTitration() {
           yRange={[0, 14]}
           shapes={shapes}
           annotations={annotations}
-          exportName="quimeq-titulacion-acidobase"
+          exportName="equilibria-titulacion-acidobase"
         />
       </section>
     </>
@@ -342,13 +342,13 @@ function EdtaTitration() {
 
   const titTraces = useMemo<Data[]>(() => [{
     x: curve.volumes, y: curve.pMs, type: 'scatter', mode: 'lines', name: 'pM',
-    line: { width: 3, color: '#009E73' },
+    line: { width: 3, color: '#2C3E50' },
     hovertemplate: 'V = %{x:.2f} mL<br>pM = %{y:.2f}<extra></extra>',
   }], [curve]);
 
   const titShapes = useMemo<Partial<Shape>[]>(() => [{
     type: 'line', x0: curve.vEq, x1: curve.vEq, y0: 0, y1: Math.max(...curve.pMs) + 1,
-    line: { color: '#009E73', width: 1.5, dash: 'dash' },
+    line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
   }], [curve]);
 
   const aY = alphaY4(pH);
@@ -372,7 +372,7 @@ function EdtaTitration() {
           yTitle="pM (−log[M])"
           xRange={[0, vMax]}
           shapes={titShapes}
-          exportName="quimeq-titulacion-edta"
+          exportName="equilibria-titulacion-edta"
         />
       ),
     },
@@ -508,16 +508,16 @@ function RedoxTitration() {
       data.push({
         x: der.v, y: der.d.map((d) => Math.min(...y) + (Math.abs(d) / maxD) * span),
         type: 'scatter', mode: 'lines', name: '|dE/dV| (escalada)',
-        line: { width: 2, color: '#E69F00' }, hoverinfo: 'skip',
+        line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
       });
     }
     const shapeList: Partial<Shape>[] = [{
       type: 'line', x0: curve.vEq, x1: curve.vEq, y0: Math.min(...y), y1: Math.max(...y),
-      line: { color: '#009E73', width: 1.5, dash: 'dash' },
+      line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
     }];
     const annList: Partial<Annotations>[] = [{
       x: curve.vEq, y: Math.max(...y), text: 'P.E.', showarrow: false,
-      font: { color: '#009E73', size: 12 },
+      font: { color: '#2C3E50', size: 12 },
     }];
     return { traces: data, shapes: shapeList, annotations: annList };
   }, [curve, usePe, showDerivative]);
@@ -531,14 +531,14 @@ function RedoxTitration() {
       <PanelShell title="Titulación redox" onReset={reset}>
         <Segmented
           options={[
-            { value: 'oxidante', label: 'Oxidimetría' },
-            { value: 'reductor', label: 'Reductimetría' },
+            { value: 'oxidante', label: 'Oxidación' },
+            { value: 'reductor', label: 'Reducción' },
           ]}
           value={direction}
           onChange={(v) => setDirection(v as 'oxidante' | 'reductor')}
         />
         <ModelBadge
-          model={direction === 'oxidante' ? 'titulación por oxidimetría' : 'titulación por reductimetría'}
+          model={direction === 'oxidante' ? 'titulación por oxidación' : 'titulación por reducción'}
           additions={[pHDependent && 'potencial condicionado por pH', usePe && 'eje pe', showDerivative && 'derivada']}
         />
         <p className="hint">
@@ -584,7 +584,7 @@ function RedoxTitration() {
           xRange={[0, vMax]}
           shapes={shapes}
           annotations={annotations}
-          exportName="quimeq-titulacion-redox"
+          exportName="equilibria-titulacion-redox"
         />
       </section>
     </>
@@ -644,7 +644,7 @@ function PrecipTitration() {
     const data: Data[] = [{
       x: curve.volumes, y, type: 'scatter', mode: 'lines',
       name: showPCation ? pCatLabel : pAniLabel,
-      line: { width: 3, color: '#8E44AD' },
+      line: { width: 3, color: '#D55E00' },
       hovertemplate: `V = %{x:.2f} mL<br>p = %{y:.2f}<extra></extra>`,
     }];
     if (showDerivative) {
@@ -654,7 +654,7 @@ function PrecipTitration() {
       data.push({
         x: der.v, y: der.d.map((d) => (Math.abs(d) / maxD) * span * 0.6),
         type: 'scatter', mode: 'lines', name: '|dp/dV| (escalada)',
-        line: { width: 2, color: '#E69F00' }, hoverinfo: 'skip',
+        line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
       });
     }
     return data;
@@ -663,12 +663,12 @@ function PrecipTitration() {
   const shapes = useMemo<Partial<Shape>[]>(() => {
     const list: Partial<Shape>[] = [{
       type: 'line', x0: curve.vEq, x1: curve.vEq, y0: 0, y1: yMax,
-      line: { color: '#009E73', width: 1.5, dash: 'dash' },
+      line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
     }];
     if (showMohr && showPCation && isAgSystem) {
       list.push({
         type: 'line', x0: 0, x1: vMax, y0: mohrPAg, y1: mohrPAg,
-        line: { color: '#E69F00', width: 1.5, dash: 'dot' },
+        line: { color: '#7F8C8D', width: 1.5, dash: 'dot' },
       });
     }
     return list;
@@ -677,13 +677,13 @@ function PrecipTitration() {
   const annotations = useMemo<Partial<Annotations>[]>(() => {
     const list: Partial<Annotations>[] = [{
       x: curve.vEq, y: yMax, text: 'P.E.', showarrow: false,
-      font: { color: '#009E73', size: 12 },
+      font: { color: '#2C3E50', size: 12 },
     }];
     if (showMohr && showPCation && isAgSystem) {
       list.push({
         x: vMax * 0.05, y: mohrPAg + 0.3,
         text: `Mohr: ${pCatLabel} = ${mohrPAg.toFixed(1)}`,
-        showarrow: false, font: { color: '#E69F00', size: 11 },
+        showarrow: false, font: { color: '#7F8C8D', size: 11 },
         xanchor: 'left',
       });
     }
@@ -788,7 +788,7 @@ function PrecipTitration() {
           yRange={[0, yMax]}
           shapes={shapes}
           annotations={annotations}
-          exportName="quimeq-titulacion-precip"
+          exportName="equilibria-titulacion-precip"
         />
       </section>
     </>
@@ -889,11 +889,11 @@ function PotenciometricaTitration() {
     }];
     if (showDeriv1) t.push({
       x: d1.v, y: d1Scaled, type: 'scatter', mode: 'lines',
-      name: '|dE/dV| (escalada)', line: { width: 2, color: '#E69F00' }, hoverinfo: 'skip',
+      name: '|dE/dV| (escalada)', line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
     });
     if (showDeriv2) t.push({
       x: d2.v, y: d2Scaled, type: 'scatter', mode: 'lines',
-      name: 'd²E/dV² (escalada)', line: { width: 2, color: '#D55E00', dash: 'dash' }, hoverinfo: 'skip',
+      name: 'd²E/dV² (escalada)', line: { width: 2, color: '#CC79A7', dash: 'dash' }, hoverinfo: 'skip',
     });
     return t;
   }, [curve.volumes, Es, showDeriv1, showDeriv2, d1, d1Scaled, d2, d2Scaled]);
@@ -901,23 +901,23 @@ function PotenciometricaTitration() {
   const efVShapes = useMemo<Partial<Shape>[]>(() => {
     const s: Partial<Shape>[] = curve.equivalenceVolumes.map((veq) => ({
       type: 'line', x0: veq, x1: veq, y0: eMin - 50, y1: eMax + 50,
-      line: { color: '#009E73', width: 1.5, dash: 'dash' },
+      line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
     }));
     if (showDeriv2 && zeroCrossing !== null) s.push({
       type: 'line', x0: zeroCrossing, x1: zeroCrossing, y0: eMin - 50, y1: eMax + 50,
-      line: { color: '#D55E00', width: 1, dash: 'dot' },
+      line: { color: '#CC79A7', width: 1, dash: 'dot' },
     });
     return s;
   }, [curve.equivalenceVolumes, showDeriv2, zeroCrossing, eMin, eMax]);
 
   const efVAnnotations = useMemo<Partial<Annotations>[]>(() => {
     const a: Partial<Annotations>[] = curve.equivalenceVolumes.map((veq) => ({
-      x: veq, y: eMax, text: 'P.E.', showarrow: false, font: { color: '#009E73', size: 12 },
+      x: veq, y: eMax, text: 'P.E.', showarrow: false, font: { color: '#2C3E50', size: 12 },
     }));
     if (showDeriv2 && zeroCrossing !== null) a.push({
       x: zeroCrossing, y: eMin + eSpan * 0.1,
       text: `d²E/dV²=0<br>${zeroCrossing.toFixed(2)} mL`,
-      showarrow: false, font: { color: '#D55E00', size: 10 },
+      showarrow: false, font: { color: '#CC79A7', size: 10 },
     });
     return a;
   }, [curve.equivalenceVolumes, showDeriv2, zeroCrossing, eMax, eMin, eSpan]);
@@ -945,7 +945,7 @@ function PotenciometricaTitration() {
     () => curve.equivalenceVolumes.map((veq) => ({
       type: 'line', x0: veq, x1: veq, y0: 0, y1: 1,
       yref: 'paper', xref: 'x',
-      line: { color: '#009E73', width: 1.5, dash: 'dash' },
+      line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
     })),
     [curve.equivalenceVolumes],
   );
@@ -963,7 +963,7 @@ function PotenciometricaTitration() {
           yRange={[eMin - 20, eMax + 20]}
           shapes={efVShapes}
           annotations={efVAnnotations}
-          exportName="quimeq-potenciometrica-efV"
+          exportName="equilibria-potenciometrica-efV"
         />
       ),
     },
@@ -979,7 +979,7 @@ function PotenciometricaTitration() {
               yTitle="Función de Gran F"
               xRange={[0, vMax]}
               shapes={granShapes}
-              exportName="quimeq-gran"
+              exportName="equilibria-gran"
             />
           </div>
           <p className="hint" style={{ margin: '4px 8px 2px' }}>
@@ -998,8 +998,8 @@ function PotenciometricaTitration() {
       <PanelShell title="Titulación potenciométrica" onReset={reset}>
         <Segmented
           options={[
-            { value: 'base', label: 'Alcalimetría (NaOH)' },
-            { value: 'acid', label: 'Acidimetría (HCl)' },
+            { value: 'base', label: 'Titulante básico' },
+            { value: 'acid', label: 'Titulante ácido' },
           ]}
           value={titrantIsAcid ? 'acid' : 'base'}
           onChange={(v) => {
@@ -1009,7 +1009,7 @@ function PotenciometricaTitration() {
           }}
         />
         <ModelBadge
-          model={`titulación potenciométrica de ${
+          model={`titulación potenciométrica (titulante ${titrantIsAcid ? 'ácido' : 'básico'}) de ${
             analyteKind === 'equilibrium'
               ? system.pKas.length > 1 ? 'sistema poliprótico' : 'sistema débil'
               : analyteKind === 'strong-base' ? 'base fuerte' : 'ácido fuerte'

@@ -1,17 +1,18 @@
-/* Equilibria Lab design tokens — see design.md */
+/* Equilibria Lab — runtime tokens (see design.md) */
 
 :root {
-  /* Color */
-  --bg: #FAFAF8;
+  /* Slate + indigo palette */
+  --bg: #F8FAFC;
   --surface: #FFFFFF;
-  --surface-alt: #F5F3EF;
-  --border: #E4DFD6;
-  --text: #1F2933;
-  --text-muted: #5C6770;
-  --accent: #2563EB;
-  --accent-violet: #7C3AED;
-  --accent-soft: #EFF6FF;
-  --accent-teal: #14B8A6;
+  --surface-alt: #F1F5F9;
+  --border: #E2E8F0;
+  --text: #0F172A;
+  --text-muted: #64748B;
+  --accent: #6366F1;
+  --accent-hover: #4F46E5;
+  --accent-soft: #EEF2FF;
+  --accent-violet: #6366F1;
+  --accent-teal: #6366F1;
   --ok: #059669;
   --warn: #D97706;
 
@@ -19,15 +20,24 @@
   --panel-bg: var(--surface);
   --bg-alt: var(--surface-alt);
 
-  /* Typography */
-  --font-ui: 'Source Sans 3', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  /* Typography — Inter */
+  --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-code: ui-monospace, 'Cascadia Code', Consolas, monospace;
   --text-xs: 12px;
-  --text-sm: 13px;
+  --text-sm: 14px;
   --text-base: 14px;
   --text-md: 15px;
-  --text-lg: 17px;
-  --text-xl: 18px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+
+  /* Elevation & radius */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.15);
 
   /* Spacing */
   --space-1: 4px;
@@ -47,10 +57,10 @@
   --duration-fast: 150ms;
   --duration-normal: 200ms;
 
-  /* Plotly chrome (read in JS) */
+  /* Plotly chrome */
   --plot-bg: #ffffff;
-  --plot-grid: #E8E4DC;
-  --plot-axis: #C9C2B8;
+  --plot-grid: #E2E8F0;
+  --plot-axis: #CBD5E1;
   --plot-font-size: 13px;
   --plot-font-size-mobile: 12px;
 }

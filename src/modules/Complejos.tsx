@@ -174,7 +174,7 @@ export default function Complejos() {
           xRange={[0, pLmax]}
           yRange={[0, 1.02]}
           shapes={equilShape}
-          exportName="quimeq-complejos-equilibrio"
+          exportName="equilibria-complejos-equilibrio"
         />
       ),
     },
@@ -203,7 +203,7 @@ export default function Complejos() {
           xRange={[0, pLmax]}
           yRange={[0, 1.02]}
           shapes={equilShape}
-          exportName="quimeq-complejos-alfa"
+          exportName="equilibria-complejos-alfa"
         />
       ),
     },
@@ -218,7 +218,7 @@ export default function Complejos() {
           xRange={[0, pLmax]}
           yRange={[0, n + 0.2]}
           shapes={showEquil && pLEq < pLmax + 1 ? [{ type: 'line', x0: pLEqClipped, x1: pLEqClipped, y0: 0, y1: n + 0.2, line: { color: '#CC79A7', width: 2, dash: 'dashdot' } }] : []}
-          exportName="quimeq-complejos-bjerrum"
+          exportName="equilibria-complejos-bjerrum"
         />
       ),
     },
@@ -233,7 +233,7 @@ export default function Complejos() {
           xRange={[0, pLmax]}
           yRange={[-12, 0.5]}
           shapes={equilShapeLogC}
-          exportName="quimeq-complejos-logc"
+          exportName="equilibria-complejos-logc"
         />
       ),
     },

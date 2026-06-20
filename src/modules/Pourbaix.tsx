@@ -144,8 +144,8 @@ export default function Pourbaix() {
       const w = waterLines();
       const phs = [0, 14];
       data.push(
-        { x: phs, y: phs.map((p) => w.o2.A - w.o2.B * p), type: 'scatter', mode: 'lines', name: 'O₂/H₂O', line: { width: 1.5, color: '#999999', dash: 'dash' }, hovertemplate: 'O₂ + 4H⁺ + 4e⁻ → 2H₂O<extra>límite O₂</extra>' },
-        { x: phs, y: phs.map((p) => w.h2.A - w.h2.B * p), type: 'scatter', mode: 'lines', name: 'H₂O/H₂', line: { width: 1.5, color: '#999999', dash: 'dot' },  hovertemplate: '2H⁺ + 2e⁻ → H₂<extra>límite H₂</extra>' },
+        { x: phs, y: phs.map((p) => w.o2.A - w.o2.B * p), type: 'scatter', mode: 'lines', name: 'O₂/H₂O', line: { width: 1.5, color: '#7F8C8D', dash: 'dash' }, hovertemplate: 'O₂ + 4H⁺ + 4e⁻ → 2H₂O<extra>límite O₂</extra>' },
+        { x: phs, y: phs.map((p) => w.h2.A - w.h2.B * p), type: 'scatter', mode: 'lines', name: 'H₂O/H₂', line: { width: 1.5, color: '#7F8C8D', dash: 'dot' },  hovertemplate: '2H⁺ + 2e⁻ → H₂<extra>límite H₂</extra>' },
       );
     }
 
