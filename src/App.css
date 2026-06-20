@@ -41,7 +41,8 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 24px;
-  padding: 0 20px;
+  padding: 0 max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left));
+  padding-top: env(safe-area-inset-top);
   background: var(--panel-bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -49,23 +50,35 @@ html, body, #root {
 
 .brand {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 12px 0;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
 }
 
-.brand-logo { font-size: 20px; }
+.brand-logo {
+  flex-shrink: 0;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
 
 .brand h1 {
   margin: 0;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.35px;
+  line-height: 1.15;
 }
 
 .brand-sub {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-muted);
+  letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 /* ---------- Navegación de secciones (nivel 1) ---------- */
@@ -209,10 +222,62 @@ html, body, #root {
   flex: 1;
   padding: 12px;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Contenedor de gráfica Plotly ---------- */
+.chart-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 280px;
+}
+
+.chart-plot {
+  flex: 1;
+  min-height: 240px;
+}
+
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-top: 8px;
+  flex-wrap: wrap;
+}
+
+.chart-export-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-bg);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chart-export-btn:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.chart-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.diagram-tab-body .chart-shell {
+  min-height: 260px;
 }
 
 /* ---------- Controles ---------- */
-.control { margin-bottom: 14px; }
+.control { margin-bottom: 14px; padding: 2px 0; }
 
 .control-header {
   display: flex;
@@ -642,7 +707,7 @@ select {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 6px 20px;
+  padding: 6px max(20px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
   background: var(--panel-bg);
   border-top: 1px solid var(--border);
   font-size: 11.5px;
@@ -868,13 +933,58 @@ select {
 
 /* ---------- Responsive ---------- */
 @media (max-width: 800px) {
-  .module { flex-direction: column; }
+  .app {
+    height: 100dvh;
+    min-height: 100vh;
+  }
+
+  .content {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .module {
+    flex-direction: column;
+    height: auto;
+    min-height: min-content;
+  }
+
   .panel {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid var(--border);
-    max-height: 58vh;
+    max-height: 45vh;
+    flex-shrink: 0;
   }
+
+  .plot-area {
+    min-height: max(48vh, 320px);
+    flex: 1;
+    padding: 10px;
+  }
+
+  .chart-shell {
+    min-height: max(42vh, 300px);
+  }
+
+  .chart-plot {
+    min-height: max(38vh, 260px);
+  }
+
+  .chart-hint {
+    display: none;
+  }
+
+  .module-with-tabs {
+    min-height: max(55vh, 360px);
+  }
+
+  .duzp svg {
+    max-height: none;
+    min-height: 160px;
+  }
+
   .topbar { flex-wrap: wrap; gap: 0; }
   .brand-sub { display: none; }
   .sections {
@@ -884,8 +994,13 @@ select {
     scrollbar-width: none;
   }
   .sections::-webkit-scrollbar { display: none; }
-  /* Buttons don't grow — they scroll horizontally at natural width */
-  .section-btn { flex: 0 0 auto; padding: 10px 10px; font-size: 13px; white-space: nowrap; }
+  .section-btn {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+    min-height: 44px;
+  }
   /* Subnav scroll with right-fade indicator */
   .subnav {
     position: relative;
@@ -907,7 +1022,7 @@ select {
     scrollbar-width: none;
   }
   .subnav-tabs::-webkit-scrollbar { display: none; }
-  .subnav-tab { flex: 0 0 auto; }
+  .subnav-tab { flex: 0 0 auto; min-height: 44px; }
   .tabs { margin-left: 0; overflow-x: auto; width: 100%; }
 
   .chart-tabs {
@@ -918,7 +1033,7 @@ select {
     padding-right: 12px;
   }
   .chart-tabs::-webkit-scrollbar { display: none; }
-  .chart-tab { flex: 0 0 auto; padding: 8px 12px; font-size: 12px; }
+  .chart-tab { flex: 0 0 auto; padding: 8px 12px; font-size: 12px; min-height: 44px; }
 
   .tit-mode-summary { display: block; }
   .tit-mode-collapse:not([open]) .chart-tabs { display: none; }
@@ -929,7 +1044,17 @@ select {
     scrollbar-width: none;
   }
   .diagram-tab-bar::-webkit-scrollbar { display: none; }
-  .diagram-tab { flex: 0 0 auto; padding: 7px 12px; font-size: 12px; }
+  .diagram-tab { flex: 0 0 auto; padding: 7px 12px; font-size: 12px; min-height: 44px; }
+
+  .assumptions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .footer-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
 
   .db-grid { grid-template-columns: 1fr; }
 }

@@ -1,90 +1,115 @@
-# QuimEq — Laboratorio de Equilibrio Químico
+# Equilibria Lab
 
-App web interactiva tipo GeoGebra para química analítica: simula y **predice**
-equilibrios ácido-base, de complejación, redox, solubilidad y titulaciones, con
-gráficas que responden en tiempo real a los sliders. Pensada como herramienta de
-aprendizaje y de trabajo profesional para equilibrios complejos, siguiendo el
-modelo pedagógico UNAM/Baeza (Química Analítica I, II y III).
+Simulador web interactivo de equilibrio químico: gráficas en tiempo real, controles deslizantes y predicción numérica de sistemas ácido-base, complejación, redox, solubilidad, titulaciones y equilibrios acoplados.
 
-## Principio de diseño
+**English:** Interactive web simulator for chemical equilibrium — live plots, sliders, and numerical prediction for acid–base, complexation, redox, solubility, titrations, and coupled equilibria.
 
-**El usuario siempre define sus propios valores; la base de datos es un atajo,
-no el punto de partida.** Cada módulo tiene un editor primario (nombre libre,
-constantes editables con ±, campos numéricos) y una BD colapsable que
-autocompleta. Cada módulo trae un botón **↺ Restablecer** a los valores por
-defecto.
+---
 
-**La interfaz parte del modelo físico mínimo y aumenta su complejidad con las
-variables que define el usuario.** Agregar una constante, especie, reacción
-parásita, componente o comparación activa el modelo correspondiente; la
-interfaz indica el modelo detectado sin obligar al usuario a escoger primero una
-categoría teórica. Por ejemplo, una titulación sin pKa se interpreta como
-ácido/base fuerte y al agregar pKa pasa automáticamente a débil o poliprótica.
+## Cómo usarlo · How to use
 
-## Secciones y módulos
+| | Español | English |
+|---|---|---|
+| **Web** | Abre la app en el navegador (sin instalar nada). Tras el despliegue en Vercel, la URL aparecerá en la descripción del repositorio en GitHub. | Open the app in your browser — no install required. After Vercel deploy, the URL will be listed in the GitHub repo description. |
+| **Local** | Clona el repo, instala dependencias y arranca el servidor de desarrollo (ver abajo). | Clone the repo, install dependencies, and run the dev server (see below). |
 
-### Equilibrios simples (QA I)
-| Módulo | Qué hace |
+Todo el cálculo ocurre en el navegador; no hay backend ni cuenta de usuario.
+
+_All computation runs in the browser; there is no backend or user account._
+
+---
+
+## Qué cubre · Topics
+
+### Equilibrios fundamentales · Core equilibria
+
+| Módulo · Module | Descripción · Description |
 |---|---|
-| **Ácido-base** | DUZP (zonas de predominio) + distribución α + diagrama logC–pH (Sillén) de cualquier sistema HnA/BHn⁺, con pH de la disolución pura |
-| **Complejos** | Complejación multi-ligante: DUZP + distribución α + función de Bjerrum n̄ + logC, sobre el eje pL; 7 sistemas de ejemplo (M/NH₃, M/en) |
-| **Redox** | Distribución α vs pe + escala de predicción de reacciones (Baeza), con pares editables y log K de la reacción espontánea |
-| **Solubilidad** | log s vs pH con Kps condicional (aniones básicos editables) y efecto del ion común |
-| **Actividad / Debye-Hückel** | Fuerza iónica, γ vs I (Debye-Hückel extendida); nota global sobre limitación de motores |
+| **Ácido-base · Acid–base** | DUZP (zonas de predominio), fracciones α, diagrama log *C*–pH (Sillén) y pH de la disolución pura para sistemas H*n*A / BH*n*⁺ editables. |
+| **Complejos · Complexation** | Multi-ligando: DUZP, α, función de Bjerrum *n̄*, log *C* vs pL; sistemas de ejemplo incluidos. |
+| **Redox** | Distribución α vs pe, escala de predicción de reacciones, pares redox editables y log *K* de la reacción espontánea. |
+| **Solubilidad · Solubility** | log *s* vs pH con *K*ps condicional, aniones básicos editables e ion común. |
+| **Actividad · Activity** | Fuerza iónica, γ vs *I* (Debye–Hückel extendido) y nota sobre limitaciones del modelo. |
 
-### Equilibrios múltiples (QA II / III)
-| Módulo | Qué hace |
+### Equilibrios acoplados · Coupled equilibria
+
+| Módulo · Module | Descripción · Description |
 |---|---|
-| **Pourbaix** | Sistema genérico Mⁿ⁺/M/M(OH)ₙ y diagramas E–pH de Fe, Cu, Mn, Zn y Cr derivados por ley de Hess |
-| **Mezclas ácido-base** | Hasta 4 sistemas ácido-base coexistiendo (incl. sales como NaHCO₃ o NH₄Cl): pH global, especies dominantes y titulación de la mezcla |
-| **Constantes condicionales** | log K′=f(pH), coeficientes α, reacciones parásitas, enmascaramiento y factibilidad |
-| **Precipitación selectiva** | log s=f(pH), log s=f(pX), pureza, redisolución y ventanas de separación entre metales |
-| **Potencial condicional** | E°′=f(pH), dismutación y E°′=f(pX) por complejación |
-| **Extracción líquido-líquido** | Reparto, quelatos, extracciones sucesivas, polimerización y preconcentración |
-| **Intercambio iónico** | Ksel, equilibrio en lote, isoterma y breakthrough en columna (modelo ideal) |
-| **Solubilidad y pH** | Solubilidad condicional de sales y comparación entre sistemas |
+| **Pourbaix** | Sistema genérico Mⁿ⁺/M/M(OH)*n* y diagramas *E*–pH de Fe, Cu, Mn, Zn y Cr. |
+| **Mezclas ácido-base · Acid–base mixtures** | Hasta cuatro sistemas coexistiendo (p. ej. NaHCO₃, NH₄Cl): pH global, especies dominantes y titulación de la mezcla. |
+| **Constantes condicionales · Conditional constants** | log *K*′ = *f*(pH), coeficientes α, reacciones parásitas, enmascaramiento y factibilidad. |
+| **Precipitación selectiva · Selective precipitation** | log *s* = *f*(pH), log *s* = *f*(pX), pureza, redisolución y ventanas de separación entre metales. |
+| **Potencial condicional · Conditional potential** | *E*°′ = *f*(pH), dismutación y *E*°′ = *f*(pX) por complejación. |
+| **Extracción líquido-líquido · Liquid–liquid extraction** | Reparto, quelatos, extracciones sucesivas, polimerización y preconcentración. |
+| **Intercambio iónico · Ion exchange** | *K*sel, equilibrio en lote, isoterma y breakthrough en columna (modelo ideal). |
+| **Solubilidad y pH · Solubility vs pH** | Solubilidad condicional de sales y comparación entre sistemas. |
 
-### Titulaciones (QA I / II)
-Cinco tipos en un módulo unificado:
-- **Ácido-base** (alcalimetría/acidimetría, balance de cargas exacto)
-- **Complejométrica** (metal+EDTA o EDTA+metal, K'f condicional)
-- **Redox** (oxidimetría/reductimetría, balance de electrones, pe°′ condicional al pH)
-- **Precipitación** (argentometría Ag⁺+X⁻, curva pAg/pX, indicador Mohr)
-- **Potenciométrica** (electrodo de vidrio, derivadas y gráfica de Gran)
+### Titulaciones · Titrations
 
-## Motor de cálculo
+Un módulo unificado con cinco modos:
 
-Sin aproximaciones: el pH se resuelve con el **balance de cargas exacto** por
-bisección (`src/lib/equilibrium.ts`), con fracciones α en espacio logarítmico
-para estabilidad numérica. Funciona igual para HCl 10⁻⁸ M que para ácido cítrico
-0.5 M.
+- **Ácido-base · Acid–base** — alcalimetría / acidimetría, balance de cargas exacto.
+- **Complejométrica · Complexometric** — metal + EDTA o EDTA + metal, *K*′f condicional.
+- **Redox** — oxidimetría / reductimetría, balance de electrones, pe°′ condicional al pH.
+- **Precipitación · Precipitation** — argentometría Ag⁺ + X⁻, curvas pAg / pX, indicador Mohr.
+- **Potenciométrica · Potentiometric** — electrodo de vidrio, derivadas y gráfica de Gran.
 
-El módulo redox usa la convención **pe = E/0.05916** (Sillén/Baeza, *Expresión
-Gráfica de las Reacciones Químicas*, UNAM 2010) y resuelve las curvas por balance
-de electrones. La complejación usa constantes globales β con la función de Bjerrum
-y solución del pL libre por balance de masa del ligando.
+---
 
-Constantes a 25 °C tomadas de Harris, *Quantitative Chemical Analysis*; Skoog;
-Bard, Parsons & Jordan (1985); Stumm & Morgan (1996). Datos Pourbaix y pares
-redox del dataset auditado del proyecto EquilibriaLab.
+## Principios de diseño · Design principles
 
-## Documentación
+**El usuario define sus propios valores.** Cada módulo ofrece un editor principal (nombre libre, constantes con ±, campos numéricos) y una base de datos colapsable como atajo. Botón **↺ Restablecer** en cada módulo.
 
-- [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) — stack, motores de cálculo, componentes, validación matemática
-- [`docs/COBERTURA-TEMARIO.md`](docs/COBERTURA-TEMARIO.md) — mapa de cobertura contra los temarios UNAM QA I/II/III
-- [`docs/AUDITORIA-ACADEMICA-UX-2026-06-13.md`](docs/AUDITORIA-ACADEMICA-UX-2026-06-13.md) — auditoría académica, bibliográfica, técnica y de interfaz
-- [`docs/ROADMAP-EQUILIBRIOS-MULTIPLES.md`](docs/ROADMAP-EQUILIBRIOS-MULTIPLES.md) — propuesta de módulos para predicción de equilibrios complejos
+**The user always sets their own values.** Each module has a primary editor (free names, ± on constants, numeric fields) and a collapsible database as a shortcut. **↺ Reset** on every module.
 
-## Desarrollo
+**La interfaz crece con la complejidad del sistema.** Al añadir pKa, ligandos, reacciones parásitas o comparaciones, el modelo correspondiente se activa automáticamente — sin elegir primero una categoría teórica.
+
+**The UI grows with system complexity.** Adding pKa values, ligands, side reactions, or comparisons activates the matching model automatically — no need to pick a theory category first.
+
+---
+
+## Motor de cálculo · Calculation engine
+
+- pH por **balance de cargas exacto** (bisección), con α en espacio logarítmico para estabilidad numérica.
+- Redox con **pe = *E* / 0,05916 V** y balance de electrones.
+- Complejación con constantes globales β, función de Bjerrum y pL libre por balance de masa del ligando.
+- Supuestos por defecto: *T* = 25 °C, actividades ≈ concentraciones, *K*w = 10⁻¹⁴.
+- Constantes de Harris, Skoog, Bard (1985) y Stumm & Morgan (1996); datos Pourbaix y redox auditados del proyecto.
+
+---
+
+## Desarrollo local · Local development
+
+Requisitos: **Node.js 20+** y npm.
 
 ```bash
+git clone https://github.com/alekcancino/quimeq.git
+cd quimeq
 npm install
 npm run dev      # http://localhost:5173
-npm run build    # genera dist/ listo para servir estático
-npm run test     # pruebas unitarias de motores
-npm run check    # lint + test + build
-npx tsc --noEmit # typecheck
 ```
 
-Stack: Vite + React + TypeScript + Plotly (basic dist). Todo corre en el
-cliente; no hay backend.
+Otros comandos · Other scripts:
+
+```bash
+npm run build    # genera dist/ · static build in dist/
+npm run test     # pruebas unitarias · unit tests
+npm run check    # lint + test + build
+```
+
+Stack: **Vite + React + TypeScript + Plotly** (basic dist). Build estático compatible con Vercel, GitHub Pages u otro hosting estático.
+
+---
+
+## Documentación adicional · Further docs
+
+| Archivo · File | Contenido · Contents |
+|---|---|
+| [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | Stack, motores, componentes y validación numérica. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Historial de versiones. |
+
+---
+
+## Licencia · License
+
+Consulta el repositorio para términos de uso. / See the repository for license terms.

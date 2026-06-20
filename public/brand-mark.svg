@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <defs>
+    <linearGradient id="eq-top" x1="8" y1="13" x2="33" y2="13" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="eq-bot" x1="32" y1="27" x2="7" y2="27" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14B8A6"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <path
+    d="M 8 15 Q 20 9.5 32 13 M 28 10 L 33.5 13 L 28 16"
+    stroke="url(#eq-top)"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M 32 25 Q 20 30.5 8 27 M 12 24 L 6.5 27 L 12 30"
+    stroke="url(#eq-bot)"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

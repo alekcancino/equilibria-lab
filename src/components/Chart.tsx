@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useCallback, useRef } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 
 const PlotChart = lazy(() => import('./PlotChart'));
@@ -12,15 +12,45 @@ export interface ChartProps {
   shapes?: Partial<Shape>[];
   annotations?: Partial<Annotations>[];
   showLegend?: boolean;
-  /** Nombre de archivo al exportar PNG (botón de cámara del modebar) */
+  /** Nombre de archivo al exportar PNG */
   exportName?: string;
 }
 
-/** Gráfica interactiva con estilo unificado (zoom, pan y hover tipo GeoGebra). */
+/** Gráfica interactiva: autoescala inicial, zoom por gestos, sin modebar Plotly. */
 export default function Chart(props: ChartProps) {
+  const { exportName = 'equilibria-lab' } = props;
+  const graphDivRef = useRef<HTMLElement | null>(null);
+
+  const onGraphDiv = useCallback((div: HTMLElement) => {
+    graphDivRef.current = div;
+  }, []);
+
+  const exportPng = useCallback(async () => {
+    const el = graphDivRef.current;
+    if (!el) return;
+    const Plotly = await import('plotly.js-basic-dist-min');
+    const rect = el.getBoundingClientRect();
+    await Plotly.default.downloadImage(el, {
+      format: 'png',
+      filename: exportName,
+      width: Math.round(rect.width * 2),
+      height: Math.round(rect.height * 2),
+    });
+  }, [exportName]);
+
   return (
-    <Suspense fallback={<div className="chart-loading">Cargando gráfica…</div>}>
-      <PlotChart {...props} />
-    </Suspense>
+    <div className="chart-shell">
+      <div className="chart-plot">
+        <Suspense fallback={<div className="chart-loading">Cargando gráfica…</div>}>
+          <PlotChart {...props} onGraphDiv={onGraphDiv} />
+        </Suspense>
+      </div>
+      <div className="chart-toolbar">
+        <button type="button" className="chart-export-btn" onClick={exportPng}>
+          Exportar PNG
+        </button>
+        <span className="chart-hint">Pinch o scroll para zoom · doble toque para restablecer</span>
+      </div>
+    </div>
   );
 }

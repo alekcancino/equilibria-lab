@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, type ComponentType } from 'react';
 import { version } from '../package.json';
+import BrandLogo from './components/BrandLogo';
 import { useActivityNote } from './context/ActivityContext';
 import './App.css';
 
@@ -70,9 +71,11 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-logo">⚖</span>
-          <h1>QuimEq</h1>
-          <span className="brand-sub">Laboratorio de Equilibrio Químico</span>
+          <BrandLogo size={34} className="brand-logo" />
+          <div className="brand-text">
+            <h1>Equilibria Lab</h1>
+            <span className="brand-sub">Simulador de equilibrio químico</span>
+          </div>
         </div>
         <nav className="sections" role="tablist" aria-label="Secciones del curso">
           {SECTIONS.map((s) => {
@@ -125,7 +128,7 @@ export default function App() {
         <span>
           Supuestos: T = 25 °C · actividades ≈ concentraciones · Kw = 10⁻¹⁴ ·
           constantes de Harris, Skoog, Bard 1985 y Stumm &amp; Morgan 1996 ·
-          exporta cualquier gráfica a PNG con el botón 📷 del menú de la gráfica
+          exporta cualquier gráfica con el botón «Exportar PNG» bajo la gráfica
         </span>
         <span className="footer-meta">
           <label className="footer-toggle">
