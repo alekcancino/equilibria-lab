@@ -10,7 +10,7 @@ Simulador web interactivo de equilibrio químico: gráficas en tiempo real, cont
 
 | | Español | English |
 |---|---|---|
-| **Web** | Abre la app en el navegador (sin instalar nada). Tras el despliegue en Vercel, la URL aparecerá en la descripción del repositorio en GitHub. | Open the app in your browser — no install required. After Vercel deploy, the URL will be listed in the GitHub repo description. |
+| **Web** | Abre **[quimeq.vercel.app](https://quimeq.vercel.app)** en el navegador (sin instalar nada). | Open **[quimeq.vercel.app](https://quimeq.vercel.app)** in your browser — no install required. |
 | **Local** | Clona el repo, instala dependencias y arranca el servidor de desarrollo (ver abajo). | Clone the repo, install dependencies, and run the dev server (see below). |
 
 Todo el cálculo ocurre en el navegador; no hay backend ni cuenta de usuario.
