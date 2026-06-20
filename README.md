@@ -105,6 +105,7 @@ Stack: **Vite + React + TypeScript + Plotly** (basic dist). Build estático comp
 
 | Archivo · File | Contenido · Contents |
 |---|---|
+| [`design.md`](design.md) | Sistema de diseño visual e interacción (Distill + GeoGebra). |
 | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | Stack, motores, componentes y validación numérica. |
 | [`CHANGELOG.md`](CHANGELOG.md) | Historial de versiones. |
 

@@ -17,6 +17,7 @@
 import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
@@ -461,12 +462,7 @@ export default function ExtraccionLiquido() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Extracción líquido-líquido</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
-
+      <PanelShell title="Extracción líquido-líquido" onReset={reset}>
         <h3>Analito 1</h3>
         <AnalyteEditor
           a={st.a1}
@@ -540,7 +536,7 @@ export default function ExtraccionLiquido() {
             (teorema de Craig).
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="logd" />

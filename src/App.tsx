@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, type ComponentType } from 'react';
 import { version } from '../package.json';
 import BrandLogo from './components/BrandLogo';
+import MobileNav from './components/MobileNav';
 import { useActivityNote } from './context/ActivityContext';
 import './App.css';
 
@@ -67,17 +68,30 @@ export default function App() {
   const ActiveModule = tab.component;
   const showSubTabs = section.tabs.length > 1;
 
+  const setTabId = (id: string) => {
+    setTabBySection({ ...tabBySection, [sectionId]: id });
+  };
+
   return (
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <BrandLogo size={34} className="brand-logo" />
+          <BrandLogo size={32} className="brand-logo" />
           <div className="brand-text">
             <h1>Equilibria Lab</h1>
             <span className="brand-sub">Simulador de equilibrio químico</span>
           </div>
         </div>
-        <nav className="sections" role="tablist" aria-label="Secciones del curso">
+        <MobileNav
+          sections={SECTIONS.map(({ id, label }) => ({ id, label }))}
+          sectionId={sectionId}
+          onSectionChange={setSectionId}
+          tabs={section.tabs.map(({ id, label }) => ({ id, label }))}
+          tabId={tabId}
+          onTabChange={setTabId}
+          showTabs={showSubTabs}
+        />
+        <nav className="sections desktop-only" role="tablist" aria-label="Secciones">
           {SECTIONS.map((s) => {
             const selected = sectionId === s.id;
             return (
@@ -97,7 +111,7 @@ export default function App() {
       </header>
 
       {showSubTabs && (
-        <div className="subnav">
+        <div className="subnav desktop-only">
           <div className="subnav-tabs" role="tablist" aria-label={`Módulos de ${section.label}`}>
             {section.tabs.map((t) => {
               const selected = tabId === t.id;
@@ -108,7 +122,7 @@ export default function App() {
                   type="button"
                   aria-selected={selected}
                   className={selected ? 'subnav-tab active' : 'subnav-tab'}
-                  onClick={() => setTabBySection({ ...tabBySection, [sectionId]: t.id })}
+                  onClick={() => setTabId(t.id)}
                 >
                   {t.label}
                 </button>
@@ -125,11 +139,14 @@ export default function App() {
       </main>
 
       <footer className="assumptions">
-        <span>
-          Supuestos: T = 25 °C · actividades ≈ concentraciones · Kw = 10⁻¹⁴ ·
-          constantes de Harris, Skoog, Bard 1985 y Stumm &amp; Morgan 1996 ·
-          exporta cualquier gráfica con el botón «Exportar PNG» bajo la gráfica
-        </span>
+        <details className="assumptions-details">
+          <summary>Supuestos y opciones</summary>
+          <p className="assumptions-text">
+            T = 25 °C · actividades ≈ concentraciones · K<sub>w</sub> = 10⁻¹⁴ ·
+            constantes de Harris, Skoog, Bard 1985 y Stumm &amp; Morgan 1996 ·
+            exporta gráficas con el botón flotante de la esquina inferior derecha
+          </p>
+        </details>
         <span className="footer-meta">
           <label className="footer-toggle">
             <input
@@ -137,7 +154,7 @@ export default function App() {
               checked={showActivityNote}
               onChange={(e) => setShowActivityNote(e.target.checked)}
             />
-            Mostrar corrección γ (informativo)
+            Mostrar corrección γ
           </label>
           <span className="footer-version">v{version}</span>
         </span>

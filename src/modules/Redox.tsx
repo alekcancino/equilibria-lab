@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import DUZP from '../components/DUZP';
 import { InfoBox, ModelBadge, ResultCard, Slider } from '../components/Controls';
@@ -150,11 +151,7 @@ export default function Redox() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Equilibrio redox</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Equilibrio redox" onReset={reset}>
         <ModelBadge
           model="predicción de reacción entre dos pares redox"
           additions={[(couple1.mH > 0 || couple2.mH > 0) && 'potencial condicionado por pH']}
@@ -178,7 +175,7 @@ export default function Redox() {
             en su semirreacción se desplazan — un oxidante puede dejar de serlo al subir el pH.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} />
       </section>

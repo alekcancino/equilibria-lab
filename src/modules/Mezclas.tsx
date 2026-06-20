@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, ModelBadge, ResultCard, SelectControl, Slider, Toggle } from '../components/Controls';
 import { ACIDS } from '../lib/database';
@@ -162,11 +163,7 @@ export default function Mezclas() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Mezclas multicomponente</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Mezclas multicomponente" onReset={reset}>
         <ModelBadge
           model={rows.length === 1
             ? 'un sistema ácido-base'
@@ -241,7 +238,7 @@ export default function Mezclas() {
             titula la mezcla: cada protón con ΔpKa suficiente da su propio salto.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={[
           {

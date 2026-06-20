@@ -11,6 +11,7 @@
 import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, LabelField } from '../components/Controls';
 import { CoupleEditor } from '../components/Editors';
@@ -329,11 +330,7 @@ export default function PotencialCondicional() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Potencial condicional</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Potencial condicional" onReset={reset}>
         <ModelBadge
           model="comparación E°′ = f(pH) entre dos pares"
           additions={[st.showCouple3 && 'Latimer y dismutación', st.showPX && 'efecto de ligando X']}
@@ -447,7 +444,7 @@ export default function PotencialCondicional() {
             la especie intermedia es inestable y reacciona consigo misma (ej. Cu⁺ → Cu²⁺ + Cu⁰).
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="eprime" />

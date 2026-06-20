@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import {
   ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, RefBadge, ResultCard,
   SelectControl, Slider, Toggle,
@@ -101,11 +102,7 @@ export default function Solubilidad() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Solubilidad (K<sub>ps</sub>)</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title={<>Solubilidad (K<sub>ps</sub>)</>} onReset={reset}>
         <div className="editor">
           <ModelBadge
             model={salt.anionPKas.length === 0 ? 'solubilidad intrínseca' : 'solubilidad condicionada por pH'}
@@ -181,7 +178,7 @@ export default function Solubilidad() {
             solubilidad se resuelve por bisección sobre log s, con ion común incluido.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <Chart
           data={traces}

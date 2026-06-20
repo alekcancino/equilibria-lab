@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data, Annotations, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import { InfoBox, LabelField, ModelBadge, ResultCard, SelectControl, Slider, Toggle } from '../components/Controls';
 import { availableSystems, buildSystem, waterLines, S_NERNST } from '../lib/pourbaix';
 
@@ -170,11 +171,7 @@ export default function Pourbaix() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Diagrama de Pourbaix</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Diagrama de Pourbaix" onReset={reset}>
         <ModelBadge
           model={useCustom ? 'sistema simple Mⁿ⁺ / M / M(OH)ₙ' : 'sistema metal–agua de múltiples especies'}
           additions={[!useCustom && 'especies de base de datos', showWater && 'estabilidad del agua']}
@@ -256,7 +253,7 @@ export default function Pourbaix() {
             M^n⁺ / M / M(OH)ₙ. Baja log C para ver cómo se expande el dominio acuoso.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <Chart
           data={traces}

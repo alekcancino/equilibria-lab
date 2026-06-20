@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import {
   ConcSlider, DbPanel, InfoBox, LabelField, ResultCard, Segmented,
   ModelBadge, RefBadge, SelectControl, Slider, Toggle,
@@ -235,11 +236,7 @@ function AcidBaseTitration() {
 
   return (
     <>
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Titulación ácido-base</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Titulación ácido-base" onReset={reset}>
         <Segmented
           options={[
             { value: 'base', label: 'Alcalimetría (NaOH)' },
@@ -290,7 +287,7 @@ function AcidBaseTitration() {
             cambia automáticamente a un equilibrio débil.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <Chart
           data={traces}
@@ -395,11 +392,7 @@ function EdtaTitration() {
 
   return (
     <>
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Titulación complejométrica</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Titulación complejométrica" onReset={reset}>
         <Segmented
           options={[
             { value: 'direct', label: 'Metal + EDTA (directa)' },
@@ -466,7 +459,7 @@ function EdtaTitration() {
             La pestaña <em>Indicadores</em> muestra el criterio ΔlogK ≥ 5 (Harris).
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} />
       </section>
@@ -535,11 +528,7 @@ function RedoxTitration() {
 
   return (
     <>
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Titulación redox</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Titulación redox" onReset={reset}>
         <Segmented
           options={[
             { value: 'oxidante', label: 'Oxidimetría' },
@@ -586,7 +575,7 @@ function RedoxTitration() {
             pH para pares con H⁺ en la semirreacción.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <Chart
           data={traces}
@@ -711,12 +700,7 @@ function PrecipTitration() {
 
   return (
     <>
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Titulación por precipitación</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
-
+      <PanelShell title="Titulación por precipitación" onReset={reset}>
         <h3>Sistema</h3>
         <ModelBadge
           model="titulación por precipitación 1:1"
@@ -794,7 +778,7 @@ function PrecipTitration() {
             1:1 (un catión + un anión). Estequiometrías m:x ≠ 1:1 no están implementadas.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <Chart
           data={traces}
@@ -1011,11 +995,7 @@ function PotenciometricaTitration() {
 
   return (
     <>
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Titulación potenciométrica</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Titulación potenciométrica" onReset={reset}>
         <Segmented
           options={[
             { value: 'base', label: 'Alcalimetría (NaOH)' },
@@ -1076,7 +1056,7 @@ function PotenciometricaTitration() {
             Excelente para detectar P.E. con <strong>poco salto</strong>.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="efV" />
       </section>

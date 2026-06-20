@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, LabelField, ModelBadge, ResultCard, Slider } from '../components/Controls';
 import {
@@ -171,11 +172,7 @@ export default function IntercambioIonico() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Intercambio iónico</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Intercambio iónico" onReset={reset}>
         <ModelBadge model="equilibrio binario A↔B · isoterma · columna ideal 1D" />
         <p className="hint">Resinas:</p>
         <div className="preset-chip-row" style={{ marginBottom: 8 }}>
@@ -232,7 +229,7 @@ export default function IntercambioIonico() {
             tras agotar la capacidad del lecho.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={tabs} />
       </section>

@@ -1,0 +1,70 @@
+/* Equilibria Lab design tokens — see design.md */
+
+:root {
+  /* Color */
+  --bg: #FAFAF8;
+  --surface: #FFFFFF;
+  --surface-alt: #F5F3EF;
+  --border: #E4DFD6;
+  --text: #1F2933;
+  --text-muted: #5C6770;
+  --accent: #2563EB;
+  --accent-violet: #7C3AED;
+  --accent-soft: #EFF6FF;
+  --accent-teal: #14B8A6;
+  --ok: #059669;
+  --warn: #D97706;
+
+  /* Legacy aliases */
+  --panel-bg: var(--surface);
+  --bg-alt: var(--surface-alt);
+
+  /* Typography */
+  --font-ui: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 18px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  /* Layout */
+  --panel-width: 320px;
+  --topbar-height: 52px;
+  --mobile-max: 800px;
+  --touch-min: 44px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+
+  /* Plotly chrome (read in JS) */
+  --plot-bg: #ffffff;
+  --plot-grid: #E8E4DC;
+  --plot-axis: #C9C2B8;
+  --plot-font-size: 13px;
+  --plot-font-size-mobile: 12px;
+}
+
+@media (max-width: 800px) {
+  :root {
+    --text-sm: 14px;
+    --text-base: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+  }
+}

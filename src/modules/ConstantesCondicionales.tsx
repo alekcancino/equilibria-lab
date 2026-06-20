@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react';
 import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   Slider, ConstantList, ConcSlider, DbPanel, InfoBox, LabelField, ModelBadge, ResultCard, Toggle,
@@ -279,12 +280,7 @@ export default function ConstantesCondicionales() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Constantes condicionales</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
-
+      <PanelShell title="Constantes condicionales" onReset={reset}>
         <h3>Metal y ligante</h3>
         <ModelBadge
           model="equilibrio principal M–Y"
@@ -465,7 +461,7 @@ export default function ConstantesCondicionales() {
             a concentración típica (0.01 M).
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="logk" />

@@ -13,49 +13,65 @@ export interface PlotChartProps extends ChartProps {
   onGraphDiv?: (div: HTMLElement) => void;
 }
 
+function plotToken(name: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
 /** Render interno con Plotly — cargado bajo demanda desde Chart.tsx */
 export default function PlotChart({
   data, xTitle, yTitle, xRange, yRange, shapes, annotations, showLegend = true,
-  exportName = 'quimeq',
+  exportName = 'equilibria-lab',
   onGraphDiv,
 }: PlotChartProps) {
   const mobile = useIsMobile();
 
-  const layout: Partial<Layout> = useMemo(() => ({
-    autosize: true,
-    margin: mobile
-      ? { l: 44, r: 12, t: 8, b: 52 }
-      : { l: 60, r: 20, t: 16, b: 48 },
-    paper_bgcolor: 'transparent',
-    plot_bgcolor: '#ffffff',
-    font: { family: 'Inter, system-ui, sans-serif', size: mobile ? 12 : 13, color: '#2c3e50' },
-    dragmode: mobile ? 'pan' : 'zoom',
-    xaxis: {
-      title: { text: xTitle, font: { size: mobile ? 12 : 14 } },
-      range: xRange,
-      fixedrange: false,
-      gridcolor: '#e8ecef',
-      zerolinecolor: '#cbd5dc',
-      linecolor: '#cbd5dc',
-    },
-    yaxis: {
-      title: { text: yTitle, font: { size: mobile ? 12 : 14 } },
-      range: yRange,
-      fixedrange: false,
-      gridcolor: '#e8ecef',
-      zerolinecolor: '#cbd5dc',
-      linecolor: '#cbd5dc',
-    },
-    showlegend: showLegend,
-    legend: {
-      orientation: 'h',
-      y: mobile ? -0.22 : -0.18,
-      font: { size: mobile ? 11 : 12 },
-    },
-    hovermode: mobile ? 'closest' : 'x unified',
-    shapes,
-    annotations,
-  }), [mobile, xTitle, yTitle, xRange, yRange, showLegend, shapes, annotations]);
+  const layout: Partial<Layout> = useMemo(() => {
+    const fontFamily = plotToken('--font-ui', 'Source Sans 3, system-ui, sans-serif');
+    const textColor = plotToken('--text', '#1F2933');
+    const gridColor = plotToken('--plot-grid', '#E8E4DC');
+    const axisColor = plotToken('--plot-axis', '#C9C2B8');
+    const plotBg = plotToken('--plot-bg', '#ffffff');
+    const fontSize = mobile
+      ? parseInt(plotToken('--plot-font-size-mobile', '12'), 10)
+      : parseInt(plotToken('--plot-font-size', '13'), 10);
+
+    return {
+      autosize: true,
+      margin: mobile
+        ? { l: 44, r: 12, t: 8, b: 52 }
+        : { l: 60, r: 20, t: 16, b: 48 },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor: plotBg,
+      font: { family: fontFamily, size: fontSize, color: textColor },
+      dragmode: mobile ? 'pan' : 'zoom',
+      xaxis: {
+        title: { text: xTitle, font: { size: fontSize + 1, family: fontFamily } },
+        range: xRange,
+        fixedrange: false,
+        gridcolor: gridColor,
+        zerolinecolor: axisColor,
+        linecolor: axisColor,
+      },
+      yaxis: {
+        title: { text: yTitle, font: { size: fontSize + 1, family: fontFamily } },
+        range: yRange,
+        fixedrange: false,
+        gridcolor: gridColor,
+        zerolinecolor: axisColor,
+        linecolor: axisColor,
+      },
+      showlegend: showLegend,
+      legend: {
+        orientation: 'h',
+        y: mobile ? -0.22 : -0.18,
+        font: { size: fontSize - 1, family: fontFamily },
+      },
+      hovermode: mobile ? 'closest' : 'x unified',
+      shapes,
+      annotations,
+    };
+  }, [mobile, xTitle, yTitle, xRange, yRange, showLegend, shapes, annotations]);
 
   return (
     <Plot

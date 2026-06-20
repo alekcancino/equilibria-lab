@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Data, Shape } from 'plotly.js';
+import PanelShell from '../components/PanelShell';
 import Chart from '../components/Chart';
 import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
@@ -125,11 +126,7 @@ export default function AcidoBase() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Equilibrio ácido-base</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Equilibrio ácido-base" onReset={reset}>
         <AcidSystemEditor system={system} onChange={setSystem} />
         <h3>Condiciones</h3>
         <ConcSlider label="Concentración analítica" value={conc} onChange={setConc} />
@@ -167,7 +164,7 @@ export default function AcidoBase() {
             La línea rosa marca el pH real de la disolución pura.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} />
       </section>

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useRef } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
+import PlotToolbar from './PlotToolbar';
 
 const PlotChart = lazy(() => import('./PlotChart'));
 
@@ -38,18 +39,23 @@ export default function Chart(props: ChartProps) {
     });
   }, [exportName]);
 
+  const resetZoom = useCallback(async () => {
+    const el = graphDivRef.current;
+    if (!el) return;
+    const Plotly = await import('plotly.js-basic-dist-min');
+    await Plotly.default.relayout(el, {
+      'xaxis.autorange': true,
+      'yaxis.autorange': true,
+    });
+  }, []);
+
   return (
     <div className="chart-shell">
       <div className="chart-plot">
         <Suspense fallback={<div className="chart-loading">Cargando gráfica…</div>}>
           <PlotChart {...props} onGraphDiv={onGraphDiv} />
         </Suspense>
-      </div>
-      <div className="chart-toolbar">
-        <button type="button" className="chart-export-btn" onClick={exportPng}>
-          Exportar PNG
-        </button>
-        <span className="chart-hint">Pinch o scroll para zoom · doble toque para restablecer</span>
+        <PlotToolbar onResetZoom={resetZoom} onExport={exportPng} />
       </div>
     </div>
   );

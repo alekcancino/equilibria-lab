@@ -42,6 +42,8 @@ export default function DUZP({ zones, pMin, pMax, pLabel, marker, caption }: DUZ
           const x1 = x(z.pEnd);
           const w = x1 - x0;
           const cx = (x0 + x1) / 2;
+          const fontSize = Math.min(20, Math.max(11, w / 5.5));
+          const showLabel = w > 24;
           return (
             <g key={i}>
               <rect
@@ -54,16 +56,16 @@ export default function DUZP({ zones, pMin, pMax, pLabel, marker, caption }: DUZ
                 stroke={z.color}
                 strokeWidth={2}
               />
-              {w > 46 && (
+              {showLabel && (
                 <text
                   x={cx}
-                  y={BAND_TOP + BAND_H / 2 + 7}
+                  y={BAND_TOP + BAND_H / 2 + fontSize * 0.35}
                   textAnchor="middle"
-                  fontSize={22}
-                  fontWeight={700}
+                  fontSize={fontSize}
+                  fontWeight={600}
                   fill={z.color}
                 >
-                  {z.label}
+                  {w < 60 && z.label.length > 8 ? z.label.replace(/(\d+)/g, ' $1').trim().slice(0, 6) : z.label}
                 </text>
               )}
             </g>

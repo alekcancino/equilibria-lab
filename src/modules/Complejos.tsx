@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import {
@@ -240,12 +241,7 @@ export default function Complejos() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Equilibrio de complejación</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
-
+      <PanelShell title="Equilibrio de complejación" onReset={reset}>
         <div className="editor">
           <ModelBadge
             model={sys.logBetas.length === 1
@@ -312,7 +308,7 @@ export default function Complejos() {
             pero sobre el eje pL. La línea rosa marca el pL del sistema real.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="equil" />

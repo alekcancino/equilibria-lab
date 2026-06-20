@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, ModelBadge, ResultCard, Slider } from '../components/Controls';
 import {
@@ -73,11 +74,7 @@ export default function Actividad() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Actividad y Debye-Hückel</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
+      <PanelShell title="Actividad y Debye-Hückel" onReset={reset}>
         <ModelBadge model="electrolito binario z:z en solución acuosa" />
         <ConcSlider label="Concentración del electrolito" value={cIon} onChange={setCIon} min={-3} max={0} />
         <div className="control">
@@ -107,7 +104,7 @@ export default function Actividad() {
             A I → 0, γ → 1 y las concentraciones aproximan actividades.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={tabs} />
       </section>

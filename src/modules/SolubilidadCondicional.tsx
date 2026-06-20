@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react';
 import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
+import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   Slider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, ResultCard, Toggle,
@@ -390,12 +391,7 @@ export default function SolubilidadCondicional() {
 
   return (
     <div className="module">
-      <aside className="panel">
-        <div className="panel-header">
-          <h2>Precipitación selectiva</h2>
-          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
-        </div>
-
+      <PanelShell title="Precipitación selectiva" onReset={reset}>
         {/* ── Metal 1 ── */}
         <h3 style={{ color: C1 }}>Metal 1 (precipitar)</h3>
         <ModelBadge
@@ -560,7 +556,7 @@ export default function SolubilidadCondicional() {
             Zn(OH)₄²⁻). Los log β del panel modelan este efecto.
           </p>
         </InfoBox>
-      </aside>
+      </PanelShell>
 
       <section className="plot-area">
         <DiagramTabs tabs={tabs} initialId="logs" />
