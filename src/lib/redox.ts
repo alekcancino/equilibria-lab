@@ -1,7 +1,9 @@
 // Equilibrio redox en convención pe (escuela Baeza/UNAM): pe = E / 0.05916.
 // pe° = E°/0.05916 SIEMPRE — sin el factor n (error P0-2 de la versión anterior).
 
-export const NERNST_S = 0.05916; // 2.303·RT/F a 25 °C (V)
+import { NERNST_S } from './constants';
+
+export { NERNST_S };
 
 export interface RedoxCouple {
   id: string;
@@ -106,6 +108,9 @@ export function redoxTitrationCurve(params: RedoxTitrationParams): RedoxCurve {
     };
     let lo = -40;
     let hi = 45;
+    const fLo = f(lo);
+    const fHi = f(hi);
+    if (fLo * fHi > 0) return fLo > 0 ? hi : lo;
     for (let i = 0; i < 90; i++) {
       const mid = (lo + hi) / 2;
       if (f(mid) < 0) lo = mid;
@@ -119,7 +124,7 @@ export function redoxTitrationCurve(params: RedoxTitrationParams): RedoxCurve {
   const pes: number[] = [];
   const Es: number[] = [];
 
-  for (let i = 1; i <= points; i++) {
+  for (let i = 0; i <= points; i++) {
     const v = (vMax * i) / points;
     const pe = solvePe(cAnalyte * vAnalyte, cTitrant * v);
     volumes.push(v);

@@ -58,7 +58,7 @@ export default function Complejos() {
   const [sys, setSys] = useState<ComplexState>(defaultState);
   const [cM, setCM] = useState(0.01);
   const [cL, setCL] = useState(0.04);
-  const [showEquil, setShowEquil] = useState(false);
+  const [showEquil, setShowEquil] = useState(true);
 
   function reset() { setSys(defaultState()); setCM(0.01); setCL(0.04); setShowEquil(false); }
 
@@ -162,6 +162,21 @@ export default function Complejos() {
   const nBarEq = bjerrumNumber(pLEqClipped, sys.logBetas);
 
   const diagrams = [
+    {
+      id: 'equil',
+      label: 'Equilibrio (pL)',
+      node: (
+        <Chart
+          data={alphaTraces}
+          xTitle="pL (−log[L])"
+          yTitle="Fracción α"
+          xRange={[0, pLmax]}
+          yRange={[0, 1.02]}
+          shapes={equilShape}
+          exportName="quimeq-complejos-equilibrio"
+        />
+      ),
+    },
     {
       id: 'duzp',
       label: 'DUZP',
@@ -275,15 +290,13 @@ export default function Complejos() {
         <h3>Condiciones</h3>
         <ConcSlider label="Concentración total del metal (cM)" value={cM} onChange={setCM} />
         <ConcSlider label="Concentración total del ligando (cL)" value={cL} onChange={setCL} />
-        <Toggle label="Marcar pL de equilibrio" checked={showEquil} onChange={setShowEquil} />
+        <Toggle label="Marcar pL de equilibrio en diagramas" checked={showEquil} onChange={setShowEquil} />
 
-        {showEquil && (
-          <ResultCard items={[
-            { label: 'pL de equilibrio', value: pLEq > pLmax ? `> ${pLmax.toFixed(0)} (sin ligando)` : pLEq.toFixed(3) },
-            { label: 'n̄ en equilibrio', value: nBarEq.toFixed(2) },
-            { label: 'Especie dominante', value: `${labels[domIdx]} (α = ${alphasEq[domIdx].toFixed(3)})` },
-          ]} />
-        )}
+        <ResultCard items={[
+          { label: 'pL de equilibrio', value: pLEq > pLmax ? `> ${pLmax.toFixed(0)} (sin ligando)` : pLEq.toFixed(3) },
+          { label: 'n̄ en equilibrio', value: nBarEq.toFixed(2) },
+          { label: 'Especie dominante', value: `${labels[domIdx]} (α = ${alphasEq[domIdx].toFixed(3)})` },
+        ]} />
 
         <InfoBox title="Cómo leer estos diagramas">
           <p>
@@ -302,7 +315,7 @@ export default function Complejos() {
       </aside>
 
       <section className="plot-area">
-        <DiagramTabs tabs={diagrams} />
+        <DiagramTabs tabs={diagrams} initialId="equil" />
       </section>
     </div>
   );

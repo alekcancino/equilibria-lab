@@ -1,6 +1,7 @@
 // Solubilidad de sales poco solubles: efecto del ion común y del pH (anión básico).
 
 import { alphaFractions } from './equilibrium';
+import { alphaL } from './conditional';
 import type { SaltPreset } from './database';
 
 /**
@@ -37,10 +38,70 @@ export function solubility(salt: SaltPreset, pH: number, cCommon = 0): number {
   // f es creciente en logS; bisección en [-15, 2]
   let lo = -15;
   let hi = 2;
+  if (f(lo) > 0) return 0;
+  if (f(hi) < 0) return Math.pow(10, hi);
   for (let i = 0; i < 70; i++) {
     const mid = (lo + hi) / 2;
     if (f(mid) < 0) lo = mid;
     else hi = mid;
   }
   return Math.pow(10, (lo + hi) / 2);
+}
+
+/**
+ * Solubilidad molar s de MmXx en presencia de un complejante X que forma
+ * hidroxo/complejos con el catión: log s = f(pX) a pH fijo.
+ * αM(L) = 1 + Σ βᵢ[X]ⁱ corrige la concentración libre del catión.
+ */
+export function solubilityVsPX(
+  salt: SaltPreset,
+  pH: number,
+  logBetasM: number[],
+  pX: number,
+  cCommon = 0,
+): number {
+  const ksp = Math.pow(10, -salt.pKsp);
+  const alphaAnion = anionFreeFraction(salt, pH);
+  const cX = Math.pow(10, -pX);
+  const alphaM = alphaL(logBetasM, cX);
+
+  const f = (logS: number): number => {
+    const s = Math.pow(10, logS);
+    const cationFree = (salt.m * s) / alphaM;
+    const anionFree = alphaAnion * (salt.x * s + cCommon);
+    return (
+      salt.m * Math.log10(cationFree) + salt.x * Math.log10(anionFree) - Math.log10(ksp)
+    );
+  };
+
+  let lo = -15;
+  let hi = 2;
+  if (f(lo) > 0) return 0;
+  if (f(hi) < 0) return Math.pow(10, hi);
+  for (let i = 0; i < 70; i++) {
+    const mid = (lo + hi) / 2;
+    if (f(mid) < 0) lo = mid;
+    else hi = mid;
+  }
+  return Math.pow(10, (lo + hi) / 2);
+}
+
+/** Curva log s = f(pX) para un barrido de pX. */
+export function solubilityPXCurve(
+  salt: SaltPreset,
+  pH: number,
+  logBetasM: number[],
+  pXMin: number,
+  pXMax: number,
+  points = 300,
+  cCommon = 0,
+): { pXs: number[]; logS: number[] } {
+  const pXs: number[] = [];
+  const logS: number[] = [];
+  for (let i = 0; i <= points; i++) {
+    const pX = pXMin + ((pXMax - pXMin) * i) / points;
+    pXs.push(pX);
+    logS.push(Math.log10(solubilityVsPX(salt, pH, logBetasM, pX, cCommon)));
+  }
+  return { pXs, logS };
 }

@@ -98,26 +98,6 @@ export const INDICATORS: Indicator[] = [
   { id: 'thymolphthalein', name: 'Timolftaleína', range: [9.3, 10.5], colors: ['#ffffff', '#2980b9'] },
 ];
 
-export interface MetalPreset {
-  id: string;
-  name: string;
-  symbol: string;
-  /** log Kf del complejo M–EDTA */
-  logKf: number;
-}
-
-// log Kf de complejos metal-EDTA (Harris, apéndice)
-export const METALS: MetalPreset[] = [
-  { id: 'mg', name: 'Magnesio', symbol: 'Mg²⁺', logKf: 8.79 },
-  { id: 'ca', name: 'Calcio', symbol: 'Ca²⁺', logKf: 10.69 },
-  { id: 'mn', name: 'Manganeso', symbol: 'Mn²⁺', logKf: 13.87 },
-  { id: 'fe2', name: 'Hierro (II)', symbol: 'Fe²⁺', logKf: 14.32 },
-  { id: 'zn', name: 'Zinc', symbol: 'Zn²⁺', logKf: 16.5 },
-  { id: 'pb', name: 'Plomo', symbol: 'Pb²⁺', logKf: 18.04 },
-  { id: 'cu', name: 'Cobre (II)', symbol: 'Cu²⁺', logKf: 18.8 },
-  { id: 'fe3', name: 'Hierro (III)', symbol: 'Fe³⁺', logKf: 25.1 },
-];
-
 export interface SaltPreset {
   id: string;
   name: string;

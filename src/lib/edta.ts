@@ -1,6 +1,6 @@
 // Titulaciones complejométricas con EDTA: constante condicional y curva pM vs volumen.
 
-import { alphaH } from './conditional';
+import { alphaH, alphaOH, condLogK } from './conditional';
 
 /** pKas del EDTA (H4Y) */
 export const EDTA_PKAS = [2.0, 2.69, 6.13, 10.37];
@@ -15,6 +15,8 @@ export interface EdtaTitrationParams {
   logKf: number;
   /** pH amortiguado de la titulación */
   pH: number;
+  /** log β globales de hidroxocomplejos M(OH)ᵢ (vacío si no hidroliza) */
+  logBetasOH?: number[];
   /** Concentración de la especie en el matraz (M) */
   cMetal: number;
   /** Volumen inicial en el matraz (mL) */
@@ -32,20 +34,23 @@ export interface EdtaCurve {
   volumes: number[];
   pMs: number[];
   vEq: number;
-  /** Constante condicional K'f = Kf / αY(H) = Kf · α[Y4-] */
+  /** log K'f con K'f = Kf / (αM(OH) · αY(H)) */
   logKfCond: number;
 }
 
 /**
  * Curva de titulación pM vs volumen de EDTA usando la constante condicional
- * K'f = alfa_Y4(pH) · Kf. Resuelve [M] exacto con la cuadrática del balance de masas:
+ * K'f = Kf / (αM(OH) · αY(H)). Resuelve [M] exacto con la cuadrática del balance de masas:
  *   K'[M]² + (K'(C_Y − C_M) + 1)[M] − C_M = 0
  */
 export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
   const { logKf, pH, cMetal, vMetal, cEdta, vMax, edtaInFlask = false } = params;
+  const logBetasOH = params.logBetasOH ?? [];
   const points = params.points ?? 500;
-  const aY = alphaY4(pH);           // αY(H) = 1/α[Y4-] ≥ 1
-  const kCond = Math.pow(10, logKf) / aY;  // K'f = Kf / αY(H)
+  const aY = alphaY4(pH);
+  const aM = alphaOH(logBetasOH, pH);
+  const logKfCond = condLogK(logKf, { alphaM: aM, alphaY: aY });
+  const kCond = Math.pow(10, logKfCond);
 
   const volumes: number[] = [];
   const pMs: number[] = [];
@@ -80,6 +85,6 @@ export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
     volumes,
     pMs,
     vEq: (cMetal * vMetal) / cEdta,
-    logKfCond: Math.log10(kCond),
+    logKfCond,
   };
 }

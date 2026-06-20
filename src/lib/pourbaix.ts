@@ -10,9 +10,9 @@
 //   MnO₂/Mn(OH)₂ = 0.784 V · Mn(OH)₂/Mn = −0.735 V
 
 import SYSTEMS_RAW from './pourbaixSystems.json';
+import { NERNST_S, PKW } from './constants';
 
-export const S_NERNST = 0.05916;
-const PKW = 14.0;
+export const S_NERNST = NERNST_S;
 
 interface Couple { ox: string; red: string; E0: number; n: number; m_H?: number }
 interface Solid { species: string; ion?: string; z?: number; pKsp?: number; pKd?: number; type?: string }

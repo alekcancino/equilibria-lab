@@ -11,33 +11,9 @@ import {
 } from '../components/Controls';
 import { condLogKCurve, feasibilityWindow } from '../lib/conditional';
 import { COMPLEX_PRESETS } from '../lib/complexDatabase';
+import { EDTA_METAL_PRESETS } from '../lib/indicatorDatabase';
 
 // ── Base de datos de complejos M–EDTA ───────────────────────────────────────
-
-interface EdtaPreset {
-  id: string;
-  metal: string;
-  logKf: number;
-  /** log β globales de los hidroxocomplejos M(OH)₁, M(OH)₂, ... */
-  logBetasOH: number[];
-  group: string;
-}
-
-const EDTA_PRESETS: EdtaPreset[] = [
-  // Metales bivalentes — Harris QCA 9.ª ed., Skoog Anal. Chem. 9.ª ed.
-  { id: 'ca', metal: 'Ca²⁺', logKf: 10.65, logBetasOH: [], group: 'M²⁺' },
-  { id: 'mg', metal: 'Mg²⁺', logKf: 8.64,  logBetasOH: [], group: 'M²⁺' },
-  { id: 'mn', metal: 'Mn²⁺', logKf: 13.81, logBetasOH: [3.4], group: 'M²⁺' },
-  { id: 'zn', metal: 'Zn²⁺', logKf: 16.50, logBetasOH: [5.04, 10.43, 13.7, 15.2], group: 'M²⁺' },
-  { id: 'cu', metal: 'Cu²⁺', logKf: 18.80, logBetasOH: [6.0, 11.8], group: 'M²⁺' },
-  { id: 'ni', metal: 'Ni²⁺', logKf: 18.56, logBetasOH: [4.97, 8.55], group: 'M²⁺' },
-  { id: 'pb', metal: 'Pb²⁺', logKf: 18.04, logBetasOH: [6.29, 10.89], group: 'M²⁺' },
-  { id: 'hg', metal: 'Hg²⁺', logKf: 21.70, logBetasOH: [10.60], group: 'M²⁺' },
-  // Metales trivalentes
-  { id: 'fe3', metal: 'Fe³⁺', logKf: 25.10, logBetasOH: [11.81, 21.68, 30.67], group: 'M³⁺' },
-  { id: 'al',  metal: 'Al³⁺', logKf: 16.13, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'M³⁺' },
-  { id: 'ga',  metal: 'Ga³⁺', logKf: 20.27, logBetasOH: [11.4, 22.1, 30.7], group: 'M³⁺' },
-];
 
 // ── Estado ───────────────────────────────────────────────────────────────────
 
@@ -101,7 +77,7 @@ export default function ConstantesCondicionales() {
   function reset() { setS(defaultState()); }
 
   function applyPreset(id: string) {
-    const p = EDTA_PRESETS.find((x) => x.id === id);
+    const p = EDTA_METAL_PRESETS.find((x) => x.id === id);
     if (!p) return;
     setS((prev) => ({
       ...prev,
@@ -113,7 +89,7 @@ export default function ConstantesCondicionales() {
   }
 
   function applyPreset2(id: string) {
-    const p = EDTA_PRESETS.find((x) => x.id === id);
+    const p = EDTA_METAL_PRESETS.find((x) => x.id === id);
     if (!p) return;
     setS((prev) => ({
       ...prev,
@@ -263,7 +239,7 @@ export default function ConstantesCondicionales() {
 
   // ── UI ─────────────────────────────────────────────────────────────────────
 
-  const dbItems = EDTA_PRESETS.map((p) => ({
+  const dbItems = EDTA_METAL_PRESETS.map((p) => ({
     id: p.id,
     label: p.metal,
     detail: `log Kf = ${p.logKf.toFixed(2)}`,
@@ -308,13 +284,6 @@ export default function ConstantesCondicionales() {
           <h2>Constantes condicionales</h2>
           <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
         </div>
-
-        {/* Selector de metal desde DB */}
-        <DbPanel
-          items={dbItems}
-          onSelect={applyPreset}
-          title="Presets M–EDTA"
-        />
 
         <h3>Metal y ligante</h3>
         <ModelBadge
@@ -462,6 +431,12 @@ export default function ConstantesCondicionales() {
             )}
           </div>
         )}
+
+        <DbPanel
+          items={dbItems}
+          onSelect={applyPreset}
+          title="Presets M–EDTA"
+        />
 
         {/* Resultado */}
         <ResultCard items={[

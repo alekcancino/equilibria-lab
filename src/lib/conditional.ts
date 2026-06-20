@@ -2,6 +2,7 @@
 // K' = K / (α_M · α_Y)    log K' = log K − log α_M − log α_Y
 // Todos los α ≥ 1; vale 1 cuando no hay reacción parásita.
 
+import { PKW } from './constants';
 import { alphaFractions } from './equilibrium';
 
 /**
@@ -30,7 +31,7 @@ export function alphaH(pKas: number[], pH: number): number {
  */
 export function alphaOH(logBetasOH: number[], pH: number): number {
   if (logBetasOH.length === 0) return 1;
-  const pOH = 14 - pH;
+  const pOH = PKW - pH;
   const logOH = -pOH;
   let sum = 1;
   for (let i = 0; i < logBetasOH.length; i++) {
@@ -86,16 +87,33 @@ export function feasibilityWindow(
   logKs: number[],
   threshold: number
 ): [number, number] | null {
-  let lo: number | null = null;
-  let hi: number | null = null;
+  let best: [number, number] | null = null;
+  let bestWidth = -1;
+  let runStart: number | null = null;
+  let runEnd: number | null = null;
+
+  const flush = () => {
+    if (runStart !== null && runEnd !== null) {
+      const width = runEnd - runStart;
+      if (width > bestWidth) {
+        best = [runStart, runEnd];
+        bestWidth = width;
+      }
+    }
+    runStart = null;
+    runEnd = null;
+  };
+
   for (let i = 0; i < pHs.length; i++) {
     if (logKs[i] >= threshold) {
-      if (lo === null) lo = pHs[i];
-      hi = pHs[i];
+      if (runStart === null) runStart = pHs[i];
+      runEnd = pHs[i];
+    } else {
+      flush();
     }
   }
-  if (lo === null || hi === null) return null;
-  return [lo, hi];
+  flush();
+  return best;
 }
 
 /**
@@ -173,7 +191,7 @@ export function hydroxideSolCurve(
 
   for (let i = 0; i <= points; i++) {
     const pH = pHmin + ((pHmax - pHmin) * i) / points;
-    const logFreeMetal = -pKsp + n * (14 - pH);
+    const logFreeMetal = -pKsp + n * (PKW - pH);
     const aOH = alphaOH(logBetasOH, pH);
     pHs.push(pH);
     logS.push(logFreeMetal + Math.log10(aOH));

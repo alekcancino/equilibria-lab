@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import type { Data, Annotations } from 'plotly.js';
+import type { Data, Annotations, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
-import { InfoBox, LabelField, ModelBadge, SelectControl, Slider, Toggle } from '../components/Controls';
+import { InfoBox, LabelField, ModelBadge, ResultCard, SelectControl, Slider, Toggle } from '../components/Controls';
 import { availableSystems, buildSystem, waterLines, S_NERNST } from '../lib/pourbaix';
 
 // ── Sistema simple custom (M^n+ / M + M(OH)n) ─────────────────────────────────
@@ -56,15 +56,42 @@ function buildSimpleDiagram(p: SimpleCustom, logC: number): { data: Data[]; anno
   return { data, annotations };
 }
 
+function customRegionAt(p: SimpleCustom, logC: number, pH: number, E: number): string {
+  const S = S_NERNST;
+  const E_dep = p.E0 + (S / p.n) * logC;
+  const pH_p = 14 - (p.pKsp + logC) / p.n;
+  const E0_sol = p.E0 + S * (14 - p.pKsp / p.n);
+  const E_sol = E0_sol - S * pH;
+  if (pH < pH_p) return E > E_dep ? p.ionName : `${p.metalName}(s)`;
+  return E > E_sol ? p.hydroxide : `${p.metalName}(s)`;
+}
+
+function nearestRegionName(
+  regions: { name: string; labelPH: number; labelE: number }[],
+  pH: number,
+  E: number,
+): string {
+  if (regions.length === 0) return '—';
+  let best = regions[0];
+  let bestD = (pH - best.labelPH) ** 2 + (E - best.labelE) ** 2;
+  for (const r of regions.slice(1)) {
+    const d = (pH - r.labelPH) ** 2 + (E - r.labelE) ** 2;
+    if (d < bestD) { best = r; bestD = d; }
+  }
+  return best.name;
+}
+
 // ── Componente ─────────────────────────────────────────────────────────────────
 
 /** Diagramas de Pourbaix (E vs pH) derivados de datos termodinámicos primitivos. */
 export default function Pourbaix() {
   const systems = availableSystems();
   const [systemId, setSystemId] = useState('fe');
-  const [useCustom, setUseCustom] = useState(false);
+  const [useCustom, setUseCustom] = useState(true);
   const [logC, setLogC] = useState(-2);
   const [showWater, setShowWater] = useState(false);
+  const [cursorPH, setCursorPH] = useState(7);
+  const [cursorE, setCursorE] = useState(0);
   const [custom, setCustom] = useState<SimpleCustom>({
     ionName: 'M²⁺', metalName: 'M', hydroxide: 'M(OH)₂',
     E0: -0.257, n: 2, pKsp: 15.8,
@@ -72,9 +99,11 @@ export default function Pourbaix() {
 
   function reset() {
     setSystemId('fe');
-    setUseCustom(false);
+    setUseCustom(true);
     setLogC(-2);
     setShowWater(false);
+    setCursorPH(7);
+    setCursorE(0);
     setCustom({ ionName: 'M²⁺', metalName: 'M', hydroxide: 'M(OH)₂', E0: -0.257, n: 2, pKsp: 15.8 });
   }
 
@@ -121,6 +150,23 @@ export default function Pourbaix() {
 
     return { traces: data, annotations: ann };
   }, [diagram, customDiagram, showWater]);
+
+  const predominant = useMemo(() => {
+    if (useCustom) return customRegionAt(custom, logC, cursorPH, cursorE);
+    if (diagram) return nearestRegionName(diagram.regions, cursorPH, cursorE);
+    return '—';
+  }, [useCustom, custom, logC, cursorPH, cursorE, diagram]);
+
+  const cursorShapes = useMemo<Partial<Shape>[]>(() => [
+    {
+      type: 'line', x0: cursorPH, x1: cursorPH, y0: -1.6, y1: 2.2,
+      line: { color: '#CC79A7', width: 1.5, dash: 'dashdot' },
+    },
+    {
+      type: 'line', x0: 0, x1: 14, y0: cursorE, y1: cursorE,
+      line: { color: '#0072B2', width: 1.5, dash: 'dot' },
+    },
+  ], [cursorPH, cursorE]);
 
   return (
     <div className="module">
@@ -190,6 +236,14 @@ export default function Pourbaix() {
         />
         <Toggle label="Líneas de estabilidad del agua" checked={showWater} onChange={setShowWater} />
 
+        <h3>Cursor</h3>
+        <Slider label="pH del cursor" value={cursorPH} min={0} max={14} step={0.1} onChange={setCursorPH} decimals={1} />
+        <Slider label="E del cursor (V)" value={cursorE} min={-1.6} max={2.2} step={0.05} onChange={setCursorE} decimals={2} />
+        <ResultCard items={[
+          { label: 'Condiciones', value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
+          { label: 'Especie predominante (aprox.)', value: predominant },
+        ]} />
+
         <InfoBox title="¿Cómo se construye este diagrama?">
           <p>
             Solo E° de los pares base y pKsp de los hidróxidos son datos de entrada
@@ -210,6 +264,7 @@ export default function Pourbaix() {
           yTitle="E (V vs ENH)"
           xRange={[0, 14]}
           yRange={[-1.6, 2.2]}
+          shapes={cursorShapes}
           annotations={annotations}
           exportName={`quimeq-pourbaix-${useCustom ? 'custom' : systemId}`}
         />

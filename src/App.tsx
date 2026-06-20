@@ -13,6 +13,8 @@ const PotencialCondicional   = lazy(() => import('./modules/PotencialCondicional
 const ExtraccionLiquido      = lazy(() => import('./modules/ExtraccionLiquido'));
 const SolubilidadSal         = lazy(() => import('./modules/SolubilidadSal'));
 const Titulacion             = lazy(() => import('./modules/Titulacion'));
+const IntercambioIonico      = lazy(() => import('./modules/IntercambioIonico'));
+const Actividad              = lazy(() => import('./modules/Actividad'));
 
 interface Tab { id: string; label: string; component: ComponentType }
 interface Section { id: string; label: string; tabs: Tab[] }
@@ -36,6 +38,8 @@ const SECTIONS: Section[] = [
       { id: 'solcond', label: 'Precipitación selectiva', component: SolubilidadCondicional },
       { id: 'potencialcond', label: 'Potencial condicional', component: PotencialCondicional },
       { id: 'extraccion', label: 'Extracción líquido-líquido', component: ExtraccionLiquido },
+      { id: 'ionexchange', label: 'Intercambio iónico', component: IntercambioIonico },
+      { id: 'actividad', label: 'Actividad / Debye-Hückel', component: Actividad },
       { id: 'solsal', label: 'Solubilidad y pH', component: SolubilidadSal },
     ],
   },
@@ -67,31 +71,43 @@ export default function App() {
           <h1>QuimEq</h1>
           <span className="brand-sub">Laboratorio de Equilibrio Químico</span>
         </div>
-        <nav className="sections">
-          {SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              className={sectionId === s.id ? 'section-btn active' : 'section-btn'}
-              onClick={() => setSectionId(s.id)}
-            >
-              {s.label}
-            </button>
-          ))}
+        <nav className="sections" role="tablist" aria-label="Secciones del curso">
+          {SECTIONS.map((s) => {
+            const selected = sectionId === s.id;
+            return (
+              <button
+                key={s.id}
+                role="tab"
+                type="button"
+                aria-selected={selected}
+                className={selected ? 'section-btn active' : 'section-btn'}
+                onClick={() => setSectionId(s.id)}
+              >
+                {s.label}
+              </button>
+            );
+          })}
         </nav>
       </header>
 
       {showSubTabs && (
         <div className="subnav">
-          <div className="subnav-tabs">
-            {section.tabs.map((t) => (
-              <button
-                key={t.id}
-                className={tabId === t.id ? 'subnav-tab active' : 'subnav-tab'}
-                onClick={() => setTabBySection({ ...tabBySection, [sectionId]: t.id })}
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="subnav-tabs" role="tablist" aria-label={`Módulos de ${section.label}`}>
+            {section.tabs.map((t) => {
+              const selected = tabId === t.id;
+              return (
+                <button
+                  key={t.id}
+                  role="tab"
+                  type="button"
+                  aria-selected={selected}
+                  className={selected ? 'subnav-tab active' : 'subnav-tab'}
+                  onClick={() => setTabBySection({ ...tabBySection, [sectionId]: t.id })}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

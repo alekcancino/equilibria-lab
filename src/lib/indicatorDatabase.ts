@@ -7,7 +7,7 @@
 // K'(MIn) en un medio dado: logK'(MIn) = logK(MIn) - log αIn(H) - log αM(OH)
 
 export interface IndicatorMetal {
-  metalId: string;   // coincide con id en EDTA_PRESETS de ConstantesCondicionales
+  metalId: string;   // coincide con id en EDTA_METAL_PRESETS
   logKMIn: number;   // log K de formación M-In (termodinámico)
 }
 
@@ -134,4 +134,5 @@ export const EDTA_METAL_PRESETS: EdtaMetalPreset[] = [
   { id: 'co',  metal: 'Co²⁺', logKf: 16.31, logBetasOH: [4.35, 8.4],                 group: 'M²⁺' },
   { id: 'fe3', metal: 'Fe³⁺', logKf: 25.10, logBetasOH: [11.81, 21.68, 30.67],       group: 'M³⁺' },
   { id: 'al',  metal: 'Al³⁺', logKf: 16.13, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'M³⁺' },
+  { id: 'ga',  metal: 'Ga³⁺', logKf: 20.27, logBetasOH: [11.4, 22.1, 30.7],           group: 'M³⁺' },
 ];

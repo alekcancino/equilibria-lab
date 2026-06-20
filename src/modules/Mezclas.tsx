@@ -16,16 +16,25 @@ interface MixRow {
 
 const MAX_ROWS = 4;
 
+const INITIAL_ROWS: MixRow[] = [{ acidId: 'acetic', conc: 0.05, saltLevel: 0 }];
+
 /** Mezclas multicomponente: pH de la mezcla y su curva de titulación. */
 export default function Mezclas() {
-  const [rows, setRows] = useState<MixRow[]>([
-    { acidId: 'acetic', conc: 0.05, saltLevel: 0 },
-  ]);
+  const [rows, setRows] = useState<MixRow[]>([...INITIAL_ROWS]);
   const [titrate, setTitrate] = useState(false);
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cTitrant, setCTitrant] = useState(0.1);
   const [vSample, setVSample] = useState(25);
   const [showDerivative, setShowDerivative] = useState(false);
+
+  function reset() {
+    setRows([...INITIAL_ROWS]);
+    setTitrate(false);
+    setTitrantIsAcid(false);
+    setCTitrant(0.1);
+    setVSample(25);
+    setShowDerivative(false);
+  }
 
   const updateRow = (i: number, patch: Partial<MixRow>) => {
     setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -150,7 +159,10 @@ export default function Mezclas() {
   return (
     <div className="module">
       <aside className="panel">
-        <h2>Mezclas multicomponente</h2>
+        <div className="panel-header">
+          <h2>Mezclas multicomponente</h2>
+          <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
+        </div>
         <ModelBadge
           model={rows.length === 1
             ? 'un sistema ácido-base'

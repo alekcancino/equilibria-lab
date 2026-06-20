@@ -263,7 +263,8 @@ export default function PotencialCondicional() {
 
   // ── Diagrams ──────────────────────────────────────────────────────────────
 
-  const diagrams = [
+  const diagrams = useMemo(() => {
+    const all = [
     {
       id: 'eprime',
       label: "E°' = f(pH)",
@@ -323,6 +324,8 @@ export default function PotencialCondicional() {
       ),
     },
   ];
+    return st.showPX ? all : all.filter((d) => d.id !== 'epx');
+  }, [Eprimetraces, eMin, eMax, logKShapes, logKAnnotations, st.showPX, pXs, EpxCurve, st.pxOxLabel, st.pxRedLabel, st.pxLigandLabel, EpxMin, EpxMax, pxShapes, st.pxE0, escalaTraces, escalaPeMin, escalaPeMax, escalaShapes, escalaAnnotations, st.pH, escalaN]);
 
   return (
     <div className="module">

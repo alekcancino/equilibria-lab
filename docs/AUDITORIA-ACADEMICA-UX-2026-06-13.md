@@ -9,13 +9,16 @@ interfaz de usuario.
 
 QuimEq tiene un motor amplio y una buena base visual para explorar equilibrios,
 pero todavía no cumple de forma completa los tres programas. La documentación
-anterior sobreestima especialmente QA I y QA II. Tampoco existe una suite de
-pruebas automatizadas que permita reproducir las validaciones matemáticas
-declaradas.
+anterior sobreestima especialmente QA I y QA II. Existe una suite parcial de
+pruebas automatizadas (`npm run test`, 25 casos) que cubre los motores
+principales pero no todos los módulos ni casos golden publicados.
 
 La prioridad de producto no debe ser agregar más gráficas aisladas, sino hacer
 explícito el razonamiento analítico: reacción principal, reacciones parásitas,
 criterio de cuantitatividad, condiciones controlables, predicción y conclusión.
+
+Desde la auditoría inicial se añadieron 25 pruebas unitarias (`npm run test`) y
+`npm run check` (lint + test + build); la cobertura sigue siendo parcial.
 
 ## Cobertura corregida
 
@@ -94,18 +97,17 @@ usuario edite un dato, la UI debe indicar que ya es un valor personalizado.
 ## Calidad técnica
 
 - `npm run build`: pasa.
-- `npm run lint`: pasa sin errores ni advertencias después de la limpieza
-  técnica posterior a la auditoría.
-- No hay comando `test`, archivos de prueba ni validación automatizada.
-- El bundle principal supera 1.4 MB minificado; conviene dividir módulos y
-  cargar Plotly bajo demanda.
+- `npm run lint`: pasa sin errores ni advertencias.
+- `npm run test`: 25 pruebas unitarias en [`src/lib/__tests__/engines.test.ts`](../src/lib/__tests__/engines.test.ts) — cubren parcialmente los motores `equilibrium`, `complexation`, `conditional`, `edta`, `redox` y `titration` (Gran). Pendiente ampliar a `ladder`, `solubility`, `pourbaix` y `precipTitration`.
+- `npm run check`: encadena lint + test + build (validación local recomendada antes de commits).
+- El bundle principal supera 500 kB minificado (Plotly en `Controls`/`Chart`); los módulos React ya cargan con lazy import.
 
 ## Backlog recomendado
 
 ### P0 — confianza y reproducibilidad
 
-1. Crear pruebas unitarias para cada motor con casos publicados y tolerancias.
-2. Agregar `npm run check` que ejecute build, lint y tests.
+1. ~~Crear pruebas unitarias para cada motor~~ — **parcial**: 25 tests en un archivo; ampliar cobertura y casos golden.
+2. ~~Agregar `npm run check`~~ — **hecho**.
 3. Normalizar la procedencia bibliográfica por registro.
 4. Mantener `COBERTURA-TEMARIO.md` sincronizado con las capacidades reales.
 

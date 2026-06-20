@@ -1,6 +1,8 @@
 // Motor de equilibrio químico: fracciones alfa y solver de pH por balance de cargas.
 
-export const KW = 1e-14;
+import { KW } from './constants';
+
+export { KW };
 
 /**
  * Un componente ácido-base: la forma totalmente protonada HnA con carga z0
@@ -74,6 +76,11 @@ export function solvePH(
 ): number {
   let lo = -2;
   let hi = 16;
+  const fLo = chargeBalance(lo, components, extraCations, extraAnions);
+  const fHi = chargeBalance(hi, components, extraCations, extraAnions);
+  if (fLo <= 0) return lo;
+  if (fHi >= 0) return hi;
+  if (fLo * fHi > 0) return (lo + hi) / 2;
   for (let i = 0; i < 80; i++) {
     const mid = (lo + hi) / 2;
     const f = chargeBalance(mid, components, extraCations, extraAnions);

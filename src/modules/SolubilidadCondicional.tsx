@@ -10,6 +10,7 @@ import {
   Slider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, ResultCard, Toggle,
 } from '../components/Controls';
 import { hydroxideSolCurve, precipitationPH, alphaOH } from '../lib/conditional';
+import { solubilityPXCurve } from '../lib/solubility';
 
 // ── Base de datos de hidróxidos metálicos ─────────────────────────────────────
 
@@ -64,6 +65,10 @@ interface State {
   m2: MetalState;
   showM2: boolean;
   logSThreshold: number;
+  showPX: boolean;
+  ligandX: string;
+  logBetasX: number[];
+  pHForPX: number;
 }
 
 function defaultState(): State {
@@ -72,6 +77,10 @@ function defaultState(): State {
     m2: fromPreset('ni2oh'),
     showM2: false,
     logSThreshold: -5,
+    showPX: false,
+    ligandX: 'NH₃',
+    logBetasX: [4.04, 7.47, 10.27],
+    pHForPX: 10,
   };
 }
 
@@ -190,6 +199,34 @@ export default function SolubilidadCondicional() {
     return { text: 'Uno de los metales no alcanza el umbral en pH 0–14', ok: false };
   }, [s.showM2, selectiveWindow, pH1precip, pH2precip]);
 
+  const logSAt = (curve: { pHs: number[]; logS: number[] }, pH: number) => {
+    let best = curve.logS[0];
+    let bestD = Math.abs(curve.pHs[0] - pH);
+    for (let i = 1; i < curve.pHs.length; i++) {
+      const d = Math.abs(curve.pHs[i] - pH);
+      if (d < bestD) { bestD = d; best = curve.logS[i]; }
+    }
+    return best;
+  };
+
+  const purityAtM1Precip = useMemo(() => {
+    if (!s.showM2 || pH1precip === null || !curve2) return null;
+    const s1 = Math.pow(10, logSAt(curve1, pH1precip));
+    const s2 = Math.pow(10, logSAt(curve2, pH1precip));
+    if (s1 + s2 <= 0) return null;
+    return 100 * s1 / (s1 + s2);
+  }, [s.showM2, pH1precip, curve1, curve2]);
+
+  const pxCurve = useMemo(() => {
+    if (!s.showPX) return null;
+    const salt = {
+      id: 'custom', name: s.m1.label, formula: s.m1.formula,
+      pKsp: s.m1.pKsp, m: 1, x: s.m1.n,
+      anionLabel: 'OH⁻', cationLabel: s.m1.label,
+    };
+    return solubilityPXCurve(salt, s.pHForPX, s.logBetasX, 0, 14, 400);
+  }, [s.showPX, s.m1, s.pHForPX, s.logBetasX]);
+
   // ── DB items ──────────────────────────────────────────────────────────────
 
   const dbItems = OH_PRESETS.map((p) => ({
@@ -292,6 +329,24 @@ export default function SolubilidadCondicional() {
         />
       ),
     },
+    ...(pxCurve ? [{
+      id: 'px',
+      label: 'log s = f(pX)',
+      node: (
+        <Chart
+          data={[{
+            x: pxCurve.pXs, y: pxCurve.logS, type: 'scatter', mode: 'lines',
+            name: `log s (${s.m1.formula})`,
+            line: { width: 3, color: '#7c3aed' },
+          }]}
+          xTitle={`p[${s.ligandX}]`}
+          yTitle="log s (solubilidad molar)"
+          xRange={[0, 14]}
+          yRange={[yMin, yMax]}
+          exportName="quimeq-sol-px"
+        />
+      ),
+    }] : []),
   ];
 
   return (
@@ -402,7 +457,29 @@ export default function SolubilidadCondicional() {
             value: `pH ${selectiveWindow[0].toFixed(1)}–${selectiveWindow[1].toFixed(1)}`,
           }] : []),
           ...(verdict ? [{ label: 'Veredicto', value: verdict.text }] : []),
+          ...(purityAtM1Precip !== null ? [{
+            label: 'Pureza teórica de M1 al precipitar',
+            value: `${purityAtM1Precip.toFixed(1)} % (s₁/(s₁+s₂) a pH ${pH1precip!.toFixed(1)})`,
+          }] : []),
         ]} />
+
+        <Toggle
+          label="log s = f(pX) — efecto de complejante"
+          checked={s.showPX}
+          onChange={(v) => setS((p) => ({ ...p, showPX: v }))}
+        />
+        {s.showPX && (
+          <div className="mask-section">
+            <LabelField label="Complejante X" value={s.ligandX} onChange={(v) => setS((p) => ({ ...p, ligandX: v }))} />
+            <Slider label="pH fijo" value={s.pHForPX} min={0} max={14} step={0.1} onChange={(v) => setS((p) => ({ ...p, pHForPX: v }))} decimals={1} />
+            <ConstantList
+              prefix="log β(X)"
+              values={s.logBetasX}
+              onChange={(v) => setS((p) => ({ ...p, logBetasX: v }))}
+              min={0} max={25} maxItems={6}
+            />
+          </div>
+        )}
 
         <InfoBox title="Separación selectiva de hidróxidos">
           <p>

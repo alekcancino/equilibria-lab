@@ -14,7 +14,7 @@ import { INDICATORS } from '../lib/database';
 import { firstDerivative, granPlot, secondDerivative, titrationCurve, titratableProtons } from '../lib/titration';
 import { alphaY4, edtaTitrationCurve, EDTA_PKAS } from '../lib/edta';
 import { redoxTitrationCurve } from '../lib/redox';
-import { precipTitrationCurve, mohrEndpointPAg } from '../lib/precipTitration';
+import { precipTitrationCurve, mohrEndpointPAg, PRECIP_PRESETS } from '../lib/precipTitration';
 import { condLogKCurve, alphaH, alphaOH } from '../lib/conditional';
 import { METAL_INDICATORS, EDTA_METAL_PRESETS, type MetalIndicator } from '../lib/indicatorDatabase';
 
@@ -336,8 +336,8 @@ function EdtaTitration() {
 
   const vMax = ((cFlask * vFlask) / cBuret) * 1.8;
   const curve = useMemo(
-    () => edtaTitrationCurve({ logKf, pH, cMetal: cFlask, vMetal: vFlask, cEdta: cBuret, vMax, edtaInFlask }),
-    [logKf, pH, cFlask, vFlask, cBuret, vMax, edtaInFlask],
+    () => edtaTitrationCurve({ logKf, pH, logBetasOH, cMetal: cFlask, vMetal: vFlask, cEdta: cBuret, vMax, edtaInFlask }),
+    [logKf, pH, logBetasOH, cFlask, vFlask, cBuret, vMax, edtaInFlask],
   );
 
   // log K'(MY) al pH actual para el panel de indicadores
@@ -461,7 +461,7 @@ function EdtaTitration() {
 
         <InfoBox title="Método de cálculo">
           <p>
-            K′f = α(Y⁴⁻)·Kf al pH del tampón. Balance de masas cuadrático exacto en
+            K′f = Kf / (αM(OH) · αY(H)) al pH del tampón. Balance de masas cuadrático exacto en
             cada punto. Retro: EDTA en exceso en el matraz, se titula con el metal.
             La pestaña <em>Indicadores</em> muestra el criterio ΔlogK ≥ 5 (Harris).
           </p>
@@ -603,17 +603,6 @@ function RedoxTitration() {
 }
 
 /* ───────────────────────── Precipitación ─────────────────────────────────── */
-
-// Presets extendidos: pares 1:1 de precipitación variados
-const PRECIP_PRESETS = [
-  { id: 'cl',   cation: 'Ag⁺',  anion: 'Cl⁻',    formula: 'AgCl',      pKsp: 9.74,  isAg: true  },
-  { id: 'br',   cation: 'Ag⁺',  anion: 'Br⁻',    formula: 'AgBr',      pKsp: 12.30, isAg: true  },
-  { id: 'i',    cation: 'Ag⁺',  anion: 'I⁻',     formula: 'AgI',       pKsp: 16.07, isAg: true  },
-  { id: 'scn',  cation: 'Ag⁺',  anion: 'SCN⁻',   formula: 'AgSCN',     pKsp: 12.00, isAg: true  },
-  { id: 'so4',  cation: 'Ba²⁺', anion: 'SO₄²⁻',  formula: 'BaSO₄',     pKsp: 9.97,  isAg: false },
-  { id: 'ox',   cation: 'Ca²⁺', anion: 'C₂O₄²⁻', formula: 'CaC₂O₄',   pKsp: 8.64,  isAg: false },
-  { id: 'pbso4',cation: 'Pb²⁺', anion: 'SO₄²⁻',  formula: 'PbSO₄',     pKsp: 7.79,  isAg: false },
-];
 
 function PrecipTitration() {
   const [presetId, setPresetId] = useState('cl');
@@ -799,6 +788,10 @@ function PrecipTitration() {
           <p>
             <strong>Otros sistemas</strong>: BaSO₄, CaC₂O₄, PbSO₄ se titulan por
             potenciometría directa o por retrogravimetría.
+          </p>
+          <p>
+            <strong>Alcance del motor</strong>: este módulo modela solo titulaciones
+            1:1 (un catión + un anión). Estequiometrías m:x ≠ 1:1 no están implementadas.
           </p>
         </InfoBox>
       </aside>

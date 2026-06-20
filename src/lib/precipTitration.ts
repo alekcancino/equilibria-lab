@@ -1,5 +1,6 @@
 // Titulación argentométrica: Ag⁺ + X⁻ → AgX↓ (estequiometría 1:1)
 // Calcula curva pAg (y pX) vs volumen de AgNO₃ agregado.
+// Alcance: solo reacciones 1:1 (m:x = 1:1). Otros estequiometrías no están modeladas.
 // Fuente: Harris QCA 9.ª ed. cap. 16; Skoog PAQUI.
 
 export interface PrecipParams {
@@ -85,9 +86,26 @@ export function mohrEndpointPAg(cChromate: number): number {
 }
 
 /** Presets de analitos comunes en argentometría */
-export const PRECIP_ANALYTES = [
-  { id: 'cl', label: 'Cl⁻', formula: 'AgCl', pKsp: 9.74 },
-  { id: 'br', label: 'Br⁻', formula: 'AgBr', pKsp: 12.30 },
-  { id: 'i',  label: 'I⁻',  formula: 'AgI',  pKsp: 16.07 },
-  { id: 'scn', label: 'SCN⁻', formula: 'AgSCN', pKsp: 12.00 },
+export interface PrecipPreset {
+  id: string;
+  cation: string;
+  anion: string;
+  formula: string;
+  pKsp: number;
+  isAg: boolean;
+}
+
+export const PRECIP_PRESETS: PrecipPreset[] = [
+  { id: 'cl',    cation: 'Ag⁺',  anion: 'Cl⁻',    formula: 'AgCl',    pKsp: 9.74,  isAg: true  },
+  { id: 'br',    cation: 'Ag⁺',  anion: 'Br⁻',    formula: 'AgBr',    pKsp: 12.30, isAg: true  },
+  { id: 'i',     cation: 'Ag⁺',  anion: 'I⁻',     formula: 'AgI',     pKsp: 16.07, isAg: true  },
+  { id: 'scn',   cation: 'Ag⁺',  anion: 'SCN⁻',   formula: 'AgSCN',   pKsp: 12.00, isAg: true  },
+  { id: 'so4',   cation: 'Ba²⁺', anion: 'SO₄²⁻',  formula: 'BaSO₄',   pKsp: 9.97,  isAg: false },
+  { id: 'ox',    cation: 'Ca²⁺', anion: 'C₂O₄²⁻', formula: 'CaC₂O₄', pKsp: 8.64,  isAg: false },
+  { id: 'pbso4', cation: 'Pb²⁺', anion: 'SO₄²⁻',  formula: 'PbSO₄',   pKsp: 7.79,  isAg: false },
 ];
+
+/** @deprecated Usar PRECIP_PRESETS */
+export const PRECIP_ANALYTES = PRECIP_PRESETS.map(({ id, anion, formula, pKsp }) => ({
+  id, label: anion, formula, pKsp,
+}));

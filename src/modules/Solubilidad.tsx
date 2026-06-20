@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Data } from 'plotly.js';
+import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import {
   ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, RefBadge, ResultCard,
@@ -88,6 +88,13 @@ export default function Solubilidad() {
 
   const sAtPoint = solubility(saltDef, pHPoint, common);
 
+  const pHMarker = useMemo<Partial<Shape>[]>(() => [{
+    type: 'line',
+    x0: pHPoint, x1: pHPoint,
+    y0: Math.log10(sAtPoint) - 2, y1: Math.log10(sAtPoint) + 2,
+    line: { color: '#CC79A7', width: 2, dash: 'dashdot' },
+  }], [pHPoint, sAtPoint]);
+
   return (
     <div className="module">
       <aside className="panel">
@@ -174,6 +181,7 @@ export default function Solubilidad() {
           xTitle="pH"
           yTitle="log s (solubilidad molar)"
           xRange={[0, 14]}
+          shapes={pHMarker}
           exportName="quimeq-solubilidad"
         />
       </section>

@@ -79,6 +79,8 @@ redox del dataset auditado del proyecto EquilibriaLab.
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # genera dist/ listo para servir estático
+npm run test     # pruebas unitarias de motores
+npm run check    # lint + test + build
 npx tsc --noEmit # typecheck
 ```
 
