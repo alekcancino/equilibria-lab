@@ -55,7 +55,11 @@ const PRESETS: ExtractionPreset[] = [
 
 // ── Motor ─────────────────────────────────────────────────────────────────────
 
-function distributionD(a: AnalyteState, pH: number): number {
+function distributionD(
+  a: AnalyteState,
+  pH: number,
+  dimer?: { enabled: boolean; logK2: number },
+): number {
   if (a.type === 'chelate') {
     // D = K_ex · [HL]_org^n · 10^(n·pH)
     return Math.pow(10, a.logKd + a.n * a.logCHL + a.n * pH);
@@ -65,7 +69,13 @@ function distributionD(a: AnalyteState, pH: number): number {
   const h = Math.pow(10, -pH);
   const alphas = alphaFractions(h, a.pKas);
   const aN = alphas[Math.min(a.neutralIdx, alphas.length - 1)] ?? 0;
-  return Kd * aN;
+  const Dmono = Kd * aN;
+  if (dimer?.enabled && a.type === 'acid') {
+    const K2 = Math.pow(10, dimer.logK2);
+    // Dímero en fase orgánica: D_eff = D_mono · (1 + K₂·α²) desplaza el máximo de log D
+    return Dmono * (1 + K2 * aN * aN);
+  }
+  return Dmono;
 }
 
 /** %E en una sola extracción. r = Vorg/Vaq. */
@@ -127,9 +137,12 @@ function defaultState() {
     a1: presetState('I2'),
     a2: presetState('8hq'),
     showA2: false,
+    showDimer: false,
+    logK2: 1.5,
     Vaq: 10,        // mL
     Vorg: 10,       // mL
     nMax: 1,        // extracciones a mostrar en la 3.ª pestaña
+    preconNMax: 10,
     pH: 5,          // cursor
   };
 }
@@ -263,12 +276,16 @@ export default function ExtraccionLiquido() {
   const reset = () => setSt(defaultState());
 
   const r = st.Vorg / st.Vaq; // ratio de volúmenes
+  const dimerOpts = useMemo(
+    () => ({ enabled: st.showDimer, logK2: st.logK2 }),
+    [st.showDimer, st.logK2],
+  );
 
   // ── Curvas ─────────────────────────────────────────────────────────────────
 
   const pHs = useMemo(() => Array.from({ length: PH_N + 1 }, (_, i) => 14 * i / PH_N), []);
 
-  const D1s = useMemo(() => pHs.map((pH) => distributionD(st.a1, pH)), [pHs, st.a1]);
+  const D1s = useMemo(() => pHs.map((pH) => distributionD(st.a1, pH, dimerOpts)), [pHs, st.a1, dimerOpts]);
   const D2s = useMemo(() => pHs.map((pH) => distributionD(st.a2, pH)), [pHs, st.a2]);
 
   const logD1s = useMemo(() => D1s.map((d) => d > 1e-10 ? Math.log10(d) : -10), [D1s]);
@@ -279,7 +296,7 @@ export default function ExtraccionLiquido() {
 
   // ── Valores en el cursor ────────────────────────────────────────────────────
 
-  const D1cur = distributionD(st.a1, st.pH);
+  const D1cur = distributionD(st.a1, st.pH, dimerOpts);
   const D2cur = distributionD(st.a2, st.pH);
   const pE1cur = percentE1(D1cur, r);
   const pE2cur = percentE1(D2cur, r);
@@ -319,6 +336,21 @@ export default function ExtraccionLiquido() {
       };
     });
   }, [pHs, D1s, r, st.nMax]);
+
+  const preconTrace = useMemo<Data[]>(() => {
+    const D = distributionD(st.a1, st.pH, dimerOpts);
+    const ns = Array.from({ length: st.preconNMax }, (_, i) => i + 1);
+    return [{
+      x: ns,
+      y: ns.map((n) => percentEn(D, r, n)),
+      type: 'scatter',
+      mode: 'lines+markers',
+      name: `%E acumulado (pH ${st.pH.toFixed(1)})`,
+      line: { width: 3, color: C1 },
+      marker: { size: 6 },
+      hovertemplate: 'n = %{x}<br>%E = %{y:.1f}%<extra></extra>',
+    }];
+  }, [st.a1, st.pH, dimerOpts, st.preconNMax, r]);
 
   // ── Trazas log D ───────────────────────────────────────────────────────────
 
@@ -411,6 +443,20 @@ export default function ExtraccionLiquido() {
         />
       ),
     },
+    {
+      id: 'precon',
+      label: 'Preconcentración (%E vs n)',
+      node: (
+        <Chart
+          data={preconTrace}
+          xTitle="Número de extracciones (n)"
+          yTitle="% extracción acumulada"
+          xRange={[1, st.preconNMax]}
+          yRange={[0, 100]}
+          exportName="quimeq-preconcentracion"
+        />
+      ),
+    },
   ];
 
   return (
@@ -443,10 +489,19 @@ export default function ExtraccionLiquido() {
         )}
 
         <h3>Condiciones</h3>
+        <Toggle
+          label="Polimerización / dímero en fase orgánica"
+          checked={st.showDimer}
+          onChange={(v) => set('showDimer', v)}
+        />
+        {st.showDimer && st.a1.type === 'acid' && (
+          <Slider label="log K₂ (dímero)" value={st.logK2} min={-1} max={4} step={0.1} onChange={(v) => set('logK2', v)} decimals={1} />
+        )}
         <Slider label="pH del cursor" value={st.pH} min={0} max={14} step={0.1} onChange={(v) => set('pH', v)} decimals={1} />
         <Slider label="Vaq (mL)" value={st.Vaq} min={1} max={50} step={1} onChange={(v) => set('Vaq', v)} decimals={0} />
         <Slider label="Vorg (mL)" value={st.Vorg} min={1} max={50} step={1} onChange={(v) => set('Vorg', v)} decimals={0} />
         <Slider label="Extracciones a graficar (n)" value={st.nMax} min={1} max={5} step={1} onChange={(v) => set('nMax', v)} decimals={0} />
+        <Slider label="Etapas en preconcentración" value={st.preconNMax} min={3} max={20} step={1} onChange={(v) => set('preconNMax', v)} decimals={0} />
 
         <ResultCard items={[
           { label: `D a pH ${st.pH.toFixed(1)}`, value: D1cur >= 0.001 ? D1cur.toFixed(3) : D1cur.toExponential(2) },
@@ -470,6 +525,14 @@ export default function ExtraccionLiquido() {
           <p>
             Los <strong>anfotéricos</strong> (8-HQ) tienen una curva en campana: solo la forma
             neutral HQ extrae, y esta domina en una ventana de pH intermedia.
+          </p>
+          <p>
+            <strong>Polimerización</strong>: cuando el analito forma dímero en la fase orgánica,
+            D_eff = D_mono · (1 + K₂·α²) y el máximo de log D se desplaza respecto al modelo monomérico.
+          </p>
+          <p>
+            <strong>Preconcentración</strong>: la pestaña %E vs n muestra cuántas extracciones
+            sucesivas (mismo Vorg total repartido) se necesitan para alcanzar un %E dado.
           </p>
           <p>
             <strong>Extracciones múltiples</strong>: con el mismo volumen total de disolvente

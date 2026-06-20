@@ -12,7 +12,8 @@ import { ladderFractions, ladderLogC, predominanceZones } from '../ladder';
 import { anionFreeFraction, solubility, solubilityVsPX } from '../solubility';
 import { precipTitrationCurve, mohrEndpointPAg } from '../precipTitration';
 import { buildSystem, availableSystems, waterLines } from '../pourbaix';
-import { batchIonExchange } from '../ionExchange';
+import { batchIonExchange, isothermCurve, breakthroughCurve } from '../ionExchange';
+import { RESIN_PRESETS, APPLICATION_PRESETS } from '../ionExchangeDatabase';
 import { activityCoefficient } from '../activity';
 import { SALTS } from '../database';
 import type { AcidBaseComponent } from '../equilibrium';
@@ -458,6 +459,45 @@ describe('pourbaix buildSystem', () => {
     const A = E0 + B * pH0;
     tol(A, 0.948, 0.02);
   });
+
+  it('Cu²⁺/Cu: E° = 0.337 V en deposición (logC = 0)', () => {
+    const diagram = buildSystem('cu', 0);
+    const line = diagram.lines.find((l) => l.name === 'Cu²⁺ / Cu');
+    expect(line).toBeDefined();
+    expect(line!.vertical).toBe(false);
+    tol(line!.E[0], 0.337, 0.02);
+  });
+});
+
+describe('smoke presets', () => {
+  it('buildSystem no lanza para todos los sistemas disponibles', () => {
+    for (const sys of availableSystems()) {
+      expect(() => buildSystem(sys.id, 0)).not.toThrow();
+    }
+  });
+
+  it('batchIonExchange con parámetros por defecto devuelve resultado finito', () => {
+    const r = batchIonExchange({
+      cA0: 0.01, cB0: 0.01, selectivityAB: 2.5,
+      resinCapacity: 2, resinVolume: 0.05, volume: 0.1,
+    });
+    expect(Number.isFinite(r.cAeq)).toBe(true);
+    expect(Number.isFinite(r.fracAInResin)).toBe(true);
+  });
+
+  it('hydroxideSolCurve preset Fe(OH)₂ no lanza', () => {
+    const curve = hydroxideSolCurve(15.1, 2, [4.5, 7.4], [0, 14], 100);
+    expect(curve.pHs.length).toBeGreaterThan(0);
+    expect(curve.logS.every(Number.isFinite)).toBe(true);
+  });
+
+  it('ionExchangeDatabase presets son coherentes', () => {
+    expect(RESIN_PRESETS.length).toBeGreaterThanOrEqual(3);
+    expect(APPLICATION_PRESETS.length).toBeGreaterThanOrEqual(2);
+    for (const app of APPLICATION_PRESETS) {
+      expect(RESIN_PRESETS.some((r) => r.id === app.resinId)).toBe(true);
+    }
+  });
 });
 
 describe('availableSystems', () => {
@@ -551,6 +591,22 @@ describe('batchIonExchange', () => {
       cA0: 0.01, cB0: 0.01, selectivityAB: 10, resinCapacity: 2, resinVolume: 0.05, volume: 0.1,
     });
     expect(high.fracAInResin).toBeGreaterThan(low.fracAInResin);
+  });
+
+  it('isotherm q crece con C_A (monotonicidad)', () => {
+    const { q } = isothermCurve({
+      cB0: 0.01, selectivityAB: 5, resinCapacity: 2, resinVolume: 0.05, volume: 0.1,
+      cMin: 1e-4, cMax: 0.05, points: 20,
+    });
+    expect(q[q.length - 1]).toBeGreaterThan(q[0]);
+  });
+
+  it('breakthrough sigmoide entre 0 y 1', () => {
+    const { cRatio } = breakthroughCurve({
+      cA0: 0.01, selectivityAB: 2, resinCapacity: 2, resinVolume: 0.05, flowRate: 0.05,
+    });
+    expect(cRatio[0]).toBeLessThan(0.1);
+    expect(cRatio[cRatio.length - 1]).toBeGreaterThan(0.9);
   });
 });
 

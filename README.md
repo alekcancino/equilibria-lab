@@ -30,6 +30,7 @@ categoría teórica. Por ejemplo, una titulación sin pKa se interpreta como
 | **Complejos** | Complejación multi-ligante: DUZP + distribución α + función de Bjerrum n̄ + logC, sobre el eje pL; 7 sistemas de ejemplo (M/NH₃, M/en) |
 | **Redox** | Distribución α vs pe + escala de predicción de reacciones (Baeza), con pares editables y log K de la reacción espontánea |
 | **Solubilidad** | log s vs pH con Kps condicional (aniones básicos editables) y efecto del ion común |
+| **Actividad / Debye-Hückel** | Fuerza iónica, γ vs I (Debye-Hückel extendida); nota global sobre limitación de motores |
 
 ### Equilibrios múltiples (QA II / III)
 | Módulo | Qué hace |
@@ -37,9 +38,10 @@ categoría teórica. Por ejemplo, una titulación sin pKa se interpreta como
 | **Pourbaix** | Sistema genérico Mⁿ⁺/M/M(OH)ₙ y diagramas E–pH de Fe, Cu, Mn, Zn y Cr derivados por ley de Hess |
 | **Mezclas ácido-base** | Hasta 4 sistemas ácido-base coexistiendo (incl. sales como NaHCO₃ o NH₄Cl): pH global, especies dominantes y titulación de la mezcla |
 | **Constantes condicionales** | log K′=f(pH), coeficientes α, reacciones parásitas, enmascaramiento y factibilidad |
-| **Precipitación selectiva** | log s=f(pH), hidroxocomplejos y ventanas de separación entre metales |
+| **Precipitación selectiva** | log s=f(pH), log s=f(pX), pureza, redisolución y ventanas de separación entre metales |
 | **Potencial condicional** | E°′=f(pH), dismutación y E°′=f(pX) por complejación |
-| **Extracción líquido-líquido** | Reparto simple, ionización, quelatos, extracciones sucesivas y factor de separación |
+| **Extracción líquido-líquido** | Reparto, quelatos, extracciones sucesivas, polimerización y preconcentración |
+| **Intercambio iónico** | Ksel, equilibrio en lote, isoterma y breakthrough en columna (modelo ideal) |
 | **Solubilidad y pH** | Solubilidad condicional de sales y comparación entre sistemas |
 
 ### Titulaciones (QA I / II)

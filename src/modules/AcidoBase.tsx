@@ -9,11 +9,13 @@ import { defaultAcidSystem, systemLabels, type AcidSystem } from '../lib/editorM
 import { SPECIES_COLORS } from '../lib/database';
 import { ladderFractions, ladderLogC, predominanceZones } from '../lib/ladder';
 import { solvePH } from '../lib/equilibrium';
+import { useActivityNote } from '../context/ActivityContext';
 
 const PH_POINTS = 400;
 
 /** Equilibrio ácido-base (mono y poliprótico): DUZP + distribución α + diagrama logC. */
 export default function AcidoBase() {
+  const { showActivityNote } = useActivityNote();
   const [system, setSystem] = useState<AcidSystem>(defaultAcidSystem());
   const [conc, setConc] = useState(0.1);
   const [showSystemPH, setShowSystemPH] = useState(false);
@@ -27,6 +29,7 @@ export default function AcidoBase() {
     () => solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }]),
     [system, conc],
   );
+  const pHInvalid = !Number.isFinite(pHSystem);
 
   // Distribución α vs pH
   const alphaTraces = useMemo<Data[]>(() => {
@@ -81,7 +84,9 @@ export default function AcidoBase() {
     return [{ type: 'line', x0: pHSystem, x1: pHSystem, y0: -14, y1: 1.02, line: { color: '#CC79A7', width: 2, dash: 'dashdot' } }];
   }, [showSystemPH, pHSystem]);
 
-  const alphasAtPH = ladderFractions(pHSystem, system.pKas, true);
+  const alphasAtPH = Number.isFinite(pHSystem)
+    ? ladderFractions(pHSystem, system.pKas, true)
+    : system.pKas.map(() => 0);
   const domIdx = alphasAtPH.indexOf(Math.max(...alphasAtPH));
 
   const diagrams = [
@@ -130,9 +135,24 @@ export default function AcidoBase() {
         <ConcSlider label="Concentración analítica" value={conc} onChange={setConc} />
         <Toggle label="Marcar pH de la disolución pura" checked={showSystemPH} onChange={setShowSystemPH} />
         <ResultCard items={[
-          { label: 'pH de la disolución pura', value: pHSystem.toFixed(2) },
-          { label: 'Especie dominante', value: `${labels[domIdx]} (α = ${alphasAtPH[domIdx].toFixed(2)})` },
+          {
+            label: 'pH de la disolución pura',
+            value: pHInvalid ? 'Sin raíz en balance de cargas' : pHSystem.toFixed(2),
+          },
+          ...(pHInvalid ? [] : [{
+            label: 'Especie dominante',
+            value: `${labels[domIdx]} (α = ${alphasAtPH[domIdx].toFixed(2)})`,
+          }]),
         ]} />
+        {showActivityNote && (
+          <InfoBox title="Actividad vs concentración">
+            <p>
+              Este módulo (y la mayoría de motores) asume <strong>actividades ≈ concentraciones</strong>.
+              A I &gt; 0,1 M la corrección Debye-Hückel puede desviar el pH real; use el módulo
+              <strong> Actividad / Debye-Hückel</strong> para estimar γ.
+            </p>
+          </InfoBox>
+        )}
         <InfoBox title="Cómo leer estos diagramas">
           <p>
             <strong>DUZP</strong> (zonas de predominio): en cada tramo de pH domina una

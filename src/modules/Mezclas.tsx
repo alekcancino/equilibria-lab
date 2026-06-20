@@ -63,8 +63,12 @@ export default function Mezclas() {
     return solvePH(comps, cations, anions);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows]);
+  const pHInvalid = !Number.isFinite(pHMix);
 
   const speciation = useMemo(() => {
+    if (pHInvalid) {
+      return [{ label: 'pH de la mezcla', value: 'Sin raíz en balance de cargas' }];
+    }
     const h = Math.pow(10, -pHMix);
     const items: { label: string; value: string }[] = [{ label: 'pH de la mezcla', value: pHMix.toFixed(2) }];
     for (const r of rows) {
@@ -77,7 +81,7 @@ export default function Mezclas() {
       });
     }
     return items;
-  }, [rows, pHMix]);
+  }, [rows, pHMix, pHInvalid]);
 
   const curve = useMemo(() => {
     if (!titrate) return null;

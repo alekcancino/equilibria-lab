@@ -87,13 +87,17 @@ export default function Solubilidad() {
   }, [saltDef, common]);
 
   const sAtPoint = solubility(saltDef, pHPoint, common);
+  const sInvalid = !Number.isFinite(sAtPoint) || sAtPoint <= 0;
 
-  const pHMarker = useMemo<Partial<Shape>[]>(() => [{
-    type: 'line',
-    x0: pHPoint, x1: pHPoint,
-    y0: Math.log10(sAtPoint) - 2, y1: Math.log10(sAtPoint) + 2,
-    line: { color: '#CC79A7', width: 2, dash: 'dashdot' },
-  }], [pHPoint, sAtPoint]);
+  const pHMarker = useMemo<Partial<Shape>[]>(() => {
+    if (sInvalid) return [];
+    return [{
+      type: 'line',
+      x0: pHPoint, x1: pHPoint,
+      y0: Math.log10(sAtPoint) - 2, y1: Math.log10(sAtPoint) + 2,
+      line: { color: '#CC79A7', width: 2, dash: 'dashdot' },
+    }];
+  }, [pHPoint, sAtPoint, sInvalid]);
 
   return (
     <div className="module">
@@ -164,7 +168,10 @@ export default function Solubilidad() {
         )}
         <Slider label="Evaluar en pH" value={pHPoint} min={0} max={14} step={0.1} onChange={setPHPoint} decimals={1} />
         <ResultCard items={[
-          { label: `Solubilidad a pH ${pHPoint.toFixed(1)}`, value: `${sAtPoint.toExponential(2)} M` },
+          {
+            label: `Solubilidad a pH ${pHPoint.toFixed(1)}`,
+            value: sInvalid ? 'Sin raíz en Ksp (revisar parámetros)' : `${sAtPoint.toExponential(2)} M`,
+          },
           { label: 'Equilibrio', value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
         ]} />
         <InfoBox title="Método de cálculo">

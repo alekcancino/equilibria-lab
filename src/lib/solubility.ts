@@ -40,6 +40,7 @@ export function solubility(salt: SaltPreset, pH: number, cCommon = 0): number {
   let hi = 2;
   if (f(lo) > 0) return 0;
   if (f(hi) < 0) return Math.pow(10, hi);
+  if (f(lo) * f(hi) > 0) return NaN;
   for (let i = 0; i < 70; i++) {
     const mid = (lo + hi) / 2;
     if (f(mid) < 0) lo = mid;
@@ -78,6 +79,7 @@ export function solubilityVsPX(
   let hi = 2;
   if (f(lo) > 0) return 0;
   if (f(hi) < 0) return Math.pow(10, hi);
+  if (f(lo) * f(hi) > 0) return NaN;
   for (let i = 0; i < 70; i++) {
     const mid = (lo + hi) / 2;
     if (f(mid) < 0) lo = mid;

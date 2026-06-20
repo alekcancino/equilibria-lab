@@ -3,41 +3,67 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, LabelField, ModelBadge, ResultCard, Slider } from '../components/Controls';
-import { batchIonExchange, selectivityFromKd } from '../lib/ionExchange';
+import {
+  batchIonExchange, breakthroughCurve, isothermCurve, selectivityFromKd,
+} from '../lib/ionExchange';
+import { APPLICATION_PRESETS, RESIN_PRESETS } from '../lib/ionExchangeDatabase';
 
-const PRESETS = [
-  { id: 'na-ca', label: 'Na⁺ / Ca²⁺', ksel: 2.5, cA: 0.01, cB: 0.005 },
-  { id: 'ca-mg', label: 'Ca²⁺ / Mg²⁺', ksel: 1.8, cA: 0.005, cB: 0.01 },
-  { id: 'pb-ca', label: 'Pb²⁺ / Ca²⁺', ksel: 45, cA: 0.001, cB: 0.01 },
-];
-
-/** Intercambio iónico: selectividad Ksel y reparto en equilibrio (lote). */
+/** Intercambio iónico: selectividad, lote, isoterma y breakthrough en columna. */
 export default function IntercambioIonico() {
-  const [labelA, setLabelA] = useState('Na⁺');
-  const [labelB, setLabelB] = useState('Ca²⁺');
-  const [cA0, setCA0] = useState(0.01);
-  const [cB0, setCB0] = useState(0.005);
-  const [selectivity, setSelectivity] = useState(2.5);
+  const [resinId, setResinId] = useState('dowex50');
+  const [labelA, setLabelA] = useState('Ca²⁺');
+  const [labelB, setLabelB] = useState('Na⁺');
+  const [cA0, setCA0] = useState(0.005);
+  const [cB0, setCB0] = useState(0.01);
+  const [selectivity, setSelectivity] = useState(2.4);
   const [resinCapacity, setResinCapacity] = useState(2);
   const [resinVolume, setResinVolume] = useState(0.05);
   const [volume, setVolume] = useState(0.1);
+  const [flowRate, setFlowRate] = useState(0.05);
 
-  function reset() {
-    setLabelA('Na⁺');
-    setLabelB('Ca²⁺');
-    setCA0(0.01);
-    setCB0(0.005);
-    setSelectivity(2.5);
-    setResinCapacity(2);
-    setResinVolume(0.05);
-    setVolume(0.1);
+  function applyResin(id: string) {
+    const r = RESIN_PRESETS.find((x) => x.id === id);
+    if (!r) return;
+    setResinId(id);
+    setResinCapacity(r.capacity);
+    setSelectivity(r.ksel);
+    setLabelA(r.ionA);
+    setLabelB(r.ionB);
   }
 
+  function reset() {
+    applyResin('dowex50');
+    setCA0(0.005);
+    setCB0(0.01);
+    setResinVolume(0.05);
+    setVolume(0.1);
+    setFlowRate(0.05);
+  }
+
+  const baseParams = useMemo(() => ({
+    cB0, selectivityAB: selectivity, resinCapacity, resinVolume, volume,
+  }), [cB0, selectivity, resinCapacity, resinVolume, volume]);
+
   const eq = useMemo(
-    () => batchIonExchange({
-      cA0, cB0, selectivityAB: selectivity, resinCapacity, resinVolume, volume,
+    () => batchIonExchange({ ...baseParams, cA0 }),
+    [baseParams, cA0],
+  );
+
+  const isotherm = useMemo(
+    () => isothermCurve({
+      ...baseParams,
+      cMin: Math.max(cA0 / 20, 1e-5),
+      cMax: Math.max(cA0 * 5, 0.05),
+      points: 50,
     }),
-    [cA0, cB0, selectivity, resinCapacity, resinVolume, volume],
+    [baseParams, cA0],
+  );
+
+  const breakthrough = useMemo(
+    () => breakthroughCurve({
+      cA0, selectivityAB: selectivity, resinCapacity, resinVolume, flowRate,
+    }),
+    [cA0, selectivity, resinCapacity, resinVolume, flowRate],
   );
 
   const kselCurve = useMemo(() => {
@@ -45,14 +71,12 @@ export default function IntercambioIonico() {
     const fracA: number[] = [];
     for (let i = 1; i <= 80; i++) {
       const k = Math.pow(10, (4 * i) / 80 - 2);
-      const r = batchIonExchange({
-        cA0, cB0, selectivityAB: k, resinCapacity, resinVolume, volume,
-      });
+      const r = batchIonExchange({ ...baseParams, cA0, selectivityAB: k });
       ks.push(k);
       fracA.push(r.fracAInResin);
     }
     return { ks, fracA };
-  }, [cA0, cB0, resinCapacity, resinVolume, volume]);
+  }, [baseParams, cA0]);
 
   const barTraces = useMemo<Data[]>(() => [
     {
@@ -67,13 +91,54 @@ export default function IntercambioIonico() {
   const tabs = [
     {
       id: 'bars',
-      label: 'Reparto',
+      label: 'Reparto (lote)',
       node: (
         <Chart
           data={barTraces}
           xTitle=""
           yTitle="Concentración (M) o fracción en resina"
           exportName="quimeq-ion-exchange-bars"
+        />
+      ),
+    },
+    {
+      id: 'isotherm',
+      label: 'Isoterma q vs C',
+      node: (
+        <Chart
+          data={[{
+            x: isotherm.cA,
+            y: isotherm.q,
+            type: 'scatter',
+            mode: 'lines',
+            name: `q (${labelA})`,
+            line: { width: 3, color: '#0072B2' },
+            hovertemplate: 'C = %{x:.2e} M<br>q = %{y:.3f} eq/L<extra></extra>',
+          }]}
+          xTitle={`[${labelA}] en equilibrio (M)`}
+          yTitle="q en resina (eq/L)"
+          exportName="quimeq-ion-exchange-isotherm"
+        />
+      ),
+    },
+    {
+      id: 'column',
+      label: 'Breakthrough',
+      node: (
+        <Chart
+          data={[{
+            x: breakthrough.bedVolumes,
+            y: breakthrough.cRatio,
+            type: 'scatter',
+            mode: 'lines',
+            name: 'C/C₀',
+            line: { width: 3, color: '#009E73' },
+            hovertemplate: 'BV = %{x:.2f}<br>C/C₀ = %{y:.3f}<extra></extra>',
+          }]}
+          xTitle="Volúmenes de lecho (BV)"
+          yTitle="C / C₀ en el efluente"
+          yRange={[0, 1.05]}
+          exportName="quimeq-ion-exchange-breakthrough"
         />
       ),
     },
@@ -111,19 +176,32 @@ export default function IntercambioIonico() {
           <h2>Intercambio iónico</h2>
           <button className="reset-btn" onClick={reset}>↺ Restablecer</button>
         </div>
-        <ModelBadge model="equilibrio binario A↔B en resina de intercambio" />
-        <p className="hint">Presets:</p>
+        <ModelBadge model="equilibrio binario A↔B · isoterma · columna ideal 1D" />
+        <p className="hint">Resinas:</p>
+        <div className="preset-chip-row" style={{ marginBottom: 8 }}>
+          {RESIN_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              className={resinId === p.id ? 'preset-chip active' : 'preset-chip'}
+              onClick={() => applyResin(p.id)}
+              title={p.reference}
+            >
+              {p.name.split(' (')[0]}
+            </button>
+          ))}
+        </div>
+        <p className="hint">Aplicaciones:</p>
         <div className="preset-chip-row" style={{ marginBottom: 10 }}>
-          {PRESETS.map((p) => (
+          {APPLICATION_PRESETS.map((p) => (
             <button
               key={p.id}
               className="preset-chip"
               onClick={() => {
-                const [a, b] = p.label.split(' / ');
-                setLabelA(a);
-                setLabelB(b);
-                setCA0(p.cA);
-                setCB0(p.cB);
+                applyResin(p.resinId);
+                setLabelA(p.ionA);
+                setLabelB(p.ionB);
+                setCA0(p.cA0);
+                setCB0(p.cB0);
                 setSelectivity(p.ksel);
               }}
             >
@@ -139,16 +217,19 @@ export default function IntercambioIonico() {
         <Slider label="Capacidad de resina (eq/L)" value={resinCapacity} min={0.5} max={5} step={0.1} onChange={setResinCapacity} decimals={1} />
         <Slider label="Volumen de resina (L)" value={resinVolume} min={0.01} max={0.2} step={0.01} onChange={setResinVolume} decimals={2} />
         <Slider label="Volumen de solución (L)" value={volume} min={0.05} max={0.5} step={0.01} onChange={setVolume} decimals={2} />
+        <Slider label="Caudal (L/min, columna)" value={flowRate} min={0.01} max={0.2} step={0.01} onChange={setFlowRate} decimals={2} />
         <ResultCard items={[
           { label: `[${labelA}] final`, value: `${eq.cAeq.toExponential(2)} M` },
           { label: `[${labelB}] final`, value: `${eq.cBeq.toExponential(2)} M` },
           { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(1)} %` },
           { label: 'Ksel (referencia)', value: selectivityFromKd(selectivity, 1).toFixed(1) },
         ]} />
-        <InfoBox title="Selectividad y reparto">
+        <InfoBox title="Selectividad, isoterma y columna">
           <p>
-            La ley de selectividad <code>K_A/B = (y_A·x_B)/(y_B·x_A)</code> relaciona las
-            fracciones en resina (y) y en solución (x). K &gt; 1 favorece la retención de A.
+            La ley <code>K_A/B = (y_A·x_B)/(y_B·x_A)</code> gobierna el equilibrio en lote.
+            La <strong>isoterma</strong> muestra q (eq/L resina) vs la concentración en solución.
+            El <strong>breakthrough</strong> es un modelo ideal: el efluente alcanza C/C₀ ≈ 1
+            tras agotar la capacidad del lecho.
           </p>
         </InfoBox>
       </aside>

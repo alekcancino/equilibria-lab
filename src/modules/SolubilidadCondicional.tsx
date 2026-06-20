@@ -65,6 +65,7 @@ interface State {
   m2: MetalState;
   showM2: boolean;
   logSThreshold: number;
+  operatingPH: number;
   showPX: boolean;
   ligandX: string;
   logBetasX: number[];
@@ -77,6 +78,7 @@ function defaultState(): State {
     m2: fromPreset('ni2oh'),
     showM2: false,
     logSThreshold: -5,
+    operatingPH: 9,
     showPX: false,
     ligandX: 'NH₃',
     logBetasX: [4.04, 7.47, 10.27],
@@ -144,6 +146,29 @@ export default function SolubilidadCondicional() {
     return Math.min(Math.ceil(Math.max(...all)) + 1, 3);
   }, [curve1, curve2]);
 
+  const logSAt = (curve: { pHs: number[]; logS: number[] }, pH: number) => {
+    let best = curve.logS[0];
+    let bestD = Math.abs(curve.pHs[0] - pH);
+    for (let i = 1; i < curve.pHs.length; i++) {
+      const d = Math.abs(curve.pHs[i] - pH);
+      if (d < bestD) { bestD = d; best = curve.logS[i]; }
+    }
+    return best;
+  };
+
+  /** pH donde la curva en U vuelve a cruzar el umbral (redisolución anfotérica). */
+  const redissolutionPH = useMemo(() => {
+    if (s.m1.logBetasOH.length === 0) return null;
+    let minIdx = 0;
+    for (let i = 1; i < curve1.logS.length; i++) {
+      if (curve1.logS[i] < curve1.logS[minIdx]) minIdx = i;
+    }
+    for (let i = minIdx + 1; i < curve1.logS.length; i++) {
+      if (curve1.logS[i] >= s.logSThreshold) return curve1.pHs[i];
+    }
+    return null;
+  }, [curve1, s.m1.logBetasOH, s.logSThreshold]);
+
   // ── Shapes y trazas ───────────────────────────────────────────────────────
 
   const shapes = useMemo<Partial<Shape>[]>(() => {
@@ -162,8 +187,18 @@ export default function SolubilidadCondicional() {
         layer: 'below',
       });
     }
+    out.push({
+      type: 'line', x0: s.operatingPH, x1: s.operatingPH, y0: yMin - 99, y1: yMax + 99,
+      line: { color: '#CC79A7', width: 1.5, dash: 'dashdot' },
+    });
+    if (redissolutionPH !== null) {
+      out.push({
+        type: 'line', x0: redissolutionPH, x1: redissolutionPH, y0: yMin - 99, y1: yMax + 99,
+        line: { color: '#E69F00', width: 1.5, dash: 'dot' },
+      });
+    }
     return out;
-  }, [s.logSThreshold, selectiveWindow, yMin, yMax]);
+  }, [s.logSThreshold, s.operatingPH, selectiveWindow, redissolutionPH, yMin, yMax]);
 
   const traces = useMemo<Data[]>(() => {
     const out: Data[] = [
@@ -199,16 +234,6 @@ export default function SolubilidadCondicional() {
     return { text: 'Uno de los metales no alcanza el umbral en pH 0–14', ok: false };
   }, [s.showM2, selectiveWindow, pH1precip, pH2precip]);
 
-  const logSAt = (curve: { pHs: number[]; logS: number[] }, pH: number) => {
-    let best = curve.logS[0];
-    let bestD = Math.abs(curve.pHs[0] - pH);
-    for (let i = 1; i < curve.pHs.length; i++) {
-      const d = Math.abs(curve.pHs[i] - pH);
-      if (d < bestD) { bestD = d; best = curve.logS[i]; }
-    }
-    return best;
-  };
-
   const purityAtM1Precip = useMemo(() => {
     if (!s.showM2 || pH1precip === null || !curve2) return null;
     const s1 = Math.pow(10, logSAt(curve1, pH1precip));
@@ -216,6 +241,20 @@ export default function SolubilidadCondicional() {
     if (s1 + s2 <= 0) return null;
     return 100 * s1 / (s1 + s2);
   }, [s.showM2, pH1precip, curve1, curve2]);
+
+  const coprecipAtOp = useMemo(() => {
+    if (!s.showM2 || !curve2) return null;
+    const logS1 = logSAt(curve1, s.operatingPH);
+    const logS2 = logSAt(curve2, s.operatingPH);
+    const s1 = Math.pow(10, logS1);
+    const s2 = Math.pow(10, logS2);
+    if (s1 + s2 <= 0) return null;
+    return {
+      logS1, logS2, s1, s2,
+      purityM1: 100 * s1 / (s1 + s2),
+      fracM2: 100 * s2 / (s1 + s2),
+    };
+  }, [s.showM2, s.operatingPH, curve1, curve2]);
 
   const pxCurve = useMemo(() => {
     if (!s.showPX) return null;
@@ -436,10 +475,19 @@ export default function SolubilidadCondicional() {
           onChange={(v) => setS((p) => ({ ...p, logSThreshold: v }))}
           decimals={1}
         />
+        <Slider
+          label="pH de operación (co-precipitación)"
+          value={s.operatingPH}
+          min={0}
+          max={14}
+          step={0.1}
+          onChange={(v) => setS((p) => ({ ...p, operatingPH: v }))}
+          decimals={1}
+        />
         <p className="hint">
           Precipitación "completa" cuando s &lt; 10^{s.logSThreshold.toFixed(0)} M
-          {' '}(línea punteada gris).
-          La banda verde es la ventana de separación selectiva.
+          {' '}(línea punteada gris). La banda verde es la ventana selectiva.
+          Línea rosa: pH de operación; naranja punteada: redisolución anfotérica.
         </p>
 
         {/* ── ResultCard ── */}
@@ -461,6 +509,24 @@ export default function SolubilidadCondicional() {
             label: 'Pureza teórica de M1 al precipitar',
             value: `${purityAtM1Precip.toFixed(1)} % (s₁/(s₁+s₂) a pH ${pH1precip!.toFixed(1)})`,
           }] : []),
+          ...(redissolutionPH !== null ? [{
+            label: `Redisolución de ${s.m1.formula}`,
+            value: `pH ≈ ${redissolutionPH.toFixed(1)} (curva en U)`,
+          }] : []),
+          ...(coprecipAtOp ? [
+            {
+              label: `log s₁ a pH ${s.operatingPH.toFixed(1)}`,
+              value: coprecipAtOp.logS1.toFixed(2),
+            },
+            {
+              label: `log s₂ a pH ${s.operatingPH.toFixed(1)}`,
+              value: coprecipAtOp.logS2.toFixed(2),
+            },
+            {
+              label: 'Pureza M1 en operación',
+              value: `${coprecipAtOp.purityM1.toFixed(1)} % · co-precip. M2: ${coprecipAtOp.fracM2.toFixed(2)} %`,
+            },
+          ] : []),
         ]} />
 
         <Toggle

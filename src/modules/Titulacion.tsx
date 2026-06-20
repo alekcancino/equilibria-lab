@@ -1096,19 +1096,23 @@ const MODES: { value: Mode; label: string }[] = [
 
 export default function Titulacion() {
   const [mode, setMode] = useState<Mode>('acidobase');
+  const modeLabel = MODES.find((m) => m.value === mode)?.label ?? '';
   return (
     <div className="module-with-tabs">
-      <div className="chart-tabs">
-        {MODES.map((m) => (
-          <button
-            key={m.value}
-            className={mode === m.value ? 'chart-tab active' : 'chart-tab'}
-            onClick={() => setMode(m.value)}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
+      <details className="tit-mode-collapse" open>
+        <summary className="tit-mode-summary">Tipo de titulación: {modeLabel}</summary>
+        <div className="chart-tabs">
+          {MODES.map((m) => (
+            <button
+              key={m.value}
+              className={mode === m.value ? 'chart-tab active' : 'chart-tab'}
+              onClick={() => setMode(m.value)}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </details>
       <div className="module">
         {mode === 'acidobase' && <AcidBaseTitration />}
         {mode === 'edta' && <EdtaTitration />}

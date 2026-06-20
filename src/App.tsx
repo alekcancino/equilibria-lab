@@ -1,4 +1,6 @@
 import { lazy, Suspense, useState, type ComponentType } from 'react';
+import { version } from '../package.json';
+import { useActivityNote } from './context/ActivityContext';
 import './App.css';
 
 const AcidoBase              = lazy(() => import('./modules/AcidoBase'));
@@ -52,6 +54,7 @@ const SECTIONS: Section[] = [
 ];
 
 export default function App() {
+  const { showActivityNote, setShowActivityNote } = useActivityNote();
   const [sectionId, setSectionId] = useState('simples');
   const [tabBySection, setTabBySection] = useState<Record<string, string>>(
     Object.fromEntries(SECTIONS.map((s) => [s.id, s.tabs[0].id])),
@@ -119,9 +122,22 @@ export default function App() {
       </main>
 
       <footer className="assumptions">
-        Supuestos: T = 25 °C · actividades ≈ concentraciones · Kw = 10⁻¹⁴ ·
-        constantes de Harris, Skoog, Bard 1985 y Stumm &amp; Morgan 1996 ·
-        exporta cualquier gráfica a PNG con el botón 📷 del menú de la gráfica
+        <span>
+          Supuestos: T = 25 °C · actividades ≈ concentraciones · Kw = 10⁻¹⁴ ·
+          constantes de Harris, Skoog, Bard 1985 y Stumm &amp; Morgan 1996 ·
+          exporta cualquier gráfica a PNG con el botón 📷 del menú de la gráfica
+        </span>
+        <span className="footer-meta">
+          <label className="footer-toggle">
+            <input
+              type="checkbox"
+              checked={showActivityNote}
+              onChange={(e) => setShowActivityNote(e.target.checked)}
+            />
+            Mostrar corrección γ (informativo)
+          </label>
+          <span className="footer-version">v{version}</span>
+        </span>
       </footer>
     </div>
   );

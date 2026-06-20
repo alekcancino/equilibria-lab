@@ -441,6 +441,25 @@ select {
 
 .module-with-tabs .module { flex: 1; min-height: 0; }
 
+.tit-mode-collapse {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+
+.tit-mode-summary {
+  display: none;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.tit-mode-summary::-webkit-details-marker { display: none; }
+
+.tit-mode-collapse .chart-tabs { border-bottom: none; }
+
 /* ---------- Editor de sistema (patrón primario) ---------- */
 .editor {
   padding: 12px;
@@ -618,12 +637,40 @@ select {
 
 /* ---------- Pie de supuestos ---------- */
 .assumptions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   padding: 6px 20px;
   background: var(--panel-bg);
   border-top: 1px solid var(--border);
   font-size: 11.5px;
   color: var(--text-muted);
   flex-shrink: 0;
+}
+
+.footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.footer-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.footer-toggle input { margin: 0; }
+
+.footer-version {
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- DiagramTabs (DUZP / α / logC) ---------- */
@@ -872,6 +919,9 @@ select {
   }
   .chart-tabs::-webkit-scrollbar { display: none; }
   .chart-tab { flex: 0 0 auto; padding: 8px 12px; font-size: 12px; }
+
+  .tit-mode-summary { display: block; }
+  .tit-mode-collapse:not([open]) .chart-tabs { display: none; }
 
   .diagram-tab-bar {
     flex-wrap: nowrap;

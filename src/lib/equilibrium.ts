@@ -80,7 +80,7 @@ export function solvePH(
   const fHi = chargeBalance(hi, components, extraCations, extraAnions);
   if (fLo <= 0) return lo;
   if (fHi >= 0) return hi;
-  if (fLo * fHi > 0) return (lo + hi) / 2;
+  if (fLo * fHi > 0) return NaN;
   for (let i = 0; i < 80; i++) {
     const mid = (lo + hi) / 2;
     const f = chargeBalance(mid, components, extraCations, extraAnions);

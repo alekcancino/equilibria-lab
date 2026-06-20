@@ -9,6 +9,8 @@ Química, UNAM:
 
 Leyenda: ✅ cubierto · 🟡 parcial · ⬜ no cubierto (roadmap)
 
+Última revisión: 2026-06-20 (v0.3.0).
+
 ---
 
 ## Química Analítica I (1402) — equilibrios simples
@@ -16,56 +18,44 @@ Leyenda: ✅ cubierto · 🟡 parcial · ⬜ no cubierto (roadmap)
 | Unidad | Tema | Estado | Módulo |
 |---|---|---|---|
 | 1 | Proceso analítico total | ⬜ | sin módulo de definición del problema, muestreo, preparación, medición y evaluación |
-| 2 | Equilibrio acuoso, actividad, Debye-Hückel, ΔG, Le Chatelier | 🟡 | ley de masas implícita; actividad≈concentración; faltan actividad, fuerza iónica y ΔG |
+| 2 | Equilibrio acuoso, actividad, Debye-Hückel, ΔG, Le Chatelier | 🟡 | ley de masas implícita; módulo **Actividad / Debye-Hückel** (γ vs I); motores aún usan concentraciones; faltan ΔG y capa transversal en cálculos |
 | 3 | Redox: Nernst, predominio, predicción, mezclas, anfolitos y dismutación | 🟡 | Redox cubre pares y predicción; Potencial condicional cubre dismutación; faltan balanceo y potencial de mezclas/anfolitos |
 | 4 | Ácido-base: fuerza, pH, mezclas, buffers, curvas e indicadores | ✅ | Ácido-base + Mezclas + Titulaciones |
-| 5 | Intercambio de partículas, complejos, pP y enmascaramiento | 🟡 | Complejos cubre formación/predominio; enmascaramiento aparece en constantes condicionales, no como desarrollo QA I |
-| 6 | Solubilidad, precipitación y reparto líquido-líquido | 🟡 | Solubilidad + Extracción; faltan fuerza iónica y una integración explícita de separación |
+| 5 | Intercambio de partículas, complejos, pP y enmascaramiento | 🟡 | Complejos cubre formación/predominio; enmascaramiento en constantes condicionales |
+| 6 | Solubilidad, precipitación y reparto líquido-líquido | 🟡 | Solubilidad + Extracción; actividad no integrada en Ksp |
 | — | Titulaciones como aplicación | ✅ | Titulaciones ácido-base, EDTA, redox, precipitación y potenciométrica |
 
-**QA I: cobertura estimada 70–75 %.** Los temas conceptuales y de cálculo
-omitidos también forman parte del programa y no deben descartarse por no ser una
-simulación gráfica.
+**QA I: cobertura estimada 72–76 %.**
 
 ---
 
 ## Química Analítica II (1504) — efecto de un equilibrio secundario
 
-> Objetivo del curso: efecto de un **equilibrio secundario** sobre la
-> cuantitatividad de la reacción principal; introducción a separaciones.
-
 | Unidad | Tema | Estado | Módulo |
 |---|---|---|---|
 | 1 | Constante aparente, efecto del medio | 🟡 | concepto presente en todos los módulos de K'; sin módulo introductorio dedicado |
-| 2 | **Complejos + ácido-base**: K' condicional, log K'=f(pH), zonas | ✅ | **Constantes condicionales** — log K', coeficientes α, enmascaramiento, ventana de factibilidad |
-| 3 | **Redox + ácido-base**: E°' aparente, Pourbaix, cuantitatividad | ✅ | **Potencial condicional** — E°'=f(pH), cruce de pares, escala condicional, dismutación (Latimer) |
-| 4 | **Redox + complejos**: E°'=f(pX), diagramas potencial-pX | ✅ | **Potencial condicional** — E°'=f(pX) con α_Ox/α_Red editables |
-| 5 | Solubilidad/precipitación: log s=f(pH), log s=f(pX), separaciones | 🟡 | **Precipitación selectiva** + **Solubilidad y pH**; falta log s=f(pX) y redisolución/selectividad con complejantes |
-| 6 | Extracción líquido-líquido (intro) | ✅ | **Extracción líquido-líquido** — log D=f(pH), %E=f(pH), extracciones múltiples, factor de separación |
-| 7 | Intercambio iónico, reparto condicional y separaciones | ⬜ | módulo pendiente |
+| 2 | **Complejos + ácido-base**: K' condicional, log K'=f(pH), zonas | ✅ | **Constantes condicionales** |
+| 3 | **Redox + ácido-base**: E°' aparente, Pourbaix, cuantitatividad | ✅ | **Potencial condicional** + **Pourbaix** |
+| 4 | **Redox + complejos**: E°'=f(pX), diagramas potencial-pX | ✅ | **Potencial condicional** |
+| 5 | Solubilidad/precipitación: log s=f(pH), log s=f(pX), separaciones | 🟡 | **Precipitación selectiva** (log s vs pH, pX, pureza, redisolución); **Solubilidad y pH** |
+| 6 | Extracción líquido-líquido (intro) | 🟡 | **Extracción líquido-líquido** — reparto, quelatos, múltiples etapas, polimerización y preconcentración (MVP) |
+| 7 | Intercambio iónico, reparto condicional y separaciones | 🟡 | **Intercambio iónico** — lote, isoterma, columna simplificada; sin cromatografía completa |
 
-**QA II: cobertura estimada 75–80 %.** Intercambio iónico es una unidad completa
-del programa 1504; también falta log s=f(pX).
+**QA II: cobertura estimada 78–82 %.**
 
 ---
 
 ## Química Analítica III (1604) — constantes condicionales y separaciones
 
-> Objetivo del curso: **predicción y simulación de equilibrios múltiples
-> mediante la evaluación de las constantes condicionales** en medio homogéneo y
-> heterogéneo. Bibliografía base: **Ringbom**, *Complexation in Analytical
-> Chemistry*. **Este es el núcleo de la herramienta profesional.**
-
 | Unidad | Tema | Estado | Módulo |
 |---|---|---|---|
-| 1 | **Constantes condicionales (homogéneo)**: coeficientes parásitos, log K'=f(pH), enmascaramiento, consecutivos, titulaciones y redox | 🟡 | **Constantes condicionales** + **Potencial condicional**; faltan consecutivos y mayor trazabilidad del razonamiento |
-| 2 | **Precipitación**: pKs'=f(pH), logS'=f(pH), selectividad y pureza | 🟡 | **Precipitación selectiva** + **Solubilidad y pH**; falta pureza teórica y factores prácticos |
-| 3 | **Extracción L-L**: reparto, polimerización, separación, quelatos y preconcentración | 🟡 | **Extracción líquido-líquido** cubre reparto ácido-base, quelatos y separación; faltan polimerización, preconcentración y validación bibliográfica exhaustiva |
-| 4 | Intercambio iónico: constante de selectividad, reparto condicional en lotes | ⬜ | Módulo nuevo (Tier 3 — roadmap) |
-| 5 | Disolventes no acuosos: efecto nivelador, escalas de acidez, titulación en anfipróticos | ⬜ | Módulo nuevo (Tier 3 — roadmap) |
+| 1 | **Constantes condicionales (homogéneo)** | 🟡 | **Constantes condicionales** + **Potencial condicional**; faltan consecutivos |
+| 2 | **Precipitación**: pKs'=f(pH), logS'=f(pH), selectividad y pureza | 🟡 | **Precipitación selectiva** + pureza/co-precipitación; factores prácticos limitados |
+| 3 | **Extracción L-L** | 🟡 | **Extracción líquido-líquido** + polimerización/preconcentración MVP |
+| 4 | Intercambio iónico | 🟡 | **Intercambio iónico** (Ksel, lote, isoterma, breakthrough); sin columna real multi-zona |
+| 5 | Disolventes no acuosos | ⬜ | Módulo pendiente (Tier 3) |
 
-**QA III: cobertura estimada 65–70 %.** Las unidades 1–3 están parcialmente
-cubiertas; 4–5 siguen pendientes.
+**QA III: cobertura estimada 68–72 %.**
 
 ---
 
@@ -73,10 +63,10 @@ cubiertas; 4–5 siguen pendientes.
 
 | # | Tema | Prioridad | Acción |
 |---|---|---|---|
-| 1 | Intercambio iónico: Ksel, reparto condicional y separaciones | Alta | Módulo nuevo; requerido por QA II y III |
-| 2 | Actividad, fuerza iónica y Debye-Hückel | Alta | Capa transversal y módulo introductorio |
-| 3 | log s=f(pX), pureza y redisolución selectiva | Media | Ampliar módulos de solubilidad |
-| 4 | Polimerización, preconcentración y trazabilidad de quelatos | Media | Ampliar y validar ExtraccionLiquido |
-| 5 | Disolventes no acuosos | Media | Módulo nuevo |
+| 1 | Actividad integrada en motores (no solo módulo intro) | Alta | Capa transversal γ en solvePH, K', Ksp |
+| 2 | Intercambio iónico: columna real / cromatografía | Media | Ampliar motor beyond MVP |
+| 3 | Disolventes no acuosos | Media | Módulo nuevo Tier 3 |
+| 4 | Consecutivos, mezclas redox, ΔG | Media | Extender módulos existentes |
+| 5 | Diagramas 2D pM–pH, pL–pH | Baja | Generalizar Pourbaix |
 
-Detalle de diseño en [`ROADMAP-EQUILIBRIOS-MULTIPLES.md`](ROADMAP-EQUILIBRIOS-MULTIPLES.md).
+Detalle en [`ROADMAP-EQUILIBRIOS-MULTIPLES.md`](ROADMAP-EQUILIBRIOS-MULTIPLES.md).

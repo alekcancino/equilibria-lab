@@ -6,7 +6,7 @@ no solo de graficación. Fundamentada en los temarios UNAM QA II (1504) y QA III
 (1604), cuyo objetivo explícito es *"la predicción y simulación de los equilibrios
 químicos múltiples mediante la evaluación de las constantes condicionales"*.
 
-Estado: **Tier 1 y Tier 2 implementados** (2026-06-13). Tier 3 pendiente.
+Estado: **Tier 1 y Tier 2 implementados** (2026-06-13). **Tier 3 parcial** (2026-06-20, v0.3.0).
 
 ---
 
@@ -105,27 +105,56 @@ tabs log S + distribución α, 10 presets).
 
 ## Tier 3 (completitud del temario, nicho)
 
-- **⑤ Intercambio iónico** (QA III.4): constante de selectividad, cociente de
-  reparto condicional en lotes.
-- **⑥ Disolventes no acuosos** (QA III.5): efecto nivelador, escalas de acidez,
-  titulación en anfipróticos.
+### ⑤ Intercambio iónico — MVP ✅ (2026-06-20)
+
+**Módulo:** `IntercambioIonico.tsx` · **Motor:** `ionExchange.ts` · **Presets:** `ionExchangeDatabase.ts`
+
+- Equilibrio binario A↔B en lote (Ksel)
+- Isoterma de equilibrio (q vs C)
+- Breakthrough en columna (modelo sigmoide ideal)
+- Presets de resinas (Dowex, Amberlite)
+
+**Pendiente:** columna multi-zona, isotermas no lineales, validación bibliográfica exhaustiva.
+
+### ⑥ Disolventes no acuosos — ⬜ pendiente
+
+Efecto nivelador, escalas de acidez, titulación en anfipróticos.
 
 ---
 
-## Mejoras transversales identificadas
+## Mejoras transversales
 
-- **Actividad, fuerza iónica y Debye-Hückel** como capa transversal.
-- **log s=f(pX), pureza y redisolución selectiva** en solubilidad.
-- **Polimerización y preconcentración** en extracción líquido-líquido.
-- **Diagramas 2D de zonas de predominio** (pM–pH, pL–pH) generalizando el motor
-  de Pourbaix a otras partículas.
+### Actividad / Debye-Hückel — MVP ✅ (2026-06-20)
+
+**Módulo:** `Actividad.tsx` · **Motor:** `activity.ts`
+
+- γ vs fuerza iónica (Debye-Hückel extendida)
+- Toggle global informativo en footer (motores aún usan concentraciones)
+
+**Pendiente:** integrar γ en solvePH, K′, Ksp (capa transversal).
+
+### log s=f(pX), pureza, redisolución — MVP ✅ (2026-06-20)
+
+En `SolubilidadCondicional.tsx`: pestaña log s=f(pX), pureza teórica, marcador de redisolución en curvas U.
+
+**Pendiente:** complejante en `SolubilidadSal.tsx`, factores prácticos de pureza.
+
+### Polimerización y preconcentración — MVP ✅ (2026-06-20)
+
+En `ExtraccionLiquido.tsx`: corrección por dimerización en fase orgánica; curva %E vs n etapas.
+
+**Pendiente:** validación bibliográfica de constantes de polimerización.
+
+### Diagramas 2D (pM–pH, pL–pH) — ⬜ pendiente
+
+Generalizar motor Pourbaix/conditional.
 
 ---
 
 ## Orden de implementación sugerido (pendientes)
 
-1. ⑤ Intercambio iónico (módulo nuevo, Tier 3)
-2. Actividad, fuerza iónica y Debye-Hückel
-3. log s=f(pX), pureza y redisolución selectiva
-4. Polimerización y preconcentración en extracción
-5. ⑥ Disolventes no acuosos (módulo nuevo, Tier 3)
+1. Integrar actividad en motores (capa transversal)
+2. Intercambio iónico: columna/cromatografía
+3. Disolventes no acuosos (módulo nuevo)
+4. Diagramas 2D de predominio
+5. Consecutivos y mezclas redox

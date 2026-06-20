@@ -8,25 +8,25 @@ interfaz de usuario.
 ## Dictamen ejecutivo
 
 QuimEq tiene un motor amplio y una buena base visual para explorar equilibrios,
-pero todavía no cumple de forma completa los tres programas. La documentación
-anterior sobreestima especialmente QA I y QA II. Existe una suite parcial de
-pruebas automatizadas (`npm run test`, 25 casos) que cubre los motores
-principales pero no todos los módulos ni casos golden publicados.
+pero todavía no cumple de forma completa los tres programas. Existe una suite de
+pruebas automatizadas (`npm run test`, 60+ casos) que cubre los motores
+principales; faltan casos golden completos para todos los metales Pourbaix.
 
 La prioridad de producto no debe ser agregar más gráficas aisladas, sino hacer
 explícito el razonamiento analítico: reacción principal, reacciones parásitas,
 criterio de cuantitatividad, condiciones controlables, predicción y conclusión.
 
-Desde la auditoría inicial se añadieron 25 pruebas unitarias (`npm run test`) y
-`npm run check` (lint + test + build); la cobertura sigue siendo parcial.
+Desde la auditoría inicial se añadieron pruebas unitarias y `npm run check`
+(lint + test + build). En v0.3.0 se corrigió K′ EDTA, se amplió UX, se añadieron
+módulos MVP (intercambio iónico, actividad) y se sincronizó la documentación.
 
 ## Cobertura corregida
 
 | Programa | Cobertura estimada | Huecos principales |
 |---|---:|---|
-| QA I (1402) | 70–75 % | proceso analítico; actividad y Debye-Hückel; ΔG y K; balanceo redox; potencial de mezclas/anfolitos; enmascaramiento explícito; extracción básica integrada |
-| QA II (1504) | 75–80 % | log s=f(pX); intercambio iónico completo; concentración aparente vs analítica; fuerza de ácidos/bases afectada por complejación |
-| QA III (1604) | 65–70 % | constantes condicionales consecutivas; pureza de precipitados; polimerización y preconcentración en fase orgánica; intercambio iónico; disolventes no acuosos |
+| QA I (1402) | 72–76 % | proceso analítico; ΔG y K; balanceo redox; potencial de mezclas/anfolitos; actividad integrada en motores |
+| QA II (1504) | 78–82 % | intercambio iónico completo (columna); actividad en motores; concentración aparente vs analítica |
+| QA III (1604) | 68–72 % | constantes consecutivas; disolventes no acuosos; columna iónica real |
 
 Las titulaciones son valiosas para aplicar conceptos, pero no sustituyen unidades
 que el programa pide explícitamente.
@@ -94,29 +94,39 @@ usuario edite un dato, la UI debe indicar que ya es un valor personalizado.
 - Referencias visibles para datos cargados desde bases internas.
 - Mejoras responsive para navegación principal, subnavegación y titulaciones.
 
+### Resueltos en v0.3.0 (post-auditoría)
+
+- K′ EDTA unificada con αM(OH) en `edta.ts` (alineada con `conditional.ts`).
+- Token CSS `--bg-alt` definido; InfoBox EDTA corregido.
+- Marcador vertical pH en Solubilidad; botón Restablecer en Mezclas.
+- Pourbaix: cursor pH/E + ResultCard de predominio; default modo custom.
+- ARIA en tabs principales y DiagramTabs; panel móvil 58vh.
+- Módulos MVP: Intercambio iónico, Actividad/Debye-Hückel.
+- 60+ tests unitarios; Plotly lazy-loaded en chunk separado.
+
 ## Calidad técnica
 
 - `npm run build`: pasa.
 - `npm run lint`: pasa sin errores ni advertencias.
-- `npm run test`: 25 pruebas unitarias en [`src/lib/__tests__/engines.test.ts`](../src/lib/__tests__/engines.test.ts) — cubren parcialmente los motores `equilibrium`, `complexation`, `conditional`, `edta`, `redox` y `titration` (Gran). Pendiente ampliar a `ladder`, `solubility`, `pourbaix` y `precipTitration`.
-- `npm run check`: encadena lint + test + build (validación local recomendada antes de commits).
-- El bundle principal supera 500 kB minificado (Plotly en `Controls`/`Chart`); los módulos React ya cargan con lazy import.
+- `npm run test`: 60+ pruebas en [`src/lib/__tests__/engines.test.ts`](../src/lib/__tests__/engines.test.ts).
+- `npm run check`: encadena lint + test + build.
+- Plotly en chunk `PlotChart-*.js` (~1 MB); módulos React con lazy import.
 
 ## Backlog recomendado
 
 ### P0 — confianza y reproducibilidad
 
-1. ~~Crear pruebas unitarias para cada motor~~ — **parcial**: 25 tests en un archivo; ampliar cobertura y casos golden.
+1. ~~Crear pruebas unitarias para cada motor~~ — **parcial**: 60+ tests; ampliar golden Pourbaix y smoke de presets.
 2. ~~Agregar `npm run check`~~ — **hecho**.
 3. Normalizar la procedencia bibliográfica por registro.
-4. Mantener `COBERTURA-TEMARIO.md` sincronizado con las capacidades reales.
+4. ~~Mantener `COBERTURA-TEMARIO.md` sincronizado~~ — **hecho en v0.3.0**; revisar tras cada release.
 
 ### P1 — aprendizaje y uso profesional
 
 1. Extender la inferencia del modelo a nuevos módulos sin convertirla en un
    asistente guiado ni exigir categorías redundantes.
-2. Implementar log s=f(pX) e intercambio iónico.
-3. Completar polimerización, preconcentración y factores de pureza/enriquecimiento.
+2. ~~Implementar log s=f(pX) e intercambio iónico~~ — **MVP hecho**; profundizar columna y actividad en motores.
+3. ~~Completar polimerización, preconcentración~~ — **MVP hecho** en ExtraccionLiquido.
 4. Añadir conclusiones exportables con datos, supuestos, resultado y fuente.
 
 ### P2 — amplitud curricular
