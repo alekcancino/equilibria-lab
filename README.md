@@ -83,8 +83,8 @@ Un módulo unificado con cinco modos:
 Requisitos: **Node.js 20+** y npm.
 
 ```bash
-git clone https://github.com/alekcancino/quimeq.git
-cd quimeq
+git clone https://github.com/alekcancino/equilibria-lab.git
+cd equilibria-lab
 npm install
 npm run dev      # http://localhost:5173
 ```
