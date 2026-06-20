@@ -1,4 +1,6 @@
 import type { Zone } from '../lib/ladder';
+import { formatAxisLabel } from '../lib/format';
+import { MARKER_COLOR } from '../lib/database';
 
 interface DUZPProps {
   zones: Zone[];
@@ -31,7 +33,7 @@ export default function DUZP({ zones, pMin, pMax, pLabel, marker, caption }: DUZ
     <div className="duzp">
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
         {caption && (
-          <text x={W / 2} y={34} textAnchor="middle" fontSize={20} fill="#7f8c8d">
+          <text x={W / 2} y={34} textAnchor="middle" fontSize={20} fill="var(--text-muted)">
             {caption}
           </text>
         )}
@@ -77,9 +79,9 @@ export default function DUZP({ zones, pMin, pMax, pLabel, marker, caption }: DUZ
           const px = x(z.pStart);
           return (
             <g key={`b${i}`}>
-              <line x1={px} y1={BAND_TOP - 8} x2={px} y2={BAND_BOTTOM + 8} stroke="#2c3e50" strokeWidth={1.5} />
-              <text x={px} y={BAND_BOTTOM + 30} textAnchor="middle" fontSize={18} fill="#2c3e50">
-                {z.pStart.toFixed(2)}
+              <line x1={px} y1={BAND_TOP - 8} x2={px} y2={BAND_BOTTOM + 8} stroke="var(--text)" strokeWidth={1.5} />
+              <text x={px} y={BAND_BOTTOM + 30} textAnchor="middle" fontSize={18} fill="var(--text)">
+                {formatAxisLabel(z.pStart)}
               </text>
             </g>
           );
@@ -93,25 +95,25 @@ export default function DUZP({ zones, pMin, pMax, pLabel, marker, caption }: DUZ
               y1={BAND_TOP - 26}
               x2={x(marker.p)}
               y2={BAND_BOTTOM}
-              stroke="#CC79A7"
+              stroke={MARKER_COLOR}
               strokeWidth={2.5}
               strokeDasharray="6 4"
             />
-            <text x={x(marker.p)} y={BAND_TOP - 32} textAnchor="middle" fontSize={17} fontWeight={600} fill="#CC79A7">
+            <text x={x(marker.p)} y={BAND_TOP - 32} textAnchor="middle" fontSize={17} fontWeight={600} fill={MARKER_COLOR}>
               {marker.label ?? `${pLabel} ${marker.p.toFixed(2)}`}
             </text>
           </g>
         )}
 
         {/* Eje */}
-        <line x1={0} y1={BAND_BOTTOM} x2={W} y2={BAND_BOTTOM} stroke="#cbd5dc" strokeWidth={1.5} />
-        <text x={4} y={BAND_BOTTOM + 30} textAnchor="start" fontSize={18} fill="#7f8c8d">
-          {pMin}
+        <line x1={0} y1={BAND_BOTTOM} x2={W} y2={BAND_BOTTOM} stroke="var(--plot-axis)" strokeWidth={1.5} />
+        <text x={4} y={BAND_BOTTOM + 30} textAnchor="start" fontSize={18} fill="var(--text-muted)">
+          {formatAxisLabel(pMin)}
         </text>
-        <text x={W - 4} y={BAND_BOTTOM + 30} textAnchor="end" fontSize={18} fill="#7f8c8d">
-          {pMax}
+        <text x={W - 4} y={BAND_BOTTOM + 30} textAnchor="end" fontSize={18} fill="var(--text-muted)">
+          {formatAxisLabel(pMax)}
         </text>
-        <text x={W / 2} y={H - 8} textAnchor="middle" fontSize={22} fontWeight={600} fill="#2c3e50">
+        <text x={W / 2} y={H - 8} textAnchor="middle" fontSize={22} fontWeight={600} fill="var(--text)">
           {pLabel}
         </text>
       </svg>

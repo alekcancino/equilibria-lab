@@ -4,11 +4,13 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import DUZP from '../components/DUZP';
+import RedoxPredictionScale from '../components/RedoxPredictionScale';
 import { InfoBox, ModelBadge, ResultCard, Slider } from '../components/Controls';
 import { CoupleEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
 import { alphaRedox, peConditional, NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
+import { paddedAxisRange } from '../lib/format';
 import type { Zone } from '../lib/ladder';
 
 const PE_POINTS = 400;
@@ -27,8 +29,7 @@ export default function Redox() {
 
   const pe01 = peConditional(couple1, pH);
   const pe02 = peConditional(couple2, pH);
-  const peMin = Math.min(pe01, pe02) - 8;
-  const peMax = Math.max(pe01, pe02) + 8;
+  const [peMin, peMax] = paddedAxisRange(Math.min(pe01, pe02), Math.max(pe01, pe02), 8);
 
   // Distribución α vs pe (ambos pares)
   const alphaView = useMemo(() => {
@@ -55,34 +56,16 @@ export default function Redox() {
       line: { color: '#aaaaaa', width: 1, dash: 'dot' },
     }));
     const annotations: Partial<Annotations>[] = [
-      { x: pe01, y: 1.07, text: `pe°′₁ = ${pe01.toFixed(1)}`, showarrow: false, font: { size: 11, color: SPECIES_COLORS[0] } },
-      { x: pe02, y: 1.07, text: `pe°′₂ = ${pe02.toFixed(1)}`, showarrow: false, font: { size: 11, color: SPECIES_COLORS[2] } },
+      { x: pe01, y: 1.07, text: `pe°′₁ = ${pe01.toFixed(1)}`, showarrow: false, font: { size: 12, color: SPECIES_COLORS[0] } },
+      { x: pe02, y: 1.07, text: `pe°′₂ = ${pe02.toFixed(1)}`, showarrow: false, font: { size: 12, color: SPECIES_COLORS[2] } },
     ];
     return { data, shapes, annotations };
   }, [couple1, couple2, pe01, pe02, peMin, peMax]);
 
-  // Escala de predicción visual (eje pe, oxidante arriba / reductor abajo)
-  const escalaView = useMemo(() => {
-    const couples = [
-      { c: couple1, pe0: pe01, color: SPECIES_COLORS[0], y: 1 },
-      { c: couple2, pe0: pe02, color: SPECIES_COLORS[2], y: 2 },
-    ];
-    const data: Data[] = couples.map(({ c, pe0, color, y }) => ({
-      x: [pe0], y: [y], type: 'scatter', mode: 'markers',
-      name: `${c.ox}/${c.red}`,
-      marker: { size: 16, color, symbol: 'line-ns', line: { width: 3, color } },
-      hovertemplate: `pe°′ = ${pe0.toFixed(2)} (E°′ = ${(pe0 * NERNST_S).toFixed(3)} V)<extra>${c.ox}/${c.red}</extra>`,
-    }));
-    const annotations: Partial<Annotations>[] = couples.flatMap(({ c, pe0, color, y }) => [
-      { x: pe0, y: y + 0.30, text: `<b>${c.ox}</b>`, showarrow: false, font: { size: 13, color } },
-      { x: pe0, y: y - 0.30, text: `<b>${c.red}</b>`, showarrow: false, font: { size: 13, color } },
-    ]);
-    const shapes: Partial<Shape>[] = [
-      { type: 'line', x0: peMin, x1: peMax, y0: 1, y1: 1, line: { color: '#e8ecef', width: 1 } },
-      { type: 'line', x0: peMin, x1: peMax, y0: 2, y1: 2, line: { color: '#e8ecef', width: 1 } },
-    ];
-    return { data, shapes, annotations };
-  }, [couple1, couple2, pe01, pe02, peMin, peMax]);
+  const scaleCouples = useMemo(() => [
+    { ox: couple1.ox, red: couple1.red, pe0: pe01, color: SPECIES_COLORS[0], label: couple1.name },
+    { ox: couple2.ox, red: couple2.red, pe0: pe02, color: SPECIES_COLORS[2], label: couple2.name },
+  ], [couple1, couple2, pe01, pe02]);
 
   // Predicción de reacción espontánea
   const strong = pe01 > pe02 ? { ox: couple1, red: couple2 } : { ox: couple2, red: couple1 };
@@ -126,7 +109,7 @@ export default function Redox() {
           yRange={[0, 1.12]}
           shapes={alphaView.shapes}
           annotations={alphaView.annotations}
-          exportName="quimeq-redox-alfa"
+          exportName="equilibria-redox-alfa"
         />
       ),
     },
@@ -134,16 +117,11 @@ export default function Redox() {
       id: 'escala',
       label: 'Escala de predicción',
       node: (
-        <Chart
-          data={escalaView.data}
-          xTitle="pe"
-          yTitle=""
-          xRange={[peMin, peMax]}
-          yRange={[0.4, 2.6]}
-          shapes={escalaView.shapes}
-          annotations={escalaView.annotations}
-          showLegend={false}
-          exportName="quimeq-escala-prediccion"
+        <RedoxPredictionScale
+          couples={scaleCouples}
+          peMin={peMin}
+          peMax={peMax}
+          caption="Oxidante arriba · reductor abajo · pe°′ condicional"
         />
       ),
     },

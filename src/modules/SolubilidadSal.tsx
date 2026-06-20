@@ -272,7 +272,7 @@ export default function SolubilidadSal() {
                 yTitle="log S  (mol L⁻¹)"
                 xRange={[0, 14]}
                 yRange={yRange}
-                exportName="quimeq-sol-sal"
+                exportName="equilibria-sol-sal"
               />
             ),
           },
@@ -291,7 +291,7 @@ export default function SolubilidadSal() {
                 yTitle="Fracción molar α"
                 xRange={[0, 14]}
                 yRange={[0, 1]}
-                exportName="quimeq-sol-sal-alpha"
+                exportName="equilibria-sol-sal-alpha"
               />
             ),
           },

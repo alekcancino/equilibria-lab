@@ -126,7 +126,7 @@ export default function Mezclas() {
         type: 'scatter',
         mode: 'lines',
         name: '|dpH/dV| (escalada)',
-        line: { width: 2, color: '#E69F00' },
+        line: { width: 2, color: '#7F8C8D' },
         hoverinfo: 'skip',
       });
     }
@@ -251,7 +251,7 @@ export default function Mezclas() {
                 yTitle="pH"
                 xRange={[0, curve.vMax]}
                 yRange={[0, 14]}
-                exportName="quimeq-mezcla-titulacion"
+                exportName="equilibria-mezcla-titulacion"
               />
             ) : (
               <div className="empty-plot">
@@ -290,7 +290,7 @@ export default function Mezclas() {
                   font: { color: '#0072B2', size: 11 },
                   xanchor: 'left',
                 }]}
-                exportName="quimeq-mezcla-buffer"
+                exportName="equilibria-mezcla-buffer"
               />
             ),
           },

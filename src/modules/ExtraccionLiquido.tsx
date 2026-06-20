@@ -104,7 +104,7 @@ function nFor(D: number, r: number, target: number): number | null {
 
 const C1 = SPECIES_COLORS[0]; // naranja — analito 1
 const C2 = SPECIES_COLORS[1]; // azul    — analito 2 (comparación)
-const C_N = ['#D55E00', '#0072B2', '#009E73']; // n=1,2,3 extracciones
+const C_N = ['#D55E00', '#0072B2', '#009E73'];
 
 const PH_N = 400;
 
@@ -234,7 +234,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
             <p className="hint">Índice de la forma neutra (0 = más protonada): {a.neutralIdx}
               {' '}
               <button
-                style={{ fontSize: 11, background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', padding: '1px 6px' }}
+                style={{ fontSize: 12, background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', padding: '1px 6px' }}
                 onClick={() => onChange({ neutralIdx: (a.neutralIdx + 1) % (a.pKas.length + 1) })}
               >
                 +1
@@ -408,7 +408,7 @@ export default function ExtraccionLiquido() {
           yRange={[logDMin, logDMax]}
           shapes={[cursorShape(logDMin, logDMax)]}
           annotations={[cursorAnnotation(logDMax)]}
-          exportName="quimeq-logD-pH"
+          exportName="equilibria-logD-pH"
         />
       ),
     },
@@ -424,7 +424,7 @@ export default function ExtraccionLiquido() {
           yRange={[0, 100]}
           shapes={[cursorShape(0, 100)]}
           annotations={[cursorAnnotation(100)]}
-          exportName="quimeq-pE-pH"
+          exportName="equilibria-pE-pH"
         />
       ),
     },
@@ -440,7 +440,7 @@ export default function ExtraccionLiquido() {
           yRange={[0, 100]}
           shapes={[cursorShape(0, 100)]}
           annotations={[cursorAnnotation(100)]}
-          exportName="quimeq-multi-pH"
+          exportName="equilibria-multi-pH"
         />
       ),
     },
@@ -454,7 +454,7 @@ export default function ExtraccionLiquido() {
           yTitle="% extracción acumulada"
           xRange={[1, st.preconNMax]}
           yRange={[0, 100]}
-          exportName="quimeq-preconcentracion"
+          exportName="equilibria-preconcentracion"
         />
       ),
     },

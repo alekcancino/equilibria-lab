@@ -98,7 +98,7 @@ export default function IntercambioIonico() {
           data={barTraces}
           xTitle=""
           yTitle="Concentración (M) o fracción en resina"
-          exportName="quimeq-ion-exchange-bars"
+          exportName="equilibria-ion-exchange-bars"
         />
       ),
     },
@@ -118,7 +118,7 @@ export default function IntercambioIonico() {
           }]}
           xTitle={`[${labelA}] en equilibrio (M)`}
           yTitle="q en resina (eq/L)"
-          exportName="quimeq-ion-exchange-isotherm"
+          exportName="equilibria-ion-exchange-isotherm"
         />
       ),
     },
@@ -133,13 +133,13 @@ export default function IntercambioIonico() {
             type: 'scatter',
             mode: 'lines',
             name: 'C/C₀',
-            line: { width: 3, color: '#009E73' },
+            line: { width: 3, color: '#2C3E50' },
             hovertemplate: 'BV = %{x:.2f}<br>C/C₀ = %{y:.3f}<extra></extra>',
           }]}
           xTitle="Volúmenes de lecho (BV)"
           yTitle="C / C₀ en el efluente"
           yRange={[0, 1.05]}
-          exportName="quimeq-ion-exchange-breakthrough"
+          exportName="equilibria-ion-exchange-breakthrough"
         />
       ),
     },
@@ -162,9 +162,9 @@ export default function IntercambioIonico() {
           shapes={[{
             type: 'line',
             x0: selectivity, x1: selectivity, y0: 0, y1: 1,
-            line: { color: '#E69F00', width: 2, dash: 'dash' },
+            line: { color: '#7F8C8D', width: 2, dash: 'dash' },
           }]}
-          exportName="quimeq-ion-exchange-ksel"
+          exportName="equilibria-ion-exchange-ksel"
         />
       ),
     },
@@ -181,7 +181,6 @@ export default function IntercambioIonico() {
               key={p.id}
               className={resinId === p.id ? 'preset-chip active' : 'preset-chip'}
               onClick={() => applyResin(p.id)}
-              title={p.reference}
             >
               {p.name.split(' (')[0]}
             </button>

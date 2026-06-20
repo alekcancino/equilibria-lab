@@ -1,5 +1,5 @@
 // Generación de curvas de titulación ácido-base por balance de cargas exacto.
-// El analito puede ser ácido o base; el titulante fuerte puede ser base (NaOH)
+// El analito puede ser ácido o base; el titulante fuerte puede ser básico (NaOH)
 // o ácido (HCl) — las cuatro combinaciones son válidas.
 
 import { solvePH, type AcidBaseComponent } from './equilibrium';
@@ -32,7 +32,7 @@ export interface TitrationCurve {
   equivalenceVolumes: number[];
 }
 
-/** Protones titulables en dirección alcalimétrica o acidimétrica (pKa en ventana útil). */
+/** Protones titulables con titulante básico o ácido (pKa en ventana útil). */
 export function titratableProtons(pKas: number[]): number {
   return Math.max(pKas.filter((pk) => pk > 0 && pk < 14).length, 1);
 }

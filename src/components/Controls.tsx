@@ -320,14 +320,10 @@ export function ModelBadge({
   );
 }
 
-/** Fuente del dato cargado desde la base; desaparece al editarlo manualmente. */
-export function RefBadge({ reference }: { reference?: string }) {
-  if (!reference) return null;
-  return (
-    <p className="ref-badge">
-      <strong>Fuente del dato:</strong> {reference}
-    </p>
-  );
+/** Reservado para metadatos internos; no se muestra en la UI. */
+export function RefBadge(props: { reference?: string }) {
+  void props.reference;
+  return null;
 }
 
 /** Tarjeta de resultado numérico destacado (ej. pH en equivalencia). */

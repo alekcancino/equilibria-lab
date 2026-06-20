@@ -125,7 +125,11 @@ export const SALTS: SaltPreset[] = [
   { id: 'pbi2', name: 'Yoduro de plomo', formula: 'PbI₂', pKsp: 8.10, m: 1, x: 2, anionLabel: 'I⁻', cationLabel: 'Pb²⁺' },
 ];
 
+/** Color for system markers (pH, pe, equilibrium lines) — Okabe-Ito pink */
+export const MARKER_COLOR = '#CC79A7';
+
 /** Paleta Okabe-Ito (segura para daltonismo) para series de especies */
 export const SPECIES_COLORS = [
-  '#D55E00', '#0072B2', '#009E73', '#CC79A7', '#E69F00', '#56B4E9', '#2c3e50', '#999999',
+  '#0072B2', '#D55E00', '#009E73', '#CC79A7',
+  '#E69F00', '#56B4E9', '#2C3E50', '#999999',
 ];

@@ -74,7 +74,7 @@ export default function Solubilidad() {
     const data: Data[] = [{
       x: phs, y: logS, type: 'scatter', mode: 'lines',
       name: common > 0 ? 'log s (con ion común)' : 'log s',
-      line: { width: 3, color: '#CC79A7' },
+      line: { width: 3, color: '#0072B2' },
       hovertemplate: 'pH = %{x:.2f}<br>log s = %{y:.2f}<extra></extra>',
     }];
     if (common > 0) {
@@ -186,7 +186,7 @@ export default function Solubilidad() {
           yTitle="log s (solubilidad molar)"
           xRange={[0, 14]}
           shapes={pHMarker}
-          exportName="quimeq-solubilidad"
+          exportName="equilibria-solubilidad"
         />
       </section>
     </div>

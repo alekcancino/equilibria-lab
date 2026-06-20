@@ -167,7 +167,7 @@ export default function PotencialCondicional() {
         x: cross12, y: Eprime(st.couple1, cross12),
         text: `×  pH ${cross12.toFixed(1)}`,
         showarrow: false,
-        font: { size: 11, color: '#7f8c8d' },
+        font: { size: 11, color: '#7F8C8D' },
         bgcolor: '#fff', borderpad: 3,
       });
     }
@@ -278,7 +278,7 @@ export default function PotencialCondicional() {
           yRange={[eMin, eMax]}
           shapes={logKShapes}
           annotations={logKAnnotations}
-          exportName="quimeq-eprime-ph"
+          exportName="equilibria-eprime-ph"
         />
       ),
     },
@@ -303,7 +303,7 @@ export default function PotencialCondicional() {
             text: `E° = ${st.pxE0.toFixed(3)} V`,
             showarrow: false, font: { size: 11, color: '#888' },
           }]}
-          exportName="quimeq-eprime-px"
+          exportName="equilibria-eprime-px"
         />
       ),
     },
@@ -320,7 +320,7 @@ export default function PotencialCondicional() {
           shapes={escalaShapes}
           annotations={escalaAnnotations}
           showLegend={false}
-          exportName="quimeq-escala-cond"
+          exportName="equilibria-escala-cond"
         />
       ),
     },

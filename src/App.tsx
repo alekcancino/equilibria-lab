@@ -144,7 +144,7 @@ export default function App() {
           <p className="assumptions-text">
             T = 25 °C · actividades ≈ concentraciones · K<sub>w</sub> = 10⁻¹⁴ ·
             constantes de Harris, Skoog, Bard 1985 y Stumm &amp; Morgan 1996 ·
-            exporta gráficas con el botón flotante de la esquina inferior derecha
+            exporta gráficas con el botón flotante sobre la gráfica
           </p>
         </details>
         <span className="footer-meta">
