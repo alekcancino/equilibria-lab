@@ -23,7 +23,9 @@ sin cálculo extra del estudiante:
 - Constantes condicionales: **pendiente d(log K′)/dpH** en el pH de evaluación (tramo lineal, Ord-2).
 - **Cargador "Cargar sistema completo"**: Zn–EDTA–NH₃ y otros se cargan de un clic poblando
   todos los paneles (editable después).
-Pendiente real: solver de **elución 3 compartimentos** (3P-c) sigue como modelo simplificado.
+- **Elución 3 compartimentos** (3P-c): solver acoplado real (resina↔solución↔quelato,
+  `elutionAtPH3C`/`optimalElutionPH3C`) con curva % Ni recuperado vs pH y pH óptimo;
+  ya **no** es un modelo simplificado.
 
 **Tests de regresión:** [`src/lib/__tests__/exam-qa3-2025.test.ts`](../src/lib/__tests__/exam-qa3-2025.test.ts)
 
