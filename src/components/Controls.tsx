@@ -436,25 +436,30 @@ export function Disclosure({
 }
 
 /**
- * Chips de resultado flotantes sobre la gráfica (patrón "figura primero").
- * El item con `accent` usa el degradado índigo→violeta para el valor clave.
+ * Fila de tarjetas de resultado bajo la gráfica (dirección C): números grandes y
+ * legibles para el estudiante. El item con `accent` usa el degradado índigo→violeta
+ * para el valor clave. Se coloca como último hijo de `.plot-area`.
  */
-export function ResultChips({
+export function ResultCardRow({
   items,
 }: {
   items: { label: ReactNode; value: ReactNode; accent?: boolean }[];
 }) {
+  if (items.length === 0) return null;
   return (
-    <div className="result-chips">
+    <div className="result-row">
       {items.map((it, i) => (
-        <div key={i} className={it.accent ? 'result-chip accent' : 'result-chip'}>
-          <span className="chip-k">{it.label}</span>
-          <span className="chip-v">{it.value}</span>
+        <div key={i} className={it.accent ? 'result-row-card accent' : 'result-row-card'}>
+          <span className="rr-k">{it.label}</span>
+          <span className="rr-v">{it.value}</span>
         </div>
       ))}
     </div>
   );
 }
+
+/** @deprecated Usar ResultCardRow. Alias para compatibilidad durante la migración. */
+export const ResultChips = ResultCardRow;
 
 /** Bloque de explicación didáctica plegable. */
 export function InfoBox({ title, children }: { title: string; children: ReactNode }) {

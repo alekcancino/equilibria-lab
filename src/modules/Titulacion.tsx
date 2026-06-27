@@ -404,7 +404,9 @@ function EdtaTitration() {
     if (traceY === 'pM' || traceY === 'both') {
       traces.push({
         x: xData, y: curve.pMs, type: 'scatter', mode: 'lines', name: "pM′",
-        line: { width: 3, color: '#2C3E50' },
+        line: { width: 3.5, color: '#0072B2' },
+        fill: traceY === 'pM' ? 'tozeroy' : undefined,
+        fillcolor: 'rgba(0, 114, 178, 0.07)',
         hovertemplate: axis === 'x' ? 'x = %{x:.2f}<br>pM′ = %{y:.2f}<extra></extra>' : 'V = %{x:.2f} mL<br>pM′ = %{y:.2f}<extra></extra>',
       });
     }

@@ -332,8 +332,9 @@ html, body, #root {
   background: linear-gradient(180deg, #fff, #FCFDFF);
   border: 1px solid var(--border);
   border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-float);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
+  padding: 6px;
 }
 
 .chart-plot {
@@ -1018,7 +1019,15 @@ select {
 .diagram-tabs {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Plot area is a flex column: chart fills, ResultCardRow sits below */
+.plot-area > .diagram-tabs,
+.plot-area > .chart-shell {
+  flex: 1;
+  min-height: 0;
 }
 
 .diagram-tab-bar {
@@ -1379,13 +1388,6 @@ select {
   .tit-mode-collapse:not([open]) .chart-tabs { display: none; }
 
   .db-grid { grid-template-columns: 1fr; }
-
-  /* Chips reflow to a static strip below the plot on mobile */
-  .result-chips {
-    position: static;
-    flex-wrap: wrap;
-    margin: var(--space-2) 0 0;
-  }
 }
 
 /* ============================================================
@@ -1430,8 +1432,8 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
-  padding: 14px;
-  margin-bottom: 12px;
+  padding: 16px 16px 18px;
+  margin-bottom: 14px;
 }
 .psection-toggle {
   display: block;
@@ -1509,49 +1511,52 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
 .disclosure.open .disclosure-caret { transform: rotate(180deg); }
 .disclosure-body { padding: 0 15px 15px; }
 
-/* Floating result chips overlaid on the plot hero */
-.result-chips {
-  position: absolute;
-  left: 26px;
-  bottom: 24px;
-  z-index: 4;
+/* Result card row under the plot (direction C) — big, readable exam numbers */
+.result-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 14px;
+  margin-top: 14px;
+  flex-shrink: 0;
+}
+.result-row-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  padding: 16px 20px;
   display: flex;
-  gap: 11px;
-  pointer-events: none;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 78px;
 }
-.result-chip {
-  pointer-events: auto;
-  min-width: 116px;
-  padding: 10px 15px;
-  border-radius: 15px;
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-float);
-}
-.result-chip .chip-k {
-  display: block;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.result-row-card .rr-k {
+  font-size: 12px;
   color: var(--text-muted);
-  margin-bottom: 4px;
+  margin-bottom: 7px;
+  line-height: 1.25;
 }
-.result-chip .chip-v {
-  display: block;
-  font-size: 22px;
+.result-row-card .rr-v {
+  font-size: 30px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.6px;
+  line-height: 1;
   color: var(--text);
 }
-.result-chip.accent {
+.result-row-card.accent {
   background: var(--accent-grad);
   border: none;
+  box-shadow: 0 10px 26px rgba(99, 102, 241, 0.32);
 }
-.result-chip.accent .chip-k { color: rgba(255, 255, 255, 0.82); }
-.result-chip.accent .chip-v { color: #fff; }
+.result-row-card.accent .rr-k { color: rgba(255, 255, 255, 0.85); }
+.result-row-card.accent .rr-v { color: #fff; }
+
+@media (max-width: 800px) {
+  .result-row { grid-auto-flow: row; grid-auto-columns: auto; }
+  .result-row-card .rr-v { font-size: 26px; }
+}
 
 /* System preset picker — one-click full system loader */
 .preset-picker {
