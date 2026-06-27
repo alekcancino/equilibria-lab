@@ -506,7 +506,7 @@ function EdtaTitration() {
           <Slider label="Volumen del matraz" value={vFlask} min={5} max={100} step={1} onChange={setVFlask} unit="mL" decimals={0} />
           <ConcSlider label={`Concentración del titulante (${buretName})`} value={cBuret} onChange={setCBuret} min={-4} max={-1} />
         </PanelSection>
-        <PanelSection title="Gráfica" icon="📈">
+        <PanelSection title="Gráfica" icon="∿">
           <div className="control">
             <div className="control-header"><span className="control-label">Eje horizontal</span></div>
             <div className="segmented" style={{ marginTop: 6 }}>
