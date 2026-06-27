@@ -4,7 +4,8 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConstantList, InfoBox, LabelField, ModelBadge, ResultCard, Slider, Toggle,
+  ConstantList, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard,
+  ResultCardRow, Slider, Toggle,
 } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
 
@@ -94,9 +95,7 @@ function buildAlphaCurve(pKas: number[], points = 400) {
 
 // ── Sub-editor ─────────────────────────────────────────────────────────────────
 
-function SalEditor({ title, color, sal, onChange }: {
-  title: string;
-  color: string;
+function SalEditor({ sal, onChange }: {
   sal: SalState;
   onChange: (patch: Partial<SalState>) => void;
 }) {
@@ -105,9 +104,7 @@ function SalEditor({ title, color, sal, onChange }: {
   );
 
   return (
-    <div className="editor">
-      <p className="editor-title" style={{ color }}>{title}</p>
-
+    <>
       {/* Chips de preset */}
       <div className="preset-chip-row" style={{ marginBottom: 8 }}>
         {PRESETS.map((p) => (
@@ -165,13 +162,13 @@ function SalEditor({ title, color, sal, onChange }: {
           Anión de ácido fuerte (sin pKa)
         </button>
       )}
-    </div>
+    </>
   );
 }
 
 // ── Componente principal ────────────────────────────────────────────────────────
 
-const ALPHA_COLORS = ['#e74c3c', '#e67e22', '#27ae60', '#2980b9', '#8e44ad'];
+const ALPHA_COLORS = ['#D55E00', '#E69F00', '#009E73', '#0072B2', '#CC79A7'];
 
 export default function SolubilidadSal() {
   const [sal1, setSal1] = useState<SalState>(fromPreset(DEFAULT1));
@@ -230,23 +227,29 @@ export default function SolubilidadSal() {
   return (
     <div className="module">
       <PanelShell title="Solubilidad y pH" onReset={reset}>
+        <PanelSection title="Sistema 1" icon="①">
         <ModelBadge
           model={sal1.pKas.length === 0 ? 'solubilidad intrínseca' : 'solubilidad condicionada por pH'}
           additions={[showP2 && 'comparación entre sistemas']}
         />
-        <SalEditor title="Sistema 1" color={sal1.color} sal={sal1} onChange={(p) => setSal1((s) => ({ ...s, ...p }))} />
+        <SalEditor sal={sal1} onChange={(p) => setSal1((s) => ({ ...s, ...p }))} />
+        </PanelSection>
 
+        <PanelSection title="Sistema 2" icon="②">
         <Toggle label="Comparar con 2.º sistema" checked={showP2} onChange={setShowP2} />
         {showP2 && (
           <div className="mask-section">
-            <SalEditor title="Sistema 2" color={sal2.color} sal={sal2} onChange={(p) => setSal2((s) => ({ ...s, ...p }))} />
+            <SalEditor sal={sal2} onChange={(p) => setSal2((s) => ({ ...s, ...p }))} />
           </div>
         )}
+        </PanelSection>
 
+        <PanelSection title="Resultado" icon="∑">
         <ResultCard items={[
           { label: `S mínima — ${sal1.name}`, value: `log S = ${minS1.logS.toFixed(2)}  (pH ${minS1.pH.toFixed(1)})` },
           { label: 'Fórmula (p, q)', value: `M_${sal1.p} A_${sal1.q}  →  S = (Kps / ${sal1.p ** sal1.p}·${sal1.q ** sal1.q}·αₙ^${sal1.q})^{1/${sal1.p + sal1.q}}` },
         ]} />
+        </PanelSection>
 
         <InfoBox title="Solubilidad condicional de sales">
           <p>
@@ -295,6 +298,11 @@ export default function SolubilidadSal() {
               />
             ),
           },
+        ]} />
+        <ResultCardRow items={[
+          { label: `S mínima ${sal1.name}`, value: Number.isFinite(minS1.logS) ? `log S ${minS1.logS.toFixed(2)}` : '—', accent: true },
+          { label: 'pH de S mínima', value: Number.isFinite(minS1.pH) ? minS1.pH.toFixed(1) : '—' },
+          { label: 'Estequiometría', value: `M${sal1.p}A${sal1.q}` },
         ]} />
       </section>
     </div>

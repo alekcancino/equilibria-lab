@@ -3,7 +3,9 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, ModelBadge, ResultCard, Slider } from '../components/Controls';
+import {
+  ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider,
+} from '../components/Controls';
 import {
   ionicStrength,
   logActivityCoefficient,
@@ -75,29 +77,35 @@ export default function Actividad() {
   return (
     <div className="module">
       <PanelShell title="Actividad y Debye-Hückel" onReset={reset}>
-        <ModelBadge model="electrolito binario z:z en solución acuosa" />
-        <ConcSlider label="Concentración del electrolito" value={cIon} onChange={setCIon} min={-3} max={0} />
-        <div className="control">
-          <div className="control-header">
-            <span className="control-label">Carga iónica |z|</span>
-            <span className="control-value">{z}</span>
+        <PanelSection title="Sistema" icon="⚛">
+          <ModelBadge model="electrolito binario z:z en solución acuosa" />
+          <div className="control">
+            <div className="control-header">
+              <span className="control-label">Carga iónica |z|</span>
+              <span className="control-value">{z}</span>
+            </div>
+            <div className="segmented" style={{ marginTop: 6 }}>
+              {[1, 2, 3].map((v) => (
+                <button key={v} className={z === v ? 'seg-btn active' : 'seg-btn'} onClick={() => setZ(v)}>
+                  {v}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="segmented" style={{ marginTop: 6 }}>
-            {[1, 2, 3].map((v) => (
-              <button key={v} className={z === v ? 'seg-btn active' : 'seg-btn'} onClick={() => setZ(v)}>
-                {v}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Slider label="pH de referencia" value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
-        <ResultCard items={[
-          { label: 'Fuerza iónica I', value: `${I.toExponential(2)} M` },
-          { label: `log γ (z = ${z})`, value: logGamma.toFixed(3) },
-          { label: `γ (z = ${z})`, value: gamma.toFixed(3) },
-          { label: 'pKw aparente', value: pKwApp.toFixed(2) },
-          { label: 'a_H ≈ γ·[H⁺]', value: (gammaH * Math.pow(10, -pH)).toExponential(2) },
-        ]} />
+        </PanelSection>
+        <PanelSection title="Condiciones" icon="⚗">
+          <ConcSlider label="Concentración del electrolito" value={cIon} onChange={setCIon} min={-3} max={0} />
+          <Slider label="pH de referencia" value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
+        </PanelSection>
+        <PanelSection title="Resultado" icon="∑">
+          <ResultCard items={[
+            { label: 'Fuerza iónica I', value: `${I.toExponential(2)} M` },
+            { label: `log γ (z = ${z})`, value: logGamma.toFixed(3) },
+            { label: `γ (z = ${z})`, value: gamma.toFixed(3) },
+            { label: 'pKw aparente', value: pKwApp.toFixed(2) },
+            { label: 'a_H ≈ γ·[H⁺]', value: (gammaH * Math.pow(10, -pH)).toExponential(2) },
+          ]} />
+        </PanelSection>
         <InfoBox title="Debye-Hückel extendida">
           <p>
             A 25 °C, <code>log γ = −0.51 z² √I / (1 + 0.33·3·√I)</code> (a ≈ 3 Å).
@@ -107,6 +115,15 @@ export default function Actividad() {
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={tabs} />
+        <ResultCardRow items={[
+          {
+            label: 'Fuerza iónica I',
+            value: Number.isFinite(I) ? `${I.toExponential(2)} M` : '—',
+            accent: true,
+          },
+          { label: `γ (z = ${z})`, value: Number.isFinite(gamma) ? gamma.toFixed(3) : '—' },
+          { label: 'pKw aparente', value: Number.isFinite(pKwApp) ? pKwApp.toFixed(2) : '—' },
+        ]} />
       </section>
     </div>
   );

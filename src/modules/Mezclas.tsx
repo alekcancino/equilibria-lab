@@ -3,7 +3,7 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, ModelBadge, ResultCard, SelectControl, Slider, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Slider, Toggle } from '../components/Controls';
 import { ACIDS } from '../lib/database';
 import { solvePH, alphaFractions, type AcidBaseComponent } from '../lib/equilibrium';
 import { firstDerivative } from '../lib/titration';
@@ -164,6 +164,7 @@ export default function Mezclas() {
   return (
     <div className="module">
       <PanelShell title="Mezclas multicomponente" onReset={reset}>
+        <PanelSection title="Sistemas" icon="⚛">
         <ModelBadge
           model={rows.length === 1
             ? 'un sistema ácido-base'
@@ -212,8 +213,13 @@ export default function Mezclas() {
             + Agregar componente
           </button>
         )}
+        </PanelSection>
+
+        <PanelSection title="Resultado" icon="∑">
         <ResultCard items={speciation} />
-        <h3>Titulación de la mezcla</h3>
+        </PanelSection>
+
+        <PanelSection title="Titulación de la mezcla" icon="⚗">
         <Toggle label="Mostrar curva de titulación" checked={titrate} onChange={setTitrate} />
         {titrate && (
           <>
@@ -227,6 +233,8 @@ export default function Mezclas() {
             <Toggle label="Mostrar derivada dpH/dV" checked={showDerivative} onChange={setShowDerivative} />
           </>
         )}
+        </PanelSection>
+
         <InfoBox title="¿Qué puedo simular aquí?">
           <p>
             Hasta 4 sistemas ácido-base coexistiendo: el pH se resuelve con el balance de
@@ -271,7 +279,7 @@ export default function Mezclas() {
                   type: 'scatter',
                   mode: 'lines',
                   name: 'β (mezcla)',
-                  line: { width: 2.5, color: '#7c3aed' },
+                  line: { width: 2.5, color: '#009E73' },
                   hovertemplate: 'pH = %{x:.2f}<br>β = %{y:.4f} mol/L·pH<extra></extra>',
                 }]}
                 xTitle="pH"
@@ -294,6 +302,11 @@ export default function Mezclas() {
               />
             ),
           },
+        ]} />
+        <ResultCardRow items={[
+          { label: 'pH de la mezcla', value: pHInvalid ? '—' : pHMix.toFixed(2), accent: true },
+          { label: 'Componentes', value: String(rows.length) },
+          { label: 'Titulante', value: titrate ? titrantName : '—' },
         ]} />
       </section>
     </div>

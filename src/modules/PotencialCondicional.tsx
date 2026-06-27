@@ -13,7 +13,7 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, LabelField } from '../components/Controls';
+import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, LabelField, PanelSection, ResultCardRow, Disclosure } from '../components/Controls';
 import { CoupleEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
 import { NERNST_S } from '../lib/redox';
@@ -347,124 +347,129 @@ export default function PotencialCondicional() {
   return (
     <div className="module">
       <PanelShell title="Potencial condicional" onReset={reset}>
-        <ModelBadge
-          model="comparación E°′ = f(pH) entre dos pares"
-          additions={[st.showCouple3 && 'Latimer y dismutación', st.showPX && 'efecto de ligando X']}
-        />
+        <PanelSection title="Sistema" icon="⚛">
+          <ModelBadge
+            model="comparación E°′ = f(pH) entre dos pares"
+            additions={[st.showCouple3 && 'Latimer y dismutación', st.showPX && 'efecto de ligando X']}
+          />
 
-        <CoupleEditor title="Par 1" couple={st.couple1} onChange={(c) => set('couple1', c)} />
-        <CoupleEditor title="Par 2" couple={st.couple2} onChange={(c) => set('couple2', c)} />
+          <CoupleEditor title="Par 1" couple={st.couple1} onChange={(c) => set('couple1', c)} />
+          <CoupleEditor title="Par 2" couple={st.couple2} onChange={(c) => set('couple2', c)} />
+        </PanelSection>
 
-        <h3>Condiciones</h3>
-        <Slider
-          label="pH del cursor"
-          value={st.pH} min={0} max={14} step={0.1}
-          onChange={(v) => set('pH', v)} decimals={1}
-        />
+        <PanelSection title="Condiciones" icon="⚗">
+          <Slider
+            label="pH del cursor"
+            value={st.pH} min={0} max={14} step={0.1}
+            onChange={(v) => set('pH', v)} decimals={1}
+          />
 
-        {/* 3.er par (diagrama de Latimer / dismutación) */}
-        <Toggle
-          label="Agregar 3.er par (Latimer / dismutación)"
-          checked={st.showCouple3}
-          onChange={(v) => set('showCouple3', v)}
-        />
-        {st.showCouple3 && (
-          <div className="mask-section">
-            <CoupleEditor
-              title="Par 3 (intermedia → reducida)"
-              couple={st.couple3}
-              onChange={(c) => set('couple3', c)}
-            />
-            {dismutationActive ? (
-              <div className="badge warn" style={{ marginBottom: 8 }}>
-                ⚠ Dismutación activa a pH {st.pH.toFixed(1)}:
-                E°'(par 3) = {E3cur!.toFixed(3)} V &gt; E°'(par 1) = {E1cur.toFixed(3)} V.
-                La especie <strong>{st.couple1.red}</strong> es inestable y dismuta.
-              </div>
-            ) : (
-              <div className="badge ok" style={{ marginBottom: 8 }}>
-                Especie intermedia estable a pH {st.pH.toFixed(1)}:
-                E°'(par 1) = {E1cur.toFixed(3)} V &gt; E°'(par 3) = {E3cur?.toFixed(3)} V.
-              </div>
-            )}
-            {cross13 !== null && (
-              <p className="hint">Cruce par 1–3: pH {cross13.toFixed(1)} (dismutación se invierte)</p>
-            )}
-            {cross23 !== null && (
-              <p className="hint">Cruce par 2–3: pH {cross23.toFixed(1)}</p>
-            )}
-          </div>
-        )}
-
-        <ResultCard items={[
-          { label: `E°'(${st.couple1.name}) a pH ${st.pH.toFixed(1)}`, value: `${E1cur.toFixed(3)} V  (pe°′ ${(E1cur/S).toFixed(1)})` },
-          { label: `E°'(${st.couple2.name}) a pH ${st.pH.toFixed(1)}`, value: `${E2cur.toFixed(3)} V  (pe°′ ${(E2cur/S).toFixed(1)})` },
-          { label: 'Cruce de pares 1–2', value: cross12 !== null ? `pH ${cross12.toFixed(2)}` : 'Paralelos (sin cruce)' },
-          {
-            label: 'Reacción espontánea',
-            value: `${strongest.c.ox} + ${weakest.c.red} · log K' = ${logKcur.toFixed(1)}`,
-          },
-        ]} />
-
-        {/* E°'=f(pX) */}
-        <Toggle
-          label="E°'=f(pX) — efecto de un ligando"
-          checked={st.showPX}
-          onChange={(v) => set('showPX', v)}
-        />
-        {st.showPX && (
-          <div className="mask-section">
-            <h3>Par redox con ligando X</h3>
-            <LabelField label="Forma oxidada (Ox)" value={st.pxOxLabel} onChange={(v) => set('pxOxLabel', v)} />
-            <LabelField label="Forma reducida (Red)" value={st.pxRedLabel} onChange={(v) => set('pxRedLabel', v)} />
-            <LabelField label="Ligando X" value={st.pxLigandLabel} onChange={(v) => set('pxLigandLabel', v)} />
-            <Slider label="E° del par (V)" value={st.pxE0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('pxE0', v)} decimals={3} />
-            <div className="control">
-              <div className="control-header">
-                <span className="control-label">n (electrones)</span>
-                <span className="control-value">{st.pxN}</span>
-              </div>
-              <div className="segmented" style={{ marginTop: 4 }}>
-                {[1, 2, 3].map((n) => (
-                  <button key={n} className={st.pxN === n ? 'seg-btn active' : 'seg-btn'} onClick={() => set('pxN', n)}>{n}</button>
-                ))}
-              </div>
+          {/* 3.er par (diagrama de Latimer / dismutación) */}
+          <Toggle
+            label="Agregar 3.er par (Latimer / dismutación)"
+            checked={st.showCouple3}
+            onChange={(v) => set('showCouple3', v)}
+          />
+          {st.showCouple3 && (
+            <div className="mask-section">
+              <CoupleEditor
+                title="Par 3 (intermedia → reducida)"
+                couple={st.couple3}
+                onChange={(c) => set('couple3', c)}
+              />
+              {dismutationActive ? (
+                <div className="badge warn" style={{ marginBottom: 8 }}>
+                  ⚠ Dismutación activa a pH {st.pH.toFixed(1)}:
+                  E°'(par 3) = {E3cur!.toFixed(3)} V &gt; E°'(par 1) = {E1cur.toFixed(3)} V.
+                  La especie <strong>{st.couple1.red}</strong> es inestable y dismuta.
+                </div>
+              ) : (
+                <div className="badge ok" style={{ marginBottom: 8 }}>
+                  Especie intermedia estable a pH {st.pH.toFixed(1)}:
+                  E°'(par 1) = {E1cur.toFixed(3)} V &gt; E°'(par 3) = {E3cur?.toFixed(3)} V.
+                </div>
+              )}
+              {cross13 !== null && (
+                <p className="hint">Cruce par 1–3: pH {cross13.toFixed(1)} (dismutación se invierte)</p>
+              )}
+              {cross23 !== null && (
+                <p className="hint">Cruce par 2–3: pH {cross23.toFixed(1)}</p>
+              )}
             </div>
-            <details className="section-collapse">
-              <summary className="section-collapse-title">log β de Ox con X</summary>
-              <ConstantList prefix="log β(Ox)" values={st.pxLogBetasOx} onChange={(v) => set('pxLogBetasOx', v)} min={0} max={35} maxItems={6} />
-            </details>
-            <details className="section-collapse">
-              <summary className="section-collapse-title">log β de Red con X</summary>
-              <ConstantList prefix="log β(Red)" values={st.pxLogBetasRed} onChange={(v) => set('pxLogBetasRed', v)} min={0} max={35} maxItems={6} />
-            </details>
-            <p className="hint">
-              Preset: Fe³⁺/Fe²⁺ + F⁻ · E° = +0.771 V · log β(Fe³⁺) = [5.28, 9.30, 12.06] · log β(Fe²⁺) = [1.0]
-            </p>
-          </div>
-        )}
+          )}
+        </PanelSection>
 
-        <Toggle
-          label="Electrodo a pM′ fijo (Nernst)"
-          checked={st.showElectrode}
-          onChange={(v) => set('showElectrode', v)}
-        />
-        {st.showElectrode && (
-          <div className="mask-section">
-            <Slider label="E° (V)" value={st.e0Metal} min={-1} max={2} step={0.01} onChange={(v) => set('e0Metal', v)} decimals={3} />
-            <Slider label="n (electrones)" value={st.nElectrode} min={1} max={4} step={1} onChange={(v) => set('nElectrode', v)} decimals={0} />
-            <Slider label="m H⁺ en semirreacción" value={st.mHElectrode} min={0} max={4} step={1} onChange={(v) => set('mHElectrode', v)} decimals={0} />
-            <Slider label="pM′ objetivo" value={st.pMPrimeTarget} min={0} max={14} step={0.1} onChange={(v) => set('pMPrimeTarget', v)} decimals={1} />
-            <Slider label="pH del electrodo" value={st.pHElectrode} min={0} max={14} step={0.1} onChange={(v) => set('pHElectrode', v)} decimals={1} />
-            {electrodeE !== null && (
-              <ResultCard items={[
-                { label: 'E°′ a pH del electrodo', value: `${e0PrimeAtPH(st.e0Metal, st.mHElectrode, st.nElectrode, st.pHElectrode).toFixed(3)} V` },
-                { label: `E a pM′ = ${st.pMPrimeTarget.toFixed(1)}`, value: `${electrodeE.toFixed(3)} V` },
-              ]} />
-            )}
-            <p className="hint">Ordinario QA III: Ni²⁺/Ni a pGly′ = 4 con ligando auxiliar en escala condicional.</p>
-          </div>
-        )}
+        <PanelSection title="Resultado" icon="∑">
+          <ResultCard items={[
+            { label: `E°'(${st.couple1.name}) a pH ${st.pH.toFixed(1)}`, value: `${E1cur.toFixed(3)} V  (pe°′ ${(E1cur/S).toFixed(1)})` },
+            { label: `E°'(${st.couple2.name}) a pH ${st.pH.toFixed(1)}`, value: `${E2cur.toFixed(3)} V  (pe°′ ${(E2cur/S).toFixed(1)})` },
+            { label: 'Cruce de pares 1–2', value: cross12 !== null ? `pH ${cross12.toFixed(2)}` : 'Paralelos (sin cruce)' },
+            {
+              label: 'Reacción espontánea',
+              value: `${strongest.c.ox} + ${weakest.c.red} · log K' = ${logKcur.toFixed(1)}`,
+            },
+          ]} />
+        </PanelSection>
+
+        <PanelSection title="Efecto de ligando (pX)" icon="✦">
+          <Toggle
+            label="E°'=f(pX) — efecto de un ligando"
+            checked={st.showPX}
+            onChange={(v) => set('showPX', v)}
+          />
+          {st.showPX && (
+            <div className="mask-section">
+              <LabelField label="Forma oxidada (Ox)" value={st.pxOxLabel} onChange={(v) => set('pxOxLabel', v)} />
+              <LabelField label="Forma reducida (Red)" value={st.pxRedLabel} onChange={(v) => set('pxRedLabel', v)} />
+              <LabelField label="Ligando X" value={st.pxLigandLabel} onChange={(v) => set('pxLigandLabel', v)} />
+              <Slider label="E° del par (V)" value={st.pxE0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('pxE0', v)} decimals={3} />
+              <div className="control">
+                <div className="control-header">
+                  <span className="control-label">n (electrones)</span>
+                  <span className="control-value">{st.pxN}</span>
+                </div>
+                <div className="segmented" style={{ marginTop: 4 }}>
+                  {[1, 2, 3].map((n) => (
+                    <button key={n} className={st.pxN === n ? 'seg-btn active' : 'seg-btn'} onClick={() => set('pxN', n)}>{n}</button>
+                  ))}
+                </div>
+              </div>
+              <Disclosure title="log β de Ox con X">
+                <ConstantList prefix="log β(Ox)" values={st.pxLogBetasOx} onChange={(v) => set('pxLogBetasOx', v)} min={0} max={35} maxItems={6} />
+              </Disclosure>
+              <Disclosure title="log β de Red con X">
+                <ConstantList prefix="log β(Red)" values={st.pxLogBetasRed} onChange={(v) => set('pxLogBetasRed', v)} min={0} max={35} maxItems={6} />
+              </Disclosure>
+              <p className="hint">
+                Preset: Fe³⁺/Fe²⁺ + F⁻ · E° = +0.771 V · log β(Fe³⁺) = [5.28, 9.30, 12.06] · log β(Fe²⁺) = [1.0]
+              </p>
+            </div>
+          )}
+        </PanelSection>
+
+        <PanelSection title="Electrodo a pM′ fijo (Nernst)" icon="✦">
+          <Toggle
+            label="Electrodo a pM′ fijo (Nernst)"
+            checked={st.showElectrode}
+            onChange={(v) => set('showElectrode', v)}
+          />
+          {st.showElectrode && (
+            <div className="mask-section">
+              <Slider label="E° (V)" value={st.e0Metal} min={-1} max={2} step={0.01} onChange={(v) => set('e0Metal', v)} decimals={3} />
+              <Slider label="n (electrones)" value={st.nElectrode} min={1} max={4} step={1} onChange={(v) => set('nElectrode', v)} decimals={0} />
+              <Slider label="m H⁺ en semirreacción" value={st.mHElectrode} min={0} max={4} step={1} onChange={(v) => set('mHElectrode', v)} decimals={0} />
+              <Slider label="pM′ objetivo" value={st.pMPrimeTarget} min={0} max={14} step={0.1} onChange={(v) => set('pMPrimeTarget', v)} decimals={1} />
+              <Slider label="pH del electrodo" value={st.pHElectrode} min={0} max={14} step={0.1} onChange={(v) => set('pHElectrode', v)} decimals={1} />
+              {electrodeE !== null && (
+                <ResultCard items={[
+                  { label: 'E°′ a pH del electrodo', value: `${e0PrimeAtPH(st.e0Metal, st.mHElectrode, st.nElectrode, st.pHElectrode).toFixed(3)} V` },
+                  { label: `E a pM′ = ${st.pMPrimeTarget.toFixed(1)}`, value: `${electrodeE.toFixed(3)} V` },
+                ]} />
+              )}
+              <p className="hint">Ordinario QA III: Ni²⁺/Ni a pGly′ = 4 con ligando auxiliar en escala condicional.</p>
+            </div>
+          )}
+        </PanelSection>
 
         <InfoBox title="E°' = f(pH): efecto del protón">
           <p>
@@ -486,6 +491,11 @@ export default function PotencialCondicional() {
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="eprime" />
+        <ResultCardRow items={[
+          { label: `E°' ${st.couple1.ox}/${st.couple1.red}`, value: Number.isFinite(E1cur) ? `${E1cur.toFixed(3)} V` : '—', accent: true },
+          { label: `E°' ${st.couple2.ox}/${st.couple2.red}`, value: Number.isFinite(E2cur) ? `${E2cur.toFixed(3)} V` : '—' },
+          { label: 'Cruce 1–2', value: cross12 !== null ? `pH ${cross12.toFixed(1)}` : '—' },
+        ]} />
       </section>
     </div>
   );

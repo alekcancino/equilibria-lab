@@ -19,7 +19,7 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList } from '../components/Controls';
+import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
 import { SPECIES_COLORS } from '../lib/database';
 
@@ -463,54 +463,59 @@ export default function ExtraccionLiquido() {
   return (
     <div className="module">
       <PanelShell title="Extracción líquido-líquido" onReset={reset}>
-        <h3>Analito 1</h3>
-        <AnalyteEditor
-          a={st.a1}
-          color={C1}
-          additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
-          onChange={(p) => set('a1', { ...st.a1, ...p })}
-        />
+        <PanelSection title="Analito 1" icon="①">
+          <AnalyteEditor
+            a={st.a1}
+            color={C1}
+            additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
+            onChange={(p) => set('a1', { ...st.a1, ...p })}
+          />
+        </PanelSection>
 
-        <Toggle label="Comparar con 2.º analito" checked={st.showA2} onChange={(v) => set('showA2', v)} />
-        {st.showA2 && (
-          <div className="mask-section">
-            <h3>Analito 2</h3>
-            <AnalyteEditor
-              a={st.a2}
-              color={C2}
-              additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
-              onChange={(p) => set('a2', { ...st.a2, ...p })}
-            />
-          </div>
-        )}
+        <PanelSection title="Comparación (Analito 2)" icon="②">
+          <Toggle label="Comparar con 2.º analito" checked={st.showA2} onChange={(v) => set('showA2', v)} />
+          {st.showA2 && (
+            <div className="mask-section">
+              <AnalyteEditor
+                a={st.a2}
+                color={C2}
+                additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
+                onChange={(p) => set('a2', { ...st.a2, ...p })}
+              />
+            </div>
+          )}
+        </PanelSection>
 
-        <h3>Condiciones</h3>
-        <Toggle
-          label="Polimerización / dímero en fase orgánica"
-          checked={st.showDimer}
-          onChange={(v) => set('showDimer', v)}
-        />
-        {st.showDimer && st.a1.type === 'acid' && (
-          <Slider label="log K₂ (dímero)" value={st.logK2} min={-1} max={4} step={0.1} onChange={(v) => set('logK2', v)} decimals={1} />
-        )}
-        <Slider label="pH del cursor" value={st.pH} min={0} max={14} step={0.1} onChange={(v) => set('pH', v)} decimals={1} />
-        <Slider label="Vaq (mL)" value={st.Vaq} min={1} max={50} step={1} onChange={(v) => set('Vaq', v)} decimals={0} />
-        <Slider label="Vorg (mL)" value={st.Vorg} min={1} max={50} step={1} onChange={(v) => set('Vorg', v)} decimals={0} />
-        <Slider label="Extracciones a graficar (n)" value={st.nMax} min={1} max={5} step={1} onChange={(v) => set('nMax', v)} decimals={0} />
-        <Slider label="Etapas en preconcentración" value={st.preconNMax} min={3} max={20} step={1} onChange={(v) => set('preconNMax', v)} decimals={0} />
+        <PanelSection title="Condiciones" icon="⚗">
+          <Toggle
+            label="Polimerización / dímero en fase orgánica"
+            checked={st.showDimer}
+            onChange={(v) => set('showDimer', v)}
+          />
+          {st.showDimer && st.a1.type === 'acid' && (
+            <Slider label="log K₂ (dímero)" value={st.logK2} min={-1} max={4} step={0.1} onChange={(v) => set('logK2', v)} decimals={1} />
+          )}
+          <Slider label="pH del cursor" value={st.pH} min={0} max={14} step={0.1} onChange={(v) => set('pH', v)} decimals={1} />
+          <Slider label="Vaq (mL)" value={st.Vaq} min={1} max={50} step={1} onChange={(v) => set('Vaq', v)} decimals={0} />
+          <Slider label="Vorg (mL)" value={st.Vorg} min={1} max={50} step={1} onChange={(v) => set('Vorg', v)} decimals={0} />
+          <Slider label="Extracciones a graficar (n)" value={st.nMax} min={1} max={5} step={1} onChange={(v) => set('nMax', v)} decimals={0} />
+          <Slider label="Etapas en preconcentración" value={st.preconNMax} min={3} max={20} step={1} onChange={(v) => set('preconNMax', v)} decimals={0} />
+        </PanelSection>
 
-        <ResultCard items={[
-          { label: `D a pH ${st.pH.toFixed(1)}`, value: D1cur >= 0.001 ? D1cur.toFixed(3) : D1cur.toExponential(2) },
-          { label: `log D`, value: D1cur > 0 ? Math.log10(D1cur).toFixed(2) : '< −10' },
-          { label: `%E · n=1  (Vorg/Vaq=${r.toFixed(1)})`, value: `${pE1cur.toFixed(1)} %` },
-          { label: `%E · n=2`, value: `${percentEn(D1cur, r, 2).toFixed(1)} %` },
-          { label: `%E · n=3`, value: `${percentEn(D1cur, r, 3).toFixed(1)} %` },
-          { label: 'Extracciones para %E ≥ 99 %', value: n99_1 !== null ? `${n99_1}` : '> 100' },
-          ...(st.showA2 ? [
-            { label: `%E n=1 — ${st.a2.label}`, value: `${pE2cur.toFixed(1)} %` },
-            { label: 'Factor separación D₁/D₂', value: D2cur > 0 ? (D1cur / D2cur).toFixed(2) : '∞' },
-          ] : []),
-        ]} />
+        <PanelSection title="Resultado" icon="∑">
+          <ResultCard items={[
+            { label: `D a pH ${st.pH.toFixed(1)}`, value: D1cur >= 0.001 ? D1cur.toFixed(3) : D1cur.toExponential(2) },
+            { label: `log D`, value: D1cur > 0 ? Math.log10(D1cur).toFixed(2) : '< −10' },
+            { label: `%E · n=1  (Vorg/Vaq=${r.toFixed(1)})`, value: `${pE1cur.toFixed(1)} %` },
+            { label: `%E · n=2`, value: `${percentEn(D1cur, r, 2).toFixed(1)} %` },
+            { label: `%E · n=3`, value: `${percentEn(D1cur, r, 3).toFixed(1)} %` },
+            { label: 'Extracciones para %E ≥ 99 %', value: n99_1 !== null ? `${n99_1}` : '> 100' },
+            ...(st.showA2 ? [
+              { label: `%E n=1 — ${st.a2.label}`, value: `${pE2cur.toFixed(1)} %` },
+              { label: 'Factor separación D₁/D₂', value: D2cur > 0 ? (D1cur / D2cur).toFixed(2) : '∞' },
+            ] : []),
+          ]} />
+        </PanelSection>
 
         <InfoBox title="Extracción líquido-líquido">
           <p>
@@ -540,6 +545,11 @@ export default function ExtraccionLiquido() {
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="logd" />
+        <ResultCardRow items={[
+          { label: `%E (n=1) a pH ${st.pH.toFixed(1)}`, value: Number.isFinite(pE1cur) ? `${pE1cur.toFixed(1)} %` : '—', accent: true },
+          { label: 'log D', value: D1cur > 0 ? Math.log10(D1cur).toFixed(2) : '—' },
+          { label: 'n para %E ≥ 99 %', value: n99_1 !== null ? `${n99_1}` : '—' },
+        ]} />
       </section>
     </div>
   );
