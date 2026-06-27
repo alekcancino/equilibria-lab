@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -80,7 +80,7 @@ export default function Complejos() {
     return Math.log10(Math.max(br.alphaOH * br.alphaL, 1e-30));
   }, [showPXPrime, pHScale, side]);
 
-  const scaleX = (pL: number) => pL + logAlphaM;
+  const scaleX = useCallback((pL: number) => pL + logAlphaM, [logAlphaM]);
   const xLabel = showPXPrime
     ? `pX′ condicional (pH ${pHScale.toFixed(1)})`
     : 'pL (−log[L])';
@@ -112,7 +112,7 @@ export default function Complejos() {
       line: { width: 3, color: SPECIES_COLORS[j % SPECIES_COLORS.length] },
       hovertemplate: `α = %{y:.3f}<extra>${labels[j] ?? ''}</extra>`,
     }));
-  }, [sys.logBetas, labels, n, pLmax]);
+  }, [sys.logBetas, labels, n, pLmax, scaleX]);
 
   // Función de Bjerrum n̄ vs pL
   const bjerrumTraces = useMemo<Data[]>(() => {
@@ -141,7 +141,7 @@ export default function Complejos() {
       });
     });
     return trace;
-  }, [sys.logBetas, stepwise, pLmax]);
+  }, [sys.logBetas, stepwise, pLmax, scaleX]);
 
   // Diagrama logC vs pL
   const logCTraces = useMemo<Data[]>(() => {
@@ -160,7 +160,7 @@ export default function Complejos() {
       line: { width: 3, color: SPECIES_COLORS[j % SPECIES_COLORS.length] },
       hovertemplate: `log C = %{y:.2f}<extra>${labels[j] ?? ''}</extra>`,
     }));
-  }, [sys.logBetas, labels, n, pLmax, cM]);
+  }, [sys.logBetas, labels, n, pLmax, cM, scaleX]);
 
   // DUZP
   const zones = useMemo(() => {
@@ -171,7 +171,7 @@ export default function Complejos() {
       pStart: scaleX(zone.pStart),
       pEnd: scaleX(zone.pEnd),
     }));
-  }, [stepwise, labels, pLmax, showPXPrime, logAlphaM]);
+  }, [stepwise, labels, pLmax, showPXPrime, scaleX]);
 
   const equilMarker = showEquil && pLEq < pLmax + 1
     ? { p: scaleX(pLEqClipped), label: `equil. · ${showPXPrime ? 'pX′' : 'pL'} ${scaleX(pLEq).toFixed(2)}` }
