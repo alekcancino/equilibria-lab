@@ -2,21 +2,28 @@
 
 Source of truth for the **web simulator**. Historical PPTX tokens live in [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md) (not used by the app UI).
 
-## Direction: "Soft instrument" (C+D hybrid)
+## Direction: "C panels + D curves" (final, 2026-06-27)
 
-Locked 2026-06-27 via /design-shotgun (variant E). Mockups + approved.json in
-`~/.gstack/projects/quimeq/designs/`. The look blends two references:
+Resolved after reviewing variants C and D on the live app. Audience: chemistry
+undergrad/grad students and professors — easy, intuitive, projectable in class.
+Applies uniformly to all 14 modules (simples, múltiples, titulaciones).
 
-- **From "Modern SaaS" (C):** the control panel is a stack of **soft rounded cards**
-  (`--radius-xl`, `--shadow-card`) with comfortable padding, pill toggles, and accordion
-  disclosure. Friendly and legible for students.
-- **From "Figure first" (D):** the plot is the **hero** — a large elevated card
-  (`--radius-2xl`, `--shadow-float`) over an ambient `--bg-grad`, with a **glass toolbar**
-  and **floating result chips** overlaid near the curve. The single most important readout
-  uses the `--accent-grad` (indigo→violet) chip.
+- **Panels & variable controls → C:** the left panel is a stack of **soft rounded section
+  cards** (`PanelSection`, `--radius-xl`, `--shadow-card`) — Sistema / Condiciones /
+  Resultado — with comfortable padding and accordion (`Disclosure`) for advanced layers.
+  A nested `.editor` inside a card is flattened (no card-in-card).
+- **Results → C:** key numbers live in a **row of big cards below the plot** (`ResultCardRow`,
+  `.result-row`), the single most important in the `--accent-grad` (indigo→violet) card.
+  Big `tabular-nums`, readable from across a classroom. These carry the exam answers
+  (pM′/pY′ at x %, V eq, windows, etc.).
+- **Curves → D:** the plot is an **immersive hero** inside a soft card (`.chart-shell`,
+  `--radius-2xl`). Thick **Okabe-Ito** lines (primary `#0072B2`), clean light grid
+  (`--plot-grid`), no zerolines, axis titles **with units**, legend hidden when a single
+  series, equivalence/markers labelled. Colorblind-safe by default.
 
-Net: a friendly editable panel that scales to dense modules, with an immersive figure-first
-canvas. The exam readouts (pM′/pY′ at x%, windows) live in the floating chips.
+Net: a friendly editable card panel that scales to dense modules, an immersive figure-first
+curve, and exam-ready numbers in a readout row. `PlotChart.tsx` carries the curve styling;
+`ResultCardRow` + `.plot-area` flex column carry the layout.
 
 ## Principles
 
