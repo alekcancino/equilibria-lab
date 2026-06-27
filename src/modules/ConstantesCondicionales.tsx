@@ -8,10 +8,19 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  Slider, ConstantList, ConcSlider, DbPanel, InfoBox, LabelField, ModelBadge, ResultCard, Toggle,
+  Slider, DbPanel, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultChips, Toggle,
 } from '../components/Controls';
-import { condLogKCurve, feasibilityWindow } from '../lib/conditional';
-import { COMPLEX_PRESETS } from '../lib/complexDatabase';
+import { SideReactionEditor } from '../components/Editors';
+import { feasibilityWindow } from '../lib/conditional';
+import {
+  condLogKCurveFromStack,
+  condLogKCurveMulti,
+  condLogKPrimary,
+  defaultSideEditorState,
+  sideStackFromEditor,
+  type PrimaryReaction,
+  type SideReactionEditorState,
+} from '../lib/sideReactions';
 import { EDTA_METAL_PRESETS } from '../lib/indicatorDatabase';
 
 // ── Base de datos de complejos M–EDTA ───────────────────────────────────────
@@ -21,36 +30,30 @@ import { EDTA_METAL_PRESETS } from '../lib/indicatorDatabase';
 interface CondState {
   metalLabel: string;
   logKf: number;
-  pKasY: number[];
-  logBetasOH: number[];
-  showOH: boolean;
-  showAux: boolean;
-  auxLabel: string;
-  logBetasAux: number[];
-  cAux: number;
+  side: SideReactionEditorState;
   showMask: boolean;
   metal2Label: string;
   logKf2: number;
   logBetasOH2: number[];
   threshold: number;
+  showMulti: boolean;
+  extraReactions: PrimaryReaction[];
+  evalPH: number;
 }
 
 function defaultState(): CondState {
   return {
     metalLabel: 'Ca²⁺',
     logKf: 10.65,
-    pKasY: [2.0, 2.69, 6.13, 10.37],
-    logBetasOH: [],
-    showOH: false,
-    showAux: false,
-    auxLabel: 'NH₃',
-    logBetasAux: [4.04, 7.47, 10.27, 12.03],
-    cAux: 0.01,
+    side: defaultSideEditorState(),
     showMask: false,
     metal2Label: 'Mg²⁺',
     logKf2: 8.64,
     logBetasOH2: [],
     threshold: 8,
+    showMulti: false,
+    extraReactions: [],
+    evalPH: 10,
   };
 }
 
@@ -61,6 +64,7 @@ const C_MASK     = '#D55E00';
 const C_ALPHA_H  = '#CC79A7';
 const C_ALPHA_OH = '#009E73';
 const C_ALPHA_L  = '#E69F00';
+const C_ALPHA_CX = '#56B4E9';
 const C_THRESH   = 'rgba(230, 126, 34, 0.85)'; // umbral
 
 // ── Componente principal ─────────────────────────────────────────────────────
@@ -84,8 +88,11 @@ export default function ConstantesCondicionales() {
       ...prev,
       metalLabel: p.metal,
       logKf: p.logKf,
-      logBetasOH: [...p.logBetasOH],
-      showOH: p.logBetasOH.length > 0,
+      side: {
+        ...prev.side,
+        showOH: p.logBetasOH.length > 0,
+        logBetasOH: [...p.logBetasOH],
+      },
     }));
   }
 
@@ -102,33 +109,43 @@ export default function ConstantesCondicionales() {
 
   // ── Curvas ─────────────────────────────────────────────────────────────────
 
+  const stack = useMemo(() => sideStackFromEditor(s.side), [s.side]);
+
   const curve1 = useMemo(() =>
-    condLogKCurve(
-      s.logKf,
-      s.pKasY,
-      s.showOH ? s.logBetasOH : [],
-      s.showAux ? s.logBetasAux : [],
-      s.showAux ? s.cAux : 0,
-      [PH_MIN, PH_MAX],
-      PH_POINTS,
-    ),
-    [s.logKf, s.pKasY, s.logBetasOH, s.showOH, s.logBetasAux, s.cAux, s.showAux],
+    condLogKCurveFromStack(s.logKf, stack, [PH_MIN, PH_MAX], PH_POINTS),
+    [s.logKf, stack],
   );
+
+  const multiCurves = useMemo(() => {
+    if (!s.showMulti || s.extraReactions.length === 0) return null;
+    const reactions = [{ label: s.metalLabel, logKf: s.logKf }, ...s.extraReactions];
+    return condLogKCurveMulti(reactions, stack, [PH_MIN, PH_MAX], PH_POINTS);
+  }, [s.showMulti, s.extraReactions, s.metalLabel, s.logKf, stack]);
 
   const curve2 = useMemo(() =>
     s.showMask
-      ? condLogKCurve(
+      ? condLogKCurveFromStack(
           s.logKf2,
-          s.pKasY,
-          s.logBetasOH2,
-          [],
-          0,
+          { ligandPKas: [...s.side.ligandPKas], hydrolysis: s.logBetasOH2.length ? { logBetasOH: s.logBetasOH2 } : undefined },
           [PH_MIN, PH_MAX],
           PH_POINTS,
         )
       : null,
-    [s.showMask, s.logKf2, s.pKasY, s.logBetasOH2],
+    [s.showMask, s.logKf2, s.side.ligandPKas, s.logBetasOH2],
   );
+
+  const logKAtEval = useMemo(
+    () => condLogKPrimary(s.logKf, s.evalPH, stack),
+    [s.logKf, s.evalPH, stack],
+  );
+
+  /** Pendiente local d(log K′)/dpH en el pH de evaluación (tramo lineal, Ord-2). */
+  const slopeAtEval = useMemo(() => {
+    const h = 0.25;
+    const lo = condLogKPrimary(s.logKf, Math.max(PH_MIN, s.evalPH - h), stack);
+    const hi = condLogKPrimary(s.logKf, Math.min(PH_MAX, s.evalPH + h), stack);
+    return (hi - lo) / (2 * h);
+  }, [s.logKf, s.evalPH, stack]);
 
   // ── Resultado ──────────────────────────────────────────────────────────────
 
@@ -179,14 +196,24 @@ export default function ConstantesCondicionales() {
   // ── Trazas diagrama log K' ─────────────────────────────────────────────────
 
   const logKTraces = useMemo<Data[]>(() => {
-    const traces: Data[] = [
-      {
+    const traces: Data[] = [];
+    if (multiCurves) {
+      multiCurves.curves.forEach((c, i) => {
+        traces.push({
+          x: multiCurves.pHs, y: c.logKs, type: 'scatter', mode: 'lines',
+          name: `log K'(${c.label})`,
+          line: { width: i === 0 ? 3 : 2, color: i === 0 ? C_PRIMARY : C_MASK, dash: i === 0 ? undefined : 'dot' },
+          hovertemplate: `log K' = %{y:.2f}<extra>${c.label}</extra>`,
+        });
+      });
+    } else {
+      traces.push({
         x: curve1.pHs, y: curve1.logKs, type: 'scatter', mode: 'lines',
         name: `log K'(${s.metalLabel}–EDTA)`,
         line: { width: 3, color: C_PRIMARY },
         hovertemplate: `log K' = %{y:.2f}<extra>${s.metalLabel}</extra>`,
-      },
-    ];
+      });
+    }
     if (curve2) {
       traces.push({
         x: curve2.pHs, y: curve2.logKs, type: 'scatter', mode: 'lines',
@@ -196,7 +223,7 @@ export default function ConstantesCondicionales() {
       });
     }
     return traces;
-  }, [curve1, curve2, s.metalLabel, s.metal2Label]);
+  }, [curve1, curve2, multiCurves, s.metalLabel, s.metal2Label]);
 
   // ── Trazas diagrama coeficientes α ────────────────────────────────────────
 
@@ -209,7 +236,7 @@ export default function ConstantesCondicionales() {
         hovertemplate: `log α_Y(H) = %{y:.2f}<extra>α_Y(H)</extra>`,
       },
     ];
-    if (s.showOH && s.logBetasOH.length > 0) {
+    if (s.side.showOH && s.side.logBetasOH.length > 0) {
       traces.push({
         x: curve1.pHs, y: curve1.logAlphaOH, type: 'scatter', mode: 'lines',
         name: 'log α_M(OH) — hidrólisis',
@@ -217,16 +244,24 @@ export default function ConstantesCondicionales() {
         hovertemplate: `log α_M(OH) = %{y:.2f}<extra>α_M(OH)</extra>`,
       });
     }
-    if (s.showAux && s.logBetasAux.length > 0) {
+    if (s.side.showAux && s.side.logBetasAux.length > 0) {
       traces.push({
         x: curve1.pHs, y: curve1.logAlphaL, type: 'scatter', mode: 'lines',
-        name: `log α_M(${s.auxLabel}) — aux`,
+        name: `log α_M(${s.side.auxLabel}) — aux`,
         line: { width: 2.5, color: C_ALPHA_L },
-        hovertemplate: `log α_M(L) = %{y:.2f}<extra>α_M(${s.auxLabel})</extra>`,
+        hovertemplate: `log α_M(L) = %{y:.2f}<extra>α_M(${s.side.auxLabel})</extra>`,
+      });
+    }
+    if (s.side.showComplex) {
+      traces.push({
+        x: curve1.pHs, y: curve1.logAlphaComplex, type: 'scatter', mode: 'lines',
+        name: 'log α_MY — complejo',
+        line: { width: 2.5, color: C_ALPHA_CX },
+        hovertemplate: `log α_MY = %{y:.2f}<extra>α_MY</extra>`,
       });
     }
     return traces;
-  }, [curve1, s.showOH, s.logBetasOH, s.showAux, s.logBetasAux, s.auxLabel]);
+  }, [curve1, s.side]);
 
   // ── Veredicto ──────────────────────────────────────────────────────────────
 
@@ -281,14 +316,16 @@ export default function ConstantesCondicionales() {
   return (
     <div className="module">
       <PanelShell title="Constantes condicionales" onReset={reset}>
-        <h3>Metal y ligante</h3>
+        <PanelSection title="Metal y ligante" icon="⚛">
         <ModelBadge
           model="equilibrio principal M–Y"
           additions={[
-            s.pKasY.length > 0 && 'protonación del ligante',
-            s.showOH && 'hidrólisis del metal',
-            s.showAux && 'ligando auxiliar',
+            s.side.ligandPKas.length > 0 && 'protonación del ligante',
+            s.side.showOH && 'hidrólisis del metal',
+            s.side.showAux && 'ligando auxiliar',
+            s.side.showComplex && 'protonación del complejo',
             s.showMask && 'competencia entre metales',
+            s.showMulti && 'varias reacciones principales',
           ]}
         />
         <LabelField label="Metal (M)" value={s.metalLabel} onChange={(v) => set('metalLabel', v)} />
@@ -302,74 +339,71 @@ export default function ConstantesCondicionales() {
           decimals={2}
         />
 
-        <details className="section-collapse">
-          <summary className="section-collapse-title">pKas del ligante Y (EDTA por defecto)</summary>
-          <ConstantList
-            prefix="pKa"
-            values={s.pKasY}
-            onChange={(v) => set('pKasY', v)}
-            min={0}
-            max={14}
-            maxItems={8}
-            minItems={0}
-            initialValue={4.76}
-          />
-        </details>
+        <SideReactionEditor
+          state={s.side}
+          onChange={(side) => set('side', side)}
+        />
 
-        {/* Hidrólisis del metal */}
-        <details className="section-collapse" open={s.showOH} onToggle={(e) => set('showOH', (e.target as HTMLDetailsElement).open)}>
-          <summary className="section-collapse-title">Hidrólisis del metal α_M(OH)</summary>
-          <ConstantList
-            prefix="log β(OH)"
-            values={s.logBetasOH}
-            onChange={(v) => {
-              set('logBetasOH', v);
-              if (!s.showOH) set('showOH', true);
-            }}
-            min={0}
-            max={40}
-            maxItems={6}
-            minItems={0}
-            initialValue={5}
-          />
-        </details>
-
-        {/* Ligando auxiliar */}
-        <details className="section-collapse" open={s.showAux} onToggle={(e) => set('showAux', (e.target as HTMLDetailsElement).open)}>
-          <summary className="section-collapse-title">Ligando auxiliar α_M(L)</summary>
-          <p className="hint" style={{ marginBottom: 6 }}>Presets (metal + ligando):</p>
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
-            {COMPLEX_PRESETS.map((cp) => (
-              <button
-                key={cp.id}
-                className="preset-chip"
-                title={`log β: [${cp.logBetas.join(', ')}]`}
-                onClick={() => {
-                  setS((prev) => ({
-                    ...prev,
-                    auxLabel: cp.ligandLabel,
-                    logBetasAux: [...cp.logBetas],
-                    showAux: true,
-                  }));
-                }}
-              >
-                {cp.metalLabel}/{cp.ligandLabel}
-              </button>
+        <Toggle
+          label="Varias reacciones principales (NiGly₁,₂,₃…)"
+          checked={s.showMulti}
+          onChange={(v) => set('showMulti', v)}
+        />
+        {s.showMulti && (
+          <div className="mask-section">
+            {s.extraReactions.map((rx, i) => (
+              <div key={i} style={{ marginBottom: 8 }}>
+                <LabelField
+                  label={`Reacción ${i + 2}`}
+                  value={rx.label}
+                  onChange={(label) => {
+                    const next = [...s.extraReactions];
+                    next[i] = { ...next[i], label };
+                    set('extraReactions', next);
+                  }}
+                />
+                <Slider
+                  label="log Kf"
+                  value={rx.logKf}
+                  min={1}
+                  max={30}
+                  step={0.01}
+                  onChange={(logKf) => {
+                    const next = [...s.extraReactions];
+                    next[i] = { ...next[i], logKf };
+                    set('extraReactions', next);
+                  }}
+                  decimals={2}
+                />
+                <button
+                  className="preset-chip"
+                  onClick={() => set('extraReactions', s.extraReactions.filter((_, j) => j !== i))}
+                >
+                  Quitar
+                </button>
+              </div>
             ))}
+            <button
+              className="preset-chip"
+              onClick={() => set('extraReactions', [...s.extraReactions, { label: 'M–L₂', logKf: 8 }])}
+            >
+              + reacción principal
+            </button>
           </div>
-          <LabelField label="Ligando auxiliar" value={s.auxLabel} onChange={(v) => set('auxLabel', v)} />
-          <ConstantList
-            prefix="log β"
-            values={s.logBetasAux}
-            onChange={(v) => set('logBetasAux', v)}
-            min={0}
-            max={25}
-            maxItems={6}
-          />
-          <ConcSlider label="[L] libre" value={s.cAux} onChange={(v) => set('cAux', v)} />
-        </details>
+        )}
 
-        <h3>Parámetros</h3>
+        <Slider
+          label="Evaluar log K′ en pH"
+          value={s.evalPH}
+          min={1}
+          max={14}
+          step={0.1}
+          onChange={(v) => set('evalPH', v)}
+          decimals={1}
+        />
+        </PanelSection>
+
+        <PanelSection title="Parámetros" icon="⚙">
         <div className="control">
           <div className="control-header">
             <span className="control-label">Umbral de cuantitatividad</span>
@@ -433,17 +467,21 @@ export default function ConstantesCondicionales() {
           onSelect={applyPreset}
           title="Presets M–EDTA"
         />
+        </PanelSection>
 
-        {/* Resultado */}
+        <PanelSection title="Resultado" icon="∑">
         <ResultCard items={[
           { label: 'pH óptimo', value: pHopt.toFixed(1) },
           { label: 'log K\'máx', value: logKmax.toFixed(1) },
+          { label: `log K′ a pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(2) },
+          { label: `pendiente d(log K′)/dpH a pH ${s.evalPH.toFixed(1)}`, value: slopeAtEval.toFixed(2) },
           { label: 'Ventana óptima', value: feasWin ? `pH ${feasWin[0].toFixed(1)}–${feasWin[1].toFixed(1)}` : 'No supera el umbral' },
           {
             label: 'Factibilidad',
             value: verdict.text,
           },
         ]} />
+        </PanelSection>
 
         <InfoBox title="Constante condicional de Ringbom">
           <p>
@@ -465,6 +503,11 @@ export default function ConstantesCondicionales() {
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="logk" />
+        <ResultChips items={[
+          { label: 'pH óptimo', value: pHopt.toFixed(1), accent: true },
+          { label: "log K′máx", value: logKmax.toFixed(1) },
+          { label: `log K′ pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(1) },
+        ]} />
       </section>
     </div>
   );

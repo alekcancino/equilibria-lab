@@ -2,13 +2,15 @@
 // PRIMARIO = etiqueta libre + constantes editables con ± .
 // SECUNDARIO = base de datos colapsable que autocompleta y se cierra.
 
-import { ConstantList, DbPanel, LabelField, ModelBadge, RefBadge, SelectControl, Slider } from './Controls';
+import { ConstantList, DbPanel, LabelField, ModelBadge, RefBadge, SelectControl, Slider, ConcSlider } from './Controls';
 import { ACIDS } from '../lib/database';
 import { REDOX_COUPLES } from '../lib/redoxDatabase';
+import { COMPLEX_PRESETS } from '../lib/complexDatabase';
 import {
   acidSystemFromPreset, coupleFromPreset, inferredSystemLabel, isGenericSystemLabel,
   type AcidSystem, type CoupleState,
 } from '../lib/editorModels';
+import type { SideReactionEditorState } from '../lib/sideReactions';
 
 export function AcidSystemEditor({
   system, onChange, includeStrong = false, allowNoConstants = false, showModel = true,
@@ -129,5 +131,174 @@ export function CoupleEditor({
         onSelect={(id) => onChange(coupleFromPreset(id))}
       />
     </div>
+  );
+}
+
+/** Editor reutilizable de reacciones parásitas (Ringbom). */
+export function SideReactionEditor({
+  state,
+  onChange,
+  showLigandPKas = true,
+  ligandTitle = 'pKas del ligante Y (EDTA por defecto)',
+}: {
+  state: SideReactionEditorState;
+  onChange: (s: SideReactionEditorState) => void;
+  showLigandPKas?: boolean;
+  ligandTitle?: string;
+}) {
+  const set = <K extends keyof SideReactionEditorState>(k: K, v: SideReactionEditorState[K]) =>
+    onChange({ ...state, [k]: v });
+
+  return (
+    <>
+      {showLigandPKas && (
+        <details className="section-collapse">
+          <summary className="section-collapse-title">{ligandTitle}</summary>
+          <ConstantList
+            prefix="pKa"
+            values={state.ligandPKas}
+            onChange={(v) => set('ligandPKas', v)}
+            min={0}
+            max={14}
+            maxItems={8}
+            minItems={0}
+            initialValue={4.76}
+          />
+        </details>
+      )}
+
+      <details
+        className="section-collapse"
+        open={state.showOH}
+        onToggle={(e) => set('showOH', (e.target as HTMLDetailsElement).open)}
+      >
+        <summary className="section-collapse-title">Hidrólisis del metal α_M(OH)</summary>
+        <ConstantList
+          prefix="log β(OH)"
+          values={state.logBetasOH}
+          onChange={(v) => {
+            set('logBetasOH', v);
+            if (!state.showOH) set('showOH', true);
+          }}
+          min={-50}
+          max={40}
+          maxItems={6}
+          minItems={0}
+          initialValue={5}
+        />
+      </details>
+
+      <details
+        className="section-collapse"
+        open={state.showAux}
+        onToggle={(e) => set('showAux', (e.target as HTMLDetailsElement).open)}
+      >
+        <summary className="section-collapse-title">Ligando auxiliar α_M(L)</summary>
+        <p className="hint" style={{ marginBottom: 6 }}>Presets (metal + ligando):</p>
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+          {COMPLEX_PRESETS.map((cp) => (
+            <button
+              key={cp.id}
+              className="preset-chip"
+              title={`log β: [${cp.logBetas.join(', ')}]`}
+              onClick={() => {
+                onChange({
+                  ...state,
+                  auxLabel: cp.ligandLabel,
+                  logBetasAux: [...cp.logBetas],
+                  showAux: true,
+                });
+              }}
+            >
+              {cp.metalLabel}/{cp.ligandLabel}
+            </button>
+          ))}
+        </div>
+        <LabelField label="Ligando auxiliar" value={state.auxLabel} onChange={(v) => set('auxLabel', v)} />
+        <ConstantList
+          prefix="log β"
+          values={state.logBetasAux}
+          onChange={(v) => set('logBetasAux', v)}
+          min={0}
+          max={25}
+          maxItems={6}
+        />
+        <div className="control">
+          <div className="control-header">
+            <span className="control-label">Concentración del auxiliar</span>
+          </div>
+          <div className="segmented" style={{ marginTop: 6 }}>
+            {([
+              { value: 'free', label: '[L] libre' },
+              { value: 'total', label: 'Total analítica (F)' },
+              { value: 'fixedPX', label: 'pX′ fijo' },
+            ] as const).map(({ value, label }) => (
+              <button
+                key={value}
+                className={state.auxSpecMode === value ? 'seg-btn active' : 'seg-btn'}
+                onClick={() => set('auxSpecMode', value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {state.auxSpecMode === 'free' && (
+          <ConcSlider label="[L] libre (M)" value={state.cAuxFree} onChange={(v) => set('cAuxFree', v)} />
+        )}
+        {state.auxSpecMode === 'total' && (
+          <>
+            <ConcSlider label="Concentración total F (M)" value={state.cAuxTotal} onChange={(v) => set('cAuxTotal', v)} min={-3} max={1} />
+            <ConstantList
+              prefix="pKa (ácido conjugado)"
+              values={state.auxPKas}
+              onChange={(v) => set('auxPKas', v)}
+              min={0}
+              max={14}
+              maxItems={4}
+              minItems={1}
+              initialValue={9.2}
+            />
+            <p className="hint">NH₃/NH₄⁺: pKa ≈ 9,2. Glicina: usar pKa del conjugado ácido.</p>
+          </>
+        )}
+        {state.auxSpecMode === 'fixedPX' && (
+          <Slider label="pX′ objetivo" value={state.pXFixed} min={0} max={14} step={0.1} onChange={(v) => set('pXFixed', v)} decimals={1} />
+        )}
+      </details>
+
+      <details
+        className="section-collapse"
+        open={state.showComplex}
+        onToggle={(e) => set('showComplex', (e.target as HTMLDetailsElement).open)}
+      >
+        <summary className="section-collapse-title">Protonación / hidrólisis del complejo MY</summary>
+        <Slider
+          label="log K (MY + H⁺ ⇌ MHY)"
+          value={state.logBetaProtonation ?? 0}
+          min={0}
+          max={30}
+          step={0.01}
+          onChange={(v) => {
+            set('logBetaProtonation', v);
+            if (!state.showComplex) set('showComplex', true);
+          }}
+          decimals={2}
+        />
+        <Slider
+          label="log β (MY + OH⁻ ⇌ MOHY)"
+          value={state.logBetaHydroxy ?? 0}
+          min={-10}
+          max={20}
+          step={0.01}
+          onChange={(v) => {
+            set('logBetaHydroxy', v);
+            if (!state.showComplex) set('showComplex', true);
+          }}
+          decimals={2}
+        />
+        <p className="hint">Ej. ZnHY (19,44) y ZnOHY (4,54) del parcial 1 QA III 2025-2.</p>
+      </details>
+    </>
   );
 }

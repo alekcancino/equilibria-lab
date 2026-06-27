@@ -3,10 +3,14 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, LabelField, ModelBadge, ResultCard, Slider } from '../components/Controls';
+import { ConcSlider, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultChips, Slider, Toggle } from '../components/Controls';
+import { SideReactionEditor } from '../components/Editors';
 import {
   batchIonExchange, breakthroughCurve, isothermCurve, selectivityFromKd,
+  exchangeDistributionCurve, optimalElutionPH, defaultSideEditorState,
+  type SideReactionEditorState,
 } from '../lib/ionExchange';
+import { sideStackFromEditor } from '../lib/sideReactions';
 import { APPLICATION_PRESETS, RESIN_PRESETS } from '../lib/ionExchangeDatabase';
 
 /** Intercambio iónico: selectividad, lote, isoterma y breakthrough en columna. */
@@ -21,6 +25,24 @@ export default function IntercambioIonico() {
   const [resinVolume, setResinVolume] = useState(0.05);
   const [volume, setVolume] = useState(0.1);
   const [flowRate, setFlowRate] = useState(0.05);
+  const [showCompetitive, setShowCompetitive] = useState(false);
+  const [kHSquared, setKHSquared] = useState(3);
+  const [pHBulk, setPHBulk] = useState(4);
+  const [hResin, setHResin] = useState(0.005);
+  const [ciMeq, setCiMeq] = useState(5);
+  const [massResinG, setMassResinG] = useState(1);
+  const [volumeL, setVolumeL] = useState(0.2);
+  const [side, setSide] = useState<SideReactionEditorState>(() => {
+    const st = defaultSideEditorState();
+    st.showOH = true;
+    st.logBetasOH = [4.97, 8.55];
+    return st;
+  });
+  const [showElution, setShowElution] = useState(false);
+  const [logKfNiY, setLogKfNiY] = useState(18.62);
+  const [cEdta, setCEdta] = useState(0.1);
+  const [vEdta, setVEdta] = useState(0.2);
+  const [nNiResin, setNNiResin] = useState(0.001);
 
   function applyResin(id: string) {
     const r = RESIN_PRESETS.find((x) => x.id === id);
@@ -66,6 +88,25 @@ export default function IntercambioIonico() {
     }),
     [cA0, selectivity, resinCapacity, resinVolume, flowRate],
   );
+
+  const stack = useMemo(() => sideStackFromEditor(side), [side]);
+  const distCurve = useMemo(
+    () => exchangeDistributionCurve(
+      kHSquared, stack, hResin, ciMeq, massResinG, volumeL, [1, 14], 200,
+    ),
+    [kHSquared, stack, hResin, ciMeq, massResinG, volumeL],
+  );
+  const elution = useMemo(
+    () => optimalElutionPH({
+      nNiResin, vEdta, cEdta, logKfNiY, stack,
+    }),
+    [nNiResin, vEdta, cEdta, logKfNiY, stack],
+  );
+  const phiAtBulk = useMemo(() => {
+    const idx = distCurve.pHs.reduce((best, pH, i) =>
+      Math.abs(pH - pHBulk) < Math.abs(distCurve.pHs[best] - pHBulk) ? i : best, 0);
+    return distCurve.phi[idx];
+  }, [distCurve, pHBulk]);
 
   const kselCurve = useMemo(() => {
     const ks: number[] = [];
@@ -168,11 +209,34 @@ export default function IntercambioIonico() {
         />
       ),
     },
+    ...(showCompetitive ? [{
+      id: 'dph',
+      label: 'D y φ vs pH',
+      node: (
+        <Chart
+          data={[
+            {
+              x: distCurve.pHs, y: distCurve.logD, type: 'scatter', mode: 'lines',
+              name: 'log D', line: { width: 3, color: '#0072B2' },
+            },
+            {
+              x: distCurve.pHs, y: distCurve.phi, type: 'scatter', mode: 'lines',
+              name: 'φ (fracción en resina)', line: { width: 2.5, color: '#D55E00', dash: 'dot' },
+              yaxis: 'y2',
+            },
+          ]}
+          xTitle="pH"
+          yTitle="log D"
+          exportName="equilibria-ion-exchange-dph"
+        />
+      ),
+    }] : []),
   ];
 
   return (
     <div className="module">
       <PanelShell title="Intercambio iónico" onReset={reset}>
+        <PanelSection title="Sistema" icon="⚛">
         <ModelBadge model="equilibrio binario A↔B · isoterma · columna ideal 1D" />
         <p className="hint">Resinas:</p>
         <div className="preset-chip-row" style={{ marginBottom: 8 }}>
@@ -214,12 +278,52 @@ export default function IntercambioIonico() {
         <Slider label="Volumen de resina (L)" value={resinVolume} min={0.01} max={0.2} step={0.01} onChange={setResinVolume} decimals={2} />
         <Slider label="Volumen de solución (L)" value={volume} min={0.05} max={0.5} step={0.01} onChange={setVolume} decimals={2} />
         <Slider label="Caudal (L/min, columna)" value={flowRate} min={0.01} max={0.2} step={0.01} onChange={setFlowRate} decimals={2} />
-        <ResultCard items={[
-          { label: `[${labelA}] final`, value: `${eq.cAeq.toExponential(2)} M` },
-          { label: `[${labelB}] final`, value: `${eq.cBeq.toExponential(2)} M` },
-          { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(1)} %` },
-          { label: 'Ksel (referencia)', value: selectivityFromKd(selectivity, 1).toFixed(1) },
-        ]} />
+        </PanelSection>
+
+        <PanelSection title="Competencia con H⁺ (pH)" icon="⚗">
+        <Toggle
+          label="Competencia catiónica con H⁺ (D vs pH)"
+          checked={showCompetitive}
+          onChange={setShowCompetitive}
+        />
+        {showCompetitive && (
+          <div className="mask-section">
+            <Slider label="K²_H/M" value={kHSquared} min={0.1} max={20} step={0.1} onChange={setKHSquared} decimals={1} />
+            <Slider label="pH bulk" value={pHBulk} min={1} max={14} step={0.1} onChange={setPHBulk} decimals={1} />
+            <ConcSlider label="[H⁺]_resina (M)" value={hResin} onChange={setHResin} min={-4} max={-1} />
+            <Slider label="CI (meq/g)" value={ciMeq} min={1} max={10} step={0.5} onChange={setCiMeq} decimals={1} />
+            <Slider label="m_R (g)" value={massResinG} min={0.1} max={5} step={0.1} onChange={setMassResinG} decimals={1} />
+            <Slider label="V (L)" value={volumeL} min={0.05} max={1} step={0.05} onChange={setVolumeL} decimals={2} />
+            <SideReactionEditor state={side} onChange={setSide} showLigandPKas={false} />
+            <Toggle label="Elución con EDTA (acoplado)" checked={showElution} onChange={setShowElution} />
+            {showElution && (
+              <>
+                <Slider label="log Kf NiY" value={logKfNiY} min={10} max={25} step={0.01} onChange={setLogKfNiY} decimals={2} />
+                <ConcSlider label="[EDTA] (M)" value={cEdta} onChange={setCEdta} min={-3} max={0} />
+                <Slider label="V EDTA (L)" value={vEdta} min={0.05} max={0.5} step={0.05} onChange={setVEdta} decimals={2} />
+                <Slider label="n Ni en resina (mol)" value={nNiResin} min={0.0001} max={0.01} step={0.0001} onChange={setNNiResin} decimals={4} />
+              </>
+            )}
+          </div>
+        )}
+        </PanelSection>
+
+        <PanelSection title="Resultado" icon="∑">
+          <ResultCard items={[
+            { label: `[${labelA}] final`, value: `${eq.cAeq.toExponential(2)} M` },
+            { label: `[${labelB}] final`, value: `${eq.cBeq.toExponential(2)} M` },
+            { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(1)} %` },
+            { label: 'Ksel (referencia)', value: selectivityFromKd(selectivity, 1).toFixed(1) },
+            ...(showCompetitive ? [
+              { label: `φ a pH ${pHBulk.toFixed(1)}`, value: `${(phiAtBulk * 100).toFixed(1)} %` },
+              ...(showElution ? [
+                { label: 'pH óptimo elución EDTA', value: elution.pH.toFixed(1) },
+                { label: 'Fracción eluida (modelo)', value: `${(elution.fractionEluted * 100).toFixed(0)} %` },
+              ] : []),
+            ] : []),
+          ]} />
+        </PanelSection>
+
         <InfoBox title="Selectividad, isoterma y columna">
           <p>
             La ley <code>K_A/B = (y_A·x_B)/(y_B·x_A)</code> gobierna el equilibrio en lote.
@@ -231,6 +335,15 @@ export default function IntercambioIonico() {
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={tabs} />
+        <ResultChips items={[
+          { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(0)} %`, accent: true },
+          ...(showCompetitive
+            ? [{ label: `φ a pH ${pHBulk.toFixed(1)}`, value: `${(phiAtBulk * 100).toFixed(0)} %` }]
+            : []),
+          ...(showCompetitive && showElution
+            ? [{ label: 'pH elución', value: elution.pH.toFixed(1) }]
+            : []),
+        ]} />
       </section>
     </div>
   );

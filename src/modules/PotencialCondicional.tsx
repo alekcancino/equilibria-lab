@@ -19,6 +19,9 @@ import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
 import { NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
 import { alphaL } from '../lib/conditional';
+import {
+  defaultSideEditorState, electrodePotential, e0PrimeAtPH,
+} from '../lib/sideReactions';
 
 const S = NERNST_S;     // 0.05916 V
 const PH_POINTS = 400;
@@ -67,6 +70,13 @@ function defaultState() {
     pxLogBetasOx: [5.28, 9.30, 12.06],   // FeF²⁺, FeF₂⁺, FeF₃
     pxLogBetasRed: [1.0],                  // FeF⁺ (débil)
     showPX: false,
+    showElectrode: false,
+    e0Metal: 0.25,
+    nElectrode: 2,
+    mHElectrode: 0,
+    pMPrimeTarget: 4,
+    pHElectrode: 10,
+    sideElectrode: defaultSideEditorState(),
   };
 }
 
@@ -123,6 +133,12 @@ export default function PotencialCondicional() {
   const pe1cur = E1cur / S;
   const pe2cur = E2cur / S;
   const logKcur = st.couple1.n * st.couple2.n * Math.abs(pe1cur - pe2cur);
+
+  const electrodeE = useMemo(() => {
+    if (!st.showElectrode) return null;
+    const e0p = e0PrimeAtPH(st.e0Metal, st.mHElectrode, st.nElectrode, st.pHElectrode);
+    return electrodePotential(e0p, st.nElectrode, st.pMPrimeTarget);
+  }, [st.showElectrode, st.e0Metal, st.mHElectrode, st.nElectrode, st.pHElectrode, st.pMPrimeTarget]);
 
   // ── Dismutación: par 1 (Ox/Int) y par 3 (Int/Red) en diagrama de Latimer ─
 
@@ -425,6 +441,28 @@ export default function PotencialCondicional() {
             <p className="hint">
               Preset: Fe³⁺/Fe²⁺ + F⁻ · E° = +0.771 V · log β(Fe³⁺) = [5.28, 9.30, 12.06] · log β(Fe²⁺) = [1.0]
             </p>
+          </div>
+        )}
+
+        <Toggle
+          label="Electrodo a pM′ fijo (Nernst)"
+          checked={st.showElectrode}
+          onChange={(v) => set('showElectrode', v)}
+        />
+        {st.showElectrode && (
+          <div className="mask-section">
+            <Slider label="E° (V)" value={st.e0Metal} min={-1} max={2} step={0.01} onChange={(v) => set('e0Metal', v)} decimals={3} />
+            <Slider label="n (electrones)" value={st.nElectrode} min={1} max={4} step={1} onChange={(v) => set('nElectrode', v)} decimals={0} />
+            <Slider label="m H⁺ en semirreacción" value={st.mHElectrode} min={0} max={4} step={1} onChange={(v) => set('mHElectrode', v)} decimals={0} />
+            <Slider label="pM′ objetivo" value={st.pMPrimeTarget} min={0} max={14} step={0.1} onChange={(v) => set('pMPrimeTarget', v)} decimals={1} />
+            <Slider label="pH del electrodo" value={st.pHElectrode} min={0} max={14} step={0.1} onChange={(v) => set('pHElectrode', v)} decimals={1} />
+            {electrodeE !== null && (
+              <ResultCard items={[
+                { label: 'E°′ a pH del electrodo', value: `${e0PrimeAtPH(st.e0Metal, st.mHElectrode, st.nElectrode, st.pHElectrode).toFixed(3)} V` },
+                { label: `E a pM′ = ${st.pMPrimeTarget.toFixed(1)}`, value: `${electrodeE.toFixed(3)} V` },
+              ]} />
+            )}
+            <p className="hint">Ordinario QA III: Ni²⁺/Ni a pGly′ = 4 con ligando auxiliar en escala condicional.</p>
           </div>
         )}
 

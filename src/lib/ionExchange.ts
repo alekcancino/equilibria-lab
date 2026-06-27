@@ -79,6 +79,17 @@ export function selectivityFromKd(kdA: number, kdB: number): number {
   return kdA / kdB;
 }
 
+export {
+  distributionCoefficient,
+  resinExchangeFraction,
+  exchangeDistributionCurve,
+  optimalElutionPH,
+  alphaMetalGlobal,
+  sideStackFromEditor,
+  defaultSideEditorState,
+} from './sideReactions';
+export type { SideReactionStack, SideReactionEditorState, ElutionParams } from './sideReactions';
+
 /** Isoterma de equilibrio: q (eq/L resina) vs C_A en solución. */
 export function isothermCurve(
   params: Omit<IonExchangeParams, 'cA0'> & { cMin: number; cMax: number; points?: number },

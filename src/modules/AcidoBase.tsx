@@ -4,7 +4,7 @@ import PanelShell from '../components/PanelShell';
 import Chart from '../components/Chart';
 import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, ResultCard, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, PanelSection, ResultChips, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
@@ -127,20 +127,13 @@ export default function AcidoBase() {
   return (
     <div className="module">
       <PanelShell title="Equilibrio ácido-base" onReset={reset}>
-        <AcidSystemEditor system={system} onChange={setSystem} />
-        <h3>Condiciones</h3>
-        <ConcSlider label="Concentración analítica" value={conc} onChange={setConc} />
-        <Toggle label="Marcar pH de la disolución pura" checked={showSystemPH} onChange={setShowSystemPH} />
-        <ResultCard items={[
-          {
-            label: 'pH de la disolución pura',
-            value: pHInvalid ? 'Sin raíz en balance de cargas' : pHSystem.toFixed(2),
-          },
-          ...(pHInvalid ? [] : [{
-            label: 'Especie dominante',
-            value: `${labels[domIdx]} (α = ${alphasAtPH[domIdx].toFixed(2)})`,
-          }]),
-        ]} />
+        <PanelSection title="Sistema" icon="⚛">
+          <AcidSystemEditor system={system} onChange={setSystem} />
+        </PanelSection>
+        <PanelSection title="Condiciones" icon="⚗">
+          <ConcSlider label="Concentración analítica" value={conc} onChange={setConc} />
+          <Toggle label="Marcar pH de la disolución pura" checked={showSystemPH} onChange={setShowSystemPH} />
+        </PanelSection>
         {showActivityNote && (
           <InfoBox title="Actividad vs concentración">
             <p>
@@ -167,6 +160,17 @@ export default function AcidoBase() {
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} />
+        <ResultChips items={[
+          {
+            label: 'pH disolución pura',
+            value: pHInvalid ? '—' : pHSystem.toFixed(2),
+            accent: true,
+          },
+          {
+            label: 'Especie dominante',
+            value: pHInvalid ? '—' : `${labels[domIdx]} · α ${alphasAtPH[domIdx].toFixed(2)}`,
+          },
+        ]} />
       </section>
     </div>
   );

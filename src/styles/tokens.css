@@ -14,7 +14,16 @@
   --accent-violet: #6366F1;
   --accent-teal: #6366F1;
   --ok: #059669;
+  --ok-soft: #E7F8F0;
   --warn: #D97706;
+
+  /* Direction "E" (C+D hybrid) — premium accent + ambient surfaces */
+  --accent-2: #8B5CF6;                                   /* violet, gradient end */
+  --accent-grad: linear-gradient(135deg, #6366F1, #8B5CF6);
+  --bg-grad: radial-gradient(95% 80% at 78% -8%, #E9ECFF 0%, var(--bg) 46%);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.82);
+  --glass-blur: blur(16px) saturate(1.3);
 
   /* Legacy aliases */
   --panel-bg: var(--surface);
@@ -35,8 +44,13 @@
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
+  --radius-xl: 16px;                                     /* control cards */
+  --radius-2xl: 22px;                                    /* plot hero card */
+  --radius-pill: 999px;
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
   --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 4px 16px rgba(30, 41, 59, 0.06);      /* soft control cards (C) */
+  --shadow-float: 0 14px 40px rgba(30, 41, 59, 0.10);    /* hero plot + floating chips (D) */
   --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.15);
 
   /* Spacing */

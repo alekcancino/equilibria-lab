@@ -300,6 +300,41 @@ export function DbPanel({
   );
 }
 
+/**
+ * Selector de sistemas completos (un clic carga metal + ligante + parásitas).
+ * Agrupa por `group`; cada item llama onSelect(id) y se cierra.
+ */
+export function SystemPresetPicker({
+  items, onSelect, title = 'Cargar sistema completo',
+}: {
+  items: { id: string; name: string; group: string; detail: string }[];
+  onSelect: (id: string) => void;
+  title?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const groups = [...new Set(items.map((it) => it.group))];
+  return (
+    <details className="preset-picker" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary><span className="preset-picker-spark" aria-hidden>✦</span> {title}</summary>
+      {groups.map((g) => (
+        <div key={g} className="preset-group">
+          <p className="preset-group-title">{g}</p>
+          {items.filter((it) => it.group === g).map((it) => (
+            <button
+              key={it.id}
+              className="preset-item"
+              onClick={() => { onSelect(it.id); setOpen(false); }}
+            >
+              <span className="preset-item-name">{it.name}</span>
+              <span className="preset-item-detail">{it.detail}</span>
+            </button>
+          ))}
+        </div>
+      ))}
+    </details>
+  );
+}
+
 /** Declara el modelo inferido y las capas opcionales activas. */
 export function ModelBadge({
   model, additions = [],
@@ -334,6 +369,87 @@ export function ResultCard({ items }: { items: { label: ReactNode; value: string
         <div key={i} className="result-item">
           <span className="result-label">{it.label}</span>
           <span className="result-value">{it.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Tarjeta de sección con cabecera (dirección "E"): agrupa controles relacionados
+ * en una superficie redondeada con elevación suave. Reemplaza el agrupado ad-hoc
+ * con <h3> sueltos.
+ */
+export function PanelSection({
+  title, icon, children, defaultOpen, collapsible = false,
+}: {
+  title?: ReactNode;
+  icon?: ReactNode;
+  children: ReactNode;
+  /** Si collapsible, estado inicial (por defecto abierto). */
+  defaultOpen?: boolean;
+  collapsible?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen ?? true);
+  const header = title && (
+    <div className="psection-head">
+      {icon && <span className="psection-ic" aria-hidden>{icon}</span>}
+      <span className="psection-title">{title}</span>
+      {collapsible && <span className="psection-caret" aria-hidden>{open ? '▾' : '▸'}</span>}
+    </div>
+  );
+  return (
+    <section className="psection">
+      {collapsible
+        ? (
+          <button type="button" className="psection-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            {header}
+          </button>
+        )
+        : header}
+      {open && <div className="psection-body">{children}</div>}
+    </section>
+  );
+}
+
+/**
+ * Acordeón de un solo nivel para capas avanzadas (reacciones parásitas,
+ * comparaciones). Sustituye los <details> anidados por una divulgación ordenada.
+ */
+export function Disclosure({
+  title, defaultOpen = false, children,
+}: {
+  title: ReactNode;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className={open ? 'disclosure open' : 'disclosure'}>
+      <button type="button" className="disclosure-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span className="disclosure-title">{title}</span>
+        <span className="disclosure-caret" aria-hidden>▾</span>
+      </button>
+      {open && <div className="disclosure-body">{children}</div>}
+    </section>
+  );
+}
+
+/**
+ * Chips de resultado flotantes sobre la gráfica (patrón "figura primero").
+ * El item con `accent` usa el degradado índigo→violeta para el valor clave.
+ */
+export function ResultChips({
+  items,
+}: {
+  items: { label: ReactNode; value: ReactNode; accent?: boolean }[];
+}) {
+  return (
+    <div className="result-chips">
+      {items.map((it, i) => (
+        <div key={i} className={it.accent ? 'result-chip accent' : 'result-chip'}>
+          <span className="chip-k">{it.label}</span>
+          <span className="chip-v">{it.value}</span>
         </div>
       ))}
     </div>

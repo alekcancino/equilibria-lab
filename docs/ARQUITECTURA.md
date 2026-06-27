@@ -19,13 +19,36 @@ src/
   components/
     Chart.tsx          Wrapper de Plotly (export PNG, modebar, layout común)
     Controls.tsx       Slider, ConcSlider, Toggle, Segmented, ConstantList,
-                       DbPanel, ResultCard, InfoBox, LabelField, SelectControl
-    Editors.tsx        AcidSystemEditor, CoupleEditor (editor + DB colapsable)
+                       DbPanel, ResultCard, InfoBox, LabelField, SelectControl,
+                       PanelSection, Disclosure, ResultChips, SystemPresetPicker
+    Editors.tsx        AcidSystemEditor, CoupleEditor, SideReactionEditor
     DiagramTabs.tsx    Pestañas DUZP / α / logC dentro de un módulo
     DUZP.tsx           Diagrama Unidimensional de Zonas de Predominio (SVG)
   lib/                 Motores de cálculo puros (sin React)
   modules/             Un archivo por módulo de la app
 ```
+
+## Sistema de diseño "Soft instrument" (dirección E, 2026-06-27)
+
+Fijado vía `/design-shotgun` (variante E, híbrido C+D). Fuente de verdad: [`design.md`](../design.md);
+tokens en [`src/styles/tokens.css`](../src/styles/tokens.css). Componentes premium compartidos:
+
+- **`PanelSection`** — tarjeta de sección redondeada con cabecera (icono + título). Agrupa
+  controles relacionados; reemplaza los `<h3>` sueltos.
+- **`Disclosure`** — acordeón de un solo nivel para capas avanzadas; reemplaza los `<details>`
+  anidados.
+- **`ResultChips`** — chips de resultado flotantes sobre la gráfica (la `plot-area` es
+  `position:relative`). El item `accent` usa el degradado índigo→violeta para el valor clave.
+- **`SystemPresetPicker`** — selector de sistemas completos (ver presets abajo).
+
+Tokens nuevos: `--accent-grad`, `--bg-grad`, `--glass-*`, `--radius-xl/2xl`, `--shadow-card/float`.
+
+## Presets de sistemas completos (`systemPresets.ts`)
+
+`SYSTEM_PRESETS` declara sistemas famosos (Zn–EDTA–NH₃, Ni–EDTA, Ca/Mg/Cu/Fe–EDTA) que cargan
+metal + log K_f + condiciones + un `SideReactionEditorState` completo de una vez, **manteniendo
+toda la edición manual**. Reusan `defaultSideEditorState`/`sideStackFromEditor` de `sideReactions.ts`.
+Cableados hoy en la titulación EDTA. Tests: `__tests__/systemPresets.test.ts`.
 
 ## Módulos activos
 
@@ -118,6 +141,17 @@ pedagógico UNAM.
 - Solvers por bisección (típicamente 80 iteraciones).
 
 ## Validación matemática
+
+Documentación ampliada (congruencia con Spana/HALTAFALL, conversión de constantes,
+benchmark planificado, límites del motor):
+
+→ [`VALIDACION-Y-CONGRUENCIA.md`](VALIDACION-Y-CONGRUENCIA.md)
+
+Ecosistema de proyectos relacionados e ideas de features futuras:
+
+→ [`PROYECTOS-RELACIONADOS-Y-ROADMAP.md`](PROYECTOS-RELACIONADOS-Y-ROADMAP.md)
+
+Resumen interno:
 
 - `alphaFractions` pasa los golden cases de EquilibriaLab a precisión doble
   (H₃PO₄ pH=0 → α₀=0.99293).

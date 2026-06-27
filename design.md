@@ -2,13 +2,36 @@
 
 Source of truth for the **web simulator**. Historical PPTX tokens live in [design/DESIGN-SYSTEM.md](design/DESIGN-SYSTEM.md) (not used by the app UI).
 
+## Direction: "Soft instrument" (C+D hybrid)
+
+Locked 2026-06-27 via /design-shotgun (variant E). Mockups + approved.json in
+`~/.gstack/projects/quimeq/designs/`. The look blends two references:
+
+- **From "Modern SaaS" (C):** the control panel is a stack of **soft rounded cards**
+  (`--radius-xl`, `--shadow-card`) with comfortable padding, pill toggles, and accordion
+  disclosure. Friendly and legible for students.
+- **From "Figure first" (D):** the plot is the **hero** — a large elevated card
+  (`--radius-2xl`, `--shadow-float`) over an ambient `--bg-grad`, with a **glass toolbar**
+  and **floating result chips** overlaid near the curve. The single most important readout
+  uses the `--accent-grad` (indigo→violet) chip.
+
+Net: a friendly editable panel that scales to dense modules, with an immersive figure-first
+canvas. The exam readouts (pM′/pY′ at x%, windows) live in the floating chips.
+
 ## Principles
 
-1. **Figure first** — Plot is the focus; controls are sidebar / bottom sheet (GeoGebra pattern).
-2. **Modern app chrome** — Slate neutrals, indigo accent, subtle elevation — not clinical teal or slide-deck typography.
-3. **Safe data colors** — Okabe-Ito palette for chart traces (colorblind-safe); brand indigo only in UI chrome.
-4. **Progressive density** — Desktop sidebar; mobile chart-first + FAB.
-5. **Legibility** — 14px body, 12px minimum on interactive labels; tabular nums for values.
+1. **Figure first** — Plot is the hero (elevated card, ambient background); controls are a
+   soft-card sidebar (desktop) / bottom sheet (mobile).
+2. **Soft instrument chrome** — Slate neutrals, indigo→violet accent gradient, layered soft
+   elevation and glass — not clinical teal or slide-deck typography.
+3. **Safe data colors** — Okabe-Ito palette for chart traces (colorblind-safe); brand indigo
+   only in UI chrome and the primary result chip.
+4. **Progressive disclosure** — Basic controls always visible in grouped section cards;
+   advanced (side reactions, comparisons) behind a single ordered accordion, not nested
+   `<details>`.
+5. **Result-forward** — Key numeric outputs surface in floating chips on the plot, not buried
+   in the panel. Tabular nums everywhere.
+6. **Legibility** — 14px body, 12px minimum on interactive labels.
 
 ## Color
 

@@ -6,13 +6,18 @@ import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, DbPanel, InfoBox, LabelField,
-  ModelBadge, RefBadge, ResultCard, Toggle,
+  ModelBadge, PanelSection, RefBadge, ResultCard, ResultChips, Slider, Toggle,
 } from '../components/Controls';
+import { SideReactionEditor } from '../components/Editors';
 import { SPECIES_COLORS } from '../lib/database';
 import { predominanceZones } from '../lib/ladder';
 import {
   complexFractions, bjerrumNumber, solvePL, logBetasToStepwise,
 } from '../lib/complexation';
+import {
+  composeAlphas, defaultSideEditorState, sideStackFromEditor,
+  type SideReactionEditorState,
+} from '../lib/sideReactions';
 import {
   COMPLEX_PRESETS, genericComplexLabels, type ComplexPreset,
 } from '../lib/complexDatabase';
@@ -60,8 +65,25 @@ export default function Complejos() {
   const [cM, setCM] = useState(0.01);
   const [cL, setCL] = useState(0.04);
   const [showEquil, setShowEquil] = useState(true);
+  const [showPXPrime, setShowPXPrime] = useState(false);
+  const [pHScale, setPHScale] = useState(10);
+  const [side, setSide] = useState<SideReactionEditorState>(defaultSideEditorState);
 
-  function reset() { setSys(defaultState()); setCM(0.01); setCL(0.04); setShowEquil(false); }
+  function reset() {
+    setSys(defaultState()); setCM(0.01); setCL(0.04); setShowEquil(false);
+    setShowPXPrime(false); setPHScale(10); setSide(defaultSideEditorState());
+  }
+
+  const logAlphaM = useMemo(() => {
+    if (!showPXPrime) return 0;
+    const br = composeAlphas(pHScale, sideStackFromEditor(side));
+    return Math.log10(Math.max(br.alphaOH * br.alphaL, 1e-30));
+  }, [showPXPrime, pHScale, side]);
+
+  const scaleX = (pL: number) => pL + logAlphaM;
+  const xLabel = showPXPrime
+    ? `pX′ condicional (pH ${pHScale.toFixed(1)})`
+    : 'pL (−log[L])';
 
   const labels = effectiveLabels(sys);
   const n = sys.logBetas.length;
@@ -69,6 +91,7 @@ export default function Complejos() {
 
   // rango pL: 0 a logβₙ + 3
   const pLmax = useMemo(() => Math.max(sys.logBetas[n - 1] + 3, 6), [sys.logBetas, n]);
+  const xMax = scaleX(pLmax);
 
   // pL de equilibrio
   const pLEq = useMemo(() => solvePL(cM, cL, sys.logBetas), [cM, cL, sys.logBetas]);
@@ -80,7 +103,7 @@ export default function Complejos() {
     const series: number[][] = Array.from({ length: n + 1 }, () => []);
     for (let i = 0; i <= PL_POINTS; i++) {
       const pL = (pLmax * i) / PL_POINTS;
-      pls.push(pL);
+      pls.push(scaleX(pL));
       complexFractions(pL, sys.logBetas).forEach((a, j) => series[j].push(a));
     }
     return series.map((ys, j) => ({
@@ -97,7 +120,7 @@ export default function Complejos() {
     const nBar: number[] = [];
     for (let i = 0; i <= PL_POINTS; i++) {
       const pL = (pLmax * i) / PL_POINTS;
-      pls.push(pL);
+      pls.push(scaleX(pL));
       nBar.push(bjerrumNumber(pL, sys.logBetas));
     }
     const trace: Data[] = [{
@@ -126,7 +149,7 @@ export default function Complejos() {
     const series: number[][] = Array.from({ length: n + 1 }, () => []);
     for (let i = 0; i <= PL_POINTS; i++) {
       const pL = (pLmax * i) / PL_POINTS;
-      pls.push(pL);
+      pls.push(scaleX(pL));
       complexFractions(pL, sys.logBetas).forEach((a, j) => {
         series[j].push(Math.log10(Math.max(a * cM, 1e-30)));
       });
@@ -140,21 +163,26 @@ export default function Complejos() {
   }, [sys.logBetas, labels, n, pLmax, cM]);
 
   // DUZP
-  const zones = useMemo(
-    () => predominanceZones(stepwise, labels, 0, pLmax, false),
-    [stepwise, labels, pLmax],
-  );
+  const zones = useMemo(() => {
+    const z = predominanceZones(stepwise, labels, 0, pLmax, false);
+    if (!showPXPrime) return z;
+    return z.map((zone) => ({
+      ...zone,
+      pStart: scaleX(zone.pStart),
+      pEnd: scaleX(zone.pEnd),
+    }));
+  }, [stepwise, labels, pLmax, showPXPrime, logAlphaM]);
 
   const equilMarker = showEquil && pLEq < pLmax + 1
-    ? { p: pLEqClipped, label: `equil. · pL ${pLEq.toFixed(2)}` }
+    ? { p: scaleX(pLEqClipped), label: `equil. · ${showPXPrime ? 'pX′' : 'pL'} ${scaleX(pLEq).toFixed(2)}` }
     : undefined;
 
   const equilShape = showEquil && pLEq < pLmax + 1
-    ? [{ type: 'line' as const, x0: pLEqClipped, x1: pLEqClipped, y0: 0, y1: 1.02, line: { color: '#CC79A7', width: 2, dash: 'dashdot' as const } }]
+    ? [{ type: 'line' as const, x0: scaleX(pLEqClipped), x1: scaleX(pLEqClipped), y0: 0, y1: 1.02, line: { color: '#CC79A7', width: 2, dash: 'dashdot' as const } }]
     : [];
 
   const equilShapeLogC = showEquil && pLEq < pLmax + 1
-    ? [{ type: 'line' as const, x0: pLEqClipped, x1: pLEqClipped, y0: -20, y1: 1, line: { color: '#CC79A7', width: 2, dash: 'dashdot' as const } }]
+    ? [{ type: 'line' as const, x0: scaleX(pLEqClipped), x1: scaleX(pLEqClipped), y0: -20, y1: 1, line: { color: '#CC79A7', width: 2, dash: 'dashdot' as const } }]
     : [];
 
   // especie dominante en pL de equilibrio
@@ -169,9 +197,9 @@ export default function Complejos() {
       node: (
         <Chart
           data={alphaTraces}
-          xTitle="pL (−log[L])"
+          xTitle={xLabel}
           yTitle="Fracción α"
-          xRange={[0, pLmax]}
+          xRange={[0, xMax]}
           yRange={[0, 1.02]}
           shapes={equilShape}
           exportName="equilibria-complejos-equilibrio"
@@ -185,8 +213,8 @@ export default function Complejos() {
         <DUZP
           zones={zones}
           pMin={0}
-          pMax={pLmax}
-          pLabel="pL"
+          pMax={xMax}
+          pLabel={showPXPrime ? 'pX′' : 'pL'}
           marker={equilMarker}
           caption="Zonas de predominio"
         />
@@ -198,9 +226,9 @@ export default function Complejos() {
       node: (
         <Chart
           data={alphaTraces}
-          xTitle="pL (−log[L])"
+          xTitle={xLabel}
           yTitle="Fracción α"
-          xRange={[0, pLmax]}
+          xRange={[0, xMax]}
           yRange={[0, 1.02]}
           shapes={equilShape}
           exportName="equilibria-complejos-alfa"
@@ -213,11 +241,11 @@ export default function Complejos() {
       node: (
         <Chart
           data={bjerrumTraces}
-          xTitle="pL (−log[L])"
+          xTitle={xLabel}
           yTitle="n̄ (ligandos coordinados)"
-          xRange={[0, pLmax]}
+          xRange={[0, xMax]}
           yRange={[0, n + 0.2]}
-          shapes={showEquil && pLEq < pLmax + 1 ? [{ type: 'line', x0: pLEqClipped, x1: pLEqClipped, y0: 0, y1: n + 0.2, line: { color: '#CC79A7', width: 2, dash: 'dashdot' } }] : []}
+          shapes={showEquil && pLEq < pLmax + 1 ? [{ type: 'line', x0: scaleX(pLEqClipped), x1: scaleX(pLEqClipped), y0: 0, y1: n + 0.2, line: { color: '#CC79A7', width: 2, dash: 'dashdot' } }] : []}
           exportName="equilibria-complejos-bjerrum"
         />
       ),
@@ -228,9 +256,9 @@ export default function Complejos() {
       node: (
         <Chart
           data={logCTraces}
-          xTitle="pL (−log[L])"
+          xTitle={xLabel}
           yTitle="log C"
-          xRange={[0, pLmax]}
+          xRange={[0, xMax]}
           yRange={[-12, 0.5]}
           shapes={equilShapeLogC}
           exportName="equilibria-complejos-logc"
@@ -242,12 +270,12 @@ export default function Complejos() {
   return (
     <div className="module">
       <PanelShell title="Equilibrio de complejación" onReset={reset}>
-        <div className="editor">
+        <PanelSection title="Sistema" icon="⚛">
           <ModelBadge
             model={sys.logBetas.length === 1
               ? 'complejo 1:1 (ML)'
               : `complejación sucesiva hasta ML${sys.logBetas.length}`}
-            additions={[showEquil && 'balance de masa y pL de equilibrio']}
+            additions={[showEquil && 'balance de masa y pL de equilibrio', showPXPrime && 'escala pX′ condicional']}
           />
           <LabelField
             label="Metal (nombre libre)"
@@ -281,18 +309,33 @@ export default function Complejos() {
               setSys(fromPreset(p));
             }}
           />
-        </div>
+        </PanelSection>
 
-        <h3>Condiciones</h3>
-        <ConcSlider label="Concentración total del metal (cM)" value={cM} onChange={setCM} />
-        <ConcSlider label="Concentración total del ligando (cL)" value={cL} onChange={setCL} />
-        <Toggle label="Marcar pL de equilibrio en diagramas" checked={showEquil} onChange={setShowEquil} />
+        <PanelSection title="Condiciones" icon="⚗">
+          <ConcSlider label="Concentración total del metal (cM)" value={cM} onChange={setCM} />
+          <ConcSlider label="Concentración total del ligando (cL)" value={cL} onChange={setCL} />
+          <Toggle label="Marcar pL de equilibrio en diagramas" checked={showEquil} onChange={setShowEquil} />
+          <Toggle
+            label="Escala pX′ condicional (parásitas del metal)"
+            checked={showPXPrime}
+            onChange={setShowPXPrime}
+          />
+          {showPXPrime && (
+            <div className="mask-section">
+              <Slider label="pH fijo" value={pHScale} min={0} max={14} step={0.1} onChange={setPHScale} decimals={1} />
+              <SideReactionEditor state={side} onChange={setSide} showLigandPKas={false} />
+              <p className="hint">pX′ = pL + log α_M (hidrólisis + auxiliar) a pH fijo.</p>
+            </div>
+          )}
+        </PanelSection>
 
-        <ResultCard items={[
-          { label: 'pL de equilibrio', value: pLEq > pLmax ? `> ${pLmax.toFixed(0)} (sin ligando)` : pLEq.toFixed(3) },
-          { label: 'n̄ en equilibrio', value: nBarEq.toFixed(2) },
-          { label: 'Especie dominante', value: `${labels[domIdx]} (α = ${alphasEq[domIdx].toFixed(3)})` },
-        ]} />
+        <PanelSection title="Resultado" icon="∑">
+          <ResultCard items={[
+            { label: 'pL de equilibrio', value: pLEq > pLmax ? `> ${pLmax.toFixed(0)} (sin ligando)` : pLEq.toFixed(3) },
+            { label: 'n̄ en equilibrio', value: nBarEq.toFixed(2) },
+            { label: 'Especie dominante', value: `${labels[domIdx]} (α = ${alphasEq[domIdx].toFixed(3)})` },
+          ]} />
+        </PanelSection>
 
         <InfoBox title="Cómo leer estos diagramas">
           <p>
@@ -312,6 +355,15 @@ export default function Complejos() {
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="equil" />
+        <ResultChips items={[
+          {
+            label: showPXPrime ? 'pX′ equilibrio' : 'pL equilibrio',
+            value: pLEq > pLmax ? `>${pLmax.toFixed(0)}` : scaleX(pLEq).toFixed(2),
+            accent: true,
+          },
+          { label: 'n̄ equilibrio', value: nBarEq.toFixed(2) },
+          { label: 'Dominante', value: `${labels[domIdx]}` },
+        ]} />
       </section>
     </div>
   );
