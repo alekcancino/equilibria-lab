@@ -458,9 +458,6 @@ export function ResultCardRow({
   );
 }
 
-/** @deprecated Usar ResultCardRow. Alias para compatibilidad durante la migración. */
-export const ResultChips = ResultCardRow;
-
 /** Bloque de explicación didáctica plegable. */
 export function InfoBox({ title, children }: { title: string; children: ReactNode }) {
   return (

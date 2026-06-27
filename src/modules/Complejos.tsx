@@ -6,7 +6,7 @@ import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, DbPanel, InfoBox, LabelField,
-  ModelBadge, PanelSection, RefBadge, ResultCard, ResultChips, Slider, Toggle,
+  ModelBadge, PanelSection, RefBadge, ResultCard, ResultCardRow, Slider, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import { SPECIES_COLORS } from '../lib/database';
@@ -355,7 +355,7 @@ export default function Complejos() {
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="equil" />
-        <ResultChips items={[
+        <ResultCardRow items={[
           {
             label: showPXPrime ? 'pX′ equilibrio' : 'pL equilibrio',
             value: pLEq > pLmax ? `>${pLmax.toFixed(0)}` : scaleX(pLEq).toFixed(2),

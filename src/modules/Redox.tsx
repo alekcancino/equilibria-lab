@@ -5,7 +5,7 @@ import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import DUZP from '../components/DUZP';
 import RedoxPredictionScale from '../components/RedoxPredictionScale';
-import { InfoBox, ModelBadge, PanelSection, ResultCard, ResultChips, Slider } from '../components/Controls';
+import { InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider } from '../components/Controls';
 import { CoupleEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
 import { alphaRedox, peConditional, NERNST_S } from '../lib/redox';
@@ -161,7 +161,7 @@ export default function Redox() {
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} />
-        <ResultChips items={[
+        <ResultCardRow items={[
           { label: 'Reacción espontánea', value: `${strong.ox.ox} + ${strong.red.red}`, accent: true },
           { label: 'log K', value: logK.toFixed(1) },
         ]} />

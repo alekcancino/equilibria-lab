@@ -4,7 +4,7 @@ import PanelShell from '../components/PanelShell';
 import Chart from '../components/Chart';
 import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, PanelSection, ResultChips, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, PanelSection, ResultCardRow, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
@@ -160,7 +160,7 @@ export default function AcidoBase() {
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} />
-        <ResultChips items={[
+        <ResultCardRow items={[
           {
             label: 'pH disolución pura',
             value: pHInvalid ? '—' : pHSystem.toFixed(2),

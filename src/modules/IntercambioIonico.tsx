@@ -3,7 +3,7 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultChips, Slider, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider, Toggle } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import {
   batchIonExchange, breakthroughCurve, isothermCurve, selectivityFromKd,
@@ -358,7 +358,7 @@ export default function IntercambioIonico() {
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={tabs} />
-        <ResultChips items={[
+        <ResultCardRow items={[
           { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(0)} %`, accent: true },
           ...(showCompetitive
             ? [{ label: `φ a pH ${pHBulk.toFixed(1)}`, value: `${(phiAtBulk * 100).toFixed(0)} %` }]

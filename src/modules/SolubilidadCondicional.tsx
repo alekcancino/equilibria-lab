@@ -9,7 +9,7 @@ import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   Slider, ConstantList, ConcSlider, DbPanel, Disclosure, InfoBox, LabelField,
-  ModelBadge, PanelSection, ResultCard, ResultChips, Toggle,
+  ModelBadge, PanelSection, ResultCard, ResultCardRow, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import { alphaOH, hydroxideSolCurve, precipitationPH } from '../lib/conditional';
@@ -640,7 +640,7 @@ export default function SolubilidadCondicional() {
 
       <section className="plot-area">
         <DiagramTabs tabs={tabs} initialId="logs" />
-        <ResultChips items={[
+        <ResultCardRow items={[
           {
             label: `${s.m1.formula} precipita`,
             value: pH1precip !== null ? `pH ${pH1precip.toFixed(1)}` : '—',

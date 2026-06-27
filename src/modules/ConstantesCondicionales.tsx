@@ -8,7 +8,7 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  Slider, DbPanel, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultChips, Toggle,
+  Slider, DbPanel, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import { feasibilityWindow } from '../lib/conditional';
@@ -503,7 +503,7 @@ export default function ConstantesCondicionales() {
 
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="logk" />
-        <ResultChips items={[
+        <ResultCardRow items={[
           { label: 'pH óptimo', value: pHopt.toFixed(1), accent: true },
           { label: "log K′máx", value: logKmax.toFixed(1) },
           { label: `log K′ pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(1) },
