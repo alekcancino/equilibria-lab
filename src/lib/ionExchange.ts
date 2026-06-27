@@ -84,11 +84,16 @@ export {
   resinExchangeFraction,
   exchangeDistributionCurve,
   optimalElutionPH,
+  elutionAtPH3C,
+  optimalElutionPH3C,
   alphaMetalGlobal,
   sideStackFromEditor,
   defaultSideEditorState,
 } from './sideReactions';
-export type { SideReactionStack, SideReactionEditorState, ElutionParams } from './sideReactions';
+export type {
+  SideReactionStack, SideReactionEditorState, ElutionParams,
+  Elution3CParams, Elution3CPoint,
+} from './sideReactions';
 
 /** Isoterma de equilibrio: q (eq/L resina) vs C_A en solución. */
 export function isothermCurve(

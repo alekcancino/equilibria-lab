@@ -7,7 +7,7 @@ import { ConcSlider, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, 
 import { SideReactionEditor } from '../components/Editors';
 import {
   batchIonExchange, breakthroughCurve, isothermCurve, selectivityFromKd,
-  exchangeDistributionCurve, optimalElutionPH, defaultSideEditorState,
+  exchangeDistributionCurve, optimalElutionPH3C, defaultSideEditorState,
   type SideReactionEditorState,
 } from '../lib/ionExchange';
 import { sideStackFromEditor } from '../lib/sideReactions';
@@ -97,10 +97,11 @@ export default function IntercambioIonico() {
     [kHSquared, stack, hResin, ciMeq, massResinG, volumeL],
   );
   const elution = useMemo(
-    () => optimalElutionPH({
+    () => optimalElutionPH3C({
       nNiResin, vEdta, cEdta, logKfNiY, stack,
+      kSelSquared: kHSquared, hResin,
     }),
-    [nNiResin, vEdta, cEdta, logKfNiY, stack],
+    [nNiResin, vEdta, cEdta, logKfNiY, stack, kHSquared, hResin],
   );
   const phiAtBulk = useMemo(() => {
     const idx = distCurve.pHs.reduce((best, pH, i) =>
@@ -231,6 +232,28 @@ export default function IntercambioIonico() {
         />
       ),
     }] : []),
+    ...(showCompetitive && showElution ? [{
+      id: 'elution',
+      label: 'Elución EDTA (3 comp.)',
+      node: (
+        <Chart
+          data={[{
+            x: elution.pHs, y: elution.fractions.map((f) => f * 100),
+            type: 'scatter', mode: 'lines',
+            name: '% Ni eluido', line: { width: 3, color: '#009E73' },
+            hovertemplate: 'pH = %{x:.1f}<br>%{y:.1f} % eluido<extra></extra>',
+          }]}
+          xTitle="pH de elución"
+          yTitle="% Ni recuperado de la resina"
+          yRange={[0, 105]}
+          shapes={[{
+            type: 'line', x0: elution.pH, x1: elution.pH, y0: 0, y1: 105,
+            line: { color: '#CC79A7', width: 2, dash: 'dashdot' },
+          }]}
+          exportName="equilibria-ion-exchange-elution"
+        />
+      ),
+    }] : []),
   ];
 
   return (
@@ -318,7 +341,7 @@ export default function IntercambioIonico() {
               { label: `φ a pH ${pHBulk.toFixed(1)}`, value: `${(phiAtBulk * 100).toFixed(1)} %` },
               ...(showElution ? [
                 { label: 'pH óptimo elución EDTA', value: elution.pH.toFixed(1) },
-                { label: 'Fracción eluida (modelo)', value: `${(elution.fractionEluted * 100).toFixed(0)} %` },
+                { label: 'Fracción eluida (3 comp.)', value: `${(elution.fractionEluted * 100).toFixed(0)} %` },
               ] : []),
             ] : []),
           ]} />

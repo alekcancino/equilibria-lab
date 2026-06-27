@@ -340,6 +340,90 @@ export function optimalElutionPH(params: ElutionParams): { pH: number; logKprime
   };
 }
 
+// ── Elución 3 compartimentos (resina ↔ solución ↔ quelato) ───────────────────
+
+export interface Elution3CParams extends ElutionParams {
+  /** Selectividad K²_H/M de la resina (mismo que en distributionCoefficient). */
+  kSelSquared: number;
+  /** [H⁺] en la resina (M). */
+  hResin: number;
+}
+
+export interface Elution3CPoint {
+  /** Fracción de Ni eluida de la resina (en solución libre + quelato). */
+  fractionEluted: number;
+  /** log K′f condicional Ni–EDTA al pH. */
+  logKprime: number;
+  /** log D de la resina (poder de retención) al pH. */
+  logD: number;
+  /** [Ni′] libre en solución (M). */
+  mFree: number;
+  /** [NiY] quelato (M). */
+  chelate: number;
+  /** Ni retenido en resina (equiv. concentración sobre V, M). */
+  resinHeld: number;
+}
+
+/**
+ * Balance acoplado de 3 compartimentos a un pH fijo.
+ *   Resina:    R₂Ni + 2H⁺ ⇌ 2RH + Ni²⁺   →  D = [Ni]_resina / [Ni′]_sol
+ *   Solución:  Ni′ + Y′ ⇌ NiY            →  K′f = [NiY] / ([Ni′][Y′])
+ * Balance de masa (sobre el volumen de solución V = vEdta):
+ *   C_Ni = D·m + m + K′f·m·y    con    y = C_Y / (1 + K′f·m)
+ * Se resuelve m = [Ni′] por bisección (g(m) monótona creciente).
+ */
+export function elutionAtPH3C(p: Elution3CParams, pH: number): Elution3CPoint {
+  const V = Math.max(p.vEdta, 1e-12);
+  const cNi = p.nNiResin / V;          // Ni total referido al volumen de solución
+  const cY = Math.max(p.cEdta, 0);
+  const logKp = condLogKPrimary(p.logKfNiY, pH, p.stack);
+  const kf = Math.pow(10, logKp);
+  const D = distributionCoefficient({ kSelSquared: p.kSelSquared, pH, stack: p.stack, hResin: p.hResin });
+
+  if (cNi <= 0) {
+    return { fractionEluted: 0, logKprime: logKp, logD: Math.log10(Math.max(D, 1e-30)), mFree: 0, chelate: 0, resinHeld: 0 };
+  }
+
+  const g = (m: number) => {
+    const y = cY / (1 + kf * m);
+    return m * (D + 1) + kf * m * y - cNi;
+  };
+  let lo = 0;
+  let hi = cNi;
+  let guard = 0;
+  while (g(hi) < 0 && guard < 200) { hi *= 2; guard++; }
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2;
+    if (g(mid) > 0) hi = mid; else lo = mid;
+  }
+  const m = (lo + hi) / 2;
+  const y = cY / (1 + kf * m);
+  const chelate = kf * m * y;
+  const resinHeld = D * m;
+  const fractionEluted = Math.min(1, Math.max(0, (m + chelate) / cNi));
+  return { fractionEluted, logKprime: logKp, logD: Math.log10(Math.max(D, 1e-30)), mFree: m, chelate, resinHeld };
+}
+
+/** pH óptimo de elución y curva fracción-eluida(pH) con el modelo de 3 compartimentos. */
+export function optimalElutionPH3C(
+  p: Elution3CParams,
+  pHRange: [number, number] = [2, 12],
+  points = 220,
+): { pH: number; fractionEluted: number; logKprime: number; pHs: number[]; fractions: number[] } {
+  const [lo, hi] = pHRange;
+  const pHs: number[] = [];
+  const fractions: number[] = [];
+  let best = { pH: lo, frac: -1, logKp: 0 };
+  for (let i = 0; i <= points; i++) {
+    const pH = lo + ((hi - lo) * i) / points;
+    const r = elutionAtPH3C(p, pH);
+    pHs.push(pH);
+    fractions.push(r.fractionEluted);
+    if (r.fractionEluted > best.frac) best = { pH, frac: r.fractionEluted, logKp: r.logKprime };
+  }
+  return { pH: best.pH, fractionEluted: best.frac, logKprime: best.logKp, pHs, fractions };
+}
+
 /** Potencial de electrodo Nernst: E = E°′ − (S/n) log([Ox]/[Red]) a pH fijo; aquí E°′ desde par. */
 export function electrodePotential(
   e0Prime: number,
