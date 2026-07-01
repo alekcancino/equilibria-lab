@@ -8,9 +8,19 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  Slider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, ResultCard, Toggle,
+  Slider, ConstantList, ConcSlider, DbPanel, Disclosure, InfoBox, LabelField,
+  ModelBadge, PanelSection, ResultCard, ResultCardRow, Toggle,
 } from '../components/Controls';
-import { hydroxideSolCurve, precipitationPH, alphaOH } from '../lib/conditional';
+import { SideReactionEditor } from '../components/Editors';
+import { alphaOH, hydroxideSolCurve, precipitationPH } from '../lib/conditional';
+import {
+  defaultSideEditorState,
+  hydroxideSolCurveMasked,
+  logSThresholdFromConcentration,
+  precipitationPHMasked,
+  sideStackFromEditor,
+  type SideReactionEditorState,
+} from '../lib/sideReactions';
 import { solubilityPXCurve } from '../lib/solubility';
 
 // ── Base de datos de hidróxidos metálicos ─────────────────────────────────────
@@ -71,6 +81,10 @@ interface State {
   ligandX: string;
   logBetasX: number[];
   pHForPX: number;
+  showSideMask: boolean;
+  side: SideReactionEditorState;
+  useCThreshold: boolean;
+  cAnalytic: number;
 }
 
 function defaultState(): State {
@@ -84,6 +98,10 @@ function defaultState(): State {
     ligandX: 'NH₃',
     logBetasX: [4.04, 7.47, 10.27],
     pHForPX: 10,
+    showSideMask: false,
+    side: defaultSideEditorState(),
+    useCThreshold: false,
+    cAnalytic: 0.01,
   };
 }
 
@@ -109,9 +127,20 @@ export default function SolubilidadCondicional() {
 
   // ── Curvas de solubilidad ──────────────────────────────────────────────────
 
+  const sideStack = useMemo(() => {
+    const st = { ...s.side, showOH: true, logBetasOH: s.m1.logBetasOH };
+    return sideStackFromEditor(st);
+  }, [s.side, s.m1.logBetasOH]);
+
+  const logSThreshold = s.useCThreshold
+    ? logSThresholdFromConcentration(s.cAnalytic)
+    : s.logSThreshold;
+
   const curve1 = useMemo(
-    () => hydroxideSolCurve(s.m1.pKsp, s.m1.n, s.m1.logBetasOH, [0, 14], 600),
-    [s.m1.pKsp, s.m1.n, s.m1.logBetasOH],
+    () => s.showSideMask
+      ? hydroxideSolCurveMasked(s.m1.pKsp, s.m1.n, sideStack, [0, 14], 600)
+      : hydroxideSolCurve(s.m1.pKsp, s.m1.n, s.m1.logBetasOH, [0, 14], 600),
+    [s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.showSideMask, sideStack],
   );
   const curve2 = useMemo(
     () => s.showM2 ? hydroxideSolCurve(s.m2.pKsp, s.m2.n, s.m2.logBetasOH, [0, 14], 600) : null,
@@ -121,12 +150,14 @@ export default function SolubilidadCondicional() {
   // ── Puntos de precipitación (primer cruce del umbral) ─────────────────────
 
   const pH1precip = useMemo(
-    () => precipitationPH(s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.logSThreshold, [0, 14], 'falling'),
-    [s.m1, s.logSThreshold],
+    () => s.showSideMask
+      ? precipitationPHMasked(s.m1.pKsp, s.m1.n, sideStack, logSThreshold, [0, 14], 'falling')
+      : precipitationPH(s.m1.pKsp, s.m1.n, s.m1.logBetasOH, logSThreshold, [0, 14], 'falling'),
+    [s.m1, logSThreshold, s.showSideMask, sideStack],
   );
   const pH2precip = useMemo(
-    () => s.showM2 ? precipitationPH(s.m2.pKsp, s.m2.n, s.m2.logBetasOH, s.logSThreshold, [0, 14], 'falling') : null,
-    [s.m2, s.logSThreshold, s.showM2],
+    () => s.showM2 ? precipitationPH(s.m2.pKsp, s.m2.n, s.m2.logBetasOH, logSThreshold, [0, 14], 'falling') : null,
+    [s.m2, logSThreshold, s.showM2],
   );
 
   // Ventana selectiva: [pH donde M1 precipita, pH donde M2 empieza a precipitar]
@@ -157,6 +188,18 @@ export default function SolubilidadCondicional() {
     return best;
   };
 
+  /** Mínimo de la curva en U: pH de mínima solubilidad y log s ahí (Ord-5a). */
+  const minSolubility = useMemo(() => {
+    let minIdx = 0;
+    for (let i = 1; i < curve1.logS.length; i++) {
+      if (Number.isFinite(curve1.logS[i]) && curve1.logS[i] < curve1.logS[minIdx]) minIdx = i;
+    }
+    return { pH: curve1.pHs[minIdx], logS: curve1.logS[minIdx] };
+  }, [curve1]);
+
+  /** El mínimo es interior (curva en U real) si no cae en los extremos del rango. */
+  const minHasInterior = minSolubility.pH > 0.3 && minSolubility.pH < 13.7;
+
   /** pH donde la curva en U vuelve a cruzar el umbral (redisolución anfotérica). */
   const redissolutionPH = useMemo(() => {
     if (s.m1.logBetasOH.length === 0) return null;
@@ -165,17 +208,17 @@ export default function SolubilidadCondicional() {
       if (curve1.logS[i] < curve1.logS[minIdx]) minIdx = i;
     }
     for (let i = minIdx + 1; i < curve1.logS.length; i++) {
-      if (curve1.logS[i] >= s.logSThreshold) return curve1.pHs[i];
+      if (curve1.logS[i] >= logSThreshold) return curve1.pHs[i];
     }
     return null;
-  }, [curve1, s.m1.logBetasOH, s.logSThreshold]);
+  }, [curve1, s.m1.logBetasOH, logSThreshold]);
 
   // ── Shapes y trazas ───────────────────────────────────────────────────────
 
   const shapes = useMemo<Partial<Shape>[]>(() => {
     const out: Partial<Shape>[] = [
       {
-        type: 'line', x0: 0, x1: 14, y0: s.logSThreshold, y1: s.logSThreshold,
+        type: 'line', x0: 0, x1: 14, y0: logSThreshold, y1: logSThreshold,
         line: { color: C_THRESH, width: 1.5, dash: 'dot' },
       },
     ];
@@ -198,8 +241,15 @@ export default function SolubilidadCondicional() {
         line: { color: '#7F8C8D', width: 1.5, dash: 'dot' },
       });
     }
+    // Marcador del mínimo de la curva en U (mínima solubilidad), solo si es interior
+    if (minHasInterior) {
+      out.push({
+        type: 'line', x0: minSolubility.pH, x1: minSolubility.pH, y0: yMin - 99, y1: minSolubility.logS,
+        line: { color: '#009E73', width: 1.5, dash: 'dash' },
+      });
+    }
     return out;
-  }, [s.logSThreshold, s.operatingPH, selectiveWindow, redissolutionPH, yMin, yMax]);
+  }, [logSThreshold, s.operatingPH, selectiveWindow, redissolutionPH, yMin, yMax, minHasInterior, minSolubility]);
 
   const traces = useMemo<Data[]>(() => {
     const out: Data[] = [
@@ -392,106 +442,133 @@ export default function SolubilidadCondicional() {
   return (
     <div className="module">
       <PanelShell title="Precipitación selectiva" onReset={reset}>
-        {/* ── Metal 1 ── */}
-        <h3 style={{ color: C1 }}>Metal 1 (precipitar)</h3>
-        <ModelBadge
-          model={s.m1.logBetasOH.length === 0
-            ? 'precipitación simple del hidróxido'
-            : `precipitación con ${s.m1.logBetasOH.length} complejo(s) hidroxo soluble(s)`}
-          additions={[s.showM2 && 'separación selectiva entre dos metales']}
-        />
-        <DbPanel items={dbItems} onSelect={(id) => setM1({ ...fromPreset(id) })} title="Presets M(OH)n" />
-        <LabelField label="Metal" value={s.m1.label} onChange={(v) => setM1({ label: v })} />
-        <LabelField label="Fórmula" value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
-        <Slider label="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
-        <div className="control">
-          <div className="control-header">
-            <span className="control-label">Estequiometría n (M(OH)_n)</span>
-            <span className="control-value">{s.m1.n}</span>
-          </div>
-          <div className="segmented" style={{ marginTop: 6 }}>
-            {[1, 2, 3].map((n) => (
-              <button
-                key={n}
-                className={s.m1.n === n ? 'seg-btn active' : 'seg-btn'}
-                onClick={() => setM1({ n })}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-        <details className="section-collapse">
-          <summary className="section-collapse-title">Complejos hidroxo de M1 (log β)</summary>
-          <ConstantList
-            prefix="log β(OH)"
-            values={s.m1.logBetasOH}
-            onChange={(v) => setM1({ logBetasOH: v })}
-            min={0} max={40} maxItems={5} minItems={0} initialValue={5}
+        <PanelSection title="Metal 1 (precipitar)" icon="①">
+          <ModelBadge
+            model={s.m1.logBetasOH.length === 0
+              ? 'precipitación simple del hidróxido'
+              : `precipitación con ${s.m1.logBetasOH.length} complejo(s) hidroxo soluble(s)`}
+            additions={[s.showM2 && 'separación selectiva entre dos metales', minHasInterior && 'mínimo de solubilidad (curva en U)']}
           />
-          <p className="hint">Incluir formas anfotéricas (β₄ para M(OH)₄⁻) da forma de U a la curva.</p>
-        </details>
-
-        {/* ── Metal 2 ── */}
-        <Toggle label="Comparar con 2.º metal (separación selectiva)" checked={s.showM2} onChange={(v) => setS((p) => ({ ...p, showM2: v }))} />
-        {s.showM2 && (
-          <div className="mask-section">
-            <DbPanel items={dbItems} onSelect={(id) => setM2({ ...fromPreset(id) })} title="Presets M2" />
-            <LabelField label="2.º metal" value={s.m2.label} onChange={(v) => setM2({ label: v })} />
-            <LabelField label="Fórmula" value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
-            <Slider label="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
-            <div className="control">
-              <div className="control-header">
-                <span className="control-label">Estequiometría n</span>
-                <span className="control-value">{s.m2.n}</span>
-              </div>
-              <div className="segmented" style={{ marginTop: 6 }}>
-                {[1, 2, 3].map((n) => (
-                  <button
-                    key={n}
-                    className={s.m2.n === n ? 'seg-btn active' : 'seg-btn'}
-                    onClick={() => setM2({ n })}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
+          <DbPanel items={dbItems} onSelect={(id) => setM1({ ...fromPreset(id) })} title="Presets M(OH)n" />
+          <LabelField label="Metal" value={s.m1.label} onChange={(v) => setM1({ label: v })} />
+          <LabelField label="Fórmula" value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
+          <Slider label="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
+          <div className="control">
+            <div className="control-header">
+              <span className="control-label">Estequiometría n (M(OH)_n)</span>
+              <span className="control-value">{s.m1.n}</span>
+            </div>
+            <div className="segmented" style={{ marginTop: 6 }}>
+              {[1, 2, 3].map((n) => (
+                <button
+                  key={n}
+                  className={s.m1.n === n ? 'seg-btn active' : 'seg-btn'}
+                  onClick={() => setM1({ n })}
+                >
+                  {n}
+                </button>
+              ))}
             </div>
           </div>
-        )}
+          <Disclosure title="Complejos hidroxo de M1 (log β)">
+            <ConstantList
+              prefix="log β(OH)"
+              values={s.m1.logBetasOH}
+              onChange={(v) => setM1({ logBetasOH: v })}
+              min={-50} max={40} maxItems={5} minItems={0} initialValue={5}
+            />
+            <p className="hint">Incluir formas anfotéricas (β₄ para M(OH)₄⁻) da forma de U a la curva.</p>
+          </Disclosure>
+          <Toggle
+            label="Enmascaramiento por ligando auxiliar (NH₃, glicinato…)"
+            checked={s.showSideMask}
+            onChange={(v) => setS((p) => ({ ...p, showSideMask: v }))}
+          />
+          {s.showSideMask && (
+            <div className="mask-section">
+              <SideReactionEditor
+                state={s.side}
+                onChange={(side) => setS((p) => ({ ...p, side }))}
+                showLigandPKas={false}
+              />
+            </div>
+          )}
+        </PanelSection>
 
-        {/* ── Umbral ── */}
-        <h3>Umbral de precipitación</h3>
-        <Slider
-          label="log s_umbral"
-          value={s.logSThreshold}
-          min={-10}
-          max={-1}
-          step={0.5}
-          onChange={(v) => setS((p) => ({ ...p, logSThreshold: v }))}
-          decimals={1}
-        />
-        <Slider
-          label="pH de operación (co-precipitación)"
-          value={s.operatingPH}
-          min={0}
-          max={14}
-          step={0.1}
-          onChange={(v) => setS((p) => ({ ...p, operatingPH: v }))}
-          decimals={1}
-        />
-        <p className="hint">
-          Precipitación "completa" cuando s &lt; 10^{s.logSThreshold.toFixed(0)} M
-          {' '}(línea punteada gris). La banda verde es la ventana selectiva.
-          Línea rosa: pH de operación; naranja punteada: redisolución anfotérica.
-        </p>
+        <PanelSection title="Comparar 2.º metal" icon="②">
+          <Toggle label="Separación selectiva entre dos metales" checked={s.showM2} onChange={(v) => setS((p) => ({ ...p, showM2: v }))} />
+          {s.showM2 && (
+            <div className="mask-section">
+              <DbPanel items={dbItems} onSelect={(id) => setM2({ ...fromPreset(id) })} title="Presets M2" />
+              <LabelField label="2.º metal" value={s.m2.label} onChange={(v) => setM2({ label: v })} />
+              <LabelField label="Fórmula" value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
+              <Slider label="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
+              <div className="control">
+                <div className="control-header">
+                  <span className="control-label">Estequiometría n</span>
+                  <span className="control-value">{s.m2.n}</span>
+                </div>
+                <div className="segmented" style={{ marginTop: 6 }}>
+                  {[1, 2, 3].map((n) => (
+                    <button
+                      key={n}
+                      className={s.m2.n === n ? 'seg-btn active' : 'seg-btn'}
+                      onClick={() => setM2({ n })}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </PanelSection>
 
-        {/* ── ResultCard ── */}
+        <PanelSection title="Umbral y operación" icon="⚗">
+          <Toggle
+            label="Umbral desde concentración analítica C"
+            checked={s.useCThreshold}
+            onChange={(v) => setS((p) => ({ ...p, useCThreshold: v }))}
+          />
+          {s.useCThreshold ? (
+            <ConcSlider label="C analítica (M)" value={s.cAnalytic} onChange={(v) => setS((p) => ({ ...p, cAnalytic: v }))} min={-4} max={-1} />
+          ) : (
+            <Slider
+              label="log s_umbral"
+              value={s.logSThreshold}
+              min={-10}
+              max={-1}
+              step={0.5}
+              onChange={(v) => setS((p) => ({ ...p, logSThreshold: v }))}
+              decimals={1}
+            />
+          )}
+          <Slider
+            label="pH de operación (co-precipitación)"
+            value={s.operatingPH}
+            min={0}
+            max={14}
+            step={0.1}
+            onChange={(v) => setS((p) => ({ ...p, operatingPH: v }))}
+            decimals={1}
+          />
+          <p className="hint">
+            Precipitación "completa" cuando s &lt; 10^{s.logSThreshold.toFixed(0)} M
+            {' '}(línea punteada gris). Banda verde: ventana selectiva. Rosa: pH de operación;
+            naranja punteada: redisolución; verde discontinua: mínimo de solubilidad.
+          </p>
+        </PanelSection>
+
+        <PanelSection title="Resultado" icon="∑">
         <ResultCard items={[
           {
             label: `pH donde ${s.m1.formula} precipita`,
             value: pH1precip !== null ? `pH ${pH1precip.toFixed(1)}` : 'No alcanza umbral',
           },
+          ...(minHasInterior ? [{
+            label: `Mínima solubilidad de ${s.m1.formula}`,
+            value: `pH ${minSolubility.pH.toFixed(1)} · log s ${minSolubility.logS.toFixed(2)}`,
+          }] : []),
           ...(s.showM2 ? [{
             label: `pH donde ${s.m2.formula} precipita`,
             value: pH2precip !== null ? `pH ${pH2precip.toFixed(1)}` : 'No alcanza umbral',
@@ -524,24 +601,27 @@ export default function SolubilidadCondicional() {
             },
           ] : []),
         ]} />
+        </PanelSection>
 
-        <Toggle
-          label="log s = f(pX) — efecto de complejante"
-          checked={s.showPX}
-          onChange={(v) => setS((p) => ({ ...p, showPX: v }))}
-        />
-        {s.showPX && (
-          <div className="mask-section">
-            <LabelField label="Complejante X" value={s.ligandX} onChange={(v) => setS((p) => ({ ...p, ligandX: v }))} />
-            <Slider label="pH fijo" value={s.pHForPX} min={0} max={14} step={0.1} onChange={(v) => setS((p) => ({ ...p, pHForPX: v }))} decimals={1} />
-            <ConstantList
-              prefix="log β(X)"
-              values={s.logBetasX}
-              onChange={(v) => setS((p) => ({ ...p, logBetasX: v }))}
-              min={0} max={25} maxItems={6}
-            />
-          </div>
-        )}
+        <PanelSection title="Efecto de complejante (pX)" icon="✦">
+          <Toggle
+            label="log s = f(pX) — efecto de complejante"
+            checked={s.showPX}
+            onChange={(v) => setS((p) => ({ ...p, showPX: v }))}
+          />
+          {s.showPX && (
+            <div className="mask-section">
+              <LabelField label="Complejante X" value={s.ligandX} onChange={(v) => setS((p) => ({ ...p, ligandX: v }))} />
+              <Slider label="pH fijo" value={s.pHForPX} min={0} max={14} step={0.1} onChange={(v) => setS((p) => ({ ...p, pHForPX: v }))} decimals={1} />
+              <ConstantList
+                prefix="log β(X)"
+                values={s.logBetasX}
+                onChange={(v) => setS((p) => ({ ...p, logBetasX: v }))}
+                min={0} max={25} maxItems={6}
+              />
+            </div>
+          )}
+        </PanelSection>
 
         <InfoBox title="Separación selectiva de hidróxidos">
           <p>
@@ -560,6 +640,19 @@ export default function SolubilidadCondicional() {
 
       <section className="plot-area">
         <DiagramTabs tabs={tabs} initialId="logs" />
+        <ResultCardRow items={[
+          {
+            label: `${s.m1.formula} precipita`,
+            value: pH1precip !== null ? `pH ${pH1precip.toFixed(1)}` : '—',
+            accent: true,
+          },
+          ...(minHasInterior
+            ? [{ label: 'Mín. solubilidad', value: `pH ${minSolubility.pH.toFixed(1)}` }]
+            : []),
+          ...(selectiveWindow
+            ? [{ label: 'Ventana selectiva', value: `${selectiveWindow[0].toFixed(1)}–${selectiveWindow[1].toFixed(1)}` }]
+            : []),
+        ]} />
       </section>
     </div>
   );

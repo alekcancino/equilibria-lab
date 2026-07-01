@@ -4,6 +4,7 @@
 
 import { PKW } from './constants';
 import { alphaFractions } from './equilibrium';
+import { stackFromLegacy, condLogKCurveFromStack } from './sideReactions';
 
 /**
  * Coeficiente de reacciones parásitas por protonación del ligante (α_Y(H)).
@@ -136,29 +137,15 @@ export function condLogKCurve(
   pHRange: [number, number] = [1, 14],
   points = 500
 ): { pHs: number[]; logKs: number[]; logAlphaH: number[]; logAlphaOH: number[]; logAlphaL: number[] } {
-  const [pHmin, pHmax] = pHRange;
-  const pHs: number[] = [];
-  const logKs: number[] = [];
-  const logAlphaH: number[] = [];
-  const logAlphaOH: number[] = [];
-  const logAlphaL: number[] = [];
-
-  for (let i = 0; i <= points; i++) {
-    const pH = pHmin + ((pHmax - pHmin) * i) / points;
-    const aH = alphaH(pKasY, pH);
-    const aOH = alphaOH(logBetasOH, pH);
-    const aL = alphaL(logBetasL, cL);
-    const alphaM = aOH * aL;
-    const lk = condLogK(logKf, { alphaM, alphaY: aH });
-
-    pHs.push(pH);
-    logKs.push(lk);
-    logAlphaH.push(Math.log10(aH));
-    logAlphaOH.push(Math.log10(aOH));
-    logAlphaL.push(Math.log10(aL));
-  }
-
-  return { pHs, logKs, logAlphaH, logAlphaOH, logAlphaL };
+  const stack = stackFromLegacy(pKasY, logBetasOH, logBetasL, cL);
+  const r = condLogKCurveFromStack(logKf, stack, pHRange, points);
+  return {
+    pHs: r.pHs,
+    logKs: r.logKs,
+    logAlphaH: r.logAlphaH,
+    logAlphaOH: r.logAlphaOH,
+    logAlphaL: r.logAlphaL,
+  };
 }
 
 /**

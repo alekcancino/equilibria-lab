@@ -1,14 +1,15 @@
 import { useId } from 'react';
 
 /**
- * Equilibrio ⇌ — como el símbolo químico:
- * flecha superior → (arco suave hacia arriba) y flecha inferior ← (arco suave hacia abajo),
- * desplazadas en sentidos opuestos.
+ * Equilibria Lab — marca "cruce de especies + nodo".
+ * Dos curvas de distribución (α) que se cruzan, con un nodo-anillo en el punto de
+ * cruce (α = 0.5 en el pKa / punto de equivalencia). Va sobre un tile con el
+ * gradiente índigo→violeta de la app, así funciona igual como favicon/ícono.
  */
-export default function BrandLogo({ size = 34, className }: { size?: number; className?: string }) {
+export default function BrandLogo({ size = 32, className }: { size?: number; className?: string }) {
   const uid = useId().replace(/:/g, '');
-  const topGrad = `eq-top-${uid}`;
-  const botGrad = `eq-bot-${uid}`;
+  const tile = `eq-tile-${uid}`;
+  const sheen = `eq-sheen-${uid}`;
 
   return (
     <svg
@@ -21,29 +22,32 @@ export default function BrandLogo({ size = 34, className }: { size?: number; cla
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id={topGrad} x1="8" y1="13" x2="33" y2="13" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#818CF8" />
-          <stop offset="100%" stopColor="#6366F1" />
-        </linearGradient>
-        <linearGradient id={botGrad} x1="32" y1="27" x2="7" y2="27" gradientUnits="userSpaceOnUse">
+        <linearGradient id={tile} x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#6366F1" />
-          <stop offset="100%" stopColor="#4F46E5" />
+          <stop offset="55%" stopColor="#7A6BF5" />
+          <stop offset="100%" stopColor="#8B5CF6" />
         </linearGradient>
+        <radialGradient id={sheen} cx="30%" cy="16%" r="85%">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.26" />
+          <stop offset="55%" stopColor="#fff" stopOpacity="0" />
+        </radialGradient>
       </defs>
+      <rect width="40" height="40" rx="11" fill={`url(#${tile})`} />
+      <rect width="40" height="40" rx="11" fill={`url(#${sheen})`} />
       <path
-        d="M 8 15 Q 20 9.5 32 13 M 28 10 L 33.5 13 L 28 16"
-        stroke={`url(#${topGrad})`}
-        strokeWidth="3"
+        d="M7 13 C15 13, 16 20, 20 20 S25 27, 33 27"
+        stroke="#fff"
+        strokeWidth="2.7"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
       <path
-        d="M 32 25 Q 20 30.5 8 27 M 12 24 L 6.5 27 L 12 30"
-        stroke={`url(#${botGrad})`}
-        strokeWidth="3"
+        d="M7 27 C15 27, 16 20, 20 20 S25 13, 33 13"
+        stroke="#fff"
+        strokeWidth="2.1"
         strokeLinecap="round"
-        strokeLinejoin="round"
+        opacity="0.55"
       />
+      <circle cx="20" cy="20" r="3.4" fill={`url(#${tile})`} stroke="#fff" strokeWidth="2" />
     </svg>
   );
 }

@@ -1,90 +1,142 @@
-// Titulaciones complejométricas con EDTA: constante condicional y curva pM vs volumen.
+// Titulaciones complejométricas con EDTA: constante condicional y curvas pM′ / pY′ vs x o volumen.
 
-import { alphaH, alphaOH, condLogK } from './conditional';
+import { alphaH } from './conditional';
+import {
+  composeAlphas,
+  condLogKPrimary,
+  defaultSideStack,
+  sideStackFromEditor,
+  type SideReactionEditorState,
+  type SideReactionStack,
+} from './sideReactions';
 
 /** pKas del EDTA (H4Y) */
 export const EDTA_PKAS = [2.0, 2.69, 6.13, 10.37];
 
-/** α_Y(H) del EDTA a un pH dado — delega en conditional.ts */
-export function alphaY4(pH: number): number {
-  return alphaH(EDTA_PKAS, pH);
+/** α_Y(H) del EDTA a un pH dado */
+export function alphaY4(pH: number, pKas: number[] = EDTA_PKAS): number {
+  return alphaH(pKas, pH);
 }
 
 export interface EdtaTitrationParams {
-  /** log Kf del complejo M-EDTA */
   logKf: number;
-  /** pH amortiguado de la titulación */
   pH: number;
-  /** log β globales de hidroxocomplejos M(OH)ᵢ (vacío si no hidroliza) */
   logBetasOH?: number[];
-  /** Concentración de la especie en el matraz (M) */
   cMetal: number;
-  /** Volumen inicial en el matraz (mL) */
   vMetal: number;
-  /** Concentración del titulante (M) */
   cEdta: number;
-  /** Volumen máximo de titulante (mL) */
   vMax: number;
-  /** true: el EDTA está en el matraz y se titula con el metal (retro/inversa) */
   edtaInFlask?: boolean;
   points?: number;
+  /** Stack declarativo de parásitas (preferido) */
+  sideStack?: SideReactionStack;
+  /** Estado del editor → stack si sideStack no se pasa */
+  sideEditor?: SideReactionEditorState;
+  /** Eje: volumen de titulante o avance x = n_Y/n_M0 */
+  axis?: 'volume' | 'x';
+  xMax?: number;
 }
 
 export interface EdtaCurve {
   volumes: number[];
+  xs: number[];
   pMs: number[];
+  pYs: number[];
   vEq: number;
-  /** log K'f con K'f = Kf / (αM(OH) · αY(H)) */
+  xEq: number;
   logKfCond: number;
 }
 
+function resolveStack(params: Pick<EdtaTitrationParams, 'sideStack' | 'sideEditor' | 'logBetasOH'>): SideReactionStack {
+  if (params.sideStack) return params.sideStack;
+  if (params.sideEditor) return sideStackFromEditor(params.sideEditor);
+  const stack = defaultSideStack(EDTA_PKAS);
+  const oh = params.logBetasOH ?? [];
+  if (oh.length > 0) stack.hydrolysis = { logBetasOH: [...oh] };
+  return stack;
+}
+
+function equilibriumPoint(kCond: number, cM: number, cY: number): { pM: number; pY: number } {
+  const a = kCond;
+  const b = kCond * (cY - cM) + 1;
+  const c = -cM;
+  let m: number;
+  if (kCond < 1e-8) {
+    m = cM;
+  } else {
+    const disc = b * b - 4 * a * c;
+    m = (-b + Math.sqrt(Math.max(disc, 0))) / (2 * a);
+  }
+  m = Math.max(m, 1e-30);
+  const my = Math.max(cM - m, 0);
+  const yFree = Math.max(cY - my, 1e-30);
+  return { pM: -Math.log10(m), pY: -Math.log10(yFree) };
+}
+
 /**
- * Curva de titulación pM vs volumen de EDTA usando la constante condicional
- * K'f = Kf / (αM(OH) · αY(H)). Resuelve [M] exacto con la cuadrática del balance de masas:
- *   K'[M]² + (K'(C_Y − C_M) + 1)[M] − C_M = 0
+ * Curva de titulación con K′f = Kf / (α_M · α_Y).
+ * Eje x: fracción n_Y/n_M0 (modelo del examen, volumen constante).
+ * Eje volumen: dilución incluida.
  */
 export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
-  const { logKf, pH, cMetal, vMetal, cEdta, vMax, edtaInFlask = false } = params;
-  const logBetasOH = params.logBetasOH ?? [];
+  const {
+    logKf, pH, cMetal, vMetal, cEdta, vMax,
+    edtaInFlask = false, axis = 'volume', xMax = 2,
+  } = params;
   const points = params.points ?? 500;
-  const aY = alphaY4(pH);
-  const aM = alphaOH(logBetasOH, pH);
-  const logKfCond = condLogK(logKf, { alphaM: aM, alphaY: aY });
+  const stack = resolveStack(params);
+  const logKfCond = condLogKPrimary(logKf, pH, stack);
   const kCond = Math.pow(10, logKfCond);
+  const br = composeAlphas(pH, stack);
 
   const volumes: number[] = [];
+  const xs: number[] = [];
   const pMs: number[] = [];
+  const pYs: number[] = [];
+
+  const vEq = (cMetal * vMetal) / cEdta;
+  const xEq = 1;
 
   for (let i = 0; i <= points; i++) {
-    const v = (vMax * i) / points;
-    const vTotal = vMetal + v;
-    // En la dirección directa el metal está en el matraz; en la inversa, el EDTA.
-    const flask = (cMetal * vMetal) / vTotal;
-    const buret = (cEdta * v) / vTotal;
-    const cM = edtaInFlask ? buret : flask;
-    const cY = edtaInFlask ? flask : buret;
-
-    // K'[M]² + (K'(cY − cM) + 1)[M] − cM = 0
-    // Cuando kCond << 1 la cuadrática degenera: usamos la rama estabilizada.
-    const a = kCond;
-    const b = kCond * (cY - cM) + 1;
-    const c = -cM;
-    let m: number;
-    if (kCond < 1e-8) {
-      // Régimen de ligando muy débil: [M] ≈ cM (sin complejo significativo)
-      m = cM;
+    if (axis === 'x') {
+      const x = (xMax * i) / points;
+      const cM = cMetal;
+      const cY = x * cMetal;
+      const eq = equilibriumPoint(kCond, cM, cY);
+      xs.push(x);
+      volumes.push(x * vEq);
+      pMs.push(eq.pM);
+      pYs.push(eq.pY);
     } else {
-      m = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
+      const v = (vMax * i) / points;
+      const vTotal = vMetal + v;
+      const flask = (cMetal * vMetal) / vTotal;
+      const buret = (cEdta * v) / vTotal;
+      const cM = edtaInFlask ? buret : flask;
+      const cY = edtaInFlask ? flask : buret;
+      const eq = equilibriumPoint(kCond, cM, cY);
+      volumes.push(v);
+      xs.push(v / vEq);
+      pMs.push(eq.pM);
+      pYs.push(eq.pY);
     }
-
-    volumes.push(v);
-    pMs.push(-Math.log10(Math.max(m, 1e-30)));
   }
 
-  return {
-    volumes,
-    pMs,
-    vEq: (cMetal * vMetal) / cEdta,
-    logKfCond,
-  };
+  void br;
+  return { volumes, xs, pMs, pYs, vEq, xEq, logKfCond };
+}
+
+/** Valores pM′ / pY′ en un avance x dado (p. ej. 0.5 o 1.5). */
+export function edtaAtFraction(
+  params: Pick<EdtaTitrationParams, 'logKf' | 'pH' | 'cMetal' | 'sideStack' | 'sideEditor' | 'logBetasOH'> & {
+    vMetal?: number;
+    cEdta?: number;
+  },
+  x: number,
+): { pM: number; pY: number; logKfCond: number } {
+  const stack = resolveStack(params);
+  const logKfCond = condLogKPrimary(params.logKf, params.pH, stack);
+  const kCond = Math.pow(10, logKfCond);
+  const eq = equilibriumPoint(kCond, params.cMetal, x * params.cMetal);
+  return { ...eq, logKfCond };
 }

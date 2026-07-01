@@ -3,8 +3,8 @@ import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import {
-  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, RefBadge, ResultCard,
-  SelectControl, Slider, Toggle,
+  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, PanelSection, RefBadge,
+  ResultCard, ResultCardRow, SelectControl, Slider, Toggle,
 } from '../components/Controls';
 import { SALTS, type SaltPreset } from '../lib/database';
 import { solubility } from '../lib/solubility';
@@ -103,7 +103,7 @@ export default function Solubilidad() {
   return (
     <div className="module">
       <PanelShell title={<>Solubilidad (K<sub>ps</sub>)</>} onReset={reset}>
-        <div className="editor">
+        <PanelSection title="Sistema" icon="⚛">
           <ModelBadge
             model={salt.anionPKas.length === 0 ? 'solubilidad intrínseca' : 'solubilidad condicionada por pH'}
             additions={[useCommon && 'ion común']}
@@ -157,20 +157,23 @@ export default function Solubilidad() {
             }))}
             onSelect={(id) => setSalt(saltFromPreset(SALTS.find((s) => s.id === id)!))}
           />
-        </div>
-        <h3>Condiciones</h3>
-        <Toggle label={`Ion común (${salt.anionLabel})`} checked={useCommon} onChange={setUseCommon} />
-        {useCommon && (
-          <ConcSlider label="Concentración del ion común" value={cCommon} onChange={setCCommon} min={-5} max={-0.5} />
-        )}
-        <Slider label="Evaluar en pH" value={pHPoint} min={0} max={14} step={0.1} onChange={setPHPoint} decimals={1} />
-        <ResultCard items={[
-          {
-            label: `Solubilidad a pH ${pHPoint.toFixed(1)}`,
-            value: sInvalid ? 'Sin raíz en Ksp (revisar parámetros)' : `${sAtPoint.toExponential(2)} M`,
-          },
-          { label: 'Equilibrio', value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
-        ]} />
+        </PanelSection>
+        <PanelSection title="Condiciones" icon="⚗">
+          <Toggle label={`Ion común (${salt.anionLabel})`} checked={useCommon} onChange={setUseCommon} />
+          {useCommon && (
+            <ConcSlider label="Concentración del ion común" value={cCommon} onChange={setCCommon} min={-5} max={-0.5} />
+          )}
+          <Slider label="Evaluar en pH" value={pHPoint} min={0} max={14} step={0.1} onChange={setPHPoint} decimals={1} />
+        </PanelSection>
+        <PanelSection title="Resultado" icon="∑">
+          <ResultCard items={[
+            {
+              label: `Solubilidad a pH ${pHPoint.toFixed(1)}`,
+              value: sInvalid ? 'Sin raíz en Ksp (revisar parámetros)' : `${sAtPoint.toExponential(2)} M`,
+            },
+            { label: 'Equilibrio', value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
+          ]} />
+        </PanelSection>
         <InfoBox title="Método de cálculo">
           <p>
             Kps condicional: la fracción α del anión libre corrige el equilibrio según el pH
@@ -188,6 +191,15 @@ export default function Solubilidad() {
           shapes={pHMarker}
           exportName="equilibria-solubilidad"
         />
+        <ResultCardRow items={[
+          {
+            label: `s a pH ${pHPoint.toFixed(1)}`,
+            value: sInvalid ? '—' : `${sAtPoint.toExponential(2)} M`,
+            accent: true,
+          },
+          { label: 'pKsp', value: salt.pKsp.toFixed(2) },
+          { label: 'Equilibrio', value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
+        ]} />
       </section>
     </div>
   );

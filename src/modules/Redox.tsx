@@ -5,7 +5,7 @@ import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import DUZP from '../components/DUZP';
 import RedoxPredictionScale from '../components/RedoxPredictionScale';
-import { InfoBox, ModelBadge, ResultCard, Slider } from '../components/Controls';
+import { InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider } from '../components/Controls';
 import { CoupleEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
 import { alphaRedox, peConditional, NERNST_S } from '../lib/redox';
@@ -130,20 +130,25 @@ export default function Redox() {
   return (
     <div className="module">
       <PanelShell title="Equilibrio redox" onReset={reset}>
-        <ModelBadge
-          model="predicción de reacción entre dos pares redox"
-          additions={[(couple1.mH > 0 || couple2.mH > 0) && 'potencial condicionado por pH']}
-        />
-        <CoupleEditor title="Par 1" couple={couple1} onChange={setCouple1} />
-        <CoupleEditor title="Par 2" couple={couple2} onChange={setCouple2} />
-        <h3>Condiciones</h3>
-        <Slider label="pH del medio" value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
-        <ResultCard items={[
-          { label: `pe°′ ${couple1.ox}/${couple1.red}`, value: `${pe01.toFixed(2)} (${(pe01 * NERNST_S).toFixed(3)} V)` },
-          { label: `pe°′ ${couple2.ox}/${couple2.red}`, value: `${pe02.toFixed(2)} (${(pe02 * NERNST_S).toFixed(3)} V)` },
-          { label: 'Reacción espontánea', value: `${strong.ox.ox} + ${strong.red.red}` },
-          { label: 'log K', value: logK.toFixed(1) },
-        ]} />
+        <PanelSection title="Pares redox" icon="⚛">
+          <ModelBadge
+            model="predicción de reacción entre dos pares redox"
+            additions={[(couple1.mH > 0 || couple2.mH > 0) && 'potencial condicionado por pH']}
+          />
+          <CoupleEditor title="Par 1" couple={couple1} onChange={setCouple1} />
+          <CoupleEditor title="Par 2" couple={couple2} onChange={setCouple2} />
+        </PanelSection>
+        <PanelSection title="Condiciones" icon="⚗">
+          <Slider label="pH del medio" value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
+        </PanelSection>
+        <PanelSection title="Resultado" icon="∑">
+          <ResultCard items={[
+            { label: `pe°′ ${couple1.ox}/${couple1.red}`, value: `${pe01.toFixed(2)} (${(pe01 * NERNST_S).toFixed(3)} V)` },
+            { label: `pe°′ ${couple2.ox}/${couple2.red}`, value: `${pe02.toFixed(2)} (${(pe02 * NERNST_S).toFixed(3)} V)` },
+            { label: 'Reacción espontánea', value: `${strong.ox.ox} + ${strong.red.red}` },
+            { label: 'log K', value: logK.toFixed(1) },
+          ]} />
+        </PanelSection>
         <InfoBox title="Cómo leer la escala de predicción">
           <p>
             En la escala de pe (Baeza), cada par se coloca en su pe°′ condicional con el
@@ -156,6 +161,10 @@ export default function Redox() {
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} />
+        <ResultCardRow items={[
+          { label: 'Reacción espontánea', value: `${strong.ox.ox} + ${strong.red.red}`, accent: true },
+          { label: 'log K', value: logK.toFixed(1) },
+        ]} />
       </section>
     </div>
   );

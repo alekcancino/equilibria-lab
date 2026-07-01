@@ -107,6 +107,9 @@ Stack: **Vite + React + TypeScript + Plotly** (basic dist). Build estático comp
 |---|---|
 | [`design.md`](design.md) | Sistema de diseño visual e interacción (Distill + GeoGebra). |
 | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | Stack, motores, componentes y validación numérica. |
+| [`docs/VALIDACION-Y-CONGRUENCIA.md`](docs/VALIDACION-Y-CONGRUENCIA.md) | Congruencia matemática con Spana/HALTAFALL y límites del motor. |
+| [`docs/PROYECTOS-RELACIONADOS-Y-ROADMAP.md`](docs/PROYECTOS-RELACIONADOS-Y-ROADMAP.md) | Ecosistema open source, matriz de módulos e ideas futuras. |
+| [`docs/EXAMENES-QAIII-2025-2.md`](docs/EXAMENES-QAIII-2025-2.md) | Cobertura vs exámenes parciales/ordinario QA III 2025-2 (UNAM). |
 | [`CHANGELOG.md`](CHANGELOG.md) | Historial de versiones. |
 
 ---

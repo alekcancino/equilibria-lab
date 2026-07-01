@@ -57,12 +57,16 @@ Leyenda: ✅ cubierto · 🟡 parcial · ⬜ no cubierto (roadmap)
 
 **QA III: cobertura estimada 68–72 %.**
 
+Detalle por exámenes reales 2025-2 (Aguilar / ordinario Ni–Gly):
+→ [`EXAMENES-QAIII-2025-2.md`](EXAMENES-QAIII-2025-2.md)
+
 ---
 
 ## Resumen de huecos activos (priorizados)
 
 | # | Tema | Prioridad | Acción |
 |---|---|---|---|
+| 0 | **Exámenes QA III 2025-2** (Zn–EDTA–NH₃, Ni–Gly, IX+EDTA) | **Alta** | Ver [`EXAMENES-QAIII-2025-2.md`](EXAMENES-QAIII-2025-2.md) — P0: NH₃ analítico, titulación pY′ vs x |
 | 1 | Actividad integrada en motores (no solo módulo intro) | Alta | Capa transversal γ en solvePH, K', Ksp |
 | 2 | Intercambio iónico: columna real / cromatografía | Media | Ampliar motor beyond MVP |
 | 3 | Disolventes no acuosos | Media | Módulo nuevo Tier 3 |

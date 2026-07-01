@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Data, Annotations, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
-import { InfoBox, LabelField, ModelBadge, ResultCard, SelectControl, Slider, Toggle } from '../components/Controls';
+import { InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Slider, Toggle } from '../components/Controls';
 import { availableSystems, buildSystem, waterLines, S_NERNST } from '../lib/pourbaix';
 
 // ── Sistema simple custom (M^n+ / M + M(OH)n) ─────────────────────────────────
@@ -23,9 +23,9 @@ function buildSimpleDiagram(p: SimpleCustom, logC: number): { data: Data[]; anno
   const E0_sol = p.E0 + S * (14 - p.pKsp / p.n);             // standard potential M(OH)n/M
   const E_sol = (pH: number) => E0_sol - S * pH;              // solid boundary vs pH
 
-  const COLOR_AQ = '#2980b9';
-  const COLOR_V  = '#8e44ad';
-  const COLOR_SO = '#16a085';
+  const COLOR_AQ = '#0072B2';
+  const COLOR_V  = '#D55E00';
+  const COLOR_SO = '#009E73';
 
   const data: Data[] = [
     {
@@ -172,6 +172,7 @@ export default function Pourbaix() {
   return (
     <div className="module">
       <PanelShell title="Diagrama de Pourbaix" onReset={reset}>
+        <PanelSection title="Sistema" icon="⚛">
         <ModelBadge
           model={useCustom ? 'sistema simple Mⁿ⁺ / M / M(OH)ₙ' : 'sistema metal–agua de múltiples especies'}
           additions={[!useCustom && 'especies de base de datos', showWater && 'estabilidad del agua']}
@@ -194,8 +195,8 @@ export default function Pourbaix() {
             )}
           </>
         ) : (
-          <div className="editor">
-            <p className="editor-title" style={{ color: '#2980b9' }}>Sistema M^n⁺ / M / M(OH)ₙ</p>
+          <>
+            <p className="editor-title" style={{ color: '#0072B2' }}>Sistema M^n⁺ / M / M(OH)ₙ</p>
             <LabelField label="Ion disuelto (ej. Ni²⁺)" value={custom.ionName}
               onChange={(ionName) => setCustom((c) => ({ ...c, ionName }))} />
             <LabelField label="Metal (ej. Ni)" value={custom.metalName}
@@ -222,9 +223,11 @@ export default function Pourbaix() {
             <Slider label={`pKsp M(OH)ₙ = ${custom.pKsp.toFixed(1)}`}
               value={custom.pKsp} min={5} max={40} step={0.1}
               onChange={(pKsp) => setCustom((c) => ({ ...c, pKsp }))} decimals={1} />
-          </div>
+          </>
         )}
+        </PanelSection>
 
+        <PanelSection title="Condiciones" icon="⚗">
         <Slider
           label={`log C de especies disueltas (${Math.pow(10, logC).toExponential(0)} M)`}
           value={logC} min={-6} max={0} step={0.5}
@@ -232,14 +235,19 @@ export default function Pourbaix() {
           decimals={1}
         />
         <Toggle label="Líneas de estabilidad del agua" checked={showWater} onChange={setShowWater} />
+        </PanelSection>
 
-        <h3>Cursor</h3>
+        <PanelSection title="Cursor" icon="✦">
         <Slider label="pH del cursor" value={cursorPH} min={0} max={14} step={0.1} onChange={setCursorPH} decimals={1} />
         <Slider label="E del cursor (V)" value={cursorE} min={-1.6} max={2.2} step={0.05} onChange={setCursorE} decimals={2} />
+        </PanelSection>
+
+        <PanelSection title="Resultado" icon="∑">
         <ResultCard items={[
           { label: 'Condiciones', value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
           { label: 'Especie predominante (aprox.)', value: predominant },
         ]} />
+        </PanelSection>
 
         <InfoBox title="¿Cómo se construye este diagrama?">
           <p>
@@ -265,6 +273,11 @@ export default function Pourbaix() {
           annotations={annotations}
           exportName={`quimeq-pourbaix-${useCustom ? 'custom' : systemId}`}
         />
+        <ResultCardRow items={[
+          { label: 'Especie predominante', value: predominant, accent: true },
+          { label: 'Condiciones', value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
+          { label: 'log C disueltas', value: `${Math.pow(10, logC).toExponential(0)} M` },
+        ]} />
       </section>
     </div>
   );

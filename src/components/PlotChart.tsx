@@ -36,42 +36,51 @@ export default function PlotChart({
       ? parseInt(plotToken('--plot-font-size-mobile', '12'), 10)
       : parseInt(plotToken('--plot-font-size', '13'), 10);
 
+    // Leyenda solo cuando hay más de una serie de datos (curva protagonista, dirección D)
+    const legendNeeded = showLegend && data.length > 1;
+
     return {
       autosize: true,
       margin: mobile
-        ? { l: 44, r: 12, t: 8, b: 52 }
-        : { l: 60, r: 20, t: 16, b: 48 },
+        ? { l: 46, r: 14, t: 10, b: legendNeeded ? 56 : 48 }
+        : { l: 58, r: 18, t: 14, b: legendNeeded ? 56 : 50 },
       paper_bgcolor: 'transparent',
       plot_bgcolor: plotBg,
       font: { family: fontFamily, size: fontSize, color: textColor },
       dragmode: mobile ? 'pan' : 'zoom',
       xaxis: {
-        title: { text: xTitle, font: { size: fontSize + 1, family: fontFamily } },
+        title: { text: xTitle, font: { size: fontSize + 2, family: fontFamily, color: textColor } },
         range: xRange,
         fixedrange: false,
         gridcolor: gridColor,
-        zerolinecolor: axisColor,
+        zeroline: false,
         linecolor: axisColor,
+        ticks: 'outside',
+        tickcolor: gridColor,
+        ticklen: 4,
       },
       yaxis: {
-        title: { text: yTitle, font: { size: fontSize + 1, family: fontFamily } },
+        title: { text: yTitle, font: { size: fontSize + 2, family: fontFamily, color: textColor } },
         range: yRange,
         fixedrange: false,
         gridcolor: gridColor,
-        zerolinecolor: axisColor,
+        zeroline: false,
         linecolor: axisColor,
+        ticks: 'outside',
+        tickcolor: gridColor,
+        ticklen: 4,
       },
-      showlegend: showLegend,
+      showlegend: legendNeeded,
       legend: {
         orientation: 'h',
-        y: mobile ? -0.22 : -0.18,
+        y: mobile ? -0.24 : -0.2,
         font: { size: fontSize, family: fontFamily },
       },
       hovermode: mobile ? 'closest' : 'x unified',
       shapes,
       annotations,
     };
-  }, [mobile, xTitle, yTitle, xRange, yRange, showLegend, shapes, annotations]);
+  }, [mobile, xTitle, yTitle, xRange, yRange, showLegend, shapes, annotations, data.length]);
 
   return (
     <Plot
