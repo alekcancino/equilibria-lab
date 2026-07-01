@@ -1,14 +1,14 @@
-// Titulación argentométrica: Ag⁺ + X⁻ → AgX↓ (estequiometría 1:1)
-// Calcula curva pAg (y pX) vs volumen de AgNO₃ agregado.
-// Alcance: solo reacciones 1:1 (m:x = 1:1). Otros estequiometrías no están modeladas.
-// Fuente: Harris QCA 9.ª ed. cap. 16; Skoog PAQUI.
+// Argentometric titration: Ag⁺ + X⁻ → AgX↓ (1:1 stoichiometry)
+// Computes pAg (and pX) curve vs. volume of AgNO₃ added.
+// Scope: 1:1 reactions only (m:x = 1:1); other stoichiometries are not modelled.
+// Source: Harris QCA 9th ed. ch. 16; Skoog PAQUI.
 
 export interface PrecipParams {
-  pKsp: number;       // pKsp del precipitado (ej. 9.74 para AgCl)
-  cAnalyte: number;   // concentración de X⁻ en el matraz (M)
-  vAnalyte: number;   // volumen del matraz (mL)
-  cTitrant: number;   // concentración de Ag⁺ en la bureta (M)
-  vMax: number;       // volumen máximo a graficar (mL)
+  pKsp: number;       // pKsp of the precipitate (e.g. 9.74 for AgCl)
+  cAnalyte: number;   // concentration of X⁻ in the flask (M)
+  vAnalyte: number;   // flask volume (mL)
+  cTitrant: number;   // Ag⁺ concentration in the burette (M)
+  vMax: number;       // maximum volume to plot (mL)
   points?: number;
 }
 
@@ -16,8 +16,8 @@ export interface PrecipCurve {
   volumes: number[];
   pAgs: number[];     // −log[Ag⁺]
   pXs: number[];      // −log[X⁻]
-  vEq: number;        // volumen de equivalencia (mL)
-  pAgEq: number;      // pAg en equivalencia = ½ pKsp
+  vEq: number;        // equivalence volume (mL)
+  pAgEq: number;      // pAg at equivalence = ½ pKsp
 }
 
 export function precipTitrationCurve(params: PrecipParams): PrecipCurve {
@@ -42,15 +42,15 @@ export function precipTitrationCurve(params: PrecipParams): PrecipCurve {
     let cX: number;
 
     if (Math.abs(excess) < 1e-15 * nX) {
-      // En equivalencia exacta
+      // Exact equivalence point
       cAg = Math.sqrt(Ksp);
       cX = Math.sqrt(Ksp);
     } else if (excess < 0) {
-      // Antes de equivalencia: exceso de X⁻
+      // Before equivalence: excess X⁻
       cX = -excess / vTotal_L;
       cAg = Ksp / cX;
     } else {
-      // Después de equivalencia: exceso de Ag⁺
+      // After equivalence: excess Ag⁺
       cAg = excess / vTotal_L;
       cX = Ksp / cAg;
     }
@@ -65,9 +65,9 @@ export function precipTitrationCurve(params: PrecipParams): PrecipCurve {
 
 export interface MohrIndicator {
   name: string;
-  /** Concentración del cromato (M) para el indicador Mohr */
+  /** Chromate concentration (M) for the Mohr indicator */
   cChromate: number;
-  /** pKsp de Ag₂CrO₄ = 11.89 → pAg en EP = ½(pKsp + log[CrO₄²⁻]) */
+  /** pKsp of Ag₂CrO₄ = 11.89 → pAg at EP = ½(pKsp + log[CrO₄²⁻]) */
   pKspChromate: number;
 }
 
@@ -77,7 +77,7 @@ export const MOHR_INDICATOR: MohrIndicator = {
   pKspChromate: 11.89,
 };
 
-/** pAg al que precipita Ag₂CrO₄: 2Ag⁺ + CrO₄²⁻ → Ag₂CrO₄↓ */
+/** pAg at which Ag₂CrO₄ precipitates: 2Ag⁺ + CrO₄²⁻ → Ag₂CrO₄↓ */
 export function mohrEndpointPAg(cChromate: number): number {
   // Ksp(Ag₂CrO₄) = [Ag⁺]²[CrO₄²⁻] → [Ag⁺] = √(Ksp/[CrO₄²⁻])
   const Ksp_chromate = Math.pow(10, -11.89);
@@ -85,7 +85,7 @@ export function mohrEndpointPAg(cChromate: number): number {
   return -Math.log10(cAg);
 }
 
-/** Presets de analitos comunes en argentometría */
+/** Common analyte presets for argentometric titrations */
 export interface PrecipPreset {
   id: string;
   cation: string;
@@ -105,7 +105,7 @@ export const PRECIP_PRESETS: PrecipPreset[] = [
   { id: 'pbso4', cation: 'Pb²⁺', anion: 'SO₄²⁻',  formula: 'PbSO₄',   pKsp: 7.79,  isAg: false },
 ];
 
-/** @deprecated Usar PRECIP_PRESETS */
+/** @deprecated Use PRECIP_PRESETS */
 export const PRECIP_ANALYTES = PRECIP_PRESETS.map(({ id, anion, formula, pKsp }) => ({
   id, label: anion, formula, pKsp,
 }));

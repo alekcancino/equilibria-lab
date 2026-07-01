@@ -1,6 +1,6 @@
-// Pares redox con potenciales estándar y referencias bibliográficas.
-// Heredado y verificado del proyecto EquilibriaLab (constants.json, auditado).
-// Lista única: cualquier par puede ser analito o titulante, en cualquier dirección.
+// Redox couples with standard potentials and bibliographic references.
+// Inherited and verified from the EquilibriaLab project (constants.json, audited).
+// Single list: any couple can be analyte or titrant in either direction.
 
 import type { RedoxCouple } from './redox';
 

@@ -11,7 +11,7 @@ import { firstDerivative } from '../lib/titration';
 interface MixRow {
   acidId: string;
   conc: number;
-  /** Protones ya neutralizados al preparar (0 = ácido puro, 1 = sal monosódica, ...) */
+  /** Protons already neutralised during preparation (0 = pure acid, 1 = monosodium salt, ...) */
   saltLevel: number;
 }
 
@@ -19,7 +19,7 @@ const MAX_ROWS = 4;
 
 const INITIAL_ROWS: MixRow[] = [{ acidId: 'acetic', conc: 0.05, saltLevel: 0 }];
 
-/** Mezclas multicomponente: pH de la mezcla y su curva de titulación. */
+/** Multicomponent mixtures: mixture pH and its titration curve. */
 export default function Mezclas() {
   const [rows, setRows] = useState<MixRow[]>([...INITIAL_ROWS]);
   const [titrate, setTitrate] = useState(false);
@@ -41,8 +41,8 @@ export default function Mezclas() {
     setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   };
 
-  // Componentes + iones espectadores de las sales (Na⁺ por cada protón neutralizado,
-  // o Cl⁻ si la "sal" de una base es su forma protonada, ej. NH₄Cl).
+  // Components + spectator ions from salts (Na⁺ per proton neutralised,
+  // or Cl⁻ if the "salt" of a base is its protonated form, e.g. NH₄Cl).
   const buildComponents = (dilution: number) => {
     const comps: AcidBaseComponent[] = [];
     let cations = 0;
@@ -51,9 +51,9 @@ export default function Mezclas() {
       const preset = ACIDS.find((a) => a.id === r.acidId)!;
       const c = r.conc * dilution;
       comps.push({ c, z0: preset.z0, pKas: preset.pKas });
-      // saltLevel protones removidos con NaOH al preparar → Na⁺ espectador
+      // saltLevel protons removed with NaOH during preparation → Na⁺ spectator
       if (preset.z0 === 0) cations += r.saltLevel * c;
-      // para bases (z0=1): saltLevel=1 significa partir de la sal (BH⁺Cl⁻) → Cl⁻
+      // for bases (z0=1): saltLevel=1 means starting from the salt (BH⁺Cl⁻) → Cl⁻
       else anions += r.saltLevel * c;
     }
     return { comps, cations, anions };

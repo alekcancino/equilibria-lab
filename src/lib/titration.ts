@@ -1,46 +1,46 @@
-// Generación de curvas de titulación ácido-base por balance de cargas exacto.
-// El analito puede ser ácido o base; el titulante fuerte puede ser básico (NaOH)
-// o ácido (HCl) — las cuatro combinaciones son válidas.
+// Acid-base titration curves by exact charge balance.
+// The analyte may be an acid or a base; the strong titrant may be basic (NaOH)
+// or acidic (HCl) — all four combinations are valid.
 
 import { solvePH, type AcidBaseComponent } from './equilibrium';
 
 export interface TitrationParams {
-  /** Sistema analito (cualquier HnA/B con sus pKa) */
+  /** Analyte system (any HnA/B with pKas) */
   analyte: {
     z0: number;
     pKas: number[];
     kind?: 'equilibrium' | 'strong-acid' | 'strong-base';
   };
-  /** true: el titulante fuerte es HCl; false: es NaOH */
+  /** true: strong titrant is HCl; false: NaOH */
   titrantIsAcid: boolean;
-  /** Concentración del analito (M) */
+  /** Analyte concentration (M) */
   cAnalyte: number;
-  /** Volumen inicial del analito (mL) */
+  /** Initial analyte volume (mL) */
   vAnalyte: number;
-  /** Concentración del titulante fuerte (M) */
+  /** Strong titrant concentration (M) */
   cTitrant: number;
-  /** Volumen máximo de titulante (mL) */
+  /** Maximum titrant volume (mL) */
   vMax: number;
-  /** Número de puntos de la curva */
+  /** Number of curve points */
   points?: number;
 }
 
 export interface TitrationCurve {
   volumes: number[];
   pHs: number[];
-  /** Volumen de equivalencia teórico de cada protón titulable (mL) */
+  /** Theoretical equivalence volume for each titratable proton (mL) */
   equivalenceVolumes: number[];
 }
 
-/** Protones titulables con titulante básico o ácido (pKa en ventana útil). */
+/** Titratable protons with a basic or acidic titrant (pKa in the useful window). */
 export function titratableProtons(pKas: number[]): number {
   return Math.max(pKas.filter((pk) => pk > 0 && pk < 14).length, 1);
 }
 
 /**
- * Curva pH vs volumen. El titulante entra al balance de cargas como ion
- * espectador (Na⁺ del NaOH o Cl⁻ del HCl); el pH se resuelve exacto en cada
- * punto, con dilución incluida (lección de la auditoría P0-5).
+ * pH vs. volume curve. The titrant enters the charge balance as a spectator ion
+ * (Na⁺ from NaOH or Cl⁻ from HCl); pH is solved exactly at each point with
+ * dilution included (lesson from audit P0-5).
  */
 export function titrationCurve(params: TitrationParams): TitrationCurve {
   const { analyte, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax } = params;
@@ -82,7 +82,7 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
   return { volumes, pHs, equivalenceVolumes };
 }
 
-/** Primera derivada numérica dpH/dV (diferencias centradas) */
+/** Numerical first derivative dpH/dV (centered differences) */
 export function firstDerivative(volumes: number[], pHs: number[]): { v: number[]; d: number[] } {
   const v: number[] = [];
   const d: number[] = [];
@@ -95,17 +95,17 @@ export function firstDerivative(volumes: number[], pHs: number[]): { v: number[]
   return { v, d };
 }
 
-/** Segunda derivada — aplica diferencias centrales dos veces. */
+/** Second derivative — applies centered differences twice. */
 export function secondDerivative(volumes: number[], ys: number[]): { v: number[]; d: number[] } {
   const first = firstDerivative(volumes, ys);
   return firstDerivative(first.v, first.d);
 }
 
 /**
- * Función linealizada de Gran para detectar V_eq con mayor precisión.
- * Antes del P.E.:  F₁ = (V₀ + V) · 10^−pH  (proporcional a [H⁺] total)
- * Después del P.E.: F₂ = (V₀ + V) · 10^(pH − 14)  (proporcional a [OH⁻] exceso)
- * Cada segmento es lineal y su extrapolación al eje-x da V_eq.
+ * Linearised Gran function for higher-precision V_eq detection.
+ * Before EP:  F₁ = (V₀ + V) · 10^−pH  (proportional to total [H⁺])
+ * After EP:   F₂ = (V₀ + V) · 10^(pH − 14)  (proportional to excess [OH⁻])
+ * Each segment is linear; its x-intercept extrapolation gives V_eq.
  */
 export function granPlot(
   volumes: number[],
@@ -118,7 +118,7 @@ export function granPlot(
     const pH = pHs[i];
     const V = volumes[i];
     if (!Number.isFinite(pH)) continue;
-    const pHc = Math.min(14, Math.max(0, pH)); // clamp numérico
+    const pHc = Math.min(14, Math.max(0, pH)); // numerical clamp
     const Vtot = vAnalyte + V;
     v1.push(V);
     F1.push(Vtot * Math.pow(10, -pHc));

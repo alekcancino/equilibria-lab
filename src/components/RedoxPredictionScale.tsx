@@ -20,7 +20,7 @@ const H = 260;
 const RAIL_Y = [92, 168] as const;
 const TICK_H = 44;
 
-/** Escala de predicción redox (Baeza): oxidante arriba, reductor abajo, pe°′ en el eje. */
+/** Redox prediction scale (Baeza): oxidant above, reductant below, pe°′ on the axis. */
 export default function RedoxPredictionScale({ couples, peMin, peMax, caption }: RedoxPredictionScaleProps) {
   const x = (pe: number) => ((pe - peMin) / (peMax - peMin)) * W;
 

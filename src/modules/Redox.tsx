@@ -15,7 +15,7 @@ import type { Zone } from '../lib/ladder';
 
 const PE_POINTS = 400;
 
-/** Diagramas redox: DUZP + α vs pe + escala de predicción (Baeza). */
+/** Redox diagrams: DUZP + α vs pe + prediction scale (Baeza). */
 export default function Redox() {
   const [couple1, setCouple1] = useState<CoupleState>(coupleFromPreset('fe'));
   const [couple2, setCouple2] = useState<CoupleState>(coupleFromPreset('ce'));
@@ -31,7 +31,7 @@ export default function Redox() {
   const pe02 = peConditional(couple2, pH);
   const [peMin, peMax] = paddedAxisRange(Math.min(pe01, pe02), Math.max(pe01, pe02), 8);
 
-  // Distribución α vs pe (ambos pares)
+  // α distribution vs pe (both couples)
   const alphaView = useMemo(() => {
     const pes: number[] = [];
     const s = { c1Ox: [] as number[], c1Red: [] as number[], c2Ox: [] as number[], c2Red: [] as number[] };
@@ -67,7 +67,7 @@ export default function Redox() {
     { ox: couple2.ox, red: couple2.red, pe0: pe02, color: SPECIES_COLORS[2], label: couple2.name },
   ], [couple1, couple2, pe01, pe02]);
 
-  // Predicción de reacción espontánea
+  // Spontaneous reaction prediction
   const strong = pe01 > pe02 ? { ox: couple1, red: couple2 } : { ox: couple2, red: couple1 };
   const logK = strong.ox.n * strong.red.n * Math.abs(pe01 - pe02);
 

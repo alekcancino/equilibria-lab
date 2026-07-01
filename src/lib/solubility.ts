@@ -1,12 +1,12 @@
-// Solubilidad de sales poco solubles: efecto del ion común y del pH (anión básico).
+// Solubility of sparingly soluble salts: common-ion effect and pH effect (basic anion).
 
 import { alphaFractions } from './equilibrium';
 import { alphaL } from './conditional';
 import type { SaltPreset } from './database';
 
 /**
- * Fracción del anión que permanece como especie libre (totalmente desprotonada)
- * a un pH dado. Si el anión no es básico, vale 1.
+ * Fraction of the anion that remains as the free (fully deprotonated) species
+ * at a given pH. Returns 1 if the anion is not basic.
  */
 export function anionFreeFraction(salt: SaltPreset, pH: number): number {
   if (!salt.anionPKas || salt.anionPKas.length === 0) return 1;
@@ -16,11 +16,11 @@ export function anionFreeFraction(salt: SaltPreset, pH: number): number {
 }
 
 /**
- * Solubilidad molar s de la sal MmXx a un pH dado y con concentración
- * adicional de anión común cCommon (analítica).
+ * Molar solubility s of salt MmXx at a given pH with additional common-ion
+ * concentration cCommon (analytical).
  *
- * Ksp = [M]^m · [X_libre]^x, con [M] = m·s y [X_libre] = alfa · (x·s + cCommon).
- * Se resuelve por bisección sobre log10(s).
+ * Ksp = [M]^m · [X_free]^x, with [M] = m·s and [X_free] = α · (x·s + cCommon).
+ * Solved by bisection on log10(s).
  */
 export function solubility(salt: SaltPreset, pH: number, cCommon = 0): number {
   const ksp = Math.pow(10, -salt.pKsp);
@@ -35,7 +35,7 @@ export function solubility(salt: SaltPreset, pH: number, cCommon = 0): number {
     );
   };
 
-  // f es creciente en logS; bisección en [-15, 2]
+  // f is increasing in logS; bisection on [-15, 2]
   let lo = -15;
   let hi = 2;
   if (f(lo) > 0) return 0;
@@ -50,9 +50,9 @@ export function solubility(salt: SaltPreset, pH: number, cCommon = 0): number {
 }
 
 /**
- * Solubilidad molar s de MmXx en presencia de un complejante X que forma
- * hidroxo/complejos con el catión: log s = f(pX) a pH fijo.
- * αM(L) = 1 + Σ βᵢ[X]ⁱ corrige la concentración libre del catión.
+ * Molar solubility s of MmXx in the presence of a complexing agent X that forms
+ * hydroxo/complexes with the cation: log s = f(pX) at fixed pH.
+ * αM(L) = 1 + Σ βᵢ[X]ⁱ corrects for the free cation concentration.
  */
 export function solubilityVsPX(
   salt: SaltPreset,
@@ -88,7 +88,7 @@ export function solubilityVsPX(
   return Math.pow(10, (lo + hi) / 2);
 }
 
-/** Curva log s = f(pX) para un barrido de pX. */
+/** log s = f(pX) curve over a pX sweep. */
 export function solubilityPXCurve(
   salt: SaltPreset,
   pH: number,

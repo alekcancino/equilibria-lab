@@ -1,20 +1,20 @@
-// Motor de complejos de coordinación multi-ligante.
-// Modelo M + iL ⇌ MLᵢ con constantes globales de estabilidad βᵢ.
-// El eje de trabajo es pL = −log[L]_libre.
+// Multi-ligand coordination complex engine.
+// Model M + iL ⇌ MLᵢ with overall stability constants βᵢ.
+// Working axis is pL = −log[L]_free.
 
 /**
- * Convierte log β globales en log K escalonadas sucesivas.
+ * Converts overall log β to successive stepwise log K.
  * logKᵢ = logβᵢ − logβᵢ₋₁  (logβ₀ = 0)
- * Las logK sucesivas son lo que necesita ladderFractions/predominanceZones.
+ * Stepwise logK values are what ladderFractions/predominanceZones need.
  */
 export function logBetasToStepwise(logBetas: number[]): number[] {
   return logBetas.map((b, i) => (i === 0 ? b : b - logBetas[i - 1]));
 }
 
 /**
- * Fracciones de distribución α de M, ML, ML₂, ..., MLₙ a un pL dado.
- * αᵢ = βᵢ·[L]ⁱ / (1 + Σ βⱼ·[L]ʲ), trabajado en espacio logarítmico para
- * evitar overflow con β grandes.
+ * α distribution fractions of M, ML, ML₂, ..., MLₙ at a given pL.
+ * αᵢ = βᵢ·[L]ⁱ / (1 + Σ βⱼ·[L]ʲ), computed in log-space to avoid
+ * overflow with large β values.
  */
 export function complexFractions(pL: number, logBetas: number[]): number[] {
   const logL = -pL;
@@ -26,20 +26,20 @@ export function complexFractions(pL: number, logBetas: number[]): number[] {
 }
 
 /**
- * Número de ligación medio de Bjerrum: n̄ = Σ(i · αᵢ).
- * Curva diagnóstica: sus inflexiones coinciden aproximadamente con log Kᵢ sucesivas.
+ * Bjerrum mean ligand number: n̄ = Σ(i · αᵢ).
+ * Diagnostic curve: its inflections occur approximately at successive stepwise log Kᵢ.
  */
 export function bjerrumNumber(pL: number, logBetas: number[]): number {
   return complexFractions(pL, logBetas).reduce((s, a, i) => s + i * a, 0);
 }
 
 /**
- * Resuelve el pL libre de equilibrio dado cM y cL totales, por bisección
- * sobre el balance de masa del ligando:
- *   cL = [L]_libre + cM · n̄([L]_libre)
+ * Solves the free equilibrium pL given total cM and cL, by bisection
+ * on the ligand mass balance:
+ *   cL = [L]_free + cM · n̄([L]_free)
  *   g(pL) = cL − 10^(−pL) − cM · n̄(pL)
- * g es monotónamente creciente en pL → bisección directa.
- * Retorna Infinity si cL = 0 (sin ligando).
+ * g is monotonically increasing in pL → direct bisection.
+ * Returns Infinity if cL = 0 (no ligand).
  */
 export function solvePL(cM: number, cL: number, logBetas: number[]): number {
   if (cL <= 0) return Infinity;
@@ -53,8 +53,8 @@ export function solvePL(cM: number, cL: number, logBetas: number[]): number {
     else lo = mid;
   }
   const result = (lo + hi) / 2;
-  // Verificar que la bisección convergió a una solución física válida.
-  // Si cL < cM·n̄_max el balance de masa del ligando no tiene solución real.
+  // Verify that bisection converged to a physically valid solution.
+  // If cL < cM·n̄_max the ligand mass balance has no real solution.
   const residual = cL - Math.pow(10, -result) - cM * bjerrumNumber(result, logBetas);
   if (Math.abs(residual) > 1e-6 * (cL + 1e-15)) return NaN;
   return result;

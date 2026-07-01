@@ -1,5 +1,5 @@
-// Compositor de reacciones parásitas (Ringbom) para equilibrios acoplados.
-// Un SideReactionStack declara hidrólisis, ligando auxiliar, protonación del complejo, etc.
+// Composer of side reactions (Ringbom) for coupled equilibria.
+// A SideReactionStack declares hydrolysis, auxiliary ligand, complex protonation, etc.
 
 import { PKW } from './constants';
 import { alphaFractions } from './equilibrium';
@@ -7,23 +7,23 @@ import { alphaH, alphaOH, alphaL, condLogK, feasibilityWindow } from './conditio
 
 export { feasibilityWindow };
 
-/** Ligando auxiliar: concentración libre fija, total analítica (F) o escala pX′ fija. */
+/** Auxiliary ligand: fixed free concentration, analytical total (F), or fixed pX′ scale. */
 export type LigandSpec =
   | { mode: 'free'; cL: number }
   | { mode: 'total'; cTotal: number; pKas: number[]; coordinatingIndex?: number }
   | { mode: 'fixedPX'; pX: number };
 
-/** Reacciones parásitas sobre el complejo MY (protonación / hidroxocomplejo del quelato). */
+/** Side reactions on the MY complex (protonation / hydroxo-complex of the chelate). */
 export interface ComplexSideReaction {
-  /** log K para MY + H⁺ ⇌ MHY (aumenta α del lado Y/complejo) */
+  /** log K for MY + H⁺ ⇌ MHY (increases α on the Y/complex side) */
   logBetaProtonation?: number;
-  /** log K para MY + OH⁻ ⇌ MOHY (convención del usuario) */
+  /** log K for MY + OH⁻ ⇌ MOHY (user convention) */
   logBetaHydroxy?: number;
 }
 
-/** Stack declarativo de parásitas para una reacción principal M + Y ⇌ MY. */
+/** Declarative side-reaction stack for a primary reaction M + Y ⇌ MY. */
 export interface SideReactionStack {
-  /** pK_a sucesivos del ligando principal Y (p. ej. EDTA) */
+  /** Successive pKas of the primary ligand Y (e.g. EDTA) */
   ligandPKas: number[];
   hydrolysis?: { logBetasOH: number[] };
   auxLigand?: {
@@ -33,7 +33,7 @@ export interface SideReactionStack {
   complex?: ComplexSideReaction;
 }
 
-/** Reacción principal con constante de formación ideal. */
+/** Primary reaction with ideal formation constant. */
 export interface PrimaryReaction {
   label: string;
   logKf: number;
@@ -43,7 +43,7 @@ export function defaultSideStack(ligandPKas: number[] = [2.0, 2.69, 6.13, 10.37]
   return { ligandPKas: [...ligandPKas] };
 }
 
-/** Concentra la especie coordinante libre [L] a partir del spec del ligando auxiliar. */
+/** Returns the free coordinating species concentration [L] from the auxiliary ligand spec. */
 export function freeLigandConcentration(spec: LigandSpec, pH: number): number {
   if (spec.mode === 'free') return Math.max(spec.cL, 0);
   if (spec.mode === 'fixedPX') return Math.pow(10, -spec.pX);
@@ -53,7 +53,7 @@ export function freeLigandConcentration(spec: LigandSpec, pH: number): number {
   return spec.cTotal * alphas[idx];
 }
 
-/** α por protonación / hidrólisis adicional del complejo MY. */
+/** α for additional protonation / hydrolysis of the MY complex. */
 export function alphaComplex(pH: number, complex?: ComplexSideReaction): number {
   if (!complex) return 1;
   let a = 1;
@@ -78,7 +78,7 @@ export interface AlphaBreakdown {
   cLFree: number;
 }
 
-/** α_M y α_Y totales a partir del stack. */
+/** Total α_M and α_Y from the stack. */
 export function composeAlphas(pH: number, stack: SideReactionStack): AlphaBreakdown {
   const aH = alphaH(stack.ligandPKas, pH);
   const aOH = stack.hydrolysis
@@ -102,7 +102,7 @@ export function composeAlphas(pH: number, stack: SideReactionStack): AlphaBreakd
   };
 }
 
-/** log K′ de una reacción principal a pH dado. */
+/** log K′ of a primary reaction at a given pH. */
 export function condLogKPrimary(logKf: number, pH: number, stack: SideReactionStack): number {
   const { alphaM, alphaY } = composeAlphas(pH, stack);
   return condLogK(logKf, { alphaM, alphaY });
@@ -117,7 +117,7 @@ export interface CondLogKCurveResult {
   logAlphaComplex: number[];
 }
 
-/** Curva log K′ = f(pH) con stack completo. */
+/** log K′ = f(pH) curve with the full stack. */
 export function condLogKCurveFromStack(
   logKf: number,
   stack: SideReactionStack,
@@ -145,7 +145,7 @@ export function condLogKCurveFromStack(
   return { pHs, logKs, logAlphaH, logAlphaOH, logAlphaL, logAlphaComplex };
 }
 
-/** Varias reacciones principales (p. ej. NiGly, NiGly₂, NiGly₃). */
+/** Multiple primary reactions (e.g. NiGly, NiGly₂, NiGly₃). */
 export function condLogKCurveMulti(
   reactions: PrimaryReaction[],
   stack: SideReactionStack,
@@ -160,7 +160,7 @@ export function condLogKCurveMulti(
   return { pHs: base.pHs, curves };
 }
 
-/** log S′ = f(pH) para M(OH)_n con enmascaramiento completo vía stack (solo parásitas del metal). */
+/** log S′ = f(pH) for M(OH)_n with full masking via stack (metal side reactions only). */
 export function hydroxideSolCurveMasked(
   pKsp: number,
   n: number,
@@ -177,7 +177,7 @@ export function hydroxideSolCurveMasked(
     const pH = pHmin + ((pHmax - pHmin) * i) / points;
     const logFreeMetal = -pKsp + n * (PKW - pH);
     const br = composeAlphas(pH, stack);
-    // α_M para solubilidad: hidróxos + auxiliar (NH₃, glicinato), sin protonación del ligando Y
+    // α_M for solubility: hydroxo + auxiliary (NH₃, glycinate), without Y-ligand protonation
     const alphaM = br.alphaOH * br.alphaL;
     pHs.push(pH);
     logS.push(logFreeMetal + Math.log10(alphaM));
@@ -187,12 +187,12 @@ export function hydroxideSolCurveMasked(
   return { pHs, logS };
 }
 
-/** Umbral log s desde concentración analítica C (M): log s_thresh = log10(C). */
+/** log s threshold from analytical concentration C (M): log s_thresh = log10(C). */
 export function logSThresholdFromConcentration(cMolar: number): number {
   return Math.log10(Math.max(cMolar, 1e-30));
 }
 
-/** pH de precipitación con stack enmascarado. */
+/** Precipitation pH with masked stack. */
 export function precipitationPHMasked(
   pKsp: number,
   n: number,
@@ -215,28 +215,28 @@ export function precipitationPHMasked(
   return null;
 }
 
-/** Escala condicional pX′ → [X] libre coordinante. */
+/** Conditional pX′ scale → free coordinating [X] concentration. */
 export function concentrationFromPX(pX: number): number {
   return Math.pow(10, -pX);
 }
 
-/** α_M global para intercambio (hidrólisis + auxiliar a pH dado). */
+/** Global α_M for exchange (hydrolysis + auxiliary at a given pH). */
 export function alphaMetalGlobal(pH: number, stack: SideReactionStack): number {
   const br = composeAlphas(pH, stack);
   return br.alphaOH * br.alphaL;
 }
 
 export interface DistributionParams {
-  /** Constante de selectividad K²_H/M (exam: K²_H/Ni = 3) */
+  /** Selectivity constant K²_H/M (exam: K²_H/Ni = 3) */
   kSelSquared: number;
   pH: number;
   stack: SideReactionStack;
-  /** [H⁺] en la resina (≈ CI durante el experimento) */
+  /** [H⁺] in the resin (≈ CI during the experiment) */
   hResin: number;
 }
 
 /**
- * Coeficiente de distribución D = [M]_resin / [M′]_sol (exam QA III 3er parcial).
+ * Distribution coefficient D = [M]_resin / [M′]_sol (QA III 3rd partial exam).
  * D = K² · (α_M)^−1 · [H⁺]_bulk² / [H⁺]_resin²
  */
 export function distributionCoefficient(params: DistributionParams): number {
@@ -253,8 +253,8 @@ export interface ExchangeFractionParams {
   /** m_R / V (g/L) */
   r: number;
   /**
-   * Factor de capacidad en meq·g/L de solución equivalente al examen.
-   * Por defecto CI_meq_g * mR_g / V_L; si se pasa capacityFactorMeqPerL se usa directamente.
+   * Capacity factor in meq·g/L of solution equivalent to the exam model.
+   * Default CI_meq_g * mR_g / V_L; if capacityFactorMeqPerL is passed it is used directly.
    */
   capacityFactorMeqPerL?: number;
   ciMeqPerG?: number;
@@ -263,8 +263,8 @@ export interface ExchangeFractionParams {
 }
 
 /**
- * Fracción del catión en resina: φ = (D·r/F) / (1 + D·r/F).
- * F = CI·(m_R/V) en meq/L cuando CI está en meq/g.
+ * Cation fraction in resin: φ = (D·r/F) / (1 + D·r/F).
+ * F = CI·(m_R/V) in meq/L when CI is in meq/g.
  */
 export function resinExchangeFraction(params: ExchangeFractionParams): number {
   const { d, r } = params;
@@ -278,7 +278,7 @@ export function resinExchangeFraction(params: ExchangeFractionParams): number {
   return ratio / (1 + ratio);
 }
 
-/** Convierte parámetros legacy de condLogKCurve al stack. */
+/** Converts legacy condLogKCurve parameters to a stack. */
 export function stackFromLegacy(
   pKasY: number[],
   logBetasOH: number[],
@@ -297,11 +297,11 @@ export function stackFromLegacy(
 }
 
 export interface ElutionParams {
-  /** moles Ni en resina al inicio */
+  /** moles of Ni in resin at start */
   nNiResin: number;
-  /** volumen EDTA (L) */
+  /** EDTA volume (L) */
   vEdta: number;
-  /** concentración analítica EDTA (M) */
+  /** analytical EDTA concentration (M) */
   cEdta: number;
   logKfNiY: number;
   stack: SideReactionStack;
@@ -309,8 +309,8 @@ export interface ElutionParams {
 }
 
 /**
- * pH que maximiza fracción de Ni complejado con EDTA al eluir resina (modelo simplificado).
- * Compara K′(pH) · [Y] disponible frente a n_Ni en resina.
+ * pH that maximises the fraction of Ni complexed with EDTA when eluting the resin (simplified model).
+ * Compares K′(pH) · [Y] available against n_Ni in the resin.
  */
 export function optimalElutionPH(params: ElutionParams): { pH: number; logKprime: number; fractionEluted: number } {
   const { nNiResin, vEdta, cEdta, logKfNiY, stack } = params;
@@ -340,41 +340,41 @@ export function optimalElutionPH(params: ElutionParams): { pH: number; logKprime
   };
 }
 
-// ── Elución 3 compartimentos (resina ↔ solución ↔ quelato) ───────────────────
+// ── 3-compartment elution (resin ↔ solution ↔ chelate) ───────────────────────
 
 export interface Elution3CParams extends ElutionParams {
-  /** Selectividad K²_H/M de la resina (mismo que en distributionCoefficient). */
+  /** Resin selectivity K²_H/M (same as in distributionCoefficient). */
   kSelSquared: number;
-  /** [H⁺] en la resina (M). */
+  /** [H⁺] in the resin (M). */
   hResin: number;
 }
 
 export interface Elution3CPoint {
-  /** Fracción de Ni eluida de la resina (en solución libre + quelato). */
+  /** Fraction of Ni eluted from resin (free solution + chelate). */
   fractionEluted: number;
-  /** log K′f condicional Ni–EDTA al pH. */
+  /** Conditional log K′f for Ni–EDTA at the pH. */
   logKprime: number;
-  /** log D de la resina (poder de retención) al pH. */
+  /** log D of the resin (retention power) at the pH. */
   logD: number;
-  /** [Ni′] libre en solución (M). */
+  /** Free [Ni′] in solution (M). */
   mFree: number;
-  /** [NiY] quelato (M). */
+  /** [NiY] chelate (M). */
   chelate: number;
-  /** Ni retenido en resina (equiv. concentración sobre V, M). */
+  /** Ni retained in resin (equiv. concentration over V, M). */
   resinHeld: number;
 }
 
 /**
- * Balance acoplado de 3 compartimentos a un pH fijo.
- *   Resina:    R₂Ni + 2H⁺ ⇌ 2RH + Ni²⁺   →  D = [Ni]_resina / [Ni′]_sol
- *   Solución:  Ni′ + Y′ ⇌ NiY            →  K′f = [NiY] / ([Ni′][Y′])
- * Balance de masa (sobre el volumen de solución V = vEdta):
- *   C_Ni = D·m + m + K′f·m·y    con    y = C_Y / (1 + K′f·m)
- * Se resuelve m = [Ni′] por bisección (g(m) monótona creciente).
+ * Coupled 3-compartment balance at a fixed pH.
+ *   Resin:    R₂Ni + 2H⁺ ⇌ 2RH + Ni²⁺   →  D = [Ni]_resin / [Ni′]_sol
+ *   Solution: Ni′ + Y′ ⇌ NiY            →  K′f = [NiY] / ([Ni′][Y′])
+ * Mass balance (over solution volume V = vEdta):
+ *   C_Ni = D·m + m + K′f·m·y    with    y = C_Y / (1 + K′f·m)
+ * Solved for m = [Ni′] by bisection (g(m) is monotonically increasing).
  */
 export function elutionAtPH3C(p: Elution3CParams, pH: number): Elution3CPoint {
   const V = Math.max(p.vEdta, 1e-12);
-  const cNi = p.nNiResin / V;          // Ni total referido al volumen de solución
+  const cNi = p.nNiResin / V;          // total Ni referred to solution volume
   const cY = Math.max(p.cEdta, 0);
   const logKp = condLogKPrimary(p.logKfNiY, pH, p.stack);
   const kf = Math.pow(10, logKp);
@@ -404,7 +404,7 @@ export function elutionAtPH3C(p: Elution3CParams, pH: number): Elution3CPoint {
   return { fractionEluted, logKprime: logKp, logD: Math.log10(Math.max(D, 1e-30)), mFree: m, chelate, resinHeld };
 }
 
-/** pH óptimo de elución y curva fracción-eluida(pH) con el modelo de 3 compartimentos. */
+/** Optimal elution pH and fraction-eluted(pH) curve with the 3-compartment model. */
 export function optimalElutionPH3C(
   p: Elution3CParams,
   pHRange: [number, number] = [2, 12],
@@ -424,7 +424,7 @@ export function optimalElutionPH3C(
   return { pH: best.pH, fractionEluted: best.frac, logKprime: best.logKp, pHs, fractions };
 }
 
-/** Potencial de electrodo Nernst: E = E°′ − (S/n) log([Ox]/[Red]) a pH fijo; aquí E°′ desde par. */
+/** Nernst electrode potential: E = E°′ − (S/n) log([Ox]/[Red]) at fixed pH; E°′ from the couple. */
 export function electrodePotential(
   e0Prime: number,
   n: number,
@@ -435,12 +435,12 @@ export function electrodePotential(
   return e0Prime - (s / n) * Math.log10(Math.max(m, 1e-30));
 }
 
-/** E°′(pH) para par con mH protones: E°′ = E° − S·(mH/n)·pH. */
+/** E°′(pH) for a couple with mH protons: E°′ = E° − S·(mH/n)·pH. */
 export function e0PrimeAtPH(e0: number, mH: number, n: number, pH: number): number {
   return e0 - 0.05916 * (mH / n) * pH;
 }
 
-// ── Estado compartido para SideReactionEditor ────────────────────────────────
+// ── Shared state for SideReactionEditor ──────────────────────────────────────
 
 export interface SideReactionEditorState {
   ligandPKas: number[];
@@ -504,7 +504,7 @@ export function sideStackFromEditor(st: SideReactionEditorState): SideReactionSt
   return stack;
 }
 
-/** Curva D(pH) y φ(pH) para intercambio catiónico competitivo con H⁺. */
+/** D(pH) and φ(pH) curves for competitive cation exchange with H⁺. */
 export function exchangeDistributionCurve(
   kSelSquared: number,
   stack: SideReactionStack,

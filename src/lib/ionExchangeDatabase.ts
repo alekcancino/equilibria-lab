@@ -1,10 +1,10 @@
-/** Presets de resinas de intercambio iónico (capacidades y selectividades típicas). */
+/** Ion exchange resin presets (typical capacities and selectivities). */
 
 export interface ResinPreset {
   id: string;
   name: string;
-  capacity: number;   // eq/L de resina
-  /** Ksel Na/Ca o par principal documentado */
+  capacity: number;   // eq/L resin
+  /** Ksel for Na/Ca or documented primary pair */
   ksel: number;
   ionA: string;
   ionB: string;

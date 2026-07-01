@@ -13,7 +13,7 @@ import {
 import { sideStackFromEditor } from '../lib/sideReactions';
 import { APPLICATION_PRESETS, RESIN_PRESETS } from '../lib/ionExchangeDatabase';
 
-/** Intercambio iónico: selectividad, lote, isoterma y breakthrough en columna. */
+/** Ion exchange: selectivity, batch, isotherm, and column breakthrough. */
 export default function IntercambioIonico() {
   const [resinId, setResinId] = useState('dowex50');
   const [labelA, setLabelA] = useState('Ca²⁺');

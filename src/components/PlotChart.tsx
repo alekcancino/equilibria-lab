@@ -18,7 +18,7 @@ function plotToken(name: string, fallback: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 }
 
-/** Render interno con Plotly — cargado bajo demanda desde Chart.tsx */
+/** Internal renderer with Plotly — loaded on demand from Chart.tsx */
 export default function PlotChart({
   data, xTitle, yTitle, xRange, yRange, shapes, annotations, showLegend = true,
   exportName = 'equilibria-lab',
@@ -36,7 +36,7 @@ export default function PlotChart({
       ? parseInt(plotToken('--plot-font-size-mobile', '12'), 10)
       : parseInt(plotToken('--plot-font-size', '13'), 10);
 
-    // Leyenda solo cuando hay más de una serie de datos (curva protagonista, dirección D)
+    // Legend only when there is more than one data series (lead curve, "D" direction)
     const legendNeeded = showLegend && data.length > 1;
 
     return {

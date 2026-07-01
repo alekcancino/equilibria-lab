@@ -15,7 +15,7 @@ import { edtaAtFraction } from '../edta';
 const tol = (val: number, expected: number, delta = 0.2) =>
   expect(Math.abs(val - expected)).toBeLessThan(delta);
 
-/** Stack Zn–EDTA–NH₃ (auxiliar total 2 F) sin protonación del complejo. */
+/** Stack Zn–EDTA–NH₃ (2 F total auxiliary) without complex protonation. */
 function znAuxStack() {
   const side = defaultSideEditorState();
   side.ligandPKas = [2.0, 2.69, 6.13, 10.37, 13.1, 13.5];

@@ -1,18 +1,18 @@
-// Extracción líquido-líquido — módulo ② de Equilibrios múltiples.
+// Liquid–liquid extraction — module ② of multiple equilibria.
 //
-// Modela la distribución de un analito entre dos fases inmiscibles en función
-// del pH. El coeficiente de distribución condicional D' captura cómo la
-// ionización en la fase acuosa reduce la extracción:
+// Models the distribution of an analyte between two immiscible phases as a
+// function of pH. The conditional distribution coefficient D captures how
+// ionisation in the aqueous phase reduces extraction:
 //
-//   D = Kd × α_neutral        α_neutral = fracción de la forma extraíble
-//   %E = 100 · D·r / (D·r + 1)   donde r = Vorg/Vaq
+//   D = Kd × α_neutral        α_neutral = fraction of the extractable form
+//   %E = 100 · D·r / (D·r + 1)   where r = Vorg/Vaq
 //
-// Para n extracciones sucesivas: %Eₙ = 100 · (1 − (1/(1+D·r))^n)
+// For n successive extractions: %Eₙ = 100 · (1 − (1/(1+D·r))^n)
 //
-// Comportamientos cubiertos:
-//   • Ácidos: D cae monotónamente para pH > pKa  (slope −1 en log D)
-//   • Anfotéricos (8-HQ): D tiene máximo bell-shaped
-//   • No ionizables (I₂): D constante = Kd
+// Covered behaviors:
+//   • Acids: D decreases monotonically for pH > pKa  (slope −1 in log D)
+//   • Amphoteric (8-HQ): D has a bell-shaped maximum
+//   • Non-ionisable (I₂): D constant = Kd
 
 import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
@@ -24,6 +24,7 @@ import { alphaFractions } from '../lib/equilibrium';
 import { SPECIES_COLORS } from '../lib/database';
 
 // ── Presets ───────────────────────────────────────────────────────────────────
+
 
 interface ExtractionPreset {
   id: string;
@@ -47,14 +48,14 @@ const PRESETS: ExtractionPreset[] = [
   { id: '8hq',       label: '8-Hidroxiquinolina',      formula: 'HQ',        type: 'acid',    logKd:  2.70, pKas: [5.13, 9.89],  neutralIdx: 1, system: 'CHCl₃/H₂O' },
   { id: 'dithizone', label: 'Ditizona',                formula: 'H₂Dz',     type: 'acid',    logKd:  4.00, pKas: [4.47],         neutralIdx: 0, system: 'CHCl₃/H₂O' },
   { id: 'I2',        label: 'Yodo molecular',          formula: 'I₂',        type: 'acid',    logKd:  2.83, pKas: [],             neutralIdx: 0, system: 'CCl₄/H₂O'  },
-  // Quelatos metálicos — D = K_ex · [HL]^n · 10^(n·pH)
+  // Metal chelates — D = K_ex · [HL]^n · 10^(n·pH)
   { id: 'cu_8hq',    label: 'Cu²⁺ + 8-HQ',            formula: 'Cu(Ox)₂',   type: 'chelate', logKd:  9.10, pKas: [], neutralIdx: 0, n: 2, logCHL: -1, system: 'CHCl₃/H₂O' },
   { id: 'zn_8hq',    label: 'Zn²⁺ + 8-HQ',            formula: 'Zn(Ox)₂',   type: 'chelate', logKd:  8.70, pKas: [], neutralIdx: 0, n: 2, logCHL: -1, system: 'CHCl₃/H₂O' },
   { id: 'fe_8hq',    label: 'Fe³⁺ + 8-HQ',            formula: 'Fe(Ox)₃',   type: 'chelate', logKd: 12.10, pKas: [], neutralIdx: 0, n: 3, logCHL: -1, system: 'CHCl₃/H₂O' },
   { id: 'pb_dithiz', label: 'Pb²⁺ + Ditizona',         formula: 'Pb(HDz)₂', type: 'chelate', logKd:  6.30, pKas: [], neutralIdx: 0, n: 2, logCHL: -2, system: 'CHCl₃/H₂O' },
 ];
 
-// ── Motor ─────────────────────────────────────────────────────────────────────
+// ── Engine ────────────────────────────────────────────────────────────────────
 
 function distributionD(
   a: AnalyteState,
@@ -73,7 +74,7 @@ function distributionD(
   const Dmono = Kd * aN;
   if (dimer?.enabled && a.type === 'acid') {
     const K2 = Math.pow(10, dimer.logK2);
-    // Dímero en fase orgánica: D_eff = D_mono · (1 + K₂·α²) desplaza el máximo de log D
+    // Organic-phase dimer: D_eff = D_mono · (1 + K₂·α²) shifts the log D maximum
     return Dmono * (1 + K2 * aN * aN);
   }
   return Dmono;
@@ -100,15 +101,15 @@ function nFor(D: number, r: number, target: number): number | null {
   return n > 0 && n <= 100 ? n : null;
 }
 
-// ── Colores ───────────────────────────────────────────────────────────────────
+// ── Colors ────────────────────────────────────────────────────────────────────
 
-const C1 = SPECIES_COLORS[0]; // naranja — analito 1
-const C2 = SPECIES_COLORS[1]; // azul    — analito 2 (comparación)
+const C1 = SPECIES_COLORS[0]; // orange — analyte 1
+const C2 = SPECIES_COLORS[1]; // blue   — analyte 2 (comparison)
 const C_N = ['#D55E00', '#0072B2', '#009E73'];
 
 const PH_N = 400;
 
-// ── Interfaces de estado ──────────────────────────────────────────────────────
+// ── State interfaces ──────────────────────────────────────────────────────────
 
 interface AnalyteState {
   label: string;
@@ -116,8 +117,8 @@ interface AnalyteState {
   logKd: number;
   pKas: number[];
   neutralIdx: number;
-  n: number;        // quelato: carga del metal
-  logCHL: number;   // quelato: log[HL]_org concentración de quelante en fase org
+  n: number;        // chelate: metal charge
+  logCHL: number;   // chelate: log[HL]_org, chelating agent concentration in organic phase
 }
 
 function presetState(id: string): AnalyteState {
@@ -142,7 +143,7 @@ function defaultState() {
     logK2: 1.5,
     Vaq: 10,        // mL
     Vorg: 10,       // mL
-    nMax: 1,        // extracciones a mostrar en la 3.ª pestaña
+    nMax: 1,        // number of successive extractions shown in the 3rd tab
     preconNMax: 10,
     pH: 5,          // cursor
   };
@@ -267,7 +268,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
   );
 }
 
-// ── Componente ────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ExtraccionLiquido() {
   const [st, setSt] = useState(defaultState);
@@ -277,7 +278,7 @@ export default function ExtraccionLiquido() {
 
   const reset = () => setSt(defaultState());
 
-  const r = st.Vorg / st.Vaq; // ratio de volúmenes
+  const r = st.Vorg / st.Vaq; // volume ratio
   const dimerOpts = useMemo(
     () => ({ enabled: st.showDimer, logK2: st.logK2 }),
     [st.showDimer, st.logK2],
@@ -304,7 +305,7 @@ export default function ExtraccionLiquido() {
   const pE2cur = percentE1(D2cur, r);
   const n99_1 = nFor(D1cur, r, 99);
 
-  // ── Rango Y dinámico para log D ────────────────────────────────────────────
+  // ── Dynamic Y range for log D ──────────────────────────────────────────────
 
   const allLogD = [...logD1s, ...(st.showA2 ? logD2s : [])];
   const logDMax = Math.ceil(Math.max(st.a1.logKd, st.showA2 ? st.a2.logKd : 0)) + 0.5;
@@ -323,7 +324,7 @@ export default function ExtraccionLiquido() {
     showarrow: false, font: { size: 11, color: '#CC79A7' },
   });
 
-  // ── Extracciones múltiples (%E vs pH para n=1..nMax) ─────────────────────
+  // ── Multiple extractions (%E vs pH for n=1..nMax) ─────────────────────────
 
   const multiTraces = useMemo<Data[]>(() => {
     return Array.from({ length: st.nMax }, (_, i) => {
@@ -354,7 +355,7 @@ export default function ExtraccionLiquido() {
     }];
   }, [st.a1, st.pH, dimerOpts, st.preconNMax, r]);
 
-  // ── Trazas log D ───────────────────────────────────────────────────────────
+  // ── log D traces ──────────────────────────────────────────────────────────
 
   const logDTraces = useMemo<Data[]>(() => {
     const t: Data[] = [{
@@ -374,7 +375,7 @@ export default function ExtraccionLiquido() {
     return t;
   }, [pHs, logD1s, logD2s, st.a1, st.a2, st.showA2]);
 
-  // ── Trazas %E ─────────────────────────────────────────────────────────────
+  // ── %E traces ─────────────────────────────────────────────────────────────
 
   const pETraces = useMemo<Data[]>(() => {
     const t: Data[] = [{

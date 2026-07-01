@@ -1,4 +1,4 @@
-/** Formato legible para ticks de ejes (pH, pe, pL, E°, …). */
+/** Human-readable format for axis ticks (pH, pe, pL, E°, …). */
 export function formatAxisLabel(v: number): string {
   if (!Number.isFinite(v)) return '—';
   const int = Math.round(v);
@@ -8,13 +8,13 @@ export function formatAxisLabel(v: number): string {
   return (Math.round(v * 100) / 100).toFixed(2);
 }
 
-/** Rango simétrico redondeado para ejes pe / pL con márgenes. */
+/** Rounded symmetric range for pe / pL axes with margins. */
 export function paddedAxisRange(min: number, max: number, pad: number): [number, number] {
   return [Math.floor(min - pad), Math.ceil(max + pad)];
 }
 
 /**
- * Formatea una concentración molar evitando la notación científica de JS.
+ * Formats a molar concentration avoiding JS scientific notation.
  * 0.1 → "0.1 M", 0.01 → "0.01 M", 1e-5 → "1.35×10⁻⁵ M".
  */
 export function formatMolar(c: number): string {

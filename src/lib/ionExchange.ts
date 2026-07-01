@@ -1,17 +1,17 @@
-// Intercambio iónico: selectividad y reparto en equilibrio (modelo binario 1:1).
+// Ion exchange: selectivity and equilibrium distribution (binary 1:1 model).
 
 export interface IonExchangeParams {
-  /** Concentración inicial del catión A en solución (M) */
+  /** Initial concentration of cation A in solution (M) */
   cA0: number;
-  /** Concentración inicial del catión B en solución (M) */
+  /** Initial concentration of cation B in solution (M) */
   cB0: number;
-  /** Capacidad de intercambio del resin (eq/L de resina) */
+  /** Exchange capacity of the resin (eq/L resin) */
   resinCapacity: number;
-  /** Volumen de solución (L) */
+  /** Solution volume (L) */
   volume: number;
-  /** Volumen de resina (L) */
+  /** Resin volume (L) */
   resinVolume: number;
-  /** Coeficiente de selectividad K_A/B = (y_A·x_B)/(y_B·x_A) */
+  /** Selectivity coefficient K_A/B = (y_A·x_B)/(y_B·x_A) */
   selectivityAB: number;
 }
 
@@ -24,8 +24,8 @@ export interface IonExchangeResult {
 }
 
 /**
- * Equilibrio en lote: resina inicialmente en forma B, intercambia con A en solución.
- * Por cada eq de A adsorbido se libera 1 eq de B (intercambio 1:1).
+ * Batch equilibrium: resin initially in form B exchanges with A in solution.
+ * For each eq of A adsorbed, 1 eq of B is released (1:1 exchange).
  */
 export function batchIonExchange(params: IonExchangeParams): IonExchangeResult {
   const { cA0, cB0, resinCapacity, volume, resinVolume, selectivityAB: K } = params;
@@ -73,7 +73,7 @@ export function batchIonExchange(params: IonExchangeParams): IonExchangeResult {
   };
 }
 
-/** Ksel = K_d(A) / K_d(B) a partir de repartos medidos. */
+/** Ksel = K_d(A) / K_d(B) from measured distribution coefficients. */
 export function selectivityFromKd(kdA: number, kdB: number): number {
   if (kdB <= 0) return Infinity;
   return kdA / kdB;
@@ -95,7 +95,7 @@ export type {
   Elution3CParams, Elution3CPoint,
 } from './sideReactions';
 
-/** Isoterma de equilibrio: q (eq/L resina) vs C_A en solución. */
+/** Equilibrium isotherm: q (eq/L resin) vs. C_A in solution. */
 export function isothermCurve(
   params: Omit<IonExchangeParams, 'cA0'> & { cMin: number; cMax: number; points?: number },
 ): { cA: number[]; q: number[] } {
@@ -121,8 +121,8 @@ export interface ColumnParams {
 }
 
 /**
- * Breakthrough ideal: C/C0 vs volúmenes de lecho (BV).
- * BV_break ≈ Q·V_res / (cA0·V_col) con sigmoide alrededor de ese punto.
+ * Ideal breakthrough curve: C/C0 vs. bed volumes (BV).
+ * BV_break ≈ Q·V_res / (cA0·V_col) with a sigmoid around that point.
  */
 export function breakthroughCurve(params: ColumnParams): { bedVolumes: number[]; cRatio: number[] } {
   const { cA0, resinCapacity, resinVolume, points = 100 } = params;

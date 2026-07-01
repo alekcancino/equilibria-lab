@@ -54,7 +54,7 @@ describe('solvePH', () => {
   });
 
   it('tampón acetato 0.1 M HAc + 0.1 M NaAc → pH ≈ pKa', () => {
-    // 0.2 M total de acético, 0.1 M Na⁺ de la sal
+    // 0.2 M total acetic, 0.1 M Na⁺ from the salt
     const comp: AcidBaseComponent = { c: 0.2, z0: 0, pKas: [4.76] };
     const pH = solvePH([comp], 0.1, 0);
     tol(pH, 4.76, 0.05);

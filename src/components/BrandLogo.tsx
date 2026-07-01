@@ -1,10 +1,10 @@
 import { useId } from 'react';
 
 /**
- * Equilibria Lab — marca "cruce de especies + nodo".
- * Dos curvas de distribución (α) que se cruzan, con un nodo-anillo en el punto de
- * cruce (α = 0.5 en el pKa / punto de equivalencia). Va sobre un tile con el
- * gradiente índigo→violeta de la app, así funciona igual como favicon/ícono.
+ * Equilibria Lab — "species crossover + node" brand mark.
+ * Two distribution curves (α) crossing, with a ring node at the crossover point
+ * (α = 0.5 at pKa / equivalence point). Placed on a tile with the app's
+ * indigo→violet gradient, so it works equally as a favicon/icon.
  */
 export default function BrandLogo({ size = 32, className }: { size?: number; className?: string }) {
   const uid = useId().replace(/:/g, '');

@@ -1,43 +1,43 @@
-// Sistemas completos de un clic (editables): cargan metal + ligante + reacciones
-// parásitas (hidrólisis, auxiliar, protonación del complejo) en un solo
-// SideReactionEditorState. El usuario puede editar cualquier parámetro después.
+// One-click complete systems (editable): load metal + ligand + side reactions
+// (hydrolysis, auxiliary, complex protonation) into a single SideReactionEditorState.
+// The user can edit any parameter afterwards.
 //
-// Mapean los sistemas de los exámenes QA III 2025-2 y clásicos de textbook
-// (Harris / Skoog). Constantes a 25 °C; convenios documentados en `note`.
+// Cover systems from QA III 2025-2 exams and classic textbook examples
+// (Harris / Skoog). Constants at 25 °C; conventions documented in `note`.
 
 import { EDTA_PKAS } from './edta';
 import { defaultSideEditorState, type SideReactionEditorState } from './sideReactions';
 
 export interface SystemPreset {
   id: string;
-  /** Nombre legible del sistema completo. */
+  /** Human-readable name of the complete system. */
   name: string;
   group: string;
-  /** Descripción corta (se muestra en el selector). */
+  /** Short description (displayed in the selector). */
   detail: string;
   reference: string;
-  /** Nota de convenio/aproximación (p. ej. signo de β OH). */
+  /** Convention/approximation note (e.g. sign of β OH). */
   note?: string;
 
   metalLabel: string;
-  /** id que coincide con EDTA_METAL_PRESETS / indicadores, si aplica. */
+  /** id matching EDTA_METAL_PRESETS / indicators, if applicable. */
   metalId?: string;
-  /** log K_f del complejo principal M–Y. */
+  /** log K_f of the primary M–Y complex. */
   logKf: number;
-  /** pH amortiguado típico del sistema. */
+  /** Typical buffered pH of the system. */
   pH: number;
-  /** Concentración analítica típica del metal (M). */
+  /** Typical analytical metal concentration (M). */
   cAnalytic: number;
 
-  /** Solubilidad: pK_sp y estequiometría de OH⁻ del hidróxido (si aplica). */
+  /** Solubility: pK_sp and OH⁻ stoichiometry of the hydroxide (if applicable). */
   pKsp?: number;
   n?: number;
 
-  /** Stack de parásitas completamente editable. */
+  /** Fully editable side-reaction stack. */
   side: SideReactionEditorState;
 }
 
-/** Constructor compacto de SideReactionEditorState desde constantes crudas. */
+/** Compact constructor for SideReactionEditorState from raw constants. */
 function makeSide(opts: {
   ligandPKas?: number[];
   oh?: number[];
@@ -77,7 +77,7 @@ function makeSide(opts: {
 }
 
 export const SYSTEM_PRESETS: SystemPreset[] = [
-  // ── Exámenes QA III 2025-2 ──────────────────────────────────────────────────
+  // ── QA III 2025-2 Exams ─────────────────────────────────────────────────────
   {
     id: 'zn-edta-nh3',
     name: 'Zn²⁺ – EDTA – NH₃',
@@ -95,7 +95,7 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
     side: makeSide({
       oh: [5.04, 10.43, 13.7, 15.2],
       aux: { label: 'NH₃', betas: [2.21, 4.5, 6.86, 8.89], mode: 'total', cTotal: 2.0, pKas: [9.2] },
-      complexProtonation: 3.0, // log K(ZnY + H ⇌ ZnHY) ≈ logβ(ZnHY 19,44) − logKf
+      complexProtonation: 3.0, // log K(ZnY + H ⇌ ZnHY) ≈ logβ(ZnHY 19.44) − logKf
     }),
   },
   {
@@ -113,7 +113,7 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
     n: 2,
     side: makeSide({ oh: [4.97, 8.55] }),
   },
-  // ── Complejometría clásica (Harris / Skoog) ─────────────────────────────────
+  // ── Classic complexometry (Harris / Skoog) ──────────────────────────────────
   {
     id: 'ca-edta',
     name: 'Ca²⁺ – EDTA',
@@ -183,7 +183,7 @@ export function systemPresetById(id: string): SystemPreset | undefined {
   return SYSTEM_PRESETS.find((p) => p.id === id);
 }
 
-/** Clona el estado del editor de un preset (para no mutar la fuente). */
+/** Clones the editor state from a preset (to avoid mutating the source). */
 export function sideFromPreset(p: SystemPreset): SideReactionEditorState {
   return {
     ...p.side,

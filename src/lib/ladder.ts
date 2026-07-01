@@ -1,21 +1,21 @@
-// Unified equilibrium ladder: MLⱼ ⇌ MLᵢ + (j−i)L on a p-scale.
-// Una "escalera" de especies S₀…Sₙ conectadas por fronteras (constantes) en la
-// escala p (pH para ácido-base, pL para complejos, pe para redox). El MISMO motor
-// alimenta la distribución α, el diagrama logarítmico y el DUZP de los tres
-// equilibrios — esa unidad es lo que hace la app intuitiva.
+// Unified equilibrium ladder (Baeza/UNAM model): MLⱼ ⇌ MLᵢ + (j−i)L on a p-scale.
+// Species S₀…Sₙ connected by boundaries (constants) on the p-scale
+// (pH for acid-base, pL for complexation, pe for redox). The SAME engine
+// drives α distribution, the log-C diagram, and the DUZP for all three
+// equilibrium types — that uniformity is what makes the app intuitive.
 
 import { SPECIES_COLORS } from './database';
 
 /**
- * Fracciones α de una escalera de 1 partícula por paso.
- * - `boundaries`: valor p de cada frontera (pKa₁…pKaₙ para ácido-base;
- *   log K₁…log Kₙ sucesivas para complejos).
- * - `ascending=true`  → el índice de especie crece al AUMENTAR p (ácido-base: pH;
- *   a mayor pH, especie más desprotonada).
- * - `ascending=false` → el índice de especie crece al DISMINUIR p (complejos: pL;
- *   a menor pL hay más ligando libre, especie más ligada).
+ * α fractions for a one-particle-per-step ladder.
+ * - `boundaries`: p-value of each boundary (pKa₁…pKaₙ for acid-base;
+ *   successive log K₁…log Kₙ for complexation).
+ * - `ascending=true`  → species index increases as p INCREASES (acid-base: pH;
+ *   higher pH means more deprotonated species).
+ * - `ascending=false` → species index increases as p DECREASES (complexation: pL;
+ *   lower pL means more free ligand, more complexed species).
  *
- * Trabaja en espacio logarítmico para evitar overflow. Devuelve α₀…αₙ.
+ * Works in log-space to avoid overflow. Returns α₀…αₙ.
  */
 export function ladderFractions(p: number, boundaries: number[], ascending: boolean): number[] {
   const logTerms: number[] = [0];
@@ -30,7 +30,7 @@ export function ladderFractions(p: number, boundaries: number[], ascending: bool
   return terms.map((t) => t / denom);
 }
 
-/** log de la concentración de cada especie: log[Sᵢ] = log αᵢ + log C_total. */
+/** log concentration of each species: log[Sᵢ] = log αᵢ + log C_total. */
 export function ladderLogC(
   p: number, boundaries: number[], ascending: boolean, logCtotal: number,
 ): number[] {
@@ -41,18 +41,18 @@ export function ladderLogC(
 
 export interface Zone {
   label: string;
-  /** índice de la especie (para color consistente con α/logC) */
+  /** species index (for consistent color with α/logC) */
   index: number;
   pStart: number;
   pEnd: number;
   color: string;
 }
 
-/** Refina la frontera entre dos especies dominantes por bisección (valor p exacto). */
+/** Refines the boundary between two dominant species by bisection (exact p-value). */
 function refineBoundary(
   lo: number, hi: number, a: number, b: number, boundaries: number[], ascending: boolean,
 ): number {
-  // raíz de f(p) = α_b − α_a; f cambia de signo en [lo, hi]
+  // root of f(p) = α_b − α_a; f changes sign on [lo, hi]
   for (let i = 0; i < 40; i++) {
     const mid = (lo + hi) / 2;
     const fr = ladderFractions(mid, boundaries, ascending);
@@ -63,10 +63,10 @@ function refineBoundary(
 }
 
 /**
- * Zonas de predominio para el DUZP, calculadas por BARRIDO de α (qué especie
- * domina en cada punto) y refinadas por bisección. Robusto a constantes
- * degeneradas/cercanas: una especie que nunca domina simplemente no genera zona
- * (evita el bug de zonas invertidas de versiones previas).
+ * Predominance zones for the DUZP, computed by SWEEPING α (which species
+ * dominates at each point) and refined by bisection. Robust to degenerate/close
+ * constants: a species that never dominates simply produces no zone
+ * (avoids the inverted-zone bug from previous versions).
  */
 export function predominanceZones(
   boundaries: number[], labels: string[], pMin: number, pMax: number, ascending: boolean,

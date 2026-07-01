@@ -1,6 +1,6 @@
-// Generador canónico de nombres de especies con sub/superíndices Unicode.
-// Evita los bugs de nomenclatura de la versión anterior (auditoría P0-8/P0-9:
-// "A4⁻", "CH₃COOH⁻", "MNH₃2"): cargas correctas, dígitos como subíndices.
+// Canonical species name generator with Unicode sub/superscripts.
+// Fixes nomenclature bugs in the prior version (audit P0-8/P0-9:
+// "A4⁻", "CH₃COOH⁻", "MNH₃2"): correct charges, digits as subscripts.
 
 const SUB: Record<string, string> = {
   0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉',
@@ -13,7 +13,7 @@ export function subscript(n: number): string {
   return String(n).split('').map((d) => SUB[d] ?? d).join('');
 }
 
-/** Carga con signo en superíndice: +2 → "²⁺", −1 → "⁻", 0 → "". */
+/** Signed charge as superscript: +2 → "²⁺", −1 → "⁻", 0 → "". */
 export function chargeSuperscript(z: number): string {
   if (z === 0) return '';
   const mag = Math.abs(z);
@@ -22,9 +22,9 @@ export function chargeSuperscript(z: number): string {
 }
 
 /**
- * Etiquetas genéricas para un sistema HnA con carga z0 en la forma más
- * protonada: H₃A, H₂A⁻, HA²⁻, A³⁻ (o BH⁺/B si z0 > 0 con base "B").
- * i = protones perdidos (0 = totalmente protonada).
+ * Generic labels for an HnA system with charge z0 on the most protonated form:
+ * H₃A, H₂A⁻, HA²⁻, A³⁻ (or BH⁺/B if z0 > 0 with base "B").
+ * i = protons lost (0 = fully protonated).
  */
 export function genericSpeciesLabels(nProtons: number, z0: number, core = 'A'): string[] {
   const labels: string[] = [];

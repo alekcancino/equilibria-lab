@@ -1,6 +1,6 @@
-// Solubilidad condicional de hidróxidos metálicos.
-// Caso central: separación selectiva (precipitar M1 dejando M2 en solución).
-// Cubre QA II.5 + QA III.2.
+// Conditional solubility of metal hydroxides.
+// Core use case: selective separation (precipitate M1 while M2 stays in solution).
+// Covers QA II.5 + QA III.2.
 
 import { useMemo, useState } from 'react';
 import type { Data, Shape } from 'plotly.js';
@@ -23,26 +23,26 @@ import {
 } from '../lib/sideReactions';
 import { solubilityPXCurve } from '../lib/solubility';
 
-// ── Base de datos de hidróxidos metálicos ─────────────────────────────────────
+// ── Metal hydroxide database ──────────────────────────────────────────────────
 
 interface OHPreset {
   id: string;
   metal: string;
   formula: string;
-  n: number;         // estequiometría de OH⁻
+  n: number;         // OH⁻ stoichiometry
   pKsp: number;
-  /** log β globales de complejos hidroxo solubles M(OH)_i */
+  /** global log β values for soluble hydroxo complexes M(OH)_i */
   logBetasOH: number[];
   group: string;
 }
 
 const OH_PRESETS: OHPreset[] = [
-  // Trivalentes — precipitan a pH ácido
+  // Trivalent — precipitate at acidic pH
   { id: 'fe3oh', metal: 'Fe³⁺', formula: 'Fe(OH)₃', n: 3, pKsp: 38.7, logBetasOH: [11.81, 21.68, 30.67], group: 'M³⁺ (precipitan a pH ácido)' },
   { id: 'al',    metal: 'Al³⁺', formula: 'Al(OH)₃', n: 3, pKsp: 32.9, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'M³⁺ (precipitan a pH ácido)' },
   { id: 'cr3oh', metal: 'Cr³⁺', formula: 'Cr(OH)₃', n: 3, pKsp: 30.2, logBetasOH: [10.1, 17.8, 24.6, 27.1], group: 'M³⁺ (precipitan a pH ácido)' },
   { id: 'la',    metal: 'La³⁺', formula: 'La(OH)₃', n: 3, pKsp: 20.7, logBetasOH: [], group: 'M³⁺ (precipitan a pH ácido)' },
-  // Bivalentes — precipitan a pH intermedio
+  // Bivalent — precipitate at intermediate pH
   { id: 'cu2oh', metal: 'Cu²⁺', formula: 'Cu(OH)₂', n: 2, pKsp: 19.7, logBetasOH: [6.0, 11.8], group: 'M²⁺ (precipitan a pH intermedio)' },
   { id: 'pb2oh', metal: 'Pb²⁺', formula: 'Pb(OH)₂', n: 2, pKsp: 20.0, logBetasOH: [6.29, 10.89, 13.94], group: 'M²⁺ (precipitan a pH intermedio)' },
   { id: 'zn2oh', metal: 'Zn²⁺', formula: 'Zn(OH)₂', n: 2, pKsp: 16.2, logBetasOH: [5.04, 10.43, 13.7, 15.2], group: 'M²⁺ (precipitan a pH intermedio)' },
@@ -51,12 +51,12 @@ const OH_PRESETS: OHPreset[] = [
   { id: 'fe2oh', metal: 'Fe²⁺', formula: 'Fe(OH)₂', n: 2, pKsp: 15.1, logBetasOH: [4.5, 7.4], group: 'M²⁺ (precipitan a pH intermedio)' },
   { id: 'cd2oh', metal: 'Cd²⁺', formula: 'Cd(OH)₂', n: 2, pKsp: 14.4, logBetasOH: [3.9, 7.7], group: 'M²⁺ (precipitan a pH intermedio)' },
   { id: 'mn2oh', metal: 'Mn²⁺', formula: 'Mn(OH)₂', n: 2, pKsp: 12.7, logBetasOH: [3.4, 6.2], group: 'M²⁺ (precipitan a pH intermedio)' },
-  // Alcalinotérreos — precipitan a pH básico
+  // Alkaline earth — precipitate at basic pH
   { id: 'mg2oh', metal: 'Mg²⁺', formula: 'Mg(OH)₂', n: 2, pKsp: 11.2, logBetasOH: [2.6], group: 'M²⁺ más solubles' },
   { id: 'ca2oh', metal: 'Ca²⁺', formula: 'Ca(OH)₂', n: 2, pKsp: 4.7,  logBetasOH: [], group: 'M²⁺ más solubles' },
 ];
 
-// ── Estado ─────────────────────────────────────────────────────────────────────
+// ── State ──────────────────────────────────────────────────────────────────────
 
 interface MetalState {
   label: string;
@@ -105,15 +105,15 @@ function defaultState(): State {
   };
 }
 
-// ── Colores ───────────────────────────────────────────────────────────────────
+// ── Colors ────────────────────────────────────────────────────────────────────
 
-const C1 = '#0072B2';               // azul — metal 1
+const C1 = '#0072B2';               // blue — metal 1
 const C2 = '#D55E00';
-const C_WIN = 'rgba(39,174,96,0.12)'; // ventana selectiva (verde suave)
-const C_THRESH = 'rgba(127,140,141,0.9)'; // umbral
+const C_WIN = 'rgba(39,174,96,0.12)'; // selective window (soft green)
+const C_THRESH = 'rgba(127,140,141,0.9)'; // threshold line
 
 
-// ── Componente ────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SolubilidadCondicional() {
   const [s, setS] = useState<State>(defaultState);
@@ -125,7 +125,7 @@ export default function SolubilidadCondicional() {
 
   function reset() { setS(defaultState()); }
 
-  // ── Curvas de solubilidad ──────────────────────────────────────────────────
+  // ── Solubility curves ─────────────────────────────────────────────────────
 
   const sideStack = useMemo(() => {
     const st = { ...s.side, showOH: true, logBetasOH: s.m1.logBetasOH };
@@ -147,7 +147,7 @@ export default function SolubilidadCondicional() {
     [s.m2.pKsp, s.m2.n, s.m2.logBetasOH, s.showM2],
   );
 
-  // ── Puntos de precipitación (primer cruce del umbral) ─────────────────────
+  // ── Precipitation pH (first threshold crossing) ───────────────────────────
 
   const pH1precip = useMemo(
     () => s.showSideMask
@@ -160,14 +160,14 @@ export default function SolubilidadCondicional() {
     [s.m2, logSThreshold, s.showM2],
   );
 
-  // Ventana selectiva: [pH donde M1 precipita, pH donde M2 empieza a precipitar]
+  // Selective window: [pH where M1 precipitates, pH where M2 starts to precipitate]
   const selectiveWindow: [number, number] | null = useMemo(() => {
     if (!s.showM2 || pH1precip === null || pH2precip === null) return null;
-    if (pH1precip >= pH2precip) return null; // sin separación
+    if (pH1precip >= pH2precip) return null; // no separation possible
     return [pH1precip, pH2precip];
   }, [s.showM2, pH1precip, pH2precip]);
 
-  // ── Rango Y dinámico ──────────────────────────────────────────────────────
+  // ── Dynamic Y range ───────────────────────────────────────────────────────
 
   const yMin = useMemo(() => {
     const all = [...curve1.logS, ...(curve2?.logS ?? [])].filter(Number.isFinite);
@@ -188,7 +188,7 @@ export default function SolubilidadCondicional() {
     return best;
   };
 
-  /** Mínimo de la curva en U: pH de mínima solubilidad y log s ahí (Ord-5a). */
+  /** U-curve minimum: pH of minimum solubility and log s there (Ord-5a). */
   const minSolubility = useMemo(() => {
     let minIdx = 0;
     for (let i = 1; i < curve1.logS.length; i++) {
@@ -197,10 +197,10 @@ export default function SolubilidadCondicional() {
     return { pH: curve1.pHs[minIdx], logS: curve1.logS[minIdx] };
   }, [curve1]);
 
-  /** El mínimo es interior (curva en U real) si no cae en los extremos del rango. */
+  /** Minimum is interior (true U-curve) when it does not fall at the range endpoints. */
   const minHasInterior = minSolubility.pH > 0.3 && minSolubility.pH < 13.7;
 
-  /** pH donde la curva en U vuelve a cruzar el umbral (redisolución anfotérica). */
+  /** pH where the U-curve recrosses the threshold (amphoteric re-dissolution). */
   const redissolutionPH = useMemo(() => {
     if (s.m1.logBetasOH.length === 0) return null;
     let minIdx = 0;
@@ -213,7 +213,7 @@ export default function SolubilidadCondicional() {
     return null;
   }, [curve1, s.m1.logBetasOH, logSThreshold]);
 
-  // ── Shapes y trazas ───────────────────────────────────────────────────────
+  // ── Shapes and traces ─────────────────────────────────────────────────────
 
   const shapes = useMemo<Partial<Shape>[]>(() => {
     const out: Partial<Shape>[] = [
@@ -241,7 +241,7 @@ export default function SolubilidadCondicional() {
         line: { color: '#7F8C8D', width: 1.5, dash: 'dot' },
       });
     }
-    // Marcador del mínimo de la curva en U (mínima solubilidad), solo si es interior
+    // U-curve minimum marker (minimum solubility), only when interior
     if (minHasInterior) {
       out.push({
         type: 'line', x0: minSolubility.pH, x1: minSolubility.pH, y0: yMin - 99, y1: minSolubility.logS,
@@ -271,7 +271,7 @@ export default function SolubilidadCondicional() {
     return out;
   }, [curve1, curve2, s.m1.formula, s.m2.formula]);
 
-  // ── Veredicto ─────────────────────────────────────────────────────────────
+  // ── Separation verdict ────────────────────────────────────────────────────
 
   const verdict = useMemo(() => {
     if (!s.showM2) return null;
@@ -317,13 +317,13 @@ export default function SolubilidadCondicional() {
     return solubilityPXCurve(salt, s.pHForPX, s.logBetasX, 0, 14, 400);
   }, [s.showPX, s.m1, s.pHForPX, s.logBetasX]);
 
-  // ── DB items ──────────────────────────────────────────────────────────────
+  // ── Database items ────────────────────────────────────────────────────────
 
   const dbItems = OH_PRESETS.map((p) => ({
     id: p.id, label: p.formula, detail: `${p.metal} · pKsp ${p.pKsp}`, group: p.group,
   }));
 
-  // ── Curva pKsp' = f(pH) ───────────────────────────────────────────────────
+  // ── pKsp' = f(pH) curve ───────────────────────────────────────────────────
 
   const pKspCurve1 = useMemo(() => {
     const N = 300;
@@ -387,7 +387,7 @@ export default function SolubilidadCondicional() {
   }, [pKspCurve1, pKspCurve2]);
   const pKspYMax = Math.max(s.m1.pKsp, s.showM2 ? s.m2.pKsp : 0) + 3;
 
-  // ── Diagrama ──────────────────────────────────────────────────────────────
+  // ── Diagrams ──────────────────────────────────────────────────────────────
 
   const tabs = [
     {

@@ -23,7 +23,7 @@ import { SYSTEM_PRESETS, sideFromPreset, systemPresetById } from '../lib/systemP
 
 type Mode = 'acidobase' | 'edta' | 'redox' | 'precip' | 'potenciometrica';
 
-/* ─────────────── Panel de indicadores metalocrómicos (embebido) ──────────── */
+/* ─────────────── Metallochromic indicator panel (embedded) ───────────────── */
 
 const IND_PANEL_COLORS = ['#0072B2', '#D55E00', '#009E73', '#CC79A7'];
 
@@ -37,7 +37,7 @@ interface IndResult {
 const IND_BADGE_LABEL: Record<string, string> = { ok: '✅ Apto', marginal: '🟡 Marginal', blocked: '⚠ Bloqueado', weak: '✗ Débil' };
 const IND_BADGE_CLS: Record<string, string>   = { ok: 'badge ok', marginal: 'badge warn', blocked: 'badge warn', weak: 'badge warn' };
 
-/** Badges de indicadores — va en el panel lateral. */
+/** Indicator badges — rendered in the side panel. */
 function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
   metalId: string; logBetasOH: number[]; pH: number; logKMY_pH: number;
 }) {
@@ -83,7 +83,7 @@ function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
   );
 }
 
-/** Gráfica log K′ = f(pH) de indicadores — va en DiagramTabs. */
+/** log K′ = f(pH) chart for indicators — rendered in DiagramTabs. */
 function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
   metalId: string; logKf: number; logBetasOH: number[]; pH: number;
 }) {
@@ -152,7 +152,7 @@ function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
   );
 }
 
-/* ───────────────────────── Ácido-base ───────────────────────── */
+/* ───────────────────────── Acid–base ───────────────────────── */
 
 function AcidBaseTitration() {
   const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem());
@@ -317,7 +317,7 @@ function AcidBaseTitration() {
   );
 }
 
-/* ───────────────────────── Complejométrica (EDTA) ───────────────────────── */
+/* ───────────────────────── Complexometric (EDTA) ────────────────────────── */
 
 function EdtaTitration() {
   const defaultPreset = EDTA_METAL_PRESETS[0]; // Ca²⁺
@@ -364,7 +364,7 @@ function EdtaTitration() {
     }));
   }
 
-  /** Carga un sistema completo editable (metal + EDTA + parásitas + condiciones). */
+  /** Loads a full editable system (metal + EDTA + side reactions + conditions). */
   function applyFullSystem(id: string) {
     const p = systemPresetById(id);
     if (!p) return;
@@ -730,7 +730,7 @@ function RedoxTitration() {
   );
 }
 
-/* ───────────────────────── Precipitación ─────────────────────────────────── */
+/* ───────────────────────── Precipitation ─────────────────────────────────── */
 
 function PrecipTitration() {
   const [presetId, setPresetId] = useState('cl');
@@ -769,7 +769,7 @@ function PrecipTitration() {
 
   const mohrPAg = mohrEndpointPAg(0.005);
 
-  // showPCation: true → eje en p(catión)=pAg, false → p(anión)=pX
+  // showPCation: true → y-axis is p(cation)=pAg, false → p(anion)=pX
   const yVals = showPCation ? curve.pAgs : curve.pXs;
   const pCatLabel = `p${cationName.replace(/[⁺²³⁴⁻]/g, '')}`;
   const pAniLabel = `p${anionName.replace(/[⁺²³⁴⁻]/g, '')}`;
@@ -940,10 +940,10 @@ function PrecipTitration() {
   );
 }
 
-/* ───────────────────────── Potenciométrica ───────────────────────── */
+/* ───────────────────────── Potentiometric ────────────────────────── */
 
-// Factor de Nernst a 25 °C para electrodo de vidrio: S = 59.16 mV/pH.
-// E_celda = K_ref − S · pH   (donde K_ref engloba E_referencia + E_junta)
+// Nernst factor at 25 °C for a glass electrode: S = 59.16 mV/pH.
+// E_cell = K_ref − S · pH   (K_ref absorbs reference electrode + junction potential)
 const S_POT = 59.16; // mV / pH
 
 function PotenciometricaTitration() {
@@ -984,12 +984,12 @@ function PotenciometricaTitration() {
     [curve.pHs, Kref],
   );
 
-  // Derivadas
+  // Derivatives
   const d1 = useMemo(() => firstDerivative(curve.volumes, Es), [curve.volumes, Es]);
   const d2 = useMemo(() => secondDerivative(d1.v, d1.d), [d1]);
 
-  // Cruce por cero de d²E/dV² — selecciona el cruce donde |dE/dV| es máximo
-  // (el punto de inflexión real), descartando cruces espurios en los extremos.
+  // Zero-crossing of d²E/dV² — picks the crossing where |dE/dV| is maximum
+  // (the true inflection point), discarding spurious crossings at the extremes.
   const zeroCrossing = useMemo(() => {
     if (d2.v.length < 3) return null;
     const maxD1 = Math.max(...d1.d.map(Math.abs), 1e-9);
@@ -1009,7 +1009,7 @@ function PotenciometricaTitration() {
     return bestV;
   }, [d2, d1]);
 
-  // Escala dE/dV y d²E/dV² para la gráfica superpuesta
+  // Scale dE/dV and d²E/dV² for the overlay chart
   const eMin = Math.min(...Es.filter(Number.isFinite));
   const eMax = Math.max(...Es.filter(Number.isFinite));
   const eSpan = eMax - eMin;
@@ -1025,7 +1025,7 @@ function PotenciometricaTitration() {
     [d2, d2Max, eSpan, eMax, eMin],
   );
 
-  // Trazas E = f(V)
+  // E = f(V) traces
   const efVTraces = useMemo<Data[]>(() => {
     const t: Data[] = [{
       x: curve.volumes, y: Es, type: 'scatter', mode: 'lines', name: 'E (mV)',

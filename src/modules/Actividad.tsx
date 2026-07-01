@@ -16,7 +16,7 @@ import { formatMolar } from '../lib/format';
 
 const I_POINTS = 200;
 
-/** Actividad iónica y corrección de Debye-Hückel (25 °C). */
+/** Ionic activity and Debye-Hückel correction (25 °C). */
 export default function Actividad() {
   const [cIon, setCIon] = useState(0.1);
   const [z, setZ] = useState(1);

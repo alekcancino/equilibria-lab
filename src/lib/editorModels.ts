@@ -3,7 +3,7 @@ import { REDOX_COUPLES } from './redoxDatabase';
 import type { RedoxCouple } from './redox';
 import { genericSpeciesLabels } from './speciesNames';
 
-/** Estado de un sistema ácido-base definido por el usuario. */
+/** State of a user-defined acid-base system. */
 export interface AcidSystem {
   label: string;
   z0: number;

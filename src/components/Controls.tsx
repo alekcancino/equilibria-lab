@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-/** Campo numérico editable que tolera estados intermedios al teclear. */
+/** Numeric field that tolerates intermediate states while typing. */
 function NumberField({
   value, onCommit, step, width = 72,
 }: {
@@ -32,7 +32,7 @@ function NumberField({
   );
 }
 
-/** Slider con etiqueta y valor numérico EDITABLE (patrón profesional). */
+/** Slider with label and EDITABLE numeric value. */
 export function Slider({
   label, value, min, max, step, onChange, unit, decimals = 2,
 }: {
@@ -68,8 +68,8 @@ export function Slider({
 }
 
 /**
- * Concentración: slider logarítmico + campo editable en M (notación libre,
- * acepta 0.05 o 5e-2).
+ * Concentration: logarithmic slider + editable field in M (free notation,
+ * accepts 0.05 or 5e-2).
  */
 export function ConcSlider({
   label, value, onChange, min = -6, max = 0,
@@ -143,7 +143,7 @@ export function Toggle({
   );
 }
 
-/** Control segmentado para elegir modo (ej. tipo de titulación o de gráfica). */
+/** Segmented control for choosing a mode (e.g. titration type or chart type). */
 export function Segmented({
   options, value, onChange,
 }: {
@@ -166,7 +166,7 @@ export function Segmented({
   );
 }
 
-/** Campo de texto libre para nombrar el compuesto/sistema. */
+/** Free-text field for naming the compound/system. */
 export function LabelField({
   label, value, onChange,
 }: {
@@ -190,8 +190,8 @@ export function LabelField({
 }
 
 /**
- * Lista editable de constantes (pKa, log β, ...) con botones ± .
- * Cada fila: slider + campo numérico + quitar.
+ * Editable list of constants (pKa, log β, ...) with ± buttons.
+ * Each row: slider + numeric field + remove button.
  */
 export function ConstantList({
   prefix, values, onChange, min, max, maxItems = 6, minItems = 1, initialValue = 7,
@@ -247,14 +247,14 @@ export function ConstantList({
 }
 
 /**
- * Base de datos colapsable (patrón secundario): cerrada por defecto,
- * al elegir un registro se autocompletan los controles y se cierra.
+ * Collapsible database (secondary pattern): closed by default;
+ * selecting a record auto-fills the controls and closes the panel.
  */
 export interface DbItem {
   id: string;
   label: string;
   detail: string;
-  /** Grupo opcional para agrupar visualmente (ej. "Monopróticos") */
+  /** Optional group for visual grouping (e.g. "Monoprotic") */
   group?: string;
 }
 
@@ -301,8 +301,8 @@ export function DbPanel({
 }
 
 /**
- * Selector de sistemas completos (un clic carga metal + ligante + parásitas).
- * Agrupa por `group`; cada item llama onSelect(id) y se cierra.
+ * Full-system picker (one click loads metal + ligand + side reactions).
+ * Groups by `group`; each item calls onSelect(id) and closes.
  */
 export function SystemPresetPicker({
   items, onSelect, title = 'Cargar sistema completo',
@@ -335,7 +335,7 @@ export function SystemPresetPicker({
   );
 }
 
-/** Declara el modelo inferido y las capas opcionales activas. */
+/** Displays the inferred model and active optional layers. */
 export function ModelBadge({
   model, additions = [],
 }: {
@@ -355,13 +355,13 @@ export function ModelBadge({
   );
 }
 
-/** Reservado para metadatos internos; no se muestra en la UI. */
+/** Reserved for internal metadata; not rendered in the UI. */
 export function RefBadge(props: { reference?: string }) {
   void props.reference;
   return null;
 }
 
-/** Tarjeta de resultado numérico destacado (ej. pH en equivalencia). */
+/** Highlighted numeric result card (e.g. pH at equivalence point). */
 export function ResultCard({ items }: { items: { label: ReactNode; value: string }[] }) {
   return (
     <div className="result-card">
@@ -376,9 +376,9 @@ export function ResultCard({ items }: { items: { label: ReactNode; value: string
 }
 
 /**
- * Tarjeta de sección con cabecera (dirección "E"): agrupa controles relacionados
- * en una superficie redondeada con elevación suave. Reemplaza el agrupado ad-hoc
- * con <h3> sueltos.
+ * Section card with header ("E" direction): groups related controls
+ * on a rounded surface with a soft elevation. Replaces ad-hoc grouping
+ * with bare <h3> elements.
  */
 export function PanelSection({
   title, icon, children, defaultOpen, collapsible = false,
@@ -386,7 +386,7 @@ export function PanelSection({
   title?: ReactNode;
   icon?: ReactNode;
   children: ReactNode;
-  /** Si collapsible, estado inicial (por defecto abierto). */
+  /** If collapsible, initial state (open by default). */
   defaultOpen?: boolean;
   collapsible?: boolean;
 }) {
@@ -413,8 +413,8 @@ export function PanelSection({
 }
 
 /**
- * Acordeón de un solo nivel para capas avanzadas (reacciones parásitas,
- * comparaciones). Sustituye los <details> anidados por una divulgación ordenada.
+ * Single-level accordion for advanced layers (side reactions, comparisons).
+ * Replaces nested <details> with a clean disclosure pattern.
  */
 export function Disclosure({
   title, defaultOpen = false, children,
@@ -436,9 +436,9 @@ export function Disclosure({
 }
 
 /**
- * Fila de tarjetas de resultado bajo la gráfica (dirección C): números grandes y
- * legibles para el estudiante. El item con `accent` usa el degradado índigo→violeta
- * para el valor clave. Se coloca como último hijo de `.plot-area`.
+ * Result card row below the chart ("C" direction): large numbers readable for students.
+ * The `accent` item uses the indigo→violet gradient for the key value.
+ * Placed as the last child of `.plot-area`.
  */
 export function ResultCardRow({
   items,
@@ -461,7 +461,7 @@ export function ResultCardRow({
   );
 }
 
-/** Bloque de explicación didáctica plegable. */
+/** Collapsible didactic explanation block. */
 export function InfoBox({ title, children }: { title: string; children: ReactNode }) {
   return (
     <details className="info-box">
