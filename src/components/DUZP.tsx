@@ -22,7 +22,7 @@ const BAND_H = 96;
 const BAND_BOTTOM = BAND_TOP + BAND_H;
 
 /**
- * Diagrama Unidimensional de Zonas de Predominio (DUZP, método Baeza/UNAM).
+ * Predominance Zone Diagram (DUZP — Diagrama Unidimensional de Zonas de Predominio).
  * Barra horizontal sobre la escala p con cada especie dominante coloreada y las
  * fronteras (pKa / log Kᵢ / pe°′) marcadas con su valor. SVG nítido y exportable.
  */

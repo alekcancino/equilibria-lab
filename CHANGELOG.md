@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.0 — 2026-07-01
+
+### UX fixes and scientific improvements
+
+- **Ion exchange**: percentage display precision fixed (0 % → 0.5 %)
+- **Activity / Pourbaix**: concentration values now use readable notation (1.35×10⁻⁵ M instead of raw scientific)
+- **Solubility vs pH**: minimum solubility in result row now formatted the same way
+- **Pourbaix**: module now opens with the Fe–H₂O diagram by default instead of a blank canvas
+- **Subnav**: scrollable on narrow screens with hidden scrollbar
+- **Acid–base mixtures**: default tab is now Buffer capacity (β) instead of the empty titration panel
+- **Redox**: default diagram tab is now Distribution α
+- **Complexometric titration**: added "minimum optimal pH" metric (first pH where log K′(pH) ≥ 8)
+
+### Repository cleanup
+
+- Added `CONTRIBUTING.md` with full dev setup, architecture reference, and academic bibliography
+- Added `LICENSE` (MIT)
+- Removed internal tooling files from version control
+- Neutralized source-specific attribution in code comments and docs
+
 ## 0.3.0 — 2026-06-20
 
 ### Correcciones críticas

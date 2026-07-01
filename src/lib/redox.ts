@@ -1,5 +1,5 @@
-// Equilibrio redox en convención pe (escuela Baeza/UNAM): pe = E / 0.05916.
-// pe° = E°/0.05916 SIEMPRE — sin el factor n (error P0-2 de la versión anterior).
+// Redox equilibrium using the pe convention: pe = E / 0.05916 V (Sillén).
+// pe° = E°/0.05916 always — n is absorbed into pe°, not repeated in the formula.
 
 import { NERNST_S } from './constants';
 
