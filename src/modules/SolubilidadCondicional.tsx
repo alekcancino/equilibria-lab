@@ -85,7 +85,19 @@ interface State {
   side: SideReactionEditorState;
   useCThreshold: boolean;
   cAnalytic: number;
+  hydroxoOpen: boolean;
 }
+
+// ── Presets anfóteros (spec issue #4 · C4) ───────────────────────────────────
+// Cargan pKsp + log β_OH del hidroxo-complejo aniónico y EXPANDEN la sección
+// "Complejos hidroxo de M1" para que la curva U se vea sin abrir nada a mano.
+interface AnfoteroPreset { id: string; label: string; metal: MetalState; }
+const ANFOTERO_PRESETS: AnfoteroPreset[] = [
+  { id: 'zn', label: 'Zn(OH)₂', metal: { label: 'Zn²⁺', formula: 'Zn(OH)₂', n: 2, pKsp: 16.2, logBetasOH: [5.04, 10.43, 13.7, 15.2] } },
+  { id: 'al', label: 'Al(OH)₃', metal: { label: 'Al³⁺', formula: 'Al(OH)₃', n: 3, pKsp: 32.9, logBetasOH: [9.01, 17.09, 23.40, 27.68] } },
+  // Pb(OH)₂ del examen QAIII: pKs=15.17, logβ_OH = [6.2, 10.3, 13.3] (n=1,2,3).
+  { id: 'pb', label: 'Pb(OH)₂', metal: { label: 'Pb²⁺', formula: 'Pb(OH)₂', n: 2, pKsp: 15.17, logBetasOH: [6.2, 10.3, 13.3] } },
+];
 
 function defaultState(): State {
   return {
@@ -102,6 +114,7 @@ function defaultState(): State {
     side: defaultSideEditorState(),
     useCThreshold: false,
     cAnalytic: 0.01,
+    hydroxoOpen: false,
   };
 }
 
@@ -124,6 +137,13 @@ export default function SolubilidadCondicional() {
     setS((prev) => ({ ...prev, m2: { ...prev.m2, ...patch } }));
 
   function reset() { setS(defaultState()); }
+
+  /** Carga un preset anfótero y expande la sección de complejos hidroxo (C4). */
+  function applyAnfotero(id: string) {
+    const p = ANFOTERO_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    setS((prev) => ({ ...prev, m1: { ...p.metal, logBetasOH: [...p.metal.logBetasOH] }, hydroxoOpen: true }));
+  }
 
   // ── Curvas de solubilidad ──────────────────────────────────────────────────
 
@@ -450,6 +470,14 @@ export default function SolubilidadCondicional() {
             additions={[s.showM2 && 'separación selectiva entre dos metales', minHasInterior && 'mínimo de solubilidad (curva en U)']}
           />
           <DbPanel items={dbItems} onSelect={(id) => setM1({ ...fromPreset(id) })} title="Presets M(OH)n" />
+          <p className="hint" style={{ marginBottom: 4 }}>Presets anfóteros (curva U por redisolución):</p>
+          <div className="preset-chip-row" style={{ marginBottom: 8 }}>
+            {ANFOTERO_PRESETS.map((p) => (
+              <button key={p.id} className="preset-chip" onClick={() => applyAnfotero(p.id)}>
+                {p.label}
+              </button>
+            ))}
+          </div>
           <LabelField label="Metal" value={s.m1.label} onChange={(v) => setM1({ label: v })} />
           <LabelField label="Fórmula" value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
           <Slider label="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
@@ -470,7 +498,11 @@ export default function SolubilidadCondicional() {
               ))}
             </div>
           </div>
-          <Disclosure title="Complejos hidroxo de M1 (log β)">
+          <Disclosure
+            title="Complejos hidroxo de M1 (log β)"
+            open={s.hydroxoOpen}
+            onToggle={(open) => setS((p) => ({ ...p, hydroxoOpen: open }))}
+          >
             <ConstantList
               prefix="log β(OH)"
               values={s.m1.logBetasOH}
