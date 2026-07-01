@@ -14,6 +14,7 @@ import { predominanceZones } from '../lib/ladder';
 import {
   complexFractions, bjerrumNumber, solvePL, logBetasToStepwise,
 } from '../lib/complexation';
+import { percentFormed, percentDissociated, pLForPercentFormed } from '../lib/metrics';
 import {
   composeAlphas, defaultSideEditorState, sideStackFromEditor,
   type SideReactionEditorState,
@@ -190,6 +191,12 @@ export default function Complejos() {
   const domIdx = alphasEq.indexOf(Math.max(...alphasEq));
   const nBarEq = bjerrumNumber(pLEqClipped, sys.logBetas);
 
+  // Métricas "% + punto de operación" (spec issue #4 · C1). Para un complejo 1:1
+  // % formado = ñ·100 y % disociado = (1−ñ)·100; el pL para 50 % = log β₁.
+  const pctFormado = percentFormed(pLEqClipped, sys.logBetas);
+  const pctDisociado = percentDissociated(pLEqClipped, sys.logBetas);
+  const pL50 = pLForPercentFormed(sys.logBetas, 50);
+
   const diagrams = [
     {
       id: 'equil',
@@ -357,9 +364,15 @@ export default function Complejos() {
         <DiagramTabs tabs={diagrams} initialId="equil" />
         <ResultCardRow items={[
           {
+            label: n === 1 ? '% formado' : '% formado (ñ·100)',
+            value: `${pctFormado.toFixed(1)} %`,
+            accent: true,
+          },
+          ...(n === 1 ? [{ label: '% disociado', value: `${pctDisociado.toFixed(1)} %` }] : []),
+          { label: 'pL para 50 %', value: Number.isFinite(pL50) ? pL50.toFixed(2) : '—' },
+          {
             label: showPXPrime ? 'pX′ equilibrio' : 'pL equilibrio',
             value: pLEq > pLmax ? `>${pLmax.toFixed(0)}` : scaleX(pLEq).toFixed(2),
-            accent: true,
           },
           { label: 'n̄ equilibrio', value: nBarEq.toFixed(2) },
           { label: 'Dominante', value: `${labels[domIdx]}` },
