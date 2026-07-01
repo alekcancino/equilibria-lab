@@ -188,11 +188,14 @@ html, body, #root {
 
 .subnav-tabs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
   gap: 6px;
   margin: 0 auto;
   justify-content: center;
 }
+.subnav-tabs::-webkit-scrollbar { display: none; }
 
 .subnav-tab {
   padding: 7px 15px;
@@ -266,7 +269,9 @@ html, body, #root {
   position: relative;
   width: var(--panel-width);
   flex-shrink: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: var(--space-4);
   background: transparent;
   border-right: 1px solid var(--border);
@@ -279,38 +284,55 @@ html, body, #root {
 .panel-shell.collapsed {
   width: 0;
   padding: 0;
-  overflow: hidden;
   border-right: none;
+}
+
+/* When collapsed the panel has zero width, so anchor the re-open handle to the
+   left edge of the content area (fully visible instead of clipped off-screen). */
+.panel-shell.collapsed .panel-collapse-btn {
+  right: auto;
+  left: 0;
+  border-radius: 0 8px 8px 0;
 }
 
 .panel-collapse-btn {
   position: absolute;
-  right: -12px;
+  right: -13px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 2;
-  width: 24px;
-  height: 48px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 52px;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 9px 9px 0;
   background: var(--surface);
   color: var(--text-muted);
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 2px 0 6px rgba(31, 41, 51, 0.06);
+  box-shadow: var(--shadow-sm);
+  transition: color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
 }
 
 .panel-collapse-btn:hover {
   color: var(--accent);
   border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .panel-body {
   display: flex;
   flex-direction: column;
   gap: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .panel h2 {

@@ -12,3 +12,18 @@ export function formatAxisLabel(v: number): string {
 export function paddedAxisRange(min: number, max: number, pad: number): [number, number] {
   return [Math.floor(min - pad), Math.ceil(max + pad)];
 }
+
+/**
+ * Formatea una concentración molar evitando la notación científica de JS.
+ * 0.1 → "0.1 M", 0.01 → "0.01 M", 1e-5 → "1.35×10⁻⁵ M".
+ */
+export function formatMolar(c: number): string {
+  if (!Number.isFinite(c) || c <= 0) return '—';
+  if (c >= 0.001) return `${parseFloat(c.toPrecision(3))} M`;
+  const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  const m = c.toExponential(2).match(/^([\d.]+)e([+-])(\d+)$/);
+  if (!m) return `${c.toExponential(2)} M`;
+  const exp = m[3].split('').map(d => SUP[+d]).join('');
+  const sign = m[2] === '-' ? '⁻' : '';
+  return `${m[1]}×10${sign}${exp} M`;
+}
