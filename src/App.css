@@ -188,11 +188,14 @@ html, body, #root {
 
 .subnav-tabs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
   gap: 6px;
   margin: 0 auto;
   justify-content: center;
 }
+.subnav-tabs::-webkit-scrollbar { display: none; }
 
 .subnav-tab {
   padding: 7px 15px;

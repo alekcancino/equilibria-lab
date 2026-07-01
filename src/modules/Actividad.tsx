@@ -12,6 +12,7 @@ import {
   activityCoefficient,
   apparentPKw,
 } from '../lib/activity';
+import { formatMolar } from '../lib/format';
 
 const I_POINTS = 200;
 
@@ -118,7 +119,7 @@ export default function Actividad() {
         <ResultCardRow items={[
           {
             label: 'Fuerza iónica I',
-            value: Number.isFinite(I) ? `${I.toExponential(2)} M` : '—',
+            value: Number.isFinite(I) ? formatMolar(I) : '—',
             accent: true,
           },
           { label: `γ (z = ${z})`, value: Number.isFinite(gamma) ? gamma.toFixed(3) : '—' },
@@ -128,3 +129,4 @@ export default function Actividad() {
     </div>
   );
 }
+

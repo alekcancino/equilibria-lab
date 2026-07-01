@@ -4,6 +4,7 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import { InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Slider, Toggle } from '../components/Controls';
 import { availableSystems, buildSystem, waterLines, S_NERNST } from '../lib/pourbaix';
+import { formatMolar } from '../lib/format';
 
 // ── Sistema simple custom (M^n+ / M + M(OH)n) ─────────────────────────────────
 
@@ -88,7 +89,7 @@ function nearestRegionName(
 export default function Pourbaix() {
   const systems = availableSystems();
   const [systemId, setSystemId] = useState('fe');
-  const [useCustom, setUseCustom] = useState(true);
+  const [useCustom, setUseCustom] = useState(false);
   const [logC, setLogC] = useState(-2);
   const [showWater, setShowWater] = useState(false);
   const [cursorPH, setCursorPH] = useState(7);
@@ -229,7 +230,7 @@ export default function Pourbaix() {
 
         <PanelSection title="Condiciones" icon="⚗">
         <Slider
-          label={`log C de especies disueltas (${Math.pow(10, logC).toExponential(0)} M)`}
+          label={`log C de especies disueltas (${formatMolar(Math.pow(10, logC))})`}
           value={logC} min={-6} max={0} step={0.5}
           onChange={setLogC}
           decimals={1}
@@ -276,7 +277,7 @@ export default function Pourbaix() {
         <ResultCardRow items={[
           { label: 'Especie predominante', value: predominant, accent: true },
           { label: 'Condiciones', value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
-          { label: 'log C disueltas', value: `${Math.pow(10, logC).toExponential(0)} M` },
+          { label: 'log C disueltas', value: formatMolar(Math.pow(10, logC)) },
         ]} />
       </section>
     </div>

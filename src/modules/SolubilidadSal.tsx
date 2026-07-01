@@ -8,6 +8,7 @@ import {
   ResultCardRow, Slider, Toggle,
 } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
+import { formatMolar } from '../lib/format';
 
 // ── Base de datos ──────────────────────────────────────────────────────────────
 
@@ -300,9 +301,9 @@ export default function SolubilidadSal() {
           },
         ]} />
         <ResultCardRow items={[
-          { label: `S mínima ${sal1.name}`, value: Number.isFinite(minS1.logS) ? `log S ${minS1.logS.toFixed(2)}` : '—', accent: true },
+          { label: `S mínima ${sal1.name}`, value: Number.isFinite(minS1.logS) ? formatMolar(Math.pow(10, minS1.logS)) : '—', accent: true },
+          { label: 'log S mínima', value: Number.isFinite(minS1.logS) ? minS1.logS.toFixed(2) : '—' },
           { label: 'pH de S mínima', value: Number.isFinite(minS1.pH) ? minS1.pH.toFixed(1) : '—' },
-          { label: 'Estequiometría', value: `M${sal1.p}A${sal1.q}` },
         ]} />
       </section>
     </div>

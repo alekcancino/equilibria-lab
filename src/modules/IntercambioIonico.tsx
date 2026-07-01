@@ -359,9 +359,9 @@ export default function IntercambioIonico() {
       <section className="plot-area">
         <DiagramTabs tabs={tabs} />
         <ResultCardRow items={[
-          { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(0)} %`, accent: true },
+          { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(1)} %`, accent: true },
           ...(showCompetitive
-            ? [{ label: `φ a pH ${pHBulk.toFixed(1)}`, value: `${(phiAtBulk * 100).toFixed(0)} %` }]
+            ? [{ label: `φ a pH ${pHBulk.toFixed(1)}`, value: `${(phiAtBulk * 100).toFixed(1)} %` }]
             : []),
           ...(showCompetitive && showElution
             ? [{ label: 'pH elución', value: elution.pH.toFixed(1) }]
