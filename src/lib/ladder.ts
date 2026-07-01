@@ -1,4 +1,4 @@
-// Motor unificador (modelo de Baeza, UNAM): MLⱼ ⇌ MLᵢ + (j−i)L sobre una escala p.
+// Unified equilibrium ladder: MLⱼ ⇌ MLᵢ + (j−i)L on a p-scale.
 // Una "escalera" de especies S₀…Sₙ conectadas por fronteras (constantes) en la
 // escala p (pH para ácido-base, pL para complejos, pe para redox). El MISMO motor
 // alimenta la distribución α, el diagrama logarítmico y el DUZP de los tres

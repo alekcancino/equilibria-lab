@@ -58,7 +58,7 @@ Cableados hoy en la titulación EDTA. Tests: `__tests__/systemPresets.test.ts`.
 |---|---|---|
 | `AcidoBase.tsx` | Ácido-base | DUZP + α + logC. Polipróticos, anfolitos. |
 | `Complejos.tsx` | Complejos | DUZP + α + Bjerrum n̄ + logC. DB complejación. |
-| `Redox.tsx` | Redox | α vs pe, escala de predicción Baeza/UNAM. |
+| `Redox.tsx` | Redox | α vs pe, spontaneous-reaction prediction scale. |
 | `Solubilidad.tsx` | Solubilidad | Kps, ion común. |
 
 ### Sección — Equilibrios múltiples
@@ -98,19 +98,19 @@ Cableados hoy en la titulación EDTA. Tests: `__tests__/systemPresets.test.ts`.
 | `complexDatabase.ts` | Sistemas de complejación con log β globales |
 | `speciesNames.ts` | Nombres de especies para etiquetas |
 
-### Principio del motor: modelo unificado Baeza/UNAM
+### Unified equilibrium ladder
 
-Toda escalera de equilibrio se trata como `MLⱼ ⇌ MLᵢ + (j−i)L`, donde la
-partícula intercambiada `L` es H⁺ (ácido-base), e⁻ (redox) o un ligando
-(complejación). `ladder.ts` encapsula esto y lo comparten Ácido-base y Complejos
-(con `ascending` true/false según crezca o decrezca la escala).
+Every equilibrium ladder is treated as `MLⱼ ⇌ MLᵢ + (j−i)L`, where the
+exchanged particle `L` is H⁺ (acid–base), e⁻ (redox), or a ligand
+(complexation). `ladder.ts` encapsulates this abstraction and is shared by
+the acid–base and complexation modules (`ascending` true/false depending on
+whether the scale increases or decreases).
 
 ## Componente firma: DUZP
 
 `DUZP.tsx` dibuja en SVG (viewBox 1000×240) las zonas de predominio coloreadas con
 la paleta Okabe-Ito (colorblind-safe, en `SPECIES_COLORS`). Recibe `zones`,
-`pMin/pMax`, `pLabel`, `marker?`, `caption?`. Es el diagrama central del enfoque
-pedagógico UNAM.
+`pMin/pMax`, `pLabel`, `marker?`, `caption?`. Es el diagrama central de predominio de especies.
 
 ## Patrones de UI
 

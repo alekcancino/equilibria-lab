@@ -1,86 +1,78 @@
 # Equilibria Lab
 
-Simulador web interactivo de equilibrio químico: gráficas en tiempo real, controles deslizantes y predicción numérica de sistemas ácido-base, complejación, redox, solubilidad, titulaciones y equilibrios acoplados.
+**Interactive web simulator for chemical equilibrium** — live plots, sliders, and numerical prediction across acid–base, complexation, redox, solubility, titrations, and coupled equilibria. Fully client-side; no backend or account required.
 
-**English:** Interactive web simulator for chemical equilibrium — live plots, sliders, and numerical prediction for acid–base, complexation, redox, solubility, titrations, and coupled equilibria.
+**Simulador web interactivo de equilibrio químico** — gráficas en tiempo real, controles deslizantes y predicción numérica para sistemas ácido-base, complejación, redox, solubilidad, titulaciones y equilibrios acoplados. Sin backend ni cuenta de usuario.
 
----
-
-## Cómo usarlo · How to use
-
-| | Español | English |
-|---|---|---|
-| **Web** | Abre **[equilibria-lab.vercel.app](https://equilibria-lab.vercel.app)** en el navegador (sin instalar nada). | Open **[equilibria-lab.vercel.app](https://equilibria-lab.vercel.app)** in your browser — no install required. |
-| **Local** | Clona el repo, instala dependencias y arranca el servidor de desarrollo (ver abajo). | Clone the repo, install dependencies, and run the dev server (see below). |
-
-Todo el cálculo ocurre en el navegador; no hay backend ni cuenta de usuario.
-
-_All computation runs in the browser; there is no backend or user account._
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-equilibria--lab.vercel.app-6366f1)](https://equilibria-lab.vercel.app)
 
 ---
 
-## Qué cubre · Topics
+## Demo
 
-### Equilibrios fundamentales · Core equilibria
-
-| Módulo · Module | Descripción · Description |
-|---|---|
-| **Ácido-base · Acid–base** | DUZP (zonas de predominio), fracciones α, diagrama log *C*–pH (Sillén) y pH de la disolución pura para sistemas H*n*A / BH*n*⁺ editables. |
-| **Complejos · Complexation** | Multi-ligando: DUZP, α, función de Bjerrum *n̄*, log *C* vs pL; sistemas de ejemplo incluidos. |
-| **Redox** | Distribución α vs pe, escala de predicción de reacciones, pares redox editables y log *K* de la reacción espontánea. |
-| **Solubilidad · Solubility** | log *s* vs pH con *K*ps condicional, aniones básicos editables e ion común. |
-| **Actividad · Activity** | Fuerza iónica, γ vs *I* (Debye–Hückel extendido) y nota sobre limitaciones del modelo. |
-
-### Equilibrios acoplados · Coupled equilibria
-
-| Módulo · Module | Descripción · Description |
-|---|---|
-| **Pourbaix** | Sistema genérico Mⁿ⁺/M/M(OH)*n* y diagramas *E*–pH de Fe, Cu, Mn, Zn y Cr. |
-| **Mezclas ácido-base · Acid–base mixtures** | Hasta cuatro sistemas coexistiendo (p. ej. NaHCO₃, NH₄Cl): pH global, especies dominantes y titulación de la mezcla. |
-| **Constantes condicionales · Conditional constants** | log *K*′ = *f*(pH), coeficientes α, reacciones parásitas, enmascaramiento y factibilidad. |
-| **Precipitación selectiva · Selective precipitation** | log *s* = *f*(pH), log *s* = *f*(pX), pureza, redisolución y ventanas de separación entre metales. |
-| **Potencial condicional · Conditional potential** | *E*°′ = *f*(pH), dismutación y *E*°′ = *f*(pX) por complejación. |
-| **Extracción líquido-líquido · Liquid–liquid extraction** | Reparto, quelatos, extracciones sucesivas, polimerización y preconcentración. |
-| **Intercambio iónico · Ion exchange** | *K*sel, equilibrio en lote, isoterma y breakthrough en columna (modelo ideal). |
-| **Solubilidad y pH · Solubility vs pH** | Solubilidad condicional de sales y comparación entre sistemas. |
-
-### Titulaciones · Titrations
-
-Un módulo unificado con cinco modos:
-
-- **Ácido-base · Acid–base** — titulante ácido o básico, balance de cargas exacto.
-- **Complejométrica · Complexometric** — metal + EDTA o EDTA + metal, *K*′f condicional.
-- **Redox** — oxidación o reducción del analito, balance de electrones, pe°′ condicional al pH.
-- **Precipitación · Precipitation** — argentometría Ag⁺ + X⁻, curvas pAg / pX, indicador Mohr.
-- **Potenciométrica · Potentiometric** — electrodo de vidrio, derivadas y gráfica de Gran.
+**[equilibria-lab.vercel.app](https://equilibria-lab.vercel.app)** — open in any browser, no install required.
 
 ---
 
-## Principios de diseño · Design principles
+## Modules
 
-**El usuario define sus propios valores.** Cada módulo ofrece un editor principal (nombre libre, constantes con ±, campos numéricos) y una base de datos colapsable como atajo. Botón **↺ Restablecer** en cada módulo.
+### Core equilibria · Equilibrios fundamentales
 
-**The user always sets their own values.** Each module has a primary editor (free names, ± on constants, numeric fields) and a collapsible database as a shortcut. **↺ Reset** on every module.
+| Module | Description |
+| --- | --- |
+| **Acid–base** | Predominance zone diagram (DUZP), α fractions, log *C*–pH diagram (Sillén), and solution pH for editable HₙA / BHₙ⁺ systems. |
+| **Complexation** | Multi-ligand systems: DUZP, α distributions, Bjerrum number *n̄*, log *C* vs pL. |
+| **Redox** | α distribution vs pe, spontaneous-reaction prediction scale, editable redox couples, log *K* of the cell reaction. |
+| **Solubility** | log *s* vs pH with conditional Ksp, editable basic anions, and common-ion effect. |
+| **Activity** | Ionic strength, γ vs *I* (extended Debye–Hückel), and model limitations. |
 
-**La interfaz crece con la complejidad del sistema.** Al añadir pKa, ligandos, reacciones parásitas o comparaciones, el modelo correspondiente se activa automáticamente — sin elegir primero una categoría teórica.
+### Coupled equilibria · Equilibrios acoplados
 
-**The UI grows with system complexity.** Adding pKa values, ligands, side reactions, or comparisons activates the matching model automatically — no need to pick a theory category first.
+| Module | Description |
+| --- | --- |
+| **Pourbaix** | Generic Mⁿ⁺/M/M(OH)ₙ model and *E*–pH diagrams for Fe, Cu, Mn, Zn, Cr. |
+| **Acid–base mixtures** | Up to four coexisting systems (e.g. NaHCO₃, NH₄Cl): global pH, dominant species, mixture titration. |
+| **Conditional constants** | log *K*′ = *f*(pH), α coefficients, side reactions, masking, and feasibility window. |
+| **Selective precipitation** | log *s* = *f*(pH) and log *s* = *f*(pX), purity, redissolution, and separation windows. |
+| **Conditional potential** | *E*°′ = *f*(pH), disproportionation, *E*°′ = *f*(pX) by complexation. |
+| **Liquid–liquid extraction** | Partition, chelates, successive extractions, polymerization, and preconcentration. |
+| **Ion exchange** | Selectivity coefficient, batch equilibrium, isotherm, and ideal-model column breakthrough. |
+| **Solubility vs pH** | Conditional solubility of salts and side-by-side system comparison. |
+
+### Titrations · Titulaciones
+
+One unified module with five modes:
+
+- **Acid–base** — acid or base titrant, exact charge balance.
+- **Complexometric** — metal + EDTA or EDTA + metal, conditional K′f, optimal pH.
+- **Redox** — analyte oxidation/reduction, electron balance, conditional pe°′.
+- **Precipitation** — argentometry Ag⁺ + X⁻, pAg / pX curves, Mohr endpoint.
+- **Potentiometric** — glass electrode, derivatives, and Gran plot.
 
 ---
 
-## Motor de cálculo · Calculation engine
+## Design principles
 
-- pH por **balance de cargas exacto** (bisección), con α en espacio logarítmico para estabilidad numérica.
-- Redox con **pe = *E* / 0,05916 V** y balance de electrones.
-- Complejación con constantes globales β, función de Bjerrum y pL libre por balance de masa del ligando.
-- Supuestos por defecto: *T* = 25 °C, actividades ≈ concentraciones, *K*w = 10⁻¹⁴.
-- Constantes de Harris, Skoog, Bard (1985) y Stumm & Morgan (1996); datos Pourbaix y redox auditados del proyecto.
+**The user always defines the system.** Every module provides a primary editor (free labels, adjustable constants) and a collapsible database as a shortcut. A reset button restores defaults on every module.
+
+**The UI grows with system complexity.** Adding pKa values, ligands, side reactions, or comparison systems activates the corresponding model layer automatically — no need to select a theory category first.
+
+**Figure first.** The plot is the hero of each module. Key numeric outputs surface in a metrics row immediately below the chart — readable from a classroom projector.
 
 ---
 
-## Desarrollo local · Local development
+## Calculation engine
 
-Requisitos: **Node.js 20+** y npm.
+- pH by **exact charge balance** (bisection), with α computed in log-space for numerical stability.
+- Redox with **pe = *E* / 0.05916 V** and electron balance.
+- Complexation with global β constants, Bjerrum number, and free-ligand pL from mass balance.
+- Default assumptions: *T* = 25 °C, activities ≈ concentrations, *K*w = 10⁻¹⁴.
+- Constants from Harris (2020), Skoog et al. (2014), Stumm & Morgan (1996), and Bard & Faulkner (1985).
+
+---
+
+## Local development
 
 ```bash
 git clone https://github.com/alekcancino/equilibria-lab.git
@@ -89,31 +81,30 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-Otros comandos · Other scripts:
-
 ```bash
-npm run build    # genera dist/ · static build in dist/
-npm run test     # pruebas unitarias · unit tests
+npm run build    # static build in dist/
+npm run test     # unit tests (vitest)
 npm run check    # lint + test + build
 ```
 
-Stack: **Vite + React + TypeScript + Plotly** (basic dist). Build estático compatible con Vercel, GitHub Pages u otro hosting estático.
+**Stack:** Vite · React · TypeScript · Plotly (basic dist). Static build — deployable to Vercel, GitHub Pages, or any static host.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and contribution guidelines.
 
 ---
 
-## Documentación adicional · Further docs
+## Documentation
 
-| Archivo · File | Contenido · Contents |
-|---|---|
-| [`design.md`](design.md) | Sistema de diseño visual e interacción (Distill + GeoGebra). |
-| [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | Stack, motores, componentes y validación numérica. |
-| [`docs/VALIDACION-Y-CONGRUENCIA.md`](docs/VALIDACION-Y-CONGRUENCIA.md) | Congruencia matemática con Spana/HALTAFALL y límites del motor. |
-| [`docs/PROYECTOS-RELACIONADOS-Y-ROADMAP.md`](docs/PROYECTOS-RELACIONADOS-Y-ROADMAP.md) | Ecosistema open source, matriz de módulos e ideas futuras. |
-| [`docs/EXAMENES-QAIII-2025-2.md`](docs/EXAMENES-QAIII-2025-2.md) | Cobertura vs exámenes parciales/ordinario QA III 2025-2 (UNAM). |
-| [`CHANGELOG.md`](CHANGELOG.md) | Historial de versiones. |
+| File | Contents |
+| --- | --- |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, architecture, contribution workflow, academic references. |
+| [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Detailed technical reference for the stack and engines. |
+| [docs/VALIDACION-Y-CONGRUENCIA.md](docs/VALIDACION-Y-CONGRUENCIA.md) | Numerical validation and benchmark comparisons (SPANA/HALTAFALL). |
+| [docs/PROYECTOS-RELACIONADOS-Y-ROADMAP.md](docs/PROYECTOS-RELACIONADOS-Y-ROADMAP.md) | Related open-source tools, module matrix, and roadmap. |
+| [CHANGELOG.md](CHANGELOG.md) | Version history. |
 
 ---
 
-## Licencia · License
+## License
 
-Consulta el repositorio para términos de uso. / See the repository for license terms.
+[MIT](LICENSE) — free to use, study, modify, and distribute.
