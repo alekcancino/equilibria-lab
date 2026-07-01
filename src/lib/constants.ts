@@ -1,4 +1,4 @@
-/** Constantes físico-químicas compartidas (25 °C). */
+/** Shared physicochemical constants (25 °C). */
 
 export const PKW = 14;
 export const KW = 1e-14;

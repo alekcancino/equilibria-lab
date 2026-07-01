@@ -6,15 +6,15 @@ interface DUZPProps {
   zones: Zone[];
   pMin: number;
   pMax: number;
-  /** Etiqueta de la escala: "pH", "pL", "pe", … */
+  /** Axis label: "pH", "pL", "pe", … */
   pLabel: string;
-  /** Marca opcional (ej. pH de la disolución real) */
+  /** Optional marker (e.g. pH of the real solution) */
   marker?: { p: number; label?: string };
-  /** Subtítulo opcional sobre la barra */
+  /** Optional subtitle above the bar */
   caption?: string;
 }
 
-// Lienzo lógico (viewBox); el SVG escala a 100% del contenedor.
+// Logical canvas (viewBox); the SVG scales to 100% of the container.
 const W = 1000;
 const H = 240;
 const BAND_TOP = 70;
@@ -23,8 +23,8 @@ const BAND_BOTTOM = BAND_TOP + BAND_H;
 
 /**
  * Predominance Zone Diagram (DUZP — Diagrama Unidimensional de Zonas de Predominio).
- * Barra horizontal sobre la escala p con cada especie dominante coloreada y las
- * fronteras (pKa / log Kᵢ / pe°′) marcadas con su valor. SVG nítido y exportable.
+ * Horizontal bar over the p scale with each dominant species coloured and
+ * boundaries (pKa / log Kᵢ / pe°′) labelled with their value. Sharp, exportable SVG.
  */
 export default function DUZP({ zones, pMin, pMax, pLabel, marker, caption }: DUZPProps) {
   const x = (p: number) => ((p - pMin) / (pMax - pMin)) * W;

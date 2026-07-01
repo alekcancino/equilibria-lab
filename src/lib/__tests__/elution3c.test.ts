@@ -3,7 +3,7 @@ import {
   elutionAtPH3C, optimalElutionPH3C, defaultSideStack, type Elution3CParams,
 } from '../sideReactions';
 
-// Sistema del 3.er parcial QA III: Ni en resina, recuperación con EDTA.
+// QA III third-exam system: Ni on resin, recovery with EDTA.
 function niElutionParams(): Elution3CParams {
   const stack = defaultSideStack(); // EDTA pKas
   stack.hydrolysis = { logBetasOH: [4.97, 8.55] }; // Ni(OH)
@@ -37,8 +37,8 @@ describe('elutionAtPH3C — balance 3 compartimentos', () => {
   });
 
   it('más EDTA elucionante → más Ni recuperado (a pH ácido, elución parcial)', () => {
-    // A pH 2 la resina retiene Ni (D grande, hBulk > hResin): la elución es parcial,
-    // así que la cantidad de EDTA importa.
+    // At pH 2 the resin retains Ni (large D, hBulk > hResin): elution is partial,
+    // so the amount of EDTA matters.
     const p = niElutionParams();
     const low = elutionAtPH3C({ ...p, cEdta: 5e-5 }, 2).fractionEluted;
     const high = elutionAtPH3C({ ...p, cEdta: 0.1 }, 2).fractionEluted;
@@ -61,7 +61,7 @@ describe('optimalElutionPH3C', () => {
     expect(r.pH).toBeLessThanOrEqual(12);
     expect(r.pHs.length).toBe(101);
     expect(r.fractions.length).toBe(101);
-    // El óptimo es el máximo de la curva
+    // The optimum is the maximum of the curve
     expect(r.fractionEluted).toBe(Math.max(...r.fractions));
   });
 });

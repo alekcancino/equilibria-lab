@@ -10,7 +10,7 @@ import {
 import { alphaFractions } from '../lib/equilibrium';
 import { formatMolar } from '../lib/format';
 
-// ── Base de datos ──────────────────────────────────────────────────────────────
+// ── Database ───────────────────────────────────────────────────────────────────
 
 interface Preset {
   id: string;
@@ -36,7 +36,7 @@ const PRESETS: Preset[] = [
   { id: 'agcl',    name: 'AgCl',        anionName: 'Cl⁻',    pKsp: 9.74,  p: 1, q: 1, pKas: [],                   color: '#999999' },
 ];
 
-// ── Estado editable ────────────────────────────────────────────────────────────
+// ── Editable state ─────────────────────────────────────────────────────────────
 
 interface SalState {
   name: string;
@@ -56,7 +56,7 @@ function fromPreset(id: string): SalState {
 const DEFAULT1 = 'agcl';
 const DEFAULT2 = 'ca3po4';
 
-// ── Funciones de cálculo ───────────────────────────────────────────────────────
+// ── Calculation functions ──────────────────────────────────────────────────────
 
 function computeLogS(pH: number, s: SalState): number {
   const h = Math.pow(10, -pH);
@@ -106,7 +106,7 @@ function SalEditor({ sal, onChange }: {
 
   return (
     <>
-      {/* Chips de preset */}
+      {/* Preset chips */}
       <div className="preset-chip-row" style={{ marginBottom: 8 }}>
         {PRESETS.map((p) => (
           <button
@@ -167,7 +167,7 @@ function SalEditor({ sal, onChange }: {
   );
 }
 
-// ── Componente principal ────────────────────────────────────────────────────────
+// ── Main component ─────────────────────────────────────────────────────────────
 
 const ALPHA_COLORS = ['#D55E00', '#E69F00', '#009E73', '#0072B2', '#CC79A7'];
 

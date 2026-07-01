@@ -1,20 +1,20 @@
-// Motor de constantes condicionales (Ringbom).
+// Conditional constants engine (Ringbom).
 // K' = K / (α_M · α_Y)    log K' = log K − log α_M − log α_Y
-// Todos los α ≥ 1; vale 1 cuando no hay reacción parásita.
+// All α ≥ 1; equals 1 when no side reaction is present.
 
 import { PKW } from './constants';
 import { alphaFractions } from './equilibrium';
 import { stackFromLegacy, condLogKCurveFromStack } from './sideReactions';
 
 /**
- * Coeficiente de reacciones parásitas por protonación del ligante (α_Y(H)).
- * α_Y(H) = 1 / α_{totalmente desprotonado} = D / [Y^n−]
+ * Side-reaction coefficient for ligand protonation (α_Y(H)).
+ * α_Y(H) = 1 / α_{fully deprotonated} = D / [Y^n−]
  *
- * Usa alphaFractions: la última fracción es α de la forma desprotonada,
- * por lo que α_Y(H) = 1 / alphas[last].
+ * Uses alphaFractions: the last fraction is α of the deprotonated form,
+ * so α_Y(H) = 1 / alphas[last].
  *
- * @param pKas  pKas sucesivos del ligante (de menor a mayor), ej. EDTA [2.0, 2.69, 6.13, 10.37]
- * @param pH    pH del medio
+ * @param pKas  successive pKas of the ligand (ascending), e.g. EDTA [2.0, 2.69, 6.13, 10.37]
+ * @param pH    medium pH
  */
 export function alphaH(pKas: number[], pH: number): number {
   const h = Math.pow(10, -pH);
@@ -24,11 +24,11 @@ export function alphaH(pKas: number[], pH: number): number {
 }
 
 /**
- * Coeficiente de reacciones parásitas por hidrólisis del metal (α_M(OH)).
+ * Side-reaction coefficient for metal hydrolysis (α_M(OH)).
  * α_M(OH) = 1 + Σ β_i(OH) · [OH]^i
  *
- * @param logBetasOH  log β globales de los hidroxocomplexos M(OH)₁, M(OH)₂, ...
- * @param pH          pH del medio
+ * @param logBetasOH  overall log β of hydroxo-complexes M(OH)₁, M(OH)₂, ...
+ * @param pH          medium pH
  */
 export function alphaOH(logBetasOH: number[], pH: number): number {
   if (logBetasOH.length === 0) return 1;
@@ -42,11 +42,11 @@ export function alphaOH(logBetasOH: number[], pH: number): number {
 }
 
 /**
- * Coeficiente de reacciones parásitas por ligando auxiliar libre (α_M(L)).
+ * Side-reaction coefficient for free auxiliary ligand (α_M(L)).
  * α_M(L) = 1 + Σ β_i · [L]^i
  *
- * @param logBetasL  log β globales del metal con el ligando auxiliar
- * @param cL         concentración libre del ligando auxiliar [L] (M)
+ * @param logBetasL  overall log β of metal with the auxiliary ligand
+ * @param cL         free auxiliary ligand concentration [L] (M)
  */
 export function alphaL(logBetasL: number[], cL: number): number {
   if (logBetasL.length === 0 || cL <= 0) return 1;
@@ -59,14 +59,14 @@ export function alphaL(logBetasL: number[], cL: number): number {
 }
 
 /**
- * Constante condicional (log K').
+ * Conditional constant (log K').
  * log K' = logKf − log(α_M) − log(α_Y)
  *
- * α_M = αM_OH · αM_L  (combinación multiplicativa de coeficientes del metal)
+ * α_M = αM_OH · αM_L  (multiplicative combination of metal side-reaction coefficients)
  *
- * @param logKf   log K de formación en medio ideal
- * @param alphaM  coeficiente total del metal (αOH · αL; pasar 1 si no aplica)
- * @param alphaY  coeficiente total del ligante (αH; pasar 1 si no aplica)
+ * @param logKf   formation log K in ideal medium
+ * @param alphaM  total metal coefficient (αOH · αL; pass 1 if not applicable)
+ * @param alphaY  total ligand coefficient (αH; pass 1 if not applicable)
  */
 export function condLogK(
   logKf: number,
@@ -76,12 +76,12 @@ export function condLogK(
 }
 
 /**
- * Ventana de factibilidad: rango de pH donde log K' ≥ threshold.
- * Devuelve [pH_min, pH_max] o null si nunca se alcanza el umbral.
+ * Feasibility window: pH range where log K' ≥ threshold.
+ * Returns [pH_min, pH_max] or null if the threshold is never reached.
  *
- * @param pHs       array de valores de pH (debe estar ordenado)
- * @param logKs     array de log K' correspondientes (mismo índice)
- * @param threshold umbral de cuantitatividad (6 = reacción; 8 = titulación nítida)
+ * @param pHs       array of pH values (must be sorted)
+ * @param logKs     corresponding array of log K' values (same index)
+ * @param threshold quantitative threshold (6 = reaction; 8 = sharp titration)
  */
 export function feasibilityWindow(
   pHs: number[],
@@ -118,15 +118,15 @@ export function feasibilityWindow(
 }
 
 /**
- * Genera la curva log K' = f(pH) para un sistema M+Y.
+ * Generates the log K' = f(pH) curve for an M+Y system.
  *
- * @param logKf       log K de formación M+Y en medio ideal
- * @param pKasY       pKas del ligante Y (protonación)
- * @param logBetasOH  log β del metal con OH⁻ (puede ser [])
- * @param logBetasL   log β del metal con ligando auxiliar (puede ser [])
- * @param cL          concentración libre del ligando auxiliar (M)
- * @param pHRange     [pHmin, pHmax] del barrido
- * @param points      número de puntos
+ * @param logKf       formation log K of M+Y in ideal medium
+ * @param pKasY       pKas of ligand Y (protonation)
+ * @param logBetasOH  log β of metal with OH⁻ (can be [])
+ * @param logBetasL   log β of metal with auxiliary ligand (can be [])
+ * @param cL          free auxiliary ligand concentration (M)
+ * @param pHRange     [pHmin, pHmax] sweep range
+ * @param points      number of points
  */
 export function condLogKCurve(
   logKf: number,
@@ -149,21 +149,21 @@ export function condLogKCurve(
 }
 
 /**
- * Curva log s = f(pH) para la sal M(OH)_n.
+ * log s = f(pH) curve for the salt M(OH)_n.
  *
- * Modelo completo (no solo línea recta): incluye complejos hidroxo solubles.
+ * Full model (not just a straight line): includes soluble hydroxo-complexes.
  *   [M^n+] = Ksp / [OH⁻]^n
- *   [M]_total = [M^n+] × α_M(OH)  (donde α_M(OH) incluye todos los M(OH)_i solubles)
+ *   [M]_total = [M^n+] × α_M(OH)  (where α_M(OH) includes all soluble M(OH)_i)
  *   log s = −pKsp + n·(14−pH) + log α_M(OH)
  *
- * Para metales anfotéricos (Al, Zn, Pb, Cr), logBetasOH debe incluir los
- * complejos aniónicos (Al(OH)₄⁻, Zn(OH)₄²⁻, etc.) → la curva tiene forma de U.
+ * For amphoteric metals (Al, Zn, Pb, Cr), logBetasOH must include the
+ * anionic complexes (Al(OH)₄⁻, Zn(OH)₄²⁻, etc.) → the curve has a U-shape.
  *
- * @param pKsp       −log Ksp de M(OH)_n
- * @param n          estequiometría de OH⁻
- * @param logBetasOH log β globales de complejos M(OH)_i solubles (puede ser [])
- * @param pHRange    rango de pH del barrido
- * @param points     número de puntos
+ * @param pKsp       −log Ksp of M(OH)_n
+ * @param n          OH⁻ stoichiometry
+ * @param logBetasOH overall log β of soluble M(OH)_i complexes (can be [])
+ * @param pHRange    pH sweep range
+ * @param points     number of points
  */
 export function hydroxideSolCurve(
   pKsp: number,
@@ -188,10 +188,10 @@ export function hydroxideSolCurve(
 }
 
 /**
- * pH donde la solubilidad del hidróxido cruza un umbral dado (bisección).
- * Devuelve null si nunca cruza el umbral en [pHmin, pHmax].
- * direction: 'rising' busca el primer cruce ascendente (logS cruza hacia arriba),
- *            'falling' busca el primer cruce descendente.
+ * pH where hydroxide solubility crosses a given threshold (bisection).
+ * Returns null if the threshold is never crossed on [pHmin, pHmax].
+ * direction: 'rising' finds the first ascending crossing (logS crosses upward),
+ *            'falling' finds the first descending crossing.
  */
 export function precipitationPH(
   pKsp: number,
@@ -202,14 +202,14 @@ export function precipitationPH(
   direction: 'falling' | 'rising' = 'falling'
 ): number | null {
   const { pHs, logS } = hydroxideSolCurve(pKsp, n, logBetasOH, pHRange, 1000);
-  // Busca la primera transición
+  // Find the first transition
   for (let i = 1; i < pHs.length; i++) {
     const crossed =
       direction === 'falling'
         ? logS[i - 1] > logSThreshold && logS[i] <= logSThreshold
         : logS[i - 1] <= logSThreshold && logS[i] > logSThreshold;
     if (crossed) {
-      // Interpolación lineal
+      // Linear interpolation
       const t = (logSThreshold - logS[i - 1]) / (logS[i] - logS[i - 1]);
       return pHs[i - 1] + t * (pHs[i] - pHs[i - 1]);
     }

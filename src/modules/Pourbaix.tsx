@@ -6,15 +6,15 @@ import { InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRo
 import { availableSystems, buildSystem, waterLines, S_NERNST } from '../lib/pourbaix';
 import { formatMolar } from '../lib/format';
 
-// ── Sistema simple custom (M^n+ / M + M(OH)n) ─────────────────────────────────
+// ── Simple custom system (M^n+ / M + M(OH)n) ─────────────────────────────────
 
 interface SimpleCustom {
   ionName: string;     // "Ni²⁺"
   metalName: string;   // "Ni"
   hydroxide: string;   // "Ni(OH)₂"
-  E0: number;          // E°(M^n+/M) en V
-  n: number;           // electrones
-  pKsp: number;        // pKsp de M(OH)n
+  E0: number;          // E°(M^n+/M) in V
+  n: number;           // electrons
+  pKsp: number;        // pKsp of M(OH)n
 }
 
 function buildSimpleDiagram(p: SimpleCustom, logC: number): { data: Data[]; annotations: Partial<Annotations>[] } {
@@ -83,9 +83,9 @@ function nearestRegionName(
   return best.name;
 }
 
-// ── Componente ─────────────────────────────────────────────────────────────────
+// ── Component ──────────────────────────────────────────────────────────────────
 
-/** Diagramas de Pourbaix (E vs pH) derivados de datos termodinámicos primitivos. */
+/** Pourbaix diagrams (E vs pH) derived from primitive thermodynamic data. */
 export default function Pourbaix() {
   const systems = availableSystems();
   const [systemId, setSystemId] = useState('fe');

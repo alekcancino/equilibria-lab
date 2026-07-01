@@ -1,6 +1,6 @@
-// Módulo de Constantes Condicionales (Ringbom).
-// Genera la curva log K' = f(pH) y los coeficientes α para sistemas M + Y (EDTA por defecto).
-// Cubre QA II.2 + QA III.1 completos.
+// Conditional Constants module (Ringbom).
+// Generates the log K' = f(pH) curve and α coefficients for M + Y systems (EDTA by default).
+// Covers QA II.2 + QA III.1 in full.
 
 import { useMemo, useState } from 'react';
 import type { Data, Shape } from 'plotly.js';
@@ -139,7 +139,7 @@ export default function ConstantesCondicionales() {
     [s.logKf, s.evalPH, stack],
   );
 
-  /** Pendiente local d(log K′)/dpH en el pH de evaluación (tramo lineal, Ord-2). */
+  /** Local slope d(log K′)/dpH at the evaluation pH (linear segment, 2nd-order). */
   const slopeAtEval = useMemo(() => {
     const h = 0.25;
     const lo = condLogKPrimary(s.logKf, Math.max(PH_MIN, s.evalPH - h), stack);
@@ -423,7 +423,7 @@ export default function ConstantesCondicionales() {
           <p className="hint">6 = reacción cuantitativa · 8 = titulación nítida (0.01 M)</p>
         </div>
 
-        {/* 2.º metal — comparación / enmascaramiento */}
+        {/* 2nd metal — comparison / masking */}
         <Toggle
           label="Comparar con 2.º metal"
           checked={s.showMask}

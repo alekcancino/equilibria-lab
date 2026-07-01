@@ -1,4 +1,4 @@
-// Titulaciones complejométricas con EDTA: constante condicional y curvas pM′ / pY′ vs x o volumen.
+// Complexometric titrations with EDTA: conditional constant and pM′ / pY′ curves vs. fraction x or volume.
 
 import { alphaH } from './conditional';
 import {
@@ -10,10 +10,10 @@ import {
   type SideReactionStack,
 } from './sideReactions';
 
-/** pKas del EDTA (H4Y) */
+/** pKas of EDTA (H4Y) */
 export const EDTA_PKAS = [2.0, 2.69, 6.13, 10.37];
 
-/** α_Y(H) del EDTA a un pH dado */
+/** α_Y(H) of EDTA at a given pH */
 export function alphaY4(pH: number, pKas: number[] = EDTA_PKAS): number {
   return alphaH(pKas, pH);
 }
@@ -28,11 +28,11 @@ export interface EdtaTitrationParams {
   vMax: number;
   edtaInFlask?: boolean;
   points?: number;
-  /** Stack declarativo de parásitas (preferido) */
+  /** Declarative side-reaction stack (preferred) */
   sideStack?: SideReactionStack;
-  /** Estado del editor → stack si sideStack no se pasa */
+  /** Editor state → stack, used only if sideStack is not provided */
   sideEditor?: SideReactionEditorState;
-  /** Eje: volumen de titulante o avance x = n_Y/n_M0 */
+  /** Axis: titrant volume or progress x = n_Y/n_M0 */
   axis?: 'volume' | 'x';
   xMax?: number;
 }
@@ -74,9 +74,9 @@ function equilibriumPoint(kCond: number, cM: number, cY: number): { pM: number; 
 }
 
 /**
- * Curva de titulación con K′f = Kf / (α_M · α_Y).
- * Eje x: fracción n_Y/n_M0 (modelo del examen, volumen constante).
- * Eje volumen: dilución incluida.
+ * Titration curve with K′f = Kf / (α_M · α_Y).
+ * x-axis: fraction n_Y/n_M0 (exam model, constant volume).
+ * volume-axis: includes dilution.
  */
 export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
   const {
@@ -126,7 +126,7 @@ export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
   return { volumes, xs, pMs, pYs, vEq, xEq, logKfCond };
 }
 
-/** Valores pM′ / pY′ en un avance x dado (p. ej. 0.5 o 1.5). */
+/** pM′ / pY′ values at a given progress fraction x (e.g. 0.5 or 1.5). */
 export function edtaAtFraction(
   params: Pick<EdtaTitrationParams, 'logKf' | 'pH' | 'cMetal' | 'sideStack' | 'sideEditor' | 'logBetasOH'> & {
     vMetal?: number;

@@ -14,7 +14,7 @@ import { useActivityNote } from '../context/ActivityContext';
 
 const PH_POINTS = 400;
 
-/** Equilibrio ácido-base (mono y poliprótico): DUZP + distribución α + diagrama logC. */
+/** Acid-base equilibrium (mono and polyprotic): DUZP + α distribution + logC diagram. */
 export default function AcidoBase() {
   const { showActivityNote } = useActivityNote();
   const [system, setSystem] = useState<AcidSystem>(defaultAcidSystem());
@@ -32,7 +32,7 @@ export default function AcidoBase() {
   );
   const pHInvalid = !Number.isFinite(pHSystem);
 
-  // Distribución α vs pH
+  // α distribution vs pH
   const alphaTraces = useMemo<Data[]>(() => {
     const phs: number[] = [];
     const series: number[][] = system.pKas.map(() => []).concat([[]]);
@@ -49,7 +49,7 @@ export default function AcidoBase() {
     }));
   }, [system, labels]);
 
-  // Diagrama logC vs pH (Sillén) con líneas H₃O⁺/OH⁻
+  // logC vs pH diagram (Sillén) with H₃O⁺/OH⁻ lines
   const logCTraces = useMemo<Data[]>(() => {
     const phs: number[] = [];
     const series: number[][] = system.pKas.map(() => []).concat([[]]);

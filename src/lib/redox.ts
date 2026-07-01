@@ -8,36 +8,36 @@ export { NERNST_S };
 export interface RedoxCouple {
   id: string;
   name: string;
-  /** Semirreacción completa para mostrar */
+  /** Full half-reaction string for display */
   halfReaction: string;
   ox: string;
   red: string;
-  /** Potencial estándar (V vs ENH) */
+  /** Standard potential (V vs SHE) */
   E0: number;
-  /** Electrones transferidos */
+  /** Electrons transferred */
   n: number;
-  /** Protones en la semirreacción (0 si no participa H⁺) */
+  /** Protons in the half-reaction (0 if H⁺ not involved) */
   mH: number;
   reference: string;
-  /** Advertencia de modelo, si aplica (ej. especies polinucleares) */
+  /** Model caveat, if applicable (e.g. polynuclear species) */
   caveat?: string;
 }
 
-/** pe° = E°/S — convención de Sillén/Baeza, consistente con los libros de texto. */
+/** pe° = E°/S — Sillén/Baeza convention, consistent with textbooks. */
 export function peStandard(E0: number): number {
   return E0 / NERNST_S;
 }
 
 /**
- * pe°' condicional al pH de trabajo: para ox + mH·H⁺ + n·e⁻ → red,
- * pe°' = pe° − (mH/n)·pH. Si mH = 0 no depende del pH.
+ * Conditional pe°' at the working pH: for ox + mH·H⁺ + n·e⁻ → red,
+ * pe°' = pe° − (mH/n)·pH. If mH = 0 it is pH-independent.
  */
 export function peConditional(couple: RedoxCouple, pH: number): number {
   return peStandard(couple.E0) - (couple.mH / couple.n) * pH;
 }
 
 /**
- * Fracciones alfa del par a un pe dado (modelo de dos especies mononucleares):
+ * Alpha fractions of a couple at a given pe (two mononuclear species model):
  * [ox]/[red] = 10^{n(pe − pe°')}.
  */
 export function alphaRedox(pe: number, pe0c: number, n: number): { ox: number; red: number } {
@@ -49,16 +49,16 @@ export function alphaRedox(pe: number, pe0c: number, n: number): { ox: number; r
 }
 
 export interface RedoxTitrationParams {
-  /** Par del analito */
+  /** Analyte couple */
   analyte: RedoxCouple;
-  /** Par del titulante */
+  /** Titrant couple */
   titrant: RedoxCouple;
   /**
-   * 'oxidante': analito inicia reducido, titulante se agrega oxidado (oxidación del analito).
-   * 'reductor': analito inicia oxidado, titulante se agrega reducido (reducción del analito).
+   * 'oxidante': analyte starts reduced, titrant is added oxidized (oxidimetry).
+   * 'reductor': analyte starts oxidized, titrant is added reduced (reductimetry).
    */
   direction?: 'oxidante' | 'reductor';
-  /** pH amortiguado del medio */
+  /** Buffered pH of the medium */
   pH: number;
   cAnalyte: number;
   vAnalyte: number;
@@ -74,20 +74,19 @@ export interface RedoxCurve {
   vEq: number;
   peEq: number;
   EEq: number;
-  /** log K de la reacción de titulación balanceada */
+  /** log K of the balanced titration reaction */
   logK: number;
   pe0cAnalyte: number;
   pe0cTitrant: number;
 }
 
 /**
- * Curva de titulación redox resuelta por BALANCE DE ELECTRONES exacto:
- * los electrones cedidos por la especie que se oxida igualan los aceptados
- * por la que se reduce. En titulación por oxidación:
+ * Redox titration curve solved by exact ELECTRON BALANCE:
+ * electrons released by the oxidized species equal those accepted
+ * by the reduced species. For oxidimetry:
  *   f(pe) = n_a·N_a·α_ox,a(pe) − n_t·N_t·α_red,t(pe) = 0
- * (en titulación por reducción los papeles se invierten). f es estrictamente monótona
- * en pe → bisección robusta. La estequiometría n_a ≠ n_t queda correcta
- * automáticamente (V_eq = n_a·C_a·V_a / (n_t·C_t)).
+ * (roles are reversed for reductimetry). f is strictly monotone in pe → robust bisection.
+ * n_a ≠ n_t stoichiometry is handled automatically (V_eq = n_a·C_a·V_a / (n_t·C_t)).
  */
 export function redoxTitrationCurve(params: RedoxTitrationParams): RedoxCurve {
   const { analyte, titrant, pH, cAnalyte, vAnalyte, cTitrant, vMax, direction = 'oxidante' } = params;
@@ -96,8 +95,8 @@ export function redoxTitrationCurve(params: RedoxTitrationParams): RedoxCurve {
   const pe0t = peConditional(titrant, pH);
 
   const solvePe = (nA: number, nT: number): number => {
-    // nA, nT en moles; bisección sobre el balance de electrones.
-    // f creciente en pe en ambas direcciones gracias al signo.
+    // nA, nT in moles; bisection on the electron balance.
+    // f is increasing in pe in both directions due to the sign convention.
     const f = (pe: number): number => {
       if (direction === 'oxidante') {
         return analyte.n * nA * alphaRedox(pe, pe0a, analyte.n).ox -
@@ -134,8 +133,8 @@ export function redoxTitrationCurve(params: RedoxTitrationParams): RedoxCurve {
 
   const peEq = solvePe(cAnalyte * vAnalyte, cTitrant * vEq);
 
-  // Reacción balanceada: intercambia n_a·n_t electrones; en titulación por reducción
-  // el oxidante es el analito, así que el signo se invierte.
+  // Balanced reaction: transfers n_a·n_t electrons; in reductimetry the analyte is
+  // the oxidant, so the sign is flipped.
   const logK = direction === 'oxidante'
     ? analyte.n * titrant.n * (pe0t - pe0a)
     : analyte.n * titrant.n * (pe0a - pe0t);

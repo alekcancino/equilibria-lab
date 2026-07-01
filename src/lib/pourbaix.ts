@@ -1,10 +1,9 @@
-// Generador de diagramas de Pourbaix orientado a datos.
-// Port directo de pourbaix_core.py (EquilibriaLab, auditado): solo E° y pKsp
-// son datos primitivos; todo potencial de frontera con sólidos se DERIVA por
-// ley de Hess, de modo que el cierre de los puntos triples es una identidad
-// matemática y no una esperanza (lección de la auditoría P0-4).
+// Data-driven Pourbaix diagram generator.
+// Direct port of pourbaix_core.py (EquilibriaLab, audited): only E° and pKsp
+// are primitive data; every solid-boundary potential is DERIVED via Hess's law,
+// so triple-point closure is a mathematical identity, not a coincidence (lesson from audit P0-4).
 //
-// Identidades verificadas en la suite dorada del proyecto original:
+// Golden-suite identities verified against the original project:
 //   Fe(OH)₃/Fe²⁺ E°′ = 0.948 V · Fe(OH)₃/Fe(OH)₂ = 0.179 V · Fe(OH)₂/Fe = −0.056 V
 //   Cu(OH)₂/Cu = 0.588 V · Zn(OH)₂/Zn = −0.437 V · Cr(OH)₃/Cr = −0.507 V
 //   MnO₂/Mn(OH)₂ = 0.784 V · Mn(OH)₂/Mn = −0.735 V
@@ -66,7 +65,7 @@ export function availableSystems(): { id: string; name: string }[] {
     .map(([id, def]) => ({ id, name: (def as SystemDef).name }));
 }
 
-/** Parámetros afines (A, B) de una frontera no vertical: E(pH) = A − B·pH */
+/** Affine parameters (A, B) for a non-vertical boundary: E(pH) = A − B·pH */
 function affineParams(
   b: BoundaryDef, sysdef: SystemDef, logC: number,
 ): { A: number; B: number; name: string; eq: string } {
@@ -201,11 +200,11 @@ function affineParams(
       };
     }
     default:
-      throw new Error(`Tipo de frontera desconocido: ${b.kind}`);
+      throw new Error(`Unknown boundary kind: ${b.kind}`);
   }
 }
 
-/** Frontera vertical de precipitación: pH = pKw − (pKsp + logC)/z */
+/** Vertical precipitation boundary: pH = pKw − (pKsp + logC)/z */
 function precipitationPH(solid: Solid, logC: number): number {
   const pH = PKW - (solid.pKsp! + logC) / solid.z!;
   return Math.max(0, Math.min(14, pH));
@@ -217,13 +216,13 @@ function regionPH(rule: (string | number)[], precip: Record<string, number>): nu
   if (op === 'half') return Math.max(0.6, precip[rule[1] as string] / 2);
   if (op === 'mid') return 0.5 * (precip[rule[1] as string] + precip[rule[2] as string]);
   if (op === 'after') return Math.min(13.5, precip[rule[1] as string] + (rule[2] as number));
-  throw new Error(`Regla de región desconocida: ${rule}`);
+  throw new Error(`Unknown region rule: ${rule}`);
 }
 
-/** Construye todas las líneas (recortadas en los puntos triples) y etiquetas. */
+/** Builds all lines (clipped at triple points) and labels. */
 export function buildSystem(systemId: string, logC: number): PourbaixDiagram {
   const sysdef = SYSTEMS[systemId] as SystemDef;
-  if (!sysdef || typeof sysdef === 'string') throw new Error(`Sistema desconocido: ${systemId}`);
+  if (!sysdef || typeof sysdef === 'string') throw new Error(`Unknown system: ${systemId}`);
 
   const precip: Record<string, number> = {};
   for (const [sid, sol] of Object.entries(sysdef.solids)) {
@@ -307,7 +306,7 @@ export function buildSystem(systemId: string, logC: number): PourbaixDiagram {
   };
 }
 
-/** Líneas de estabilidad del agua (a y b de Pourbaix), para dibujar punteadas. */
+/** Water stability lines (Pourbaix lines a and b), to be drawn as dashed lines. */
 export function waterLines(): { o2: { A: number; B: number }; h2: { A: number; B: number } } {
   return {
     o2: { A: 1.229, B: S_NERNST }, // O₂ + 4H⁺ + 4e⁻ → 2H₂O

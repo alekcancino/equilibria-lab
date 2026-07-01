@@ -1,27 +1,27 @@
-// Base de datos de indicadores metalocrómicos para titulaciones complejométricas.
-// Fuente: Harris, Quantitative Chemical Analysis 9.ª ed., Tabla 12-3;
-//         Skoog, Principles of Analytical Chemistry 9.ª ed.
+// Database of metallochromic indicators for complexometric titrations.
+// Source: Harris, Quantitative Chemical Analysis 9th ed., Table 12-3;
+//         Skoog, Principles of Analytical Chemistry 9th ed.
 //
-// logK(MIn): constante de formación del complejo M-In referenciada a la forma
-// completamente desprotonada In^(n-) del indicador.
-// K'(MIn) en un medio dado: logK'(MIn) = logK(MIn) - log αIn(H) - log αM(OH)
+// logK(MIn): formation constant of the M-In complex referenced to the fully
+// deprotonated In^(n-) form of the indicator.
+// K'(MIn) at a given medium: logK'(MIn) = logK(MIn) - log αIn(H) - log αM(OH)
 
 export interface IndicatorMetal {
-  metalId: string;   // coincide con id en EDTA_METAL_PRESETS
-  logKMIn: number;   // log K de formación M-In (termodinámico)
+  metalId: string;   // matches id in EDTA_METAL_PRESETS
+  logKMIn: number;   // thermodynamic log K for M-In formation
 }
 
 export interface MetalIndicator {
   id: string;
   name: string;
   abbrev: string;
-  /** pKas del indicador como ácido débil — la última especie es la forma que coordina al metal */
+  /** pKas of the indicator as a weak acid — the last species is the form that coordinates to the metal */
   pKas: number[];
-  /** Color del indicador libre al pH de trabajo (aprox. pH 8–11) */
+  /** Color of the free indicator at the working pH (approx. pH 8–11) */
   colorFree: string;
-  /** Color del complejo M-In */
+  /** Color of the M-In complex */
   colorMIn: string;
-  /** Rango de pH donde el indicador funciona normalmente */
+  /** pH range where the indicator normally functions */
   pHRange: [number, number];
   metals: IndicatorMetal[];
   notes: string;
@@ -33,8 +33,8 @@ export const METAL_INDICATORS: MetalIndicator[] = [
     name: 'Negro de Eriocromo T',
     abbrev: 'EBT',
     pKas: [6.3, 11.6],
-    colorFree: '#3A7BD5',    // azul
-    colorMIn: '#8B1A4A',     // rojo vino
+    colorFree: '#3A7BD5',    // blue
+    colorMIn: '#8B1A4A',     // wine red
     pHRange: [7, 11],
     metals: [
       { metalId: 'ca',   logKMIn:  5.4 },
@@ -74,8 +74,8 @@ export const METAL_INDICATORS: MetalIndicator[] = [
     name: 'Murexide',
     abbrev: 'Mur',
     pKas: [9.2, 10.9],
-    colorFree: '#7B3FA0',    // púrpura
-    colorMIn: '#D04070',     // rosa-rojo
+    colorFree: '#7B3FA0',    // purple
+    colorMIn: '#D04070',     // pink-red
     pHRange: [8, 11],
     metals: [
       { metalId: 'ca',   logKMIn:  3.4 },
@@ -91,8 +91,8 @@ export const METAL_INDICATORS: MetalIndicator[] = [
     name: 'Naranja de Xilenol',
     abbrev: 'XO',
     pKas: [2.6, 3.2, 6.4, 10.5],
-    colorFree: '#F0A500',    // amarillo-naranja
-    colorMIn: '#C0392B',     // rojo
+    colorFree: '#F0A500',    // yellow-orange
+    colorMIn: '#C0392B',     // red
     pHRange: [1, 6],
     metals: [
       { metalId: 'pb',   logKMIn: 18.0 },
@@ -106,17 +106,17 @@ export const METAL_INDICATORS: MetalIndicator[] = [
   },
 ];
 
-/** Mapa rápido id → indicador */
+/** Fast id → indicator map */
 export const INDICATOR_BY_ID = Object.fromEntries(METAL_INDICATORS.map((ind) => [ind.id, ind]));
 
-// ── Presets de metales para titulaciones EDTA ────────────────────────────────
-// Fuente: Harris QCA 9.ª ed., Tabla 12-1; Ringbom.
-// logBetasOH: constantes de formación de complejos hidroxo β₁, β₂, … del metal.
+// ── Metal presets for EDTA titrations ────────────────────────────────────────
+// Source: Harris QCA 9th ed., Table 12-1; Ringbom.
+// logBetasOH: formation constants of the metal's hydroxo complexes β₁, β₂, …
 
 export interface EdtaMetalPreset {
   id: string;
-  metal: string;   // etiqueta de display e.g. 'Ca²⁺'
-  logKf: number;   // log Kf termodinámico M–EDTA
+  metal: string;   // display label e.g. 'Ca²⁺'
+  logKf: number;   // thermodynamic log Kf for M–EDTA
   logBetasOH: number[];
   group: string;
 }

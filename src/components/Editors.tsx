@@ -1,6 +1,6 @@
-// Editores compartidos según el patrón estándar de UI:
-// PRIMARIO = etiqueta libre + constantes editables con ± .
-// SECUNDARIO = base de datos colapsable que autocompleta y se cierra.
+// Shared editors following the standard UI pattern:
+// PRIMARY = free label + editable constants with ± buttons.
+// SECONDARY = collapsible database that auto-fills and closes.
 
 import { ConstantList, DbPanel, LabelField, ModelBadge, RefBadge, SelectControl, Slider, ConcSlider } from './Controls';
 import { ACIDS } from '../lib/database';
@@ -54,7 +54,7 @@ export function AcidSystemEditor({
             ...system,
             label: shouldRename ? inferredSystemLabel(system.z0, pKas) : system.label,
             pKas,
-            // si cambió el número de constantes, las etiquetas de BD ya no aplican
+            // if the number of constants changed, database labels no longer apply
             speciesLabels: pKas.length === system.pKas.length ? system.speciesLabels : null,
             reference: null,
           });
@@ -134,7 +134,7 @@ export function CoupleEditor({
   );
 }
 
-/** Editor reutilizable de reacciones parásitas (Ringbom). */
+/** Reusable side-reaction (Ringbom) editor. */
 export function SideReactionEditor({
   state,
   onChange,

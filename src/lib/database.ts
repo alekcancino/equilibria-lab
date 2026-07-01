@@ -1,20 +1,20 @@
-// Base de datos de especies químicas con constantes de equilibrio (25 °C).
-// Fuentes: Harris, Quantitative Chemical Analysis; Skoog, Analytical Chemistry.
+// Database of chemical species with equilibrium constants (25 °C).
+// Sources: Harris, Quantitative Chemical Analysis; Skoog, Analytical Chemistry.
 
 export interface AcidPreset {
   id: string;
-  /** Nombre para mostrar, ej. "Ácido fosfórico" */
+  /** Display name, e.g. "Ácido fosfórico" */
   name: string;
-  /** Fórmula de la forma más protonada, con HTML sub/sup, ej. "H<sub>3</sub>PO<sub>4</sub>" */
+  /** Formula of the most protonated form with HTML sub/sup, e.g. "H<sub>3</sub>PO<sub>4</sub>" */
   formula: string;
-  /** Carga de la forma totalmente protonada */
+  /** Charge of the fully protonated form */
   z0: number;
   pKas: number[];
-  /** Etiquetas de cada especie, de más a menos protonada (HTML) */
+  /** Species labels from most to least protonated (HTML) */
   speciesLabels: string[];
-  /** true si funciona como base (se titula con ácido fuerte) */
+  /** true if it acts as a base (titrated with a strong acid) */
   isBase?: boolean;
-  /** true si es ácido/base fuerte (pKa no aplica para titulación) */
+  /** true if it is a strong acid/base (pKa not applicable for titration) */
   strong?: boolean;
 }
 
@@ -84,9 +84,9 @@ export const ACIDS: AcidPreset[] = [
 export interface Indicator {
   id: string;
   name: string;
-  /** Intervalo de vire [pH bajo, pH alto] */
+  /** Transition interval [low pH, high pH] */
   range: [number, number];
-  /** Colores ácido → básico */
+  /** Colors: acid form → basic form */
   colors: [string, string];
 }
 
@@ -104,12 +104,12 @@ export interface SaltPreset {
   formula: string;
   /** pKsp */
   pKsp: number;
-  /** estequiometría M_m X_x */
+  /** stoichiometry M_m X_x */
   m: number;
   x: number;
-  /** pKa(s) del ácido conjugado del anión, si el anión es básico (para efecto del pH) */
+  /** pKa(s) of the conjugate acid of the anion, if the anion is basic (for pH effect) */
   anionPKas?: number[];
-  /** cuántos protones puede aceptar el anión (índice de la especie libre en alphas) */
+  /** how many protons the anion can accept (index of free species in alphas) */
   anionLabel: string;
   cationLabel: string;
 }
@@ -128,7 +128,7 @@ export const SALTS: SaltPreset[] = [
 /** Color for system markers (pH, pe, equilibrium lines) — Okabe-Ito pink */
 export const MARKER_COLOR = '#CC79A7';
 
-/** Paleta Okabe-Ito (segura para daltonismo) para series de especies */
+/** Okabe-Ito palette (colorblind-safe) for species series */
 export const SPECIES_COLORS = [
   '#0072B2', '#D55E00', '#009E73', '#CC79A7',
   '#E69F00', '#56B4E9', '#2C3E50', '#999999',

@@ -1,12 +1,12 @@
-// Potencial condicional E°' = f(pH) — módulo ④ (QA II.3 + QA II.4).
-// Muestra cómo el potencial formal cambia con el pH según la presencia de H⁺
-// en la semirreacción. La pendiente es −0.05916·mH/n V/pH.
+// Conditional potential E°' = f(pH) — module ④ (QA II.3 + QA II.4).
+// Shows how the formal potential changes with pH due to H⁺ in the half-reaction.
+// Slope is −0.05916·mH/n V/pH.
 //
-// Nuevas capacidades respecto al módulo Redox (que trabaja a pH fijo):
-//   1. E°' = f(pH) como curva continua — cruce entre pares visible.
-//   2. Cruce de pH: a qué pH se invierten las predicciones de espontaneidad.
-//   3. Dismutación: la especie intermedia de un diagrama de Latimer es inestable
-//      cuando E°'(derecho) > E°'(izquierdo).
+// Capabilities beyond the Redox module (which works at fixed pH):
+//   1. E°' = f(pH) as a continuous curve — crossover between couples visible.
+//   2. Crossover pH: the pH at which spontaneity predictions reverse.
+//   3. Disproportionation: the intermediate species in a Latimer diagram is unstable
+//      when E°'(right) > E°'(left).
 
 import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
@@ -26,33 +26,33 @@ import {
 const S = NERNST_S;     // 0.05916 V
 const PH_POINTS = 400;
 
-// ── Utilidades ────────────────────────────────────────────────────────────────
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
-/** E°'(pH) para un par con mH protones en su semirreacción de n electrones. */
+/** E°'(pH) for a couple with mH protons in its n-electron half-reaction. */
 function Eprime(c: CoupleState, pH: number): number {
   return c.E0 - S * (c.mH / c.n) * pH;
 }
 
 /**
- * pH donde E°'₁ = E°'₂ (cruce de las dos rectas).
- * Devuelve null si las rectas son paralelas o el cruce queda fuera de [0, 14].
+ * pH where E°'₁ = E°'₂ (intersection of the two lines).
+ * Returns null if the lines are parallel or the crossing falls outside [0, 14].
  */
 function crossoverPH(c1: CoupleState, c2: CoupleState): number | null {
   const slope1 = -S * c1.mH / c1.n;
   const slope2 = -S * c2.mH / c2.n;
   const dSlope = slope2 - slope1;
-  if (Math.abs(dSlope) < 1e-9) return null; // paralelas
+  if (Math.abs(dSlope) < 1e-9) return null; // parallel lines
   const pH = (c1.E0 - c2.E0) / dSlope;
   return pH >= 0 && pH <= 14 ? pH : null;
 }
 
-// ── Colores ───────────────────────────────────────────────────────────────────
+// ── Colors ────────────────────────────────────────────────────────────────────
 
-const C1 = SPECIES_COLORS[0]; // naranja
-const C2 = SPECIES_COLORS[1]; // azul
-const C3 = SPECIES_COLORS[2]; // verde
+const C1 = SPECIES_COLORS[0]; // orange
+const C2 = SPECIES_COLORS[1]; // blue
+const C3 = SPECIES_COLORS[2]; // green
 
-// ── Estado ────────────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────────
 
 function defaultState() {
   return {
@@ -61,14 +61,14 @@ function defaultState() {
     showCouple3: false,
     couple3: coupleFromPreset('cu1'),
     pH: 2,
-    // E°' = f(pX): efecto del ligando X sobre el potencial de un par
+    // E°' = f(pX): effect of ligand X on the couple's potential
     pxE0: 0.771,          // E° Fe³⁺/Fe²⁺ por defecto
     pxN: 1,
     pxOxLabel: 'Fe³⁺',
     pxRedLabel: 'Fe²⁺',
     pxLigandLabel: 'F⁻',
     pxLogBetasOx: [5.28, 9.30, 12.06],   // FeF²⁺, FeF₂⁺, FeF₃
-    pxLogBetasRed: [1.0],                  // FeF⁺ (débil)
+    pxLogBetasRed: [1.0],                  // FeF⁺ (weak)
     showPX: false,
     showElectrode: false,
     e0Metal: 0.25,
@@ -80,7 +80,7 @@ function defaultState() {
   };
 }
 
-// ── Componente ────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PotencialCondicional() {
   const [st, setSt] = useState(defaultState);
@@ -91,7 +91,7 @@ export default function PotencialCondicional() {
 
   function reset() { setSt(defaultState()); }
 
-  // ── Curvas E°' = f(pH) ────────────────────────────────────────────────────
+  // ── E°' = f(pH) curves ────────────────────────────────────────────────────
 
   const pHs = useMemo(() => Array.from({ length: PH_POINTS + 1 }, (_, i) => 14 * i / PH_POINTS), []);
 
@@ -102,7 +102,7 @@ export default function PotencialCondicional() {
     [pHs, st.couple3, st.showCouple3],
   );
 
-  // ── Cruce ─────────────────────────────────────────────────────────────────
+  // ── Crossover ─────────────────────────────────────────────────────────────
 
   const cross12 = useMemo(() => crossoverPH(st.couple1, st.couple2), [st.couple1, st.couple2]);
   const cross13 = useMemo(
@@ -114,22 +114,22 @@ export default function PotencialCondicional() {
     [st.couple2, st.couple3, st.showCouple3],
   );
 
-  // ── E°' en el cursor ──────────────────────────────────────────────────────
+  // ── E°' at the cursor pH ──────────────────────────────────────────────────
 
   const E1cur = Eprime(st.couple1, st.pH);
   const E2cur = Eprime(st.couple2, st.pH);
   const E3cur = st.showCouple3 ? Eprime(st.couple3, st.pH) : null;
 
-  // ── Reacción espontánea ───────────────────────────────────────────────────
+  // ── Spontaneous reaction ──────────────────────────────────────────────────
 
   const couples = [
     { c: st.couple1, E: E1cur },
     { c: st.couple2, E: E2cur },
     ...(st.showCouple3 && E3cur !== null ? [{ c: st.couple3, E: E3cur }] : []),
-  ].sort((a, b) => b.E - a.E); // ordenados por E°' desc
+  ].sort((a, b) => b.E - a.E); // sorted by E°' descending
 
-  const strongest = couples[0]; // oxidante más fuerte (mayor E°')
-  const weakest = couples[couples.length - 1]; // reductor más fuerte (menor E°')
+  const strongest = couples[0]; // strongest oxidant (highest E°')
+  const weakest = couples[couples.length - 1]; // strongest reductant (lowest E°')
   const pe1cur = E1cur / S;
   const pe2cur = E2cur / S;
   const logKcur = st.couple1.n * st.couple2.n * Math.abs(pe1cur - pe2cur);
@@ -140,27 +140,27 @@ export default function PotencialCondicional() {
     return electrodePotential(e0p, st.nElectrode, st.pMPrimeTarget);
   }, [st.showElectrode, st.e0Metal, st.mHElectrode, st.nElectrode, st.pHElectrode, st.pMPrimeTarget]);
 
-  // ── Dismutación: par 1 (Ox/Int) y par 3 (Int/Red) en diagrama de Latimer ─
+  // ── Disproportionation: couple 1 (Ox/Int) and couple 3 (Int/Red) in Latimer diagram ─
 
   const dismutationActive = st.showCouple3 && E3cur !== null && E3cur > E1cur;
 
-  // ── Rango Y dinámico ──────────────────────────────────────────────────────
+  // ── Dynamic Y range ───────────────────────────────────────────────────────
 
   const allE = [...E1s, ...E2s, ...(E3s ?? [])].filter(Number.isFinite);
   const eMin = Math.floor(Math.min(...allE) * 10) / 10 - 0.1;
   const eMax = Math.ceil(Math.max(...allE) * 10) / 10 + 0.1;
 
-  // ── Shapes y anotaciones ──────────────────────────────────────────────────
+  // ── Shapes and annotations ────────────────────────────────────────────────
 
   const logKShapes = useMemo<Partial<Shape>[]>(() => {
     const out: Partial<Shape>[] = [
-      // cursor de pH
+      // pH cursor
       {
         type: 'line', x0: st.pH, x1: st.pH, y0: eMin - 10, y1: eMax + 10,
         line: { color: '#CC79A7', width: 1.5, dash: 'dashdot' },
       },
     ];
-    // línea vertical en el cruce 1–2
+    // vertical line at crossover 1–2
     if (cross12 !== null) {
       out.push({
         type: 'line', x0: cross12, x1: cross12, y0: eMin - 10, y1: Eprime(st.couple1, cross12) + 0.05,
@@ -190,7 +190,7 @@ export default function PotencialCondicional() {
     return out;
   }, [st.pH, cross12, eMax, st.couple1]);
 
-  // ── Trazas E°' = f(pH) ───────────────────────────────────────────────────
+  // ── E°' = f(pH) traces ────────────────────────────────────────────────────
 
   const Eprimetraces = useMemo<Data[]>(() => {
     const t: Data[] = [
@@ -218,7 +218,7 @@ export default function PotencialCondicional() {
     return t;
   }, [pHs, E1s, E2s, E3s, st.couple1, st.couple2, st.couple3]);
 
-  // ── Escala condicional (visual, al cursor pH) ─────────────────────────────
+  // ── Conditional scale (visual, at cursor pH) ──────────────────────────────
 
   const escalaTraces = useMemo<Data[]>(() => {
     const cs = [
@@ -257,7 +257,7 @@ export default function PotencialCondicional() {
     [escalaN, escalaPeMin, escalaPeMax],
   );
 
-  // ── E°'=f(pX) ─────────────────────────────────────────────────────────────
+  // ── E°' = f(pX) ───────────────────────────────────────────────────────────
 
   const PX_POINTS = 400;
   const pXs = useMemo(() => Array.from({ length: PX_POINTS + 1 }, (_, i) => 14 * i / PX_POINTS), []);
@@ -278,7 +278,7 @@ export default function PotencialCondicional() {
     line: { color: '#aaaaaa', width: 1.5, dash: 'dot' },
   }], [st.pxE0]);
 
-  // ── Diagrams ──────────────────────────────────────────────────────────────
+  // ── Diagram tabs ──────────────────────────────────────────────────────────
 
   const diagrams = useMemo(() => {
     const all = [
@@ -364,7 +364,7 @@ export default function PotencialCondicional() {
             onChange={(v) => set('pH', v)} decimals={1}
           />
 
-          {/* 3.er par (diagrama de Latimer / dismutación) */}
+          {/* 3rd couple (Latimer diagram / disproportionation) */}
           <Toggle
             label="Agregar 3.er par (Latimer / dismutación)"
             checked={st.showCouple3}

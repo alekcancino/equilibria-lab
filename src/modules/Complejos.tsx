@@ -59,7 +59,7 @@ function effectiveLabels(s: ComplexState): string[] {
   return genericComplexLabels(s.metalLabel || 'M', s.ligandLabel || 'L', s.logBetas.length);
 }
 
-/** Equilibrio de complejación multi-ligante: DUZP + distribución α + Bjerrum + logC. */
+/** Multi-ligand complexation equilibrium: DUZP + α distribution + Bjerrum + logC. */
 export default function Complejos() {
   const [sys, setSys] = useState<ComplexState>(defaultState);
   const [cM, setCM] = useState(0.01);
@@ -89,15 +89,15 @@ export default function Complejos() {
   const n = sys.logBetas.length;
   const stepwise = useMemo(() => logBetasToStepwise(sys.logBetas), [sys.logBetas]);
 
-  // rango pL: 0 a logβₙ + 3
+  // pL range: 0 to logβₙ + 3
   const pLmax = useMemo(() => Math.max(sys.logBetas[n - 1] + 3, 6), [sys.logBetas, n]);
   const xMax = scaleX(pLmax);
 
-  // pL de equilibrio
+  // equilibrium pL
   const pLEq = useMemo(() => solvePL(cM, cL, sys.logBetas), [cM, cL, sys.logBetas]);
   const pLEqClipped = Math.min(pLEq, pLmax - 0.05);
 
-  // Distribución α vs pL
+  // α distribution vs pL
   const alphaTraces = useMemo<Data[]>(() => {
     const pls: number[] = [];
     const series: number[][] = Array.from({ length: n + 1 }, () => []);
@@ -114,7 +114,7 @@ export default function Complejos() {
     }));
   }, [sys.logBetas, labels, n, pLmax, scaleX]);
 
-  // Función de Bjerrum n̄ vs pL
+  // Bjerrum function n̄ vs pL
   const bjerrumTraces = useMemo<Data[]>(() => {
     const pls: number[] = [];
     const nBar: number[] = [];

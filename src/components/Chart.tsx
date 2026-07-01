@@ -13,11 +13,11 @@ export interface ChartProps {
   shapes?: Partial<Shape>[];
   annotations?: Partial<Annotations>[];
   showLegend?: boolean;
-  /** Nombre de archivo al exportar PNG */
+  /** File name when exporting PNG */
   exportName?: string;
 }
 
-/** Gráfica interactiva: autoescala inicial, zoom por gestos, sin modebar Plotly. */
+/** Interactive chart: initial autoscale, gesture zoom, no Plotly modebar. */
 export default function Chart(props: ChartProps) {
   const { exportName = 'equilibria-lab' } = props;
   const graphDivRef = useRef<HTMLElement | null>(null);

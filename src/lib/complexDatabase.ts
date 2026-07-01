@@ -1,14 +1,13 @@
-// Base de datos de sistemas de complejos de coordinación con constantes de
-// estabilidad globales β (25 °C, μ ≈ 0).
-// Fuentes: Harris, QCA 9.ª ed.; Skoog, Principles of Analytical Chemistry.
+// Database of coordination complex systems with overall stability constants β (25 °C, μ ≈ 0).
+// Sources: Harris, QCA 9th ed.; Skoog, Principles of Analytical Chemistry.
 
 export interface ComplexPreset {
   id: string;
   metalLabel: string;
   ligandLabel: string;
-  /** log β globales: β₁, β₂, ..., βₙ */
+  /** Overall log β: β₁, β₂, ..., βₙ */
   logBetas: number[];
-  /** Etiquetas de las n+1 especies: M, ML, ML₂, ... */
+  /** Labels for the n+1 species: M, ML, ML₂, ... */
   speciesLabels: string[];
   reference: string;
   group: string;
@@ -74,8 +73,8 @@ export const COMPLEX_PRESETS: ComplexPreset[] = [
 ];
 
 /**
- * Genera etiquetas genéricas para los complejos cuando el usuario edita manualmente.
- * Ej: metalLabel="M", ligandLabel="L" → ["M", "ML", "ML₂", "ML₃"]
+ * Generates generic complex labels when the user edits manually.
+ * E.g.: metalLabel="M", ligandLabel="L" → ["M", "ML", "ML₂", "ML₃"]
  */
 const SUB = '₀₁₂₃₄₅₆₇₈₉';
 const toSub = (n: number) =>

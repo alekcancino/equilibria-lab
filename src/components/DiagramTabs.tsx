@@ -7,9 +7,9 @@ export interface DiagramTab {
 }
 
 /**
- * Conmutador de diagramas con layout idéntico en todos los módulos de equilibrio
- * (DUZP / Distribución α / log C). La consistencia visual es lo que hace la app
- * intuitiva: se aprende una vez y aplica a ácido-base, complejos y redox.
+ * Diagram switcher with identical layout across all equilibrium modules
+ * (DUZP / α distribution / log C). Visual consistency makes the app
+ * intuitive: learn once, apply to acid-base, complexes, and redox.
  */
 export default function DiagramTabs({ tabs, initialId }: { tabs: DiagramTab[]; initialId?: string }) {
   const baseId = useId();

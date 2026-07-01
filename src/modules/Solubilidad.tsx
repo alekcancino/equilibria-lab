@@ -37,7 +37,7 @@ function saltFromPreset(p: SaltPreset): SaltState {
 
 const DEFAULT_SALT_ID = 'agcl';
 
-/** Solubilidad de sales poco solubles: efecto del pH y del ion común. */
+/** Solubility of sparingly soluble salts: pH effect and common-ion effect. */
 export default function Solubilidad() {
   const [salt, setSalt] = useState<SaltState>(saltFromPreset(SALTS.find((s) => s.id === DEFAULT_SALT_ID)!));
   const [useCommon, setUseCommon] = useState(false);
