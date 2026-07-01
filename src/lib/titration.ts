@@ -127,3 +127,59 @@ export function granPlot(
   }
   return { v1, F1, v2, F2 };
 }
+
+/**
+ * Ajuste lineal por mínimos cuadrados de un conjunto de puntos (x, y).
+ * Devuelve { m, b } de y = m·x + b. Devuelve null si es degenerado.
+ */
+function linearFit(xs: number[], ys: number[]): { m: number; b: number } | null {
+  const n = xs.length;
+  if (n < 2) return null;
+  let sx = 0, sy = 0, sxx = 0, sxy = 0;
+  for (let i = 0; i < n; i++) {
+    sx += xs[i]; sy += ys[i]; sxx += xs[i] * xs[i]; sxy += xs[i] * ys[i];
+  }
+  const denom = n * sxx - sx * sx;
+  if (Math.abs(denom) < 1e-30) return null;
+  const m = (n * sxy - sx * sy) / denom;
+  const b = (sy - m * sx) / n;
+  return { m, b };
+}
+
+/**
+ * V_eq detectado por extrapolación lineal de la función de Gran F₁ (rama ácida,
+ * antes del P.E.). Ajusta la porción lineal descendente cercana a la equivalencia
+ * (F₁ entre 0.5 % y 60 % de su máximo) y extrapola a F₁ = 0.
+ * Devuelve NaN si no hay suficiente rama útil.
+ */
+export function granVeq(
+  volumes: number[],
+  pHs: number[],
+  vAnalyte: number,
+): number {
+  const { v1, F1 } = granPlot(volumes, pHs, vAnalyte);
+  const Fmax = Math.max(...F1, 0);
+  if (Fmax <= 0) return NaN;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (let i = 0; i < v1.length; i++) {
+    // Rama pre-equivalencia, tramo lineal cercano al P.E.
+    if (F1[i] <= 0.6 * Fmax && F1[i] >= 0.005 * Fmax) {
+      xs.push(v1[i]);
+      ys.push(F1[i]);
+    }
+  }
+  const fit = linearFit(xs, ys);
+  if (!fit || Math.abs(fit.m) < 1e-30) return NaN;
+  return -fit.b / fit.m; // intersección con F₁ = 0
+}
+
+/**
+ * Cuantitatividad q% = (1 − ε/Co)·100, donde ε es la concentración molar
+ * efectiva de la especie limitante en el punto de equivalencia y Co la
+ * concentración analítica (diluida) en ese punto. q → 100 % ⇒ reacción completa.
+ */
+export function quantitativity(epsLimiting: number, cAtEquivalence: number): number {
+  if (cAtEquivalence <= 0) return NaN;
+  return (1 - epsLimiting / cAtEquivalence) * 100;
+}
