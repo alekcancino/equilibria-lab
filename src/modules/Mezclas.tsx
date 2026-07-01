@@ -248,7 +248,7 @@ export default function Mezclas() {
         </InfoBox>
       </PanelShell>
       <section className="plot-area">
-        <DiagramTabs tabs={[
+        <DiagramTabs initialId="beta" tabs={[
           {
             id: 'titulacion',
             label: 'Titulación',

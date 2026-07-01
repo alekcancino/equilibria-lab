@@ -406,6 +406,12 @@ function EdtaTitration() {
 
   const logKMY_pH = useMemo(() => curve.logKfCond, [curve.logKfCond]);
 
+  const pHOptimo = useMemo(() => {
+    const kCurve = condLogKCurve(logKf, EDTA_PKAS, logBetasOH, [], 0, [1, 14], 400);
+    const idx = kCurve.pHs.findIndex((_, i) => kCurve.logKs[i] >= 8);
+    return idx >= 0 ? kCurve.pHs[idx] : null;
+  }, [logKf, logBetasOH]);
+
   const xData = axis === 'x' ? curve.xs : curve.volumes;
   const xTitle = axis === 'x' ? 'x = n_Y / n_M⁰' : `Volumen de ${edtaInFlask ? label : 'EDTA'} agregado (mL)`;
   const eqX = axis === 'x' ? curve.xEq : curve.vEq;
@@ -583,6 +589,7 @@ function EdtaTitration() {
           },
           { label: 'pM′ al 50 %', value: at50.pM.toFixed(2), accent: true },
           { label: 'pM′ al 150 %', value: at150.pM.toFixed(2) },
+          { label: 'pH óptimo mín.', value: pHOptimo !== null ? `≥ ${pHOptimo.toFixed(1)}` : '> 14' },
         ]} />
       </section>
     </>

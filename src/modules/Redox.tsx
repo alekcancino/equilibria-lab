@@ -160,7 +160,7 @@ export default function Redox() {
         </InfoBox>
       </PanelShell>
       <section className="plot-area">
-        <DiagramTabs tabs={diagrams} />
+        <DiagramTabs tabs={diagrams} initialId="alpha" />
         <ResultCardRow items={[
           { label: 'Reacción espontánea', value: `${strong.ox.ox} + ${strong.red.red}`, accent: true },
           { label: 'log K', value: logK.toFixed(1) },
