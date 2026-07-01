@@ -157,8 +157,9 @@ function AnalyteEditor({ a, color, additions, onChange }: {
   const acidPresets = PRESETS.filter((p) => p.type === 'acid');
   const chelatePresets = PRESETS.filter((p) => p.type === 'chelate');
   return (
-    <div style={{ borderLeft: `3px solid ${color}`, paddingLeft: 10, marginBottom: 12 }}>
-      <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
+    <div style={{ marginBottom: 12 }}>
+      <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
         Nombre / fórmula
       </label>
       <input

@@ -445,13 +445,16 @@ export function ResultCardRow({
 }: {
   items: { label: ReactNode; value: ReactNode; accent?: boolean }[];
 }) {
+  // Rendered as a slim metric header that sits ABOVE the plot (via CSS order),
+  // reading as the chart card's header row. The `accent` item is emphasized in
+  // indigo. Data comes unchanged from each module.
   if (items.length === 0) return null;
   return (
     <div className="result-row">
       {items.map((it, i) => (
-        <div key={i} className={it.accent ? 'result-row-card accent' : 'result-row-card'}>
-          <span className="rr-k">{it.label}</span>
-          <span className="rr-v">{it.value}</span>
+        <div key={i} className={it.accent ? 'metric accent' : 'metric'}>
+          <span className="metric-k">{it.label}</span>
+          <span className="metric-v">{it.value}</span>
         </div>
       ))}
     </div>
