@@ -43,6 +43,7 @@ export function AcidSystemEditor({
       )}
       <ConstantList
         prefix="pKa"
+        helpId="pKa"
         values={system.pKas}
         min={-2}
         max={16}
@@ -117,9 +118,9 @@ export function CoupleEditor({
         value={couple.name}
         onChange={(name) => onChange({ ...couple, name })}
       />
-      <Slider label="E° (V vs ENH)" value={couple.E0} min={-1} max={2} step={0.01} onChange={(E0) => edited({ E0 })} decimals={2} unit="V" />
-      <Slider label="n (electrones)" value={couple.n} min={1} max={6} step={1} onChange={(n) => edited({ n })} decimals={0} />
-      <Slider label="m H⁺ (protones en la semirreacción)" value={couple.mH} min={0} max={14} step={1} onChange={(mH) => edited({ mH })} decimals={0} />
+      <Slider label="E° (V vs ENH)" value={couple.E0} min={-1} max={2} step={0.01} onChange={(E0) => edited({ E0 })} decimals={2} unit="V" helpId="E0" />
+      <Slider label="n (electrones)" value={couple.n} min={1} max={6} step={1} onChange={(n) => edited({ n })} decimals={0} helpId="n" />
+      <Slider label="m H⁺ (protones en la semirreacción)" value={couple.mH} min={0} max={14} step={1} onChange={(mH) => edited({ mH })} decimals={0} helpId="mH" />
       <RefBadge reference={couple.reference || undefined} />
       {couple.caveat && <p className="badge warn">⚠ {couple.caveat}</p>}
       <DbPanel
@@ -156,6 +157,7 @@ export function SideReactionEditor({
           <summary className="section-collapse-title">{ligandTitle}</summary>
           <ConstantList
             prefix="pKa"
+            helpId="pKa"
             values={state.ligandPKas}
             onChange={(v) => set('ligandPKas', v)}
             min={0}
@@ -175,6 +177,7 @@ export function SideReactionEditor({
         <summary className="section-collapse-title">Hidrólisis del metal α_M(OH)</summary>
         <ConstantList
           prefix="log β(OH)"
+          helpId="logBetaOH"
           values={state.logBetasOH}
           onChange={(v) => {
             set('logBetasOH', v);
@@ -217,6 +220,7 @@ export function SideReactionEditor({
         <LabelField label="Ligando auxiliar" value={state.auxLabel} onChange={(v) => set('auxLabel', v)} />
         <ConstantList
           prefix="log β"
+          helpId="logBeta"
           values={state.logBetasAux}
           onChange={(v) => set('logBetasAux', v)}
           min={0}
@@ -275,6 +279,7 @@ export function SideReactionEditor({
         <summary className="section-collapse-title">Protonación / hidrólisis del complejo MY</summary>
         <Slider
           label="log K (MY + H⁺ ⇌ MHY)"
+          helpId="logKprotonation"
           value={state.logBetaProtonation ?? 0}
           min={0}
           max={30}
@@ -287,6 +292,7 @@ export function SideReactionEditor({
         />
         <Slider
           label="log β (MY + OH⁻ ⇌ MOHY)"
+          helpId="logBetaHydroxy"
           value={state.logBetaHydroxy ?? 0}
           min={-10}
           max={20}

@@ -1,4 +1,34 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { GLOSSARY } from '../lib/glossary';
+
+/**
+ * Small ⓘ affordance next to a cryptic control label. Shows a styled tooltip on
+ * hover/focus (CSS) and on tap (click toggle for touch). Content comes from the
+ * glossary; unknown ids render nothing.
+ */
+export function HelpTip({ id }: { id: string }) {
+  const [open, setOpen] = useState(false);
+  const entry = GLOSSARY[id];
+  if (!entry) return null;
+  return (
+    <span className={open ? 'help-tip open' : 'help-tip'}>
+      <button
+        type="button"
+        className="help-tip-btn"
+        aria-label={`Ayuda: ${entry.meaning}`}
+        aria-expanded={open}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o); }}
+        onBlur={() => setOpen(false)}
+      >
+        ⓘ
+      </button>
+      <span className="help-tip-pop" role="tooltip">
+        <span className="help-tip-meaning">{entry.meaning}</span>
+        <span className="help-tip-units">{entry.units}</span>
+      </span>
+    </span>
+  );
+}
 
 /** Numeric field that tolerates intermediate states while typing. */
 function NumberField({
@@ -34,7 +64,7 @@ function NumberField({
 
 /** Slider with label and EDITABLE numeric value. */
 export function Slider({
-  label, value, min, max, step, onChange, unit, decimals = 2,
+  label, value, min, max, step, onChange, unit, decimals = 2, helpId,
 }: {
   label: ReactNode;
   value: number;
@@ -44,12 +74,13 @@ export function Slider({
   onChange: (v: number) => void;
   unit?: string;
   decimals?: number;
+  helpId?: string;
 }) {
   const rounded = parseFloat(value.toFixed(decimals));
   return (
     <div className="control">
       <div className="control-header">
-        <span className="control-label">{label}</span>
+        <span className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
         <span className="control-value">
           <NumberField value={rounded} onCommit={onChange} step={step} />
           {unit && <span className="unit">{unit}</span>}
@@ -72,18 +103,19 @@ export function Slider({
  * accepts 0.05 or 5e-2).
  */
 export function ConcSlider({
-  label, value, onChange, min = -6, max = 0,
+  label, value, onChange, min = -6, max = 0, helpId,
 }: {
   label: ReactNode;
   value: number;
   onChange: (v: number) => void;
   min?: number;
   max?: number;
+  helpId?: string;
 }) {
   return (
     <div className="control">
       <div className="control-header">
-        <span className="control-label">{label}</span>
+        <span className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
         <span className="control-value">
           <NumberField
             value={parseFloat(value.toPrecision(4))}
@@ -105,18 +137,19 @@ export function ConcSlider({
 }
 
 export function SelectControl({
-  label, value, options, onChange,
+  label, value, options, onChange, helpId,
 }: {
   label: string;
   value: string;
   options: { value: string; label: string }[];
   onChange: (v: string) => void;
+  helpId?: string;
 }) {
   return (
     <div className="control">
       {label && (
         <div className="control-header">
-          <span className="control-label">{label}</span>
+          <span className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
         </div>
       )}
       <select value={value} onChange={(e) => onChange(e.target.value)}>
@@ -129,16 +162,18 @@ export function SelectControl({
 }
 
 export function Toggle({
-  label, checked, onChange,
+  label, checked, onChange, helpId,
 }: {
   label: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  helpId?: string;
 }) {
   return (
     <label className="toggle">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span>{label}</span>
+      {helpId && <HelpTip id={helpId} />}
     </label>
   );
 }
@@ -168,16 +203,17 @@ export function Segmented({
 
 /** Free-text field for naming the compound/system. */
 export function LabelField({
-  label, value, onChange,
+  label, value, onChange, helpId,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  helpId?: string;
 }) {
   return (
     <div className="control">
       <div className="control-header">
-        <span className="control-label">{label}</span>
+        <span className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
       </div>
       <input
         type="text"
@@ -194,7 +230,7 @@ export function LabelField({
  * Each row: slider + numeric field + remove button.
  */
 export function ConstantList({
-  prefix, values, onChange, min, max, maxItems = 6, minItems = 1, initialValue = 7,
+  prefix, values, onChange, min, max, maxItems = 6, minItems = 1, initialValue = 7, helpId,
 }: {
   prefix: string;
   values: number[];
@@ -204,6 +240,7 @@ export function ConstantList({
   maxItems?: number;
   minItems?: number;
   initialValue?: number;
+  helpId?: string;
 }) {
   return (
     <div className="constant-list">
@@ -216,6 +253,7 @@ export function ConstantList({
               min={min}
               max={max}
               step={0.01}
+              helpId={i === 0 ? helpId : undefined}
               onChange={(nv) => onChange(values.map((x, j) => (j === i ? nv : x)))}
             />
           </div>

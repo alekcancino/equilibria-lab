@@ -12,6 +12,7 @@ import {
 import { coupleFromPreset, strongAcidSystem, type AcidSystem, type CoupleState } from '../lib/editorModels';
 import DiagramTabs from '../components/DiagramTabs';
 import { INDICATORS } from '../lib/database';
+import { formatSci } from '../lib/format';
 import { firstDerivative, granPlot, granVeq, quantitativity, secondDerivative, titrationCurve, titratableProtons } from '../lib/titration';
 import { alphaY4, edtaAtFraction, edtaTitrationCurve, EDTA_PKAS } from '../lib/edta';
 import { defaultSideEditorState, type SideReactionEditorState } from '../lib/sideReactions';
@@ -633,7 +634,7 @@ function EdtaTitration() {
         </Disclosure>
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
-            { label: 'α(Y⁴⁻) a este pH', value: (1 / aY).toExponential(3) },
+            { label: 'α(Y⁴⁻) a este pH', value: formatSci(1 / aY, 3) },
             { label: "log K′f condicional", value: curve.logKfCond.toFixed(2) },
             { label: axis === 'x' ? 'x de equivalencia' : 'Volumen de equivalencia', value: axis === 'x' ? `${curve.xEq.toFixed(2)}` : `${curve.vEq.toFixed(2)} mL` },
             { label: "pM′ al 50 %", value: at50.pM.toFixed(2) },
@@ -944,7 +945,7 @@ function PrecipTitration() {
           <LabelField label="Catión titulante" value={cationName} onChange={setCationName} />
           <LabelField label="Anión analito" value={anionName} onChange={setAnionName} />
           <LabelField label="Fórmula del precipitado" value={saltFormula} onChange={setSaltFormula} />
-          <Slider label="pKsp del precipitado" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
+          <Slider label="pKsp del precipitado" helpId="pKsp" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
           <RefBadge reference={presetIsUnedited ? 'Harris, QCA 9.ª ed., cap. 16; Skoog, Fundamentos de Química Analítica.' : undefined} />
         </PanelSection>
 

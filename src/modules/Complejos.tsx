@@ -296,6 +296,7 @@ export default function Complejos() {
           />
           <ConstantList
             prefix="log β"
+            helpId="logBeta"
             values={sys.logBetas}
             min={0}
             max={30}

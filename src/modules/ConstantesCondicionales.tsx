@@ -350,6 +350,7 @@ export default function ConstantesCondicionales() {
         <LabelField label="Metal (M)" value={s.metalLabel} onChange={(v) => set('metalLabel', v)} />
         <Slider
           label="log Kf (M–Y)"
+          helpId="logKf"
           value={s.logKf}
           min={1}
           max={30}
@@ -422,6 +423,7 @@ export default function ConstantesCondicionales() {
         />
         <ConcSlider
           label="Concentración del complejante Co (exceso)"
+          helpId="co"
           value={s.co}
           onChange={(v) => set('co', v)}
           min={-4}
