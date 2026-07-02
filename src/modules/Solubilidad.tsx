@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useShareEffect } from '../hooks/useShareableState';
 import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -44,6 +45,13 @@ export default function Solubilidad() {
   const [useCommon, setUseCommon] = useState(false);
   const [cCommon, setCCommon] = useState(0.01);
   const [pHPoint, setPHPoint] = useState(7);
+
+  useShareEffect('solubilidad', { salt, useCommon, cCommon, pHPoint }, (s) => {
+    if (s.salt) setSalt(s.salt);
+    if (s.useCommon !== undefined) setUseCommon(s.useCommon);
+    if (s.cCommon !== undefined) setCCommon(s.cCommon);
+    if (s.pHPoint !== undefined) setPHPoint(s.pHPoint);
+  });
 
   function reset() {
     setSalt(saltFromPreset(SALTS.find((s) => s.id === DEFAULT_SALT_ID)!));

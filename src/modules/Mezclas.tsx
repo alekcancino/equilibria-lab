@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useShareEffect } from '../hooks/useShareableState';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -27,6 +28,15 @@ export default function Mezclas() {
   const [cTitrant, setCTitrant] = useState(0.1);
   const [vSample, setVSample] = useState(25);
   const [showDerivative, setShowDerivative] = useState(false);
+
+  useShareEffect('mezclas', { rows, titrate, titrantIsAcid, cTitrant, vSample, showDerivative }, (s) => {
+    if (s.rows) setRows(s.rows);
+    if (s.titrate !== undefined) setTitrate(s.titrate);
+    if (s.titrantIsAcid !== undefined) setTitrantIsAcid(s.titrantIsAcid);
+    if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
+    if (s.vSample !== undefined) setVSample(s.vSample);
+    if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
+  });
 
   function reset() {
     setRows([...INITIAL_ROWS]);

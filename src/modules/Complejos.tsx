@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useShareEffect } from '../hooks/useShareableState';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -69,6 +70,16 @@ export default function Complejos() {
   const [showPXPrime, setShowPXPrime] = useState(false);
   const [pHScale, setPHScale] = useState(10);
   const [side, setSide] = useState<SideReactionEditorState>(defaultSideEditorState);
+
+  useShareEffect('complejos', { sys, cM, cL, showEquil, showPXPrime, pHScale, side }, (s) => {
+    if (s.sys) setSys(s.sys);
+    if (s.cM !== undefined) setCM(s.cM);
+    if (s.cL !== undefined) setCL(s.cL);
+    if (s.showEquil !== undefined) setShowEquil(s.showEquil);
+    if (s.showPXPrime !== undefined) setShowPXPrime(s.showPXPrime);
+    if (s.pHScale !== undefined) setPHScale(s.pHScale);
+    if (s.side) setSide(s.side);
+  });
 
   function reset() {
     setSys(defaultState()); setCM(0.01); setCL(0.04); setShowEquil(false);

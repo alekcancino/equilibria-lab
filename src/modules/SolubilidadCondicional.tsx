@@ -1,7 +1,8 @@
 // Conditional solubility of metal hydroxides.
 // Core use case: selective separation (precipitate M1 while M2 stays in solution).
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useShareableState } from '../hooks/useShareableState';
 import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -128,7 +129,7 @@ const C_THRESH = 'rgba(127,140,141,0.9)'; // threshold line
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SolubilidadCondicional() {
-  const [s, setS] = useState<State>(defaultState);
+  const [s, setS] = useShareableState<State>('solcond', defaultState());
 
   const setM1 = (patch: Partial<MetalState>) =>
     setS((prev) => ({ ...prev, m1: { ...prev.m1, ...patch } }));

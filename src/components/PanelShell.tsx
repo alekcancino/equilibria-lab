@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
+import ShareButton from './ShareButton';
 
 interface PanelShellProps {
   title: ReactNode;
@@ -29,11 +30,14 @@ export default function PanelShell({ title, onReset, children }: PanelShellProps
   const header = (
     <div className="panel-header">
       <h2>{title}</h2>
-      {onReset && (
-        <button type="button" className="reset-btn" onClick={onReset}>
-          ↺ Restablecer
-        </button>
-      )}
+      <div className="panel-header-actions">
+        <ShareButton />
+        {onReset && (
+          <button type="button" className="reset-btn" onClick={onReset}>
+            ↺ Restablecer
+          </button>
+        )}
+      </div>
     </div>
   );
 
