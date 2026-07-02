@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useShareEffect } from '../hooks/useShareableState';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -44,6 +45,25 @@ export default function IntercambioIonico() {
   const [labelC, setLabelC] = useState('Mg²⁺');
   const [cC0, setCC0] = useState(0.003);
   const [kCB, setKCB] = useState(1.7);
+
+  useShareEffect('ionex', {
+    labelA, labelB, cA0, cB0, selectivity, resinCapacity, resinVolume, flowRate,
+    showCraig, nPlates, labelC, cC0, kCB,
+  }, (s) => {
+    if (s.labelA !== undefined) setLabelA(s.labelA as string);
+    if (s.labelB !== undefined) setLabelB(s.labelB as string);
+    if (s.cA0 !== undefined) setCA0(s.cA0 as number);
+    if (s.cB0 !== undefined) setCB0(s.cB0 as number);
+    if (s.selectivity !== undefined) setSelectivity(s.selectivity as number);
+    if (s.resinCapacity !== undefined) setResinCapacity(s.resinCapacity as number);
+    if (s.resinVolume !== undefined) setResinVolume(s.resinVolume as number);
+    if (s.flowRate !== undefined) setFlowRate(s.flowRate as number);
+    if (s.showCraig !== undefined) setShowCraig(s.showCraig as boolean);
+    if (s.nPlates !== undefined) setNPlates(s.nPlates as number);
+    if (s.labelC !== undefined) setLabelC(s.labelC as string);
+    if (s.cC0 !== undefined) setCC0(s.cC0 as number);
+    if (s.kCB !== undefined) setKCB(s.kCB as number);
+  });
 
   const [showElution, setShowElution] = useState(false);
   const [logKfNiY, setLogKfNiY] = useState(18.62);

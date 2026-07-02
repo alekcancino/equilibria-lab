@@ -585,7 +585,7 @@ function EdtaTitration() {
         />
       ),
     },
-  ], [titTraces, titShapes, xTitle, vMax, axis, traceY, metalId, logKf, logBetasOH, pH]);
+  ], [titTraces, titShapes, xTitle, vMax, axis, traceY, metalId, logKf, logBetasOH, pH, exportMetadata]);
 
   return (
     <>

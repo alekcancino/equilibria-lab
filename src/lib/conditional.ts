@@ -4,6 +4,7 @@
 
 import { PKW } from './constants';
 import { alphaFractions } from './equilibrium';
+import { logActivityCoefficient } from './activity';
 import { stackFromLegacy, condLogKCurveFromStack } from './sideReactions';
 
 /**
@@ -170,15 +171,20 @@ export function hydroxideSolCurve(
   n: number,
   logBetasOH: number[],
   pHRange: [number, number] = [0, 14],
-  points = 500
+  points = 500,
+  I = 0,
 ): { pHs: number[]; logS: number[] } {
+  // Ksp_app = Ksp_thermo / (γ_M · γ_OH^n) → pKsp_app = pKsp + logγ(n, I) + n·logγ(1, I)
+  const pKspApp = I > 0
+    ? pKsp + logActivityCoefficient(n, I) + n * logActivityCoefficient(1, I)
+    : pKsp;
   const [pHmin, pHmax] = pHRange;
   const pHs: number[] = [];
   const logS: number[] = [];
 
   for (let i = 0; i <= points; i++) {
     const pH = pHmin + ((pHmax - pHmin) * i) / points;
-    const logFreeMetal = -pKsp + n * (PKW - pH);
+    const logFreeMetal = -pKspApp + n * (PKW - pH);
     const aOH = alphaOH(logBetasOH, pH);
     pHs.push(pH);
     logS.push(logFreeMetal + Math.log10(aOH));
@@ -199,9 +205,10 @@ export function precipitationPH(
   logBetasOH: number[],
   logSThreshold: number,
   pHRange: [number, number] = [0, 14],
-  direction: 'falling' | 'rising' = 'falling'
+  direction: 'falling' | 'rising' = 'falling',
+  I = 0,
 ): number | null {
-  const { pHs, logS } = hydroxideSolCurve(pKsp, n, logBetasOH, pHRange, 1000);
+  const { pHs, logS } = hydroxideSolCurve(pKsp, n, logBetasOH, pHRange, 1000, I);
   // Find the first transition
   for (let i = 1; i < pHs.length; i++) {
     const crossed =

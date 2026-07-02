@@ -313,3 +313,280 @@ export function waterLines(): { o2: { A: number; B: number }; h2: { A: number; B
     h2: { A: 0, B: S_NERNST },     // 2H⁺ + 2e⁻ → H₂
   };
 }
+
+// ─── Arbitrary Pourbaix (N couples + N solids) ────────────────────────────────
+
+export interface ArbIon {
+  kind: 'ion';
+  formula: string;
+  /** Charge number (positive) */
+  z: number;
+}
+export interface ArbHydrox {
+  kind: 'hydroxide';
+  formula: string;
+  z: number;
+  pKsp: number;
+  /** Formula of the dissolved ion this solid precipitates from */
+  ionRef: string;
+}
+export interface ArbMetal {
+  kind: 'metal';
+  formula: string;
+}
+export type ArbSpecies = ArbIon | ArbHydrox | ArbMetal;
+
+export interface ArbCouple {
+  /** Formula of oxidized species (must be an ion) */
+  ox: string;
+  /** Formula of reduced species (ion or metal) */
+  red: string;
+  E0: number;
+  n: number;
+  /** H⁺ stoichiometry (for couples that consume protons) */
+  mH?: number;
+}
+
+/**
+ * Builds a Pourbaix diagram from an arbitrary set of species and redox couples.
+ * Only the fundamental couples (aqueous ion/ion or ion/metal) need to be supplied;
+ * all solid-phase boundaries are auto-derived via Hess's law.
+ * Clipping uses precipitation pHs as natural boundary limits.
+ */
+export function buildArbitraryDiagram(
+  species: ArbSpecies[],
+  couples: ArbCouple[],
+  logC: number,
+): PourbaixDiagram {
+  const S = S_NERNST;
+
+  const byFormula = new Map<string, ArbSpecies>();
+  for (const sp of species) byFormula.set(sp.formula, sp);
+
+  const metals = species.filter((s): s is ArbMetal => s.kind === 'metal');
+
+  // pH where each hydroxide solid starts to precipitate
+  const precipPH = new Map<string, number>();
+  for (const sp of species) {
+    if (sp.kind === 'hydroxide') {
+      const pH = PKW - (sp.pKsp + logC) / sp.z;
+      precipPH.set(sp.formula, Math.max(0, Math.min(14, pH)));
+    }
+  }
+
+  // Map dissolved ion formula → its hydroxide solid
+  const ionToSolid = new Map<string, ArbHydrox>();
+  for (const sp of species) {
+    if (sp.kind === 'hydroxide') ionToSolid.set(sp.ionRef, sp);
+  }
+
+  interface AffineEntry {
+    name: string;
+    A: number;
+    B: number;
+    color: string;
+    eq: string;
+    pHMin: number;
+    pHMax: number;
+  }
+  const affines: AffineEntry[] = [];
+
+  for (const c of couples) {
+    const oxSp = byFormula.get(c.ox);
+    const redSp = byFormula.get(c.red);
+    if (!oxSp || !redSp || oxSp.kind !== 'ion') continue;
+
+    const H_ox = ionToSolid.get(c.ox);
+    const sn = S / c.n;
+
+    if (redSp.kind === 'metal') {
+      const clipMax = H_ox ? (precipPH.get(H_ox.formula) ?? 14) : 14;
+
+      // Deposition: M^n+ + n·e⁻ → M(s)   E = E0 + (S/n)·logC
+      affines.push({
+        name: `${c.ox} / ${redSp.formula}`,
+        A: c.E0 + sn * logC, B: 0,
+        color: '#0072B2',
+        eq: `${c.ox} + ${c.n}e⁻ → ${redSp.formula}  |  E° = ${c.E0.toFixed(3)} V`,
+        pHMin: 0, pHMax: clipMax,
+      });
+
+      // Solid/metal: M(OH)z + z·H⁺ + n·e⁻ → M(s) + z·H₂O
+      if (H_ox) {
+        const E0p = c.E0 + sn * (H_ox.z * PKW - H_ox.pKsp);
+        affines.push({
+          name: `${H_ox.formula} / ${redSp.formula}`,
+          A: E0p, B: sn * H_ox.z,
+          color: '#009E73',
+          eq: `${H_ox.formula} + ${H_ox.z}H⁺ + ${c.n}e⁻ → ${redSp.formula} + ${H_ox.z}H₂O  |  E°′ = ${E0p.toFixed(3)} V (derivado)`,
+          pHMin: precipPH.get(H_ox.formula) ?? 0, pHMax: 14,
+        });
+      }
+    } else if (redSp.kind === 'ion') {
+      const H_red = ionToSolid.get(c.red);
+      const mH = c.mH ?? 0;
+
+      // Aqueous redox: both species dissolved
+      const aqMax = Math.min(
+        H_ox ? (precipPH.get(H_ox.formula) ?? 14) : 14,
+        H_red ? (precipPH.get(H_red.formula) ?? 14) : 14,
+      );
+      affines.push({
+        name: `${c.ox} / ${c.red}`,
+        A: c.E0, B: sn * mH,
+        color: '#0072B2',
+        eq: mH === 0
+          ? `${c.ox} + ${c.n}e⁻ → ${c.red}  |  E° = ${c.E0.toFixed(3)} V`
+          : `${c.ox} + ${mH}H⁺ + ${c.n}e⁻ → ${c.red} + H₂O  |  E° = ${c.E0.toFixed(3)} V`,
+        pHMin: 0, pHMax: aqMax,
+      });
+
+      // ox_solid_red_ion: H_ox solid, red ion still dissolved
+      if (H_ox) {
+        const E0p = c.E0 + sn * (H_ox.z * PKW - H_ox.pKsp);
+        affines.push({
+          name: `${H_ox.formula} / ${c.red}`,
+          A: E0p - sn * logC, B: sn * H_ox.z,
+          color: '#CC79A7',
+          eq: `${H_ox.formula} + ${H_ox.z}H⁺ + ${c.n}e⁻ → ${c.red} + ${H_ox.z}H₂O  |  E°′ = ${E0p.toFixed(3)} V (derivado)`,
+          pHMin: precipPH.get(H_ox.formula) ?? 0,
+          pHMax: H_red ? (precipPH.get(H_red.formula) ?? 14) : 14,
+        });
+      }
+
+      // both_hydroxides: both ions have precipitated as solids
+      if (H_ox && H_red) {
+        const dz = H_ox.z - H_red.z;
+        const E0p = c.E0 + sn * (dz * PKW - H_ox.pKsp + H_red.pKsp);
+        const pHMin = Math.max(
+          precipPH.get(H_ox.formula) ?? 0,
+          precipPH.get(H_red.formula) ?? 0,
+        );
+        affines.push({
+          name: `${H_ox.formula} / ${H_red.formula}`,
+          A: E0p, B: sn * dz,
+          color: '#E69F00',
+          eq: `${H_ox.formula} + ${dz}H⁺ + ${c.n}e⁻ → ${H_red.formula} + ${dz}H₂O  |  E°′ = ${E0p.toFixed(3)} V (derivado)`,
+          pHMin, pHMax: 14,
+        });
+      }
+
+      // oxyanion_red_solid (unusual): ox ion stable, red precipitates first
+      if (!H_ox && H_red) {
+        const E0p = c.E0 - sn * (H_red.z * PKW - H_red.pKsp - logC);
+        affines.push({
+          name: `${c.ox} / ${H_red.formula}`,
+          A: E0p, B: sn * (mH - H_red.z),
+          color: '#56B4E9',
+          eq: `${c.ox} + ${mH - H_red.z}H⁺ + ${c.n}e⁻ → ${H_red.formula} + H₂O  |  derivado`,
+          pHMin: precipPH.get(H_red.formula) ?? 0, pHMax: 14,
+        });
+      }
+    }
+  }
+
+  // Render non-vertical boundary lines
+  const NPTS = 60;
+  const lines: PourbaixLine[] = [];
+  for (const a of affines) {
+    const p0 = Math.max(0, a.pHMin);
+    const p1 = Math.min(14, a.pHMax);
+    if (p1 <= p0) continue;
+    const phArr: number[] = [];
+    const eArr: number[] = [];
+    for (let i = 0; i <= NPTS; i++) {
+      const pH = p0 + ((p1 - p0) * i) / NPTS;
+      phArr.push(pH);
+      eArr.push(a.A - a.B * pH);
+    }
+    lines.push({ name: a.name, pH: phArr, E: eArr, color: a.color, equation: a.eq, vertical: false });
+  }
+
+  // Render precipitation vertical lines
+  for (const sp of species) {
+    if (sp.kind !== 'hydroxide') continue;
+    const pHv = precipPH.get(sp.formula) ?? 0;
+    if (pHv <= 0 || pHv >= 14) continue;
+
+    // eLo: E of the solid/metal (or solid/ion) boundary at pHv → bottom of vertical
+    // eHi: E of the deposition boundary at pHv → top of vertical
+    let eLo = -1.6;
+    let eHi = 2.2;
+    for (const a of affines) {
+      const Eat = a.A - a.B * pHv;
+      if (a.name.startsWith(sp.formula + ' /')) {
+        eLo = Math.max(eLo, Eat);
+      }
+      if (
+        (a.name.startsWith(sp.ionRef + ' /') || a.name === `${sp.ionRef} / ${sp.formula}`) &&
+        Math.abs(a.B) < 1e-9
+      ) {
+        eHi = Math.min(eHi, Eat);
+      }
+    }
+
+    lines.push({
+      name: `${sp.ionRef} / ${sp.formula}`,
+      pH: [pHv, pHv],
+      E: [eLo, eHi],
+      color: '#D55E00',
+      equation: `${sp.formula} ⇌ ${sp.ionRef} + ${sp.z}OH⁻  |  Ksp = 10^−${sp.pKsp}`,
+      vertical: true,
+    });
+  }
+
+  // Auto-place region labels (approximate)
+  const regions: PourbaixRegion[] = [];
+  const solidsSorted = species
+    .filter((s): s is ArbHydrox => s.kind === 'hydroxide')
+    .sort((a, b) => (precipPH.get(a.formula) ?? 0) - (precipPH.get(b.formula) ?? 0));
+
+  for (const sp of species) {
+    if (sp.kind !== 'ion') continue;
+    const H = ionToSolid.get(sp.formula);
+    const pHright = H ? (precipPH.get(H.formula) ?? 14) : 14;
+    // Place label at 70 % of the ion's domain so the cursor reads the correct species
+    // even when positioned near the right edge of the ionic region (close to precipPH).
+    const labelPH = Math.max(0.5, pHright * 0.7);
+    // E label: above the highest boundary ending at this ion as red
+    let labelE = 0.4;
+    for (const a of affines) {
+      if (a.pHMin <= labelPH && labelPH <= a.pHMax) {
+        const Eat = a.A - a.B * labelPH;
+        if (a.name.endsWith('/ ' + sp.formula)) {
+          labelE = Math.max(labelE, Eat + 0.25);
+        }
+      }
+    }
+    regions.push({ name: sp.formula, color: '#2c3e50', labelPH, labelE });
+  }
+
+  for (let i = 0; i < solidsSorted.length; i++) {
+    const sp = solidsSorted[i];
+    const pHstart = precipPH.get(sp.formula) ?? 0;
+    const nextPrecip = solidsSorted[i + 1] ? (precipPH.get(solidsSorted[i + 1].formula) ?? 14) : 14;
+    const labelPH = (pHstart + nextPrecip) / 2;
+    let labelE = -0.3;
+    for (const a of affines) {
+      if (a.name.startsWith(sp.formula + ' /') && a.pHMin <= labelPH && labelPH <= a.pHMax) {
+        const Eat = a.A - a.B * labelPH;
+        labelE = Math.max(labelE, Eat + 0.18);
+      }
+    }
+    regions.push({ name: sp.formula, color: '#2c3e50', labelPH, labelE });
+  }
+
+  for (const sp of metals) {
+    const lastPrecip = solidsSorted.length > 0
+      ? (precipPH.get(solidsSorted[solidsSorted.length - 1].formula) ?? 7)
+      : 7;
+    regions.push({
+      name: `${sp.formula}(s)`,
+      color: '#2c3e50',
+      labelPH: (lastPrecip + 14) / 2,
+      labelE: -0.9,
+    });
+  }
+
+  return { lines, regions, name: 'Sistema personalizado', note: '', excluded: [] };
+}
