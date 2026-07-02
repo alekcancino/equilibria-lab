@@ -589,6 +589,7 @@ function EdtaTitration() {
           <LabelField label="Ion metálico (nombre libre)" value={label} onChange={setLabel} />
           <Slider
             label="log Kf del complejo M–EDTA"
+            helpId="logKf"
             value={logKf} min={1} max={28} step={0.01}
             onChange={(v) => setLogKf(v)}
           />
@@ -1257,6 +1258,7 @@ function PotenciometricaTitration() {
         <PanelSection title="Electrodo de vidrio" icon="✦">
           <Slider
             label="K_ref (constante del electrodo, mV)"
+            helpId="Kref"
             value={Kref} min={0} max={800} step={10}
             onChange={setKref} decimals={0}
           />
