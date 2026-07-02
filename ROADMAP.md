@@ -9,24 +9,33 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 ## Currently available
 
 ### Core equilibria
+
 - Acid–base: α fractions, log *C*–pH diagram, predominance zone diagram (DUZP), pure solution pH
 - Complexation: multi-ligand systems, Bjerrum number, α distributions, log *C* vs pL
 - Redox: α vs pe, spontaneous-reaction prediction, conditional pe°′
-- Solubility: log *s* vs pH with conditional Ksp, common-ion effect
-- Activity: ionic strength, γ vs *I* (extended Debye–Hückel)
+- Solubility: log *s* vs pH with conditional Ksp, common-ion effect; Debye–Hückel activity corrections applied to the solver
+- Activity: ionic strength, γ vs *I* (extended Debye–Hückel); corrections wired to solubility, complexation, and conditional-constant engines
 
 ### Coupled equilibria
-- Pourbaix diagrams: *E*–pH for Fe, Cu, Mn, Zn, Cr and generic M/M(OH)ₙ systems
+
+- Pourbaix diagrams: *E*–pH for Fe, Cu, Mn, Zn, Cr and fully custom N-species / N-couples systems with auto-derived boundaries
 - Acid–base mixtures: up to four coexisting systems, buffer capacity β = *f*(pH)
 - Conditional constants: log *K*′ = *f*(pH), side reactions, masking, feasibility window (Ringbom)
 - Selective precipitation: log *s* = *f*(pH) and log *s* = *f*(pX), separation windows, redissolution
 - Conditional potential: *E*°′ = *f*(pH), disproportionation (Latimer), *E*°′ = *f*(pX)
 - Liquid–liquid extraction: partition, chelates, successive extractions, preconcentration
-- Ion exchange: batch equilibrium, isotherm, ideal-model column breakthrough
+- Ion exchange: batch equilibrium, isotherm, Craig *N*-plate multi-zone column model, breakthrough and elution curves
 - Solubility vs pH: conditional solubility of salts, side-by-side system comparison
 
 ### Titrations (unified module)
+
 - Acid–base, complexometric (EDTA), redox, precipitation (argentometry), potentiometric (Gran plot)
+
+### Data and export
+
+- Equilibrium constants database: formation constants, E° values, Ksp, pKa — sourced from Medusa/HYDRA and NIST SRD-46 (cited per entry)
+- CSV export with metadata headers on every chart (module, system, conditions, date)
+- Shareable scenario links: full module state encoded in the URL
 
 ---
 
@@ -36,32 +45,27 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 
 | Feature | Notes |
 | --- | --- |
-| **Activity correction in engines** | Apply Debye–Hückel γ corrections to solvePH, solubility, and conditional constants. Currently the activity module is informational only. |
-| **Ion exchange: column with multiple zones** | Extend breakthrough curve beyond the ideal single-front model. |
-| **Arbitrary Pourbaix systems** | Allow fully custom species and half-reactions beyond the built-in presets. |
-| **CSV / report export** | Export current chart data and computed values as a downloadable CSV or PDF summary. |
-| **Shareable scenario links** | Encode the current module state in the URL so a configured example can be shared with a single link — useful for teaching and reporting. |
+| **Bilingual UI (Spanish / English)** | Toggle between Spanish and English for all labels, tooltips, and InfoBox content. Chemistry notation and formula strings remain language-neutral. |
+| **In-app validation and assumptions** | Surface each module's simplifying assumptions and its cross-check status (validated against Spana/HALTAFALL) directly in the UI, so results are auditable at a glance. |
+| **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
+| **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP to two chemical axes. |
+| **Competitive precipitation** | Simultaneous solubility of multiple solids sharing a common ion; separation-window analysis. |
 
 ### Medium-term
 
 | Feature | Notes |
 | --- | --- |
-| **Non-aqueous solvents** | Leveling effect, acidity scales in amphiprotic solvents. |
-| **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP. |
-| **Competitive precipitation** | Simultaneous solubility of multiple solids sharing a common ion. |
-| **Step-by-step titration animation** | Visual playback of the titration curve point by point. |
-| **Comprehensive constants database** | Import a curated equilibrium-constant set (e.g. Medusa/HALTAFALL, KTH) to expand coverage well beyond the hand-picked presets. Constants are extracted to JSON at build time with citations; only the data is used, never upstream code. |
-| **In-app validation and assumptions** | Surface each module's simplifying assumptions and its validation status (cross-checked against Spana/HALTAFALL) directly in the UI, so results are auditable at a glance. |
-| **Worked-example gallery** | Loadable, solved problems per module to speed onboarding for new users. |
+| **Step-by-step titration animation** | Visual playback of the titration curve point by point, with species fractions updated in sync. |
+| **Non-aqueous solvents** | Leveling effect, acidity scales in amphiprotic solvents (MeOH, AN, DMSO). |
+| **Pitzer model** | Activity corrections valid at high ionic strength (I > 0.5 M), extending Debye–Hückel. |
 
 ### Long-term / exploratory
 
 | Feature | Notes |
 | --- | --- |
-| **Pitzer model** | Activity corrections for high ionic strength (I > 0.5 M). |
-| **Surface adsorption** | Constant capacitance model (CCM), diffuse-layer model. |
+| **Surface adsorption** | Constant capacitance model (CCM), diffuse-layer model for mineral-surface equilibria. |
 | **PHREEQC bridge** | Offline batch validation against PHREEQC as an oracle (not a runtime dependency). |
-| **Reactive kinetics** | One slow reaction + fast equilibrium system. |
+| **Reactive kinetics** | One slow reaction coupled to a fast equilibrium system. |
 | **Richer 2D interactivity** | Evaluate Plotly `contour`/`heatmap` or a lightweight D3/canvas layer (both MIT/BSD-compatible) for 2D predominance maps and Pourbaix diagrams. GeoGebra was considered but ruled out: its GPL-3.0 licensing is incompatible with this project's MIT license. |
 
 ---
