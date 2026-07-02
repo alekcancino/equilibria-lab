@@ -417,16 +417,26 @@ export function PanelSection({
  * Replaces nested <details> with a clean disclosure pattern.
  */
 export function Disclosure({
-  title, defaultOpen = false, children,
+  title, defaultOpen = false, children, open: openProp, onToggle,
 }: {
   title: ReactNode;
   defaultOpen?: boolean;
   children: ReactNode;
+  /** Modo controlado: si se pasa `open`, el componente lo obedece (úsese con `onToggle`). */
+  open?: boolean;
+  onToggle?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
+  const toggle = () => {
+    const next = !open;
+    if (!isControlled) setInternalOpen(next);
+    onToggle?.(next);
+  };
   return (
     <section className={open ? 'disclosure open' : 'disclosure'}>
-      <button type="button" className="disclosure-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button type="button" className="disclosure-head" aria-expanded={open} onClick={toggle}>
         <span className="disclosure-title">{title}</span>
         <span className="disclosure-caret" aria-hidden>▾</span>
       </button>

@@ -8,8 +8,9 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  Slider, DbPanel, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, Toggle,
+  Slider, ConcSlider, DbPanel, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, Toggle,
 } from '../components/Controls';
+import { fractionFormedExcess, operatingPoint } from '../lib/metrics';
 import { SideReactionEditor } from '../components/Editors';
 import { feasibilityWindow } from '../lib/conditional';
 import {
@@ -39,6 +40,7 @@ interface CondState {
   showMulti: boolean;
   extraReactions: PrimaryReaction[];
   evalPH: number;
+  co: number;
 }
 
 function defaultState(): CondState {
@@ -54,6 +56,7 @@ function defaultState(): CondState {
     showMulti: false,
     extraReactions: [],
     evalPH: 10,
+    co: 0.1,
   };
 }
 
@@ -146,6 +149,24 @@ export default function ConstantesCondicionales() {
     const hi = condLogKPrimary(s.logKf, Math.min(PH_MAX, s.evalPH + h), stack);
     return (hi - lo) / (2 * h);
   }, [s.logKf, s.evalPH, stack]);
+
+  // ── Métrica "% + punto de operación" (spec issue #4 · C1) ───────────────────
+  // % formado del complejo M+Y a Co (ligante/complejante en exceso) con log K′(pH).
+  // pH para 10/50/90 % por bisección sobre f(pH) = K'(pH)·Co / (1 + K'(pH)·Co).
+  const pctFormado = useMemo(
+    () => fractionFormedExcess(logKAtEval, s.co) * 100,
+    [logKAtEval, s.co],
+  );
+  const phForPct = useMemo(() => {
+    const metric = (pH: number) =>
+      fractionFormedExcess(condLogKPrimary(s.logKf, pH, stack), s.co) * 100;
+    return {
+      p10: operatingPoint(metric, 10, PH_MIN, PH_MAX),
+      p50: operatingPoint(metric, 50, PH_MIN, PH_MAX),
+      p90: operatingPoint(metric, 90, PH_MIN, PH_MAX),
+    };
+  }, [s.logKf, stack, s.co]);
+  const fmtPH = (v: number) => (Number.isFinite(v) ? v.toFixed(2) : '—');
 
   // ── Resultado ──────────────────────────────────────────────────────────────
 
@@ -401,6 +422,17 @@ export default function ConstantesCondicionales() {
           onChange={(v) => set('evalPH', v)}
           decimals={1}
         />
+        <ConcSlider
+          label="Concentración del complejante Co (exceso)"
+          value={s.co}
+          onChange={(v) => set('co', v)}
+          min={-4}
+          max={0}
+        />
+        <p className="hint">
+          % formado a Co: fracción del metal complejada con el ligante en exceso;
+          pH 10/50/90 % marcan la ventana de la reacción.
+        </p>
         </PanelSection>
 
         <PanelSection title="Parámetros" icon="⚙">
@@ -476,6 +508,8 @@ export default function ConstantesCondicionales() {
           { label: `log K′ a pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(2) },
           { label: `pendiente d(log K′)/dpH a pH ${s.evalPH.toFixed(1)}`, value: slopeAtEval.toFixed(2) },
           { label: 'Ventana óptima', value: feasWin ? `pH ${feasWin[0].toFixed(1)}–${feasWin[1].toFixed(1)}` : 'No supera el umbral' },
+          { label: `% formado a Co (pH ${s.evalPH.toFixed(1)})`, value: `${pctFormado.toFixed(1)} %` },
+          { label: 'pH para 10 / 50 / 90 %', value: `${fmtPH(phForPct.p10)} / ${fmtPH(phForPct.p50)} / ${fmtPH(phForPct.p90)}` },
           {
             label: 'Factibilidad',
             value: verdict.text,
@@ -504,7 +538,9 @@ export default function ConstantesCondicionales() {
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="logk" />
         <ResultCardRow items={[
-          { label: 'pH óptimo', value: pHopt.toFixed(1), accent: true },
+          { label: `% formado a Co`, value: `${pctFormado.toFixed(1)} %`, accent: true },
+          { label: 'pH 50 %', value: fmtPH(phForPct.p50) },
+          { label: 'pH óptimo', value: pHopt.toFixed(1) },
           { label: "log K′máx", value: logKmax.toFixed(1) },
           { label: `log K′ pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(1) },
         ]} />

@@ -12,7 +12,7 @@ import {
 import { coupleFromPreset, strongAcidSystem, type AcidSystem, type CoupleState } from '../lib/editorModels';
 import DiagramTabs from '../components/DiagramTabs';
 import { INDICATORS } from '../lib/database';
-import { firstDerivative, granPlot, secondDerivative, titrationCurve, titratableProtons } from '../lib/titration';
+import { firstDerivative, granPlot, granVeq, quantitativity, secondDerivative, titrationCurve, titratableProtons } from '../lib/titration';
 import { alphaY4, edtaAtFraction, edtaTitrationCurve, EDTA_PKAS } from '../lib/edta';
 import { defaultSideEditorState, type SideReactionEditorState } from '../lib/sideReactions';
 import { redoxTitrationCurve } from '../lib/redox';
@@ -236,6 +236,54 @@ function AcidBaseTitration() {
   const pHLastEq = lastIdx > 0 ? curve.pHs[lastIdx] : NaN;
   const indicatorOk = pHLastEq >= indicator.range[0] - 1 && pHLastEq <= indicator.range[1] + 1;
 
+  // ── Gráfica de Gran + cuantitatividad (spec issue #4 · C3) ──────────────────
+  const gran = useMemo(
+    () => granPlot(curve.volumes, curve.pHs, vAnalyte),
+    [curve.volumes, curve.pHs, vAnalyte],
+  );
+  const granVeqDetected = useMemo(
+    () => granVeq(curve.volumes, curve.pHs, vAnalyte),
+    [curve.volumes, curve.pHs, vAnalyte],
+  );
+  // q% = (1 − ε/Co)·100. ε = especie limitante residual en el P.E. (H⁺ si se
+  // titula un ácido con base; OH⁻ si se titula una base con ácido); Co = conc.
+  // analítica diluida en Veq.
+  const cAtEq = (cAnalyte * vAnalyte) / (vAnalyte + vEqLast);
+  const epsLimiting = Number.isFinite(pHLastEq)
+    ? (titrantIsAcid ? Math.pow(10, pHLastEq - 14) : Math.pow(10, -pHLastEq))
+    : NaN;
+  const qPercent = quantitativity(epsLimiting, cAtEq);
+  const granErrorPct = Number.isFinite(granVeqDetected) && vEqLast > 0
+    ? ((granVeqDetected - vEqLast) / vEqLast) * 100
+    : NaN;
+
+  const granTraces = useMemo<Data[]>(() => [
+    {
+      x: gran.v1, y: gran.F1, type: 'scatter', mode: 'lines', name: 'F₁ (antes del P.E.)',
+      line: { width: 2.5, color: '#0072B2' },
+      hovertemplate: 'V = %{x:.2f} mL<br>F₁ = %{y:.2e}<extra>Antes P.E.</extra>',
+    },
+    {
+      x: gran.v2, y: gran.F2, type: 'scatter', mode: 'lines', name: 'F₂ (después del P.E.)',
+      line: { width: 2.5, color: '#D55E00', dash: 'dash' },
+      hovertemplate: 'V = %{x:.2f} mL<br>F₂ = %{y:.2e}<extra>Después P.E.</extra>',
+    },
+  ], [gran]);
+
+  const granShapes = useMemo<Partial<Shape>[]>(() => {
+    const list: Partial<Shape>[] = curve.equivalenceVolumes.map((veq) => ({
+      type: 'line', x0: veq, x1: veq, y0: 0, y1: 1, yref: 'paper', xref: 'x',
+      line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
+    }));
+    if (Number.isFinite(granVeqDetected)) {
+      list.push({
+        type: 'line', x0: granVeqDetected, x1: granVeqDetected, y0: 0, y1: 1,
+        yref: 'paper', xref: 'x', line: { color: '#009E73', width: 1.5, dash: 'dot' },
+      });
+    }
+    return list;
+  }, [curve.equivalenceVolumes, granVeqDetected]);
+
   return (
     <>
       <PanelShell title="Titulación ácido-base" onReset={reset}>
@@ -297,20 +345,56 @@ function AcidBaseTitration() {
         </InfoBox>
       </PanelShell>
       <section className="plot-area">
-        <Chart
-          data={traces}
-          xTitle={`Volumen de ${titrantName} agregado (mL)`}
-          yTitle="pH"
-          xRange={[0, vMax]}
-          yRange={[0, 14]}
-          shapes={shapes}
-          annotations={annotations}
-          exportName="equilibria-titulacion-acidobase"
+        <DiagramTabs
+          initialId="ph"
+          tabs={[
+            {
+              id: 'ph',
+              label: 'pH = f(V)',
+              node: (
+                <Chart
+                  data={traces}
+                  xTitle={`Volumen de ${titrantName} agregado (mL)`}
+                  yTitle="pH"
+                  xRange={[0, vMax]}
+                  yRange={[0, 14]}
+                  shapes={shapes}
+                  annotations={annotations}
+                  exportName="equilibria-titulacion-acidobase"
+                />
+              ),
+            },
+            {
+              id: 'gran',
+              label: 'Gran',
+              node: (
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <Chart
+                      data={granTraces}
+                      xTitle={`Volumen de ${titrantName} agregado (mL)`}
+                      yTitle="Función de Gran F"
+                      xRange={[0, vMax]}
+                      shapes={granShapes}
+                      exportName="equilibria-titulacion-gran"
+                    />
+                  </div>
+                  <p className="hint" style={{ margin: '4px 8px 2px' }}>
+                    F₁ = (V₀+V)·[H⁺] es lineal <em>antes</em> del P.E. y su extrapolación (línea
+                    verde) cruza cero en V<sub>eq</sub> = {Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—'}.
+                  </p>
+                </div>
+              ),
+            },
+          ]}
         />
         <ResultCardRow items={[
           { label: 'pH en equivalencia', value: Number.isFinite(pHLastEq) ? pHLastEq.toFixed(2) : '—', accent: true },
-          { label: 'Volumen de equivalencia', value: `${vEqLast.toFixed(2)} mL` },
-          { label: 'Puntos de equivalencia', value: `${curve.equivalenceVolumes.length}` },
+          { label: 'Veq (Gran)', value: Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—' },
+          { label: 'q (cuantitatividad)', value: Number.isFinite(qPercent) ? `${qPercent >= 99.95 ? qPercent.toFixed(3) : qPercent.toFixed(1)} %` : '—' },
+          ...(Number.isFinite(granErrorPct)
+            ? [{ label: '% error P.E.', value: `${granErrorPct.toFixed(2)} %` }]
+            : []),
         ]} />
       </section>
     </>
