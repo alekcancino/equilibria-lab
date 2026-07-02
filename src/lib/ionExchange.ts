@@ -95,6 +95,72 @@ export type {
   Elution3CParams, Elution3CPoint,
 } from './sideReactions';
 
+// ─── Craig N-plate multi-ion breakthrough model ────────────────────────────
+
+export interface CraigIon {
+  label: string;
+  /** Feed concentration (M) */
+  c0: number;
+  /** Selectivity vs. background counter-ion B: K_{i/B} = (y_i·x_B)/(y_B·x_i) */
+  kSel: number;
+}
+
+export interface CraigParams {
+  ions: CraigIon[];
+  /** Resin capacity (eq/L resin) */
+  resinCapacity: number;
+  /** Resin bed volume (L) */
+  resinVolume: number;
+  /** Number of Craig theoretical plates — controls front sharpness */
+  nPlates: number;
+  /** Output BV-axis points (default 200) */
+  points?: number;
+}
+
+export interface CraigResult {
+  /** Bed-volume axis (0 … ~2.5 × BV_break_max) */
+  bv: number[];
+  /** C_i / C_i0 for each ion; cRatios[i] matches ions[i] */
+  cRatios: number[][];
+  /** BV at C/C0 = 0.5 for each ion (competitive formula) */
+  bvBreaks: number[];
+}
+
+/**
+ * Craig N-plate analytical model for multi-ion column breakthrough.
+ *
+ * Each ion i breaks through at BV_break_i = kSel_i · Q / (c_i0 · V_r) where
+ * Q = resinCapacity · resinVolume.  With N theoretical plates the front width
+ * is σ_i = BV_break_i / √N (Gaussian dispersion), approximated by a sigmoid:
+ *   C_i/C_i0 ≈ 1 / (1 + exp(−1.7 · (BV − BV_break_i) / σ_i))
+ *
+ * Reference: Craig, L.C. (1944). Countercurrent distribution model, applied
+ * here to ion-exchange chromatography columns.
+ */
+export function craigBreakthrough(params: CraigParams): CraigResult {
+  const { ions, resinCapacity, nPlates, points = 200 } = params;
+  const N = Math.max(nPlates, 1);
+
+  const activeIons = ions.filter((ion) => ion.c0 > 0 && ion.kSel > 0);
+  if (activeIons.length === 0) return { bv: [], cRatios: [], bvBreaks: [] };
+
+  // Competitive BV_break: each ion's capacity fraction is K_i·c_i / Σ_j(K_j·c_j).
+  // For a single ion this reduces to resinCapacity/c0 — matches breakthroughCurve.
+  const kCSum = activeIons.reduce((s, ion) => s + ion.kSel * ion.c0, 0);
+  const bvBreaks = activeIons.map((ion) => (ion.kSel * resinCapacity) / kCSum);
+  const bvMax = Math.max(...bvBreaks) * 2.5;
+
+  const bv = Array.from({ length: points + 1 }, (_, i) => (bvMax * i) / points);
+
+  const cRatios = activeIons.map((_, i) => {
+    const bvBreak = bvBreaks[i];
+    const sigma = bvBreak / Math.sqrt(N);
+    return bv.map((v) => 1 / (1 + Math.exp((-1.7 * (v - bvBreak)) / sigma)));
+  });
+
+  return { bv, cRatios, bvBreaks };
+}
+
 /** Equilibrium isotherm: q (eq/L resin) vs. C_A in solution. */
 export function isothermCurve(
   params: Omit<IonExchangeParams, 'cA0'> & { cMin: number; cMax: number; points?: number },
