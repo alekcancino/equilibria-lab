@@ -30,7 +30,7 @@ interface Preset {
 const PRESETS: Preset[] = [
   { id: 'caco3',   name: 'CaCO₃',      anionName: 'CO₃²⁻',  pKsp: 8.48,  p: 1, q: 1, zM: 2, pKas: [6.35, 10.33],       color: '#0072B2' },
   { id: 'mgco3',   name: 'MgCO₃',      anionName: 'CO₃²⁻',  pKsp: 7.46,  p: 1, q: 1, zM: 2, pKas: [6.35, 10.33],       color: '#56B4E9' },
-  { id: 'caf2',    name: 'CaF₂',       anionName: 'F⁻',     pKsp: 10.40, p: 1, q: 2, zM: 2, pKas: [3.17],               color: '#E69F00' },
+  { id: 'caf2',    name: 'CaF₂',       anionName: 'F⁻',     pKsp: 10.60, p: 1, q: 2, zM: 2, pKas: [3.17],               color: '#E69F00' },
   { id: 'ca3po4',  name: 'Ca₃(PO₄)₂', anionName: 'PO₄³⁻',  pKsp: 28.92, p: 3, q: 2, zM: 2, pKas: [2.15, 7.20, 12.35], color: '#009E73' },
   { id: 'mg3po4',  name: 'Mg₃(PO₄)₂', anionName: 'PO₄³⁻',  pKsp: 23.28, p: 3, q: 2, zM: 2, pKas: [2.15, 7.20, 12.35], color: '#CC79A7' },
   { id: 'ag3po4',  name: 'Ag₃PO₄',    anionName: 'PO₄³⁻',  pKsp: 17.55, p: 3, q: 1, zM: 1, pKas: [2.15, 7.20, 12.35], color: '#F0A500' },

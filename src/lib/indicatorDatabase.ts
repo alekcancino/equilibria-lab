@@ -110,37 +110,45 @@ export const METAL_INDICATORS: MetalIndicator[] = [
 export const INDICATOR_BY_ID = Object.fromEntries(METAL_INDICATORS.map((ind) => [ind.id, ind]));
 
 // ── Metal presets for EDTA titrations ────────────────────────────────────────
-// Source: Harris QCA 9th ed., Table 12-1; Ringbom.
-// logBetasOH: formation constants of the metal's hydroxo complexes β₁, β₂, …
+// logKf: thermodynamic log K (M + Y⁴⁻ → MY^(2−n)), I → 0, 25 °C.
+// logBetasOH: cumulative formation constants β_i for M(OH)_i complexes
+//             (used to compute αM(OH) side-reaction coefficient).
+// Sources: HYDRA/Medusa (KTH, 2016); NIST SRD-46; Harris QCA 9th ed.
 
 export interface EdtaMetalPreset {
   id: string;
-  metal: string;   // display label e.g. 'Ca²⁺'
-  logKf: number;   // thermodynamic log Kf for M–EDTA
+  metal: string;
+  logKf: number;
   logBetasOH: number[];
   group: string;
+  /** Primary source for logKf */
+  reference?: string;
 }
 
 export const EDTA_METAL_PRESETS: EdtaMetalPreset[] = [
-  { id: 'ca',  metal: 'Ca²⁺', logKf: 10.65, logBetasOH: [],                          group: 'M²⁺' },
-  { id: 'mg',  metal: 'Mg²⁺', logKf:  8.64, logBetasOH: [],                          group: 'M²⁺' },
-  { id: 'mn',  metal: 'Mn²⁺', logKf: 13.81, logBetasOH: [3.4],                       group: 'M²⁺' },
-  { id: 'zn',  metal: 'Zn²⁺', logKf: 16.50, logBetasOH: [5.04, 10.43, 13.7, 15.2],  group: 'M²⁺' },
-  { id: 'cu',  metal: 'Cu²⁺', logKf: 18.80, logBetasOH: [6.0, 11.8],                 group: 'M²⁺' },
-  { id: 'ni',  metal: 'Ni²⁺', logKf: 18.56, logBetasOH: [4.97, 8.55],                group: 'M²⁺' },
-  { id: 'pb',  metal: 'Pb²⁺', logKf: 18.04, logBetasOH: [6.29, 10.89],               group: 'M²⁺' },
-  { id: 'hg',  metal: 'Hg²⁺', logKf: 21.70, logBetasOH: [10.60],                     group: 'M²⁺' },
-  { id: 'cd',  metal: 'Cd²⁺', logKf: 16.46, logBetasOH: [3.9, 7.7],                  group: 'M²⁺' },
-  { id: 'co',  metal: 'Co²⁺', logKf: 16.31, logBetasOH: [4.35, 8.4],                 group: 'M²⁺' },
-  { id: 'fe3', metal: 'Fe³⁺', logKf: 25.10, logBetasOH: [11.81, 21.68, 30.67],       group: 'M³⁺' },
-  { id: 'al',  metal: 'Al³⁺', logKf: 16.13, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'M³⁺' },
-  { id: 'ga',  metal: 'Ga³⁺', logKf: 20.27, logBetasOH: [11.4, 22.1, 30.7],           group: 'M³⁺' },
-  { id: 'cr',  metal: 'Cr³⁺', logKf: 23.40, logBetasOH: [10.07, 17.83, 24.0],          group: 'M³⁺' },
-  { id: 'bi',  metal: 'Bi³⁺', logKf: 27.94, logBetasOH: [12.4, 23.3, 30.5],            group: 'M³⁺' },
-  { id: 'in',  metal: 'In³⁺', logKf: 24.95, logBetasOH: [10.0, 20.3],                  group: 'M³⁺' },
-  { id: 'la',  metal: 'La³⁺', logKf: 15.50, logBetasOH: [5.5],                          group: 'Lantánidos' },
-  { id: 'ce3', metal: 'Ce³⁺', logKf: 15.98, logBetasOH: [5.0],                          group: 'Lantánidos' },
-  { id: 'ba',  metal: 'Ba²⁺', logKf:  7.86, logBetasOH: [],                             group: 'M²⁺' },
-  { id: 'sr',  metal: 'Sr²⁺', logKf:  8.63, logBetasOH: [],                             group: 'M²⁺' },
-  { id: 'th',  metal: 'Th⁴⁺', logKf: 23.20, logBetasOH: [11.80, 22.60, 32.20, 38.50],  group: 'M⁴⁺' },
+  // ── Divalent metals ──────────────────────────────────────────────────────
+  { id: 'ca',  metal: 'Ca²⁺', logKf: 10.65, logBetasOH: [],                              group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'mg',  metal: 'Mg²⁺', logKf:  8.69, logBetasOH: [],                              group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'ba',  metal: 'Ba²⁺', logKf:  7.86, logBetasOH: [],                              group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'sr',  metal: 'Sr²⁺', logKf:  8.63, logBetasOH: [],                              group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'mn',  metal: 'Mn²⁺', logKf: 13.87, logBetasOH: [3.4],                           group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'co',  metal: 'Co²⁺', logKf: 16.31, logBetasOH: [4.35, 8.4],                    group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'ni',  metal: 'Ni²⁺', logKf: 18.62, logBetasOH: [4.97, 8.55, 11.33],            group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'zn',  metal: 'Zn²⁺', logKf: 16.50, logBetasOH: [4.40, 11.30, 13.10, 15.10],   group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'cu',  metal: 'Cu²⁺', logKf: 18.80, logBetasOH: [6.0, 11.8],                    group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'cd',  metal: 'Cd²⁺', logKf: 16.46, logBetasOH: [3.9, 7.65, 8.70],              group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'pb',  metal: 'Pb²⁺', logKf: 18.04, logBetasOH: [6.29, 10.88, 13.94, 15.50],   group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  { id: 'hg',  metal: 'Hg²⁺', logKf: 21.80, logBetasOH: [10.60, 21.83],                 group: 'M²⁺', reference: 'HYDRA/Medusa' },
+  // ── Trivalent metals ─────────────────────────────────────────────────────
+  { id: 'fe3', metal: 'Fe³⁺', logKf: 25.10, logBetasOH: [11.81, 21.68, 30.67],          group: 'M³⁺', reference: 'HYDRA/Medusa' },
+  { id: 'al',  metal: 'Al³⁺', logKf: 16.13, logBetasOH: [9.01, 17.97, 26.0, 32.4],     group: 'M³⁺', reference: 'HYDRA/Medusa' },
+  { id: 'cr',  metal: 'Cr³⁺', logKf: 23.40, logBetasOH: [10.07, 17.83, 24.0],           group: 'M³⁺', reference: 'HYDRA/Medusa' },
+  { id: 'ga',  metal: 'Ga³⁺', logKf: 20.27, logBetasOH: [11.4, 22.1, 30.7],             group: 'M³⁺', reference: 'NIST SRD-46'  },
+  { id: 'bi',  metal: 'Bi³⁺', logKf: 27.94, logBetasOH: [12.4, 23.2, 30.5],             group: 'M³⁺', reference: 'HYDRA/Medusa' },
+  { id: 'in',  metal: 'In³⁺', logKf: 24.95, logBetasOH: [10.0, 20.3],                   group: 'M³⁺', reference: 'NIST SRD-46'  },
+  // ── Tetravalent ──────────────────────────────────────────────────────────
+  { id: 'th',  metal: 'Th⁴⁺', logKf: 23.20, logBetasOH: [11.80, 22.60, 32.20, 38.50],  group: 'M⁴⁺', reference: 'NIST SRD-46'  },
+  // ── Lanthanides ──────────────────────────────────────────────────────────
+  { id: 'la',  metal: 'La³⁺', logKf: 15.50, logBetasOH: [5.5],                           group: 'Lantánidos', reference: 'NIST SRD-46' },
+  { id: 'ce3', metal: 'Ce³⁺', logKf: 15.98, logBetasOH: [5.0],                           group: 'Lantánidos', reference: 'NIST SRD-46' },
 ];
