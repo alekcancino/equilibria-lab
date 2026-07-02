@@ -27,6 +27,7 @@ dist-ssr
 .gstack/
 .cursor/
 .agents/
+.claude/
 CLAUDE.md
 
 # Deployment
