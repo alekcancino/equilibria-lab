@@ -1,10 +1,11 @@
 interface PlotToolbarProps {
   onResetZoom: () => void;
   onExport: () => void;
+  onExportCSV?: () => void;
 }
 
 /** Floating chart controls (GeoGebra-style). */
-export default function PlotToolbar({ onResetZoom, onExport }: PlotToolbarProps) {
+export default function PlotToolbar({ onResetZoom, onExport, onExportCSV }: PlotToolbarProps) {
   return (
     <div className="plot-toolbar" role="toolbar" aria-label="Controles de gráfica">
       <button
@@ -31,6 +32,20 @@ export default function PlotToolbar({ onResetZoom, onExport }: PlotToolbarProps)
           <path d="M4 21h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </button>
+      {onExportCSV && (
+        <button
+          type="button"
+          className="plot-toolbar-btn"
+          onClick={onExportCSV}
+          title="Exportar datos CSV"
+          aria-label="Exportar datos CSV"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
+            <path d="M3 9h18M3 15h18M9 3v18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
       <span className="plot-toolbar-hint" title="Pinch o scroll para zoom">
         ⓘ
       </span>
