@@ -128,10 +128,7 @@ export function granPlot(
   return { v1, F1, v2, F2 };
 }
 
-/**
- * Ajuste lineal por mínimos cuadrados de un conjunto de puntos (x, y).
- * Devuelve { m, b } de y = m·x + b. Devuelve null si es degenerado.
- */
+/** Least-squares linear fit for points (x, y). Returns { m, b } of y = m·x + b, or null if degenerate. */
 function linearFit(xs: number[], ys: number[]): { m: number; b: number } | null {
   const n = xs.length;
   if (n < 2) return null;
@@ -147,10 +144,10 @@ function linearFit(xs: number[], ys: number[]): { m: number; b: number } | null 
 }
 
 /**
- * V_eq detectado por extrapolación lineal de la función de Gran F₁ (rama ácida,
- * antes del P.E.). Ajusta la porción lineal descendente cercana a la equivalencia
- * (F₁ entre 0.5 % y 60 % de su máximo) y extrapola a F₁ = 0.
- * Devuelve NaN si no hay suficiente rama útil.
+ * V_eq from linear extrapolation of the Gran F₁ function (acid branch, before EP).
+ * Fits the linear descending segment near equivalence (F₁ between 0.5 % and 60 %
+ * of its maximum) and extrapolates to F₁ = 0. Returns NaN if the usable arm is
+ * too short.
  */
 export function granVeq(
   volumes: number[],
@@ -163,7 +160,6 @@ export function granVeq(
   const xs: number[] = [];
   const ys: number[] = [];
   for (let i = 0; i < v1.length; i++) {
-    // Rama pre-equivalencia, tramo lineal cercano al P.E.
     if (F1[i] <= 0.6 * Fmax && F1[i] >= 0.005 * Fmax) {
       xs.push(v1[i]);
       ys.push(F1[i]);
@@ -171,13 +167,13 @@ export function granVeq(
   }
   const fit = linearFit(xs, ys);
   if (!fit || Math.abs(fit.m) < 1e-30) return NaN;
-  return -fit.b / fit.m; // intersección con F₁ = 0
+  return -fit.b / fit.m;
 }
 
 /**
- * Cuantitatividad q% = (1 − ε/Co)·100, donde ε es la concentración molar
- * efectiva de la especie limitante en el punto de equivalencia y Co la
- * concentración analítica (diluida) en ese punto. q → 100 % ⇒ reacción completa.
+ * Quantitativity q% = (1 − ε/Co)·100, where ε is the effective molar concentration
+ * of the limiting species at the equivalence point and Co is the analytical
+ * concentration (diluted) at that point. q → 100 % means complete reaction.
  */
 export function quantitativity(epsLimiting: number, cAtEquivalence: number): number {
   if (cAtEquivalence <= 0) return NaN;

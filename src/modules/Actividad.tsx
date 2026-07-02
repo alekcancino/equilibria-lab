@@ -39,7 +39,7 @@ export default function Actividad() {
     [iMode, iDirect, cIon, z],
   );
   const logGamma = logActivityCoefficient(z, I);
-  // γ para las tres cargas más comunes a la I actual (spec issue #4 · C2).
+  // γ for the three most common charge magnitudes at the current I.
   const gamma1 = activityCoefficient(1, I);
   const gamma2 = activityCoefficient(2, I);
   const gamma3 = activityCoefficient(3, I);
