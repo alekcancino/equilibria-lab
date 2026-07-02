@@ -2,8 +2,8 @@
 // (hydrolysis, auxiliary, complex protonation) into a single SideReactionEditorState.
 // The user can edit any parameter afterwards.
 //
-// Cover systems from QA III 2025-2 exams and classic textbook examples
-// (Harris / Skoog). Constants at 25 °C; conventions documented in `note`.
+// Covers classic complexometric systems (Harris / Skoog) and common analytical
+// scenarios. Constants at 25 °C; sign conventions documented in `note`.
 
 import { EDTA_PKAS } from './edta';
 import { defaultSideEditorState, type SideReactionEditorState } from './sideReactions';
@@ -77,14 +77,14 @@ function makeSide(opts: {
 }
 
 export const SYSTEM_PRESETS: SystemPreset[] = [
-  // ── QA III 2025-2 Exams ─────────────────────────────────────────────────────
+  // ── EDTA complexometry ───────────────────────────────────────────────────────
   {
     id: 'zn-edta-nh3',
     name: 'Zn²⁺ – EDTA – NH₃',
-    group: 'Exámenes QA III',
-    detail: '1.er parcial · enmascaramiento NH₃ 2 F, pH 10',
-    reference: 'QA III 2025-2, 1.er parcial (Aguilar Cordero)',
-    note: 'NH₃ como total analítica 2 F (pKa 9,2). β Zn(OH)ₖ del preset son magnitudes de formación positivas; el encabezado del examen las da con signo negativo (convenio de descomposición).',
+    group: 'Complejometría EDTA',
+    detail: 'Enmascaramiento con NH₃ 2 M, pH 10',
+    reference: 'Harris, QCA 9.ª ed.',
+    note: 'β Zn(OH)ₖ son constantes de formación (positivas); algunos textos las dan con signo negativo (convenio de descomposición).',
     metalLabel: 'Zn²⁺',
     metalId: 'zn',
     logKf: 16.44,
@@ -101,9 +101,9 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
   {
     id: 'ni-edta-ix',
     name: 'Ni²⁺ – EDTA (intercambio iónico)',
-    group: 'Exámenes QA III',
-    detail: '3.er parcial · Ni 0,1 mM, recuperación con EDTA',
-    reference: 'QA III 2025-2, 3.er parcial',
+    group: 'Complejometría EDTA',
+    detail: 'Recuperación de Ni²⁺ con EDTA, 0,1 mM, pH 6',
+    reference: 'Harris, QCA 9.ª ed.',
     metalLabel: 'Ni²⁺',
     metalId: 'ni',
     logKf: 18.56,

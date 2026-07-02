@@ -15,7 +15,7 @@ import { edtaAtFraction } from '../edta';
 const tol = (val: number, expected: number, delta = 0.2) =>
   expect(Math.abs(val - expected)).toBeLessThan(delta);
 
-/** Stack Zn–EDTA–NH₃ (2 F total auxiliary) without complex protonation. */
+/** Zn–EDTA–NH₃ stack (2 M total auxiliary) without complex protonation. */
 function znAuxStack() {
   const side = defaultSideEditorState();
   side.ligandPKas = [2.0, 2.69, 6.13, 10.37, 13.1, 13.5];
@@ -47,8 +47,8 @@ function znFullStack(): ReturnType<typeof sideStackFromEditor> {
   };
 }
 
-describe('Parcial 1 — NH₃ 2 F analítica', () => {
-  it('[NH₃] libre desde 2 F y pKa 9,2 a pH 10', () => {
+describe('NH₃ masking — free ligand concentration', () => {
+  it('[NH₃] free from 2 M total and pKa 9.2 at pH 10', () => {
     const c = freeLigandConcentration(
       { mode: 'total', cTotal: 2.0, pKas: [9.2] },
       10,
@@ -57,17 +57,17 @@ describe('Parcial 1 — NH₃ 2 F analítica', () => {
     expect(c).toBeLessThan(2.0);
   });
 
-  it('[NH₃] libre cae al bajar pH (más NH₄⁺)', () => {
+  it('[NH₃] free drops as pH decreases (more NH₄⁺ formed)', () => {
     const cHigh = freeLigandConcentration({ mode: 'total', cTotal: 2.0, pKas: [9.2] }, 10);
     const cLow = freeLigandConcentration({ mode: 'total', cTotal: 2.0, pKas: [9.2] }, 6.5);
     expect(cHigh).toBeGreaterThan(cLow);
   });
 });
 
-describe('Parcial 1 — log β′ZnY vs pH', () => {
+describe('Zn–EDTA — conditional log K′ vs pH', () => {
   const logKf = 16.44;
 
-  it('NH₃ 2 F reduce log K′ respecto al sistema sin auxiliar a pH 6,5', () => {
+  it('NH₃ 2 M reduces log K′ vs bare system at pH 6.5', () => {
     const bare = sideStackFromEditor(defaultSideEditorState());
     const withAux = znAuxStack();
     const lkBare = condLogKPrimary(logKf, 6.5, bare);
@@ -75,25 +75,25 @@ describe('Parcial 1 — log β′ZnY vs pH', () => {
     expect(lkBare).toBeGreaterThan(lkAux);
   });
 
-  it('log K′ a pH 10 menor que a pH 6,5 con OH + NH₃ (sin protonación MY)', () => {
+  it('log K′ at pH 10 lower than at pH 6.5 with OH + NH₃ (no MY protonation)', () => {
     const stack = znOhAuxStack();
     const lk65 = condLogKPrimary(logKf, 6.5, stack);
     const lk10 = condLogKPrimary(logKf, 10, stack);
     expect(lk65).toBeGreaterThan(lk10);
   });
 
-  it('protonación del complejo MY aumenta α_MY a pH ácido', () => {
+  it('complex protonation of MY increases α_MY at acidic pH', () => {
     const a = alphaComplex(6.5, { logBetaProtonation: 19.44 });
     expect(a).toBeGreaterThan(1e6);
   });
 });
 
-describe('Parcial 1 — solubilidad Zn(OH)₂ enmascarada', () => {
-  it('umbral log s desde C = 0,01 M', () => {
+describe('Zn(OH)₂ conditional solubility with NH₃ masking', () => {
+  it('solubility threshold from C = 0.01 M', () => {
     tol(logSThresholdFromConcentration(0.01), -2, 0.01);
   });
 
-  it('NH₃ 2 F aumenta log s respecto a solo hidróxos a pH 10', () => {
+  it('NH₃ 2 M raises log s vs hydroxide-only at pH 10', () => {
     const stackOH = sideStackFromEditor({
       ...defaultSideEditorState(),
       showOH: true,
@@ -107,7 +107,7 @@ describe('Parcial 1 — solubilidad Zn(OH)₂ enmascarada', () => {
   });
 });
 
-describe('Parcial 1 — titulación EDTA (x, pY′, pM′)', () => {
+describe('EDTA complexometric titration (pY′ and pM′)', () => {
   const side = defaultSideEditorState();
   side.showAux = true;
   side.auxSpecMode = 'total';
@@ -115,7 +115,7 @@ describe('Parcial 1 — titulación EDTA (x, pY′, pM′)', () => {
   side.auxPKas = [9.2];
   side.logBetasAux = [2.21, 4.5, 6.86, 8.89];
 
-  it('pY′ al 50 % y pM′ al 150 % son finitos', () => {
+  it('pY′ at 50 % and pM′ at 150 % are finite', () => {
     const at50 = edtaAtFraction({
       logKf: 16.44, pH: 10, cMetal: 0.01, sideEditor: side,
     }, 0.5);
@@ -127,15 +127,15 @@ describe('Parcial 1 — titulación EDTA (x, pY′, pM′)', () => {
     expect(at50.pY).toBeLessThan(20);
   });
 
-  it('pM′ aumenta después de la equivalencia (x = 1,5, exceso EDTA)', () => {
+  it('pM′ increases past the equivalence point (x = 1.5, EDTA excess)', () => {
     const atEq = edtaAtFraction({ logKf: 16.44, pH: 10, cMetal: 0.01, sideEditor: side }, 1.0);
     const at150 = edtaAtFraction({ logKf: 16.44, pH: 10, cMetal: 0.01, sideEditor: side }, 1.5);
     expect(at150.pM).toBeGreaterThan(atEq.pM);
   });
 });
 
-describe('3.er parcial — intercambio iónico D(pH)', () => {
-  it('D aumenta al bajar pH (competencia H⁺)', () => {
+describe('Ion exchange — distribution coefficient D vs pH', () => {
+  it('D increases as pH drops (H⁺ competition)', () => {
     const stack = sideStackFromEditor({
       ...defaultSideEditorState(),
       showOH: true,
@@ -146,7 +146,7 @@ describe('3.er parcial — intercambio iónico D(pH)', () => {
     expect(d4).toBeGreaterThan(d8);
   });
 
-  it('φ resina entre 0 y 1 para parámetros del examen', () => {
+  it('resin exchange fraction φ is between 0 and 1', () => {
     const stack = sideStackFromEditor({
       ...defaultSideEditorState(),
       showOH: true,

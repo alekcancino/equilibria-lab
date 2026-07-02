@@ -33,5 +33,6 @@ CLAUDE.md
 # Deployment
 .vercel
 
-# Internal working notes
+# Internal working notes and design assets
 docs/testing/
+design/

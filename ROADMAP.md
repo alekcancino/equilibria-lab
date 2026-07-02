@@ -58,6 +58,8 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | **Surface adsorption** | Constant capacitance model (CCM), diffuse-layer model. |
 | **PHREEQC bridge** | Offline batch validation against PHREEQC as an oracle (not a runtime dependency). |
 | **Reactive kinetics** | One slow reaction + fast equilibrium system. |
+| **Medusa/HALTAFALL thermodynamic database** | Investigate integrating the Medusa database (KTH/Ignasi Puigdomenech) as a constants source. Medusa is open-source (LGPL); need to verify license compatibility, data format (`.db` binary vs exportable), and whether constants can be imported at build time or bundled as JSON for client-side use. |
+| **GeoGebra 2D graphics engine** | Investigate using GeoGebra's 2D rendering engine for interactive diagrams. GeoGebra is open-source under GPL-3.0 (non-commercial) — need to assess whether GPL-3.0 is compatible with this project's MIT license and intended use. If compatible, could replace Plotly for 2D predominance maps and Pourbaix diagrams with richer interactivity. |
 
 ---
 
