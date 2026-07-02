@@ -90,10 +90,9 @@ export default function AcidoBase() {
     : system.pKas.map(() => 0);
   const domIdx = alphasAtPH.indexOf(Math.max(...alphasAtPH));
 
-  // Métrica "% + punto de operación" (spec issue #4 · C1).
-  // % de la especie dominante a este pH = α_dom·100.
-  // pH para 50 % de la transición activa = el pKa que bordea la especie dominante
-  // (el más cercano al pH del sistema). En pH = pKa las conjugadas cruzan a 50 %.
+  // "% + operating point" metrics.
+  // pH for 50 % of the active transition = the pKa nearest to the system pH
+  // (at pH = pKa the conjugate pair crosses at 50 %).
   const pctDominante = (alphasAtPH[domIdx] ?? 0) * 100;
   const transitionPKa = useMemo(() => {
     if (system.pKas.length === 0 || !Number.isFinite(pHSystem)) return null;

@@ -1,46 +1,46 @@
-// Helpers de lectura de métricas para la UI: "% + punto de operación".
+// UI metric helpers — "% + operating point".
 //
-// NO tocan el motor de cálculo (complexation/equilibrium/conditional ya están
-// verificados). Solo LEEN esas funciones y añaden:
-//   • porcentajes derivados (% formado / disociado / de especie)
-//   • el "punto de operación": el valor del eje del diagrama (pL/pH/pe) donde
-//     una métrica alcanza X% (X ∈ {10,50,90}), por bisección.
+// These do NOT touch the calculation engines (complexation/equilibrium/conditional
+// are already validated). They only READ those functions and add:
+//   • derived percentages (% formed / dissociated / species fraction)
+//   • "operating point": the diagram axis value (pL/pH/pe) where a metric
+//     reaches X% (X ∈ {10,50,90}), solved by bisection.
 //
-// Definiciones exactas (spec issue #4), sin decisiones libres:
-//   % formado de complejo (1:1) = ñ·100          (ñ = bjerrumNumber)
-//   % disociado                 = (1 − ñ)·100
-//   % de especie ácido-base a pH = αᵢ·100
-//   fracción formada a Co (ligando en exceso) = K'·Co / (1 + K'·Co)
+// Exact definitions:
+//   % formed (1:1 complex)       = ñ·100          (ñ = bjerrumNumber)
+//   % dissociated                = (1 − ñ)·100
+//   % acid-base species at pH    = αᵢ·100
+//   fraction formed at Co (excess ligand) = K'·Co / (1 + K'·Co)
 
 import { bjerrumNumber } from './complexation';
 import { alphaFractions } from './equilibrium';
 import { alphaH, alphaOH } from './conditional';
 
-// ── Porcentajes de complejación (1:1) ────────────────────────────────────────
+// ── Complexation percentages (1:1) ───────────────────────────────────────────
 
-/** % formado de complejo 1:1 a un pL dado: ñ·100. */
+/** Percent formed for a 1:1 complex at a given pL: ñ·100. */
 export function percentFormed(pL: number, logBetas: number[]): number {
   return bjerrumNumber(pL, logBetas) * 100;
 }
 
-/** % disociado de complejo 1:1 a un pL dado: (1 − ñ)·100. */
+/** Percent dissociated for a 1:1 complex at a given pL: (1 − ñ)·100. */
 export function percentDissociated(pL: number, logBetas: number[]): number {
   return (1 - bjerrumNumber(pL, logBetas)) * 100;
 }
 
-// ── % de especie ácido-base ──────────────────────────────────────────────────
+// ── Acid-base species percentages ────────────────────────────────────────────
 
-/** % de la especie i (αᵢ·100) de un sistema HnA con las pKa dadas, a un pH. */
+/** Percent of species i (αᵢ·100) for an HnA system with the given pKas, at a given pH. */
 export function percentSpeciesAtPH(pH: number, pKas: number[], idx: number): number {
   const alphas = alphaFractions(Math.pow(10, -pH), pKas);
   return (alphas[idx] ?? 0) * 100;
 }
 
-// ── Constante condicional y fracción formada ─────────────────────────────────
+// ── Conditional constant and fraction formed ──────────────────────────────────
 
 /**
- * log K′(pH) de un complejo M+Y con protonación del ligante (α_Y(H)) e
- * hidrólisis del metal (α_M(OH)). Reusa el motor conditional.ts.
+ * log K′(pH) for an M+Y complex with ligand protonation (α_Y(H)) and metal
+ * hydrolysis (α_M(OH)). Delegates to conditional.ts.
  *   log K′ = log Kf − log α_Y(H) − log α_M(OH)
  */
 export function condLogKAtPH(
@@ -53,23 +53,23 @@ export function condLogKAtPH(
 }
 
 /**
- * Fracción formada de un complejo 1:1 con el ligando en exceso (o el metal en
- * exceso: el modelo es simétrico). Co es la concentración del reactivo en
- * exceso (M):
- *   f = [ML]/C_limitante = K'·Co / (1 + K'·Co)
+ * Fraction formed for a 1:1 complex with the ligand in excess (or the metal in
+ * excess — the model is symmetric). Co is the concentration of the excess
+ * reagent (M):
+ *   f = [ML]/C_limiting = K'·Co / (1 + K'·Co)
  */
 export function fractionFormedExcess(logKprime: number, cExcess: number): number {
   const KC = Math.pow(10, logKprime) * cExcess;
   return KC / (1 + KC);
 }
 
-// ── Punto de operación (bisección genérica) ──────────────────────────────────
+// ── Operating point (generic bisection) ──────────────────────────────────────
 
 /**
- * Punto de operación: el valor de x ∈ [lo, hi] donde metric(x) = targetPercent.
- * metric debe ser monótona en [lo, hi] (creciente o decreciente); la bisección
- * lo detecta por el signo de los extremos. Sigue el patrón de bisección de
- * equilibrium.ts (~64 iteraciones). Devuelve NaN si [lo, hi] no acota el objetivo.
+ * Operating point: value of x ∈ [lo, hi] where metric(x) = targetPercent.
+ * metric must be monotone on [lo, hi] (increasing or decreasing); bisection
+ * detects this from the sign of the endpoints. Follows the bisection pattern
+ * in equilibrium.ts (~64 iterations). Returns NaN if [lo, hi] does not bracket the target.
  */
 export function operatingPoint(
   metric: (x: number) => number,
@@ -95,8 +95,8 @@ export function operatingPoint(
 }
 
 /**
- * pL donde el % formado del complejo alcanza targetPercent (bisección sobre pL).
- * Para un complejo 1:1, %formado = 50 ocurre en pL = log β₁.
+ * pL at which the percent formed of the complex reaches targetPercent (bisection over pL).
+ * For a 1:1 complex, %formed = 50 occurs at pL = log β₁.
  */
 export function pLForPercentFormed(logBetas: number[], targetPercent: number): number {
   const hi = (logBetas[logBetas.length - 1] ?? 6) + 8;
@@ -104,8 +104,8 @@ export function pLForPercentFormed(logBetas: number[], targetPercent: number): n
 }
 
 /**
- * pH donde la fracción formada del complejo M+Y (ligando en exceso, conc. Co)
- * alcanza targetPercent. Bisección sobre pH usando log K′(pH).
+ * pH at which the fraction formed of the M+Y complex (ligand in excess, conc. Co)
+ * reaches targetPercent. Bisection over pH using log K′(pH).
  */
 export function pHForPercentFormed(
   logKf: number,
