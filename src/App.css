@@ -615,13 +615,6 @@ html, body, #root {
               transform var(--duration-fast, 150ms) var(--ease-out, ease);
 }
 
-.help-tip:hover .help-tip-pop,
-.help-tip-btn:focus-visible + .help-tip-pop,
-.help-tip.open .help-tip-pop {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 .help-tip-units {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
