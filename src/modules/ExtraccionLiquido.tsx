@@ -281,6 +281,15 @@ export default function ExtraccionLiquido() {
   const reset = () => setSt(defaultState());
 
   const r = st.Vorg / st.Vaq; // volume ratio
+
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Extracción líquido-líquido',
+    'Analito 1': st.a1.label,
+    ...(st.showA2 ? { 'Analito 2': st.a2.label } : {}),
+    'r (Vorg/Vaq)': r.toFixed(2),
+    'n extracciones': String(st.nMax),
+  }), [st.a1.label, st.showA2, st.a2.label, r, st.nMax]);
+
   const dimerOpts = useMemo(
     () => ({ enabled: st.showDimer, logK2: st.logK2 }),
     [st.showDimer, st.logK2],
@@ -413,6 +422,7 @@ export default function ExtraccionLiquido() {
           shapes={[cursorShape(logDMin, logDMax)]}
           annotations={[cursorAnnotation(logDMax)]}
           exportName="equilibria-logD-pH"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -429,6 +439,7 @@ export default function ExtraccionLiquido() {
           shapes={[cursorShape(0, 100)]}
           annotations={[cursorAnnotation(100)]}
           exportName="equilibria-pE-pH"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -445,6 +456,7 @@ export default function ExtraccionLiquido() {
           shapes={[cursorShape(0, 100)]}
           annotations={[cursorAnnotation(100)]}
           exportName="equilibria-multi-pH"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -459,6 +471,7 @@ export default function ExtraccionLiquido() {
           xRange={[1, st.preconNMax]}
           yRange={[0, 100]}
           exportName="equilibria-preconcentracion"
+          exportMetadata={exportMetadata}
         />
       ),
     },

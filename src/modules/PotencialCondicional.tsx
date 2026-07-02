@@ -92,6 +92,14 @@ export default function PotencialCondicional() {
 
   function reset() { setSt(defaultState()); }
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Potencial condicional',
+    'Par 1': st.couple1.name,
+    'Par 2': st.couple2.name,
+    ...(st.showCouple3 ? { 'Par 3': st.couple3.name } : {}),
+    pH: st.pH.toFixed(1),
+  }), [st.couple1.name, st.couple2.name, st.showCouple3, st.couple3.name, st.pH]);
+
   // ── E°' = f(pH) curves ────────────────────────────────────────────────────
 
   const pHs = useMemo(() => Array.from({ length: PH_POINTS + 1 }, (_, i) => 14 * i / PH_POINTS), []);
@@ -296,6 +304,7 @@ export default function PotencialCondicional() {
           shapes={logKShapes}
           annotations={logKAnnotations}
           exportName="equilibria-eprime-ph"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -321,6 +330,7 @@ export default function PotencialCondicional() {
             showarrow: false, font: { size: 11, color: '#888' },
           }]}
           exportName="equilibria-eprime-px"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -338,12 +348,13 @@ export default function PotencialCondicional() {
           annotations={escalaAnnotations}
           showLegend={false}
           exportName="equilibria-escala-cond"
+          exportMetadata={exportMetadata}
         />
       ),
     },
   ];
     return st.showPX ? all : all.filter((d) => d.id !== 'epx');
-  }, [Eprimetraces, eMin, eMax, logKShapes, logKAnnotations, st.showPX, pXs, EpxCurve, st.pxOxLabel, st.pxRedLabel, st.pxLigandLabel, EpxMin, EpxMax, pxShapes, st.pxE0, escalaTraces, escalaPeMin, escalaPeMax, escalaShapes, escalaAnnotations, st.pH, escalaN]);
+  }, [Eprimetraces, eMin, eMax, logKShapes, logKAnnotations, st.showPX, pXs, EpxCurve, st.pxOxLabel, st.pxRedLabel, st.pxLigandLabel, EpxMin, EpxMax, pxShapes, st.pxE0, escalaTraces, escalaPeMin, escalaPeMax, escalaShapes, escalaAnnotations, st.pH, escalaN, exportMetadata]);
 
   return (
     <div className="module">

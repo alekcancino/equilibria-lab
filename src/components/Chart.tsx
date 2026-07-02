@@ -16,6 +16,8 @@ export interface ChartProps {
   showLegend?: boolean;
   /** File name when exporting PNG and CSV */
   exportName?: string;
+  /** Module-specific parameters prepended as # comments in the CSV */
+  exportMetadata?: Record<string, string>;
 }
 
 /** Interactive chart: initial autoscale, gesture zoom, no Plotly modebar. */
@@ -51,9 +53,13 @@ export default function Chart(props: ChartProps) {
   }, []);
 
   const exportCsv = useCallback(() => {
-    const csv = tracesToCSV(props.data, props.xTitle, props.yTitle);
+    const meta: Record<string, string> = {
+      ...props.exportMetadata,
+      Fecha: new Date().toISOString().slice(0, 10),
+    };
+    const csv = tracesToCSV(props.data, props.xTitle, props.yTitle, meta);
     if (csv) downloadCSV(csv, exportName);
-  }, [props.data, props.xTitle, props.yTitle, exportName]);
+  }, [props.data, props.xTitle, props.yTitle, props.exportMetadata, exportName]);
 
   return (
     <div className="chart-shell">

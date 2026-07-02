@@ -75,6 +75,13 @@ export default function Actividad() {
     ];
   }, []);
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Actividad',
+    'Carga |z|': String(z),
+    'C / M': cIon.toFixed(4),
+    'I / M': I.toFixed(4),
+  }), [z, cIon, I]);
+
   const tabs = [
     {
       id: 'gamma',
@@ -91,6 +98,7 @@ export default function Actividad() {
             line: { color: '#CC79A7', width: 2, dash: 'dashdot' },
           }] : []}
           exportName="equilibria-actividad-gamma"
+          exportMetadata={exportMetadata}
         />
       ),
     },

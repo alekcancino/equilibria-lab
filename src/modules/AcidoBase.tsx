@@ -37,6 +37,13 @@ export default function AcidoBase() {
   const labels = systemLabels(system);
   const logCtotal = Math.log10(conc);
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Ácido-Base',
+    Sistema: system.label,
+    'C / M': conc.toFixed(4),
+    'I / M': ionicStrength.toFixed(3),
+  }), [system.label, conc, ionicStrength]);
+
   const pHSystem = useMemo(
     () => solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }], 0, 0, ionicStrength),
     [system, conc, ionicStrength],
@@ -132,7 +139,7 @@ export default function AcidoBase() {
       node: (
         <Chart data={alphaTraces} xTitle="pH" yTitle="Fracción α" xRange={[0, 14]} yRange={[0, 1.02]}
           shapes={showSystemPH ? [{ type: 'line', x0: pHSystem, x1: pHSystem, y0: 0, y1: 1.02, line: { color: MARKER_COLOR, width: 2, dash: 'dashdot' } }] : []}
-          exportName="equilibria-acidobase-alfa" />
+          exportName="equilibria-acidobase-alfa" exportMetadata={exportMetadata} />
       ),
     },
     {
@@ -140,7 +147,7 @@ export default function AcidoBase() {
       label: 'log C',
       node: (
         <Chart data={logCTraces} xTitle="pH" yTitle="log C" xRange={[0, 14]} yRange={[-12, 0.5]}
-          shapes={systemShape} exportName="equilibria-acidobase-logc" />
+          shapes={systemShape} exportName="equilibria-acidobase-logc" exportMetadata={exportMetadata} />
       ),
     },
   ];

@@ -72,6 +72,12 @@ export default function Mezclas() {
     return { comps, cations, anions };
   };
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Mezclas ácido-base',
+    Componentes: rows.map((r) => ACIDS.find((a) => a.id === r.acidId)?.name ?? r.acidId).join(' + '),
+    'I / M': ionicStrength.toFixed(3),
+  }), [rows, ionicStrength]);
+
   const pHMix = useMemo(() => {
     const { comps, cations, anions } = buildComponents(1);
     return solvePH(comps, cations, anions, ionicStrength);
@@ -278,6 +284,7 @@ export default function Mezclas() {
                 xRange={[0, curve.vMax]}
                 yRange={[0, 14]}
                 exportName="equilibria-mezcla-titulacion"
+                exportMetadata={exportMetadata}
               />
             ) : (
               <div className="empty-plot">
@@ -317,6 +324,7 @@ export default function Mezclas() {
                   xanchor: 'left',
                 }]}
                 exportName="equilibria-mezcla-buffer"
+                exportMetadata={exportMetadata}
               />
             ),
           },

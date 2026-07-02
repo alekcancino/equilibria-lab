@@ -203,6 +203,13 @@ export default function SolubilidadSal() {
     setIonicStrength(0);
   }
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Solubilidad con ácido-base',
+    'Sal 1': sal1.name,
+    'pKsp 1': sal1.pKsp.toFixed(2),
+    ...(showP2 ? { 'Sal 2': sal2.name, 'pKsp 2': sal2.pKsp.toFixed(2) } : {}),
+  }), [sal1.name, sal1.pKsp, showP2, sal2.name, sal2.pKsp]);
+
   const curve1 = useMemo(() => buildCurve(sal1, ionicStrength), [sal1, ionicStrength]);
   const curve2 = useMemo(() => (showP2 ? buildCurve(sal2, ionicStrength) : null), [sal2, showP2, ionicStrength]);
   const alphaCurve = useMemo(() => buildAlphaCurve(sal1.pKas), [sal1.pKas]);
@@ -309,6 +316,7 @@ export default function SolubilidadSal() {
                 xRange={[0, 14]}
                 yRange={yRange}
                 exportName="equilibria-sol-sal"
+                exportMetadata={exportMetadata}
               />
             ),
           },
@@ -328,6 +336,7 @@ export default function SolubilidadSal() {
                 xRange={[0, 14]}
                 yRange={[0, 1]}
                 exportName="equilibria-sol-sal-alpha"
+                exportMetadata={exportMetadata}
               />
             ),
           },

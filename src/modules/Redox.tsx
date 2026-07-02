@@ -36,6 +36,13 @@ export default function Redox() {
 
   const pe01 = peConditional(couple1, pH);
   const pe02 = peConditional(couple2, pH);
+
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Redox',
+    'Par 1': couple1.name,
+    'Par 2': couple2.name,
+    pH: pH.toFixed(1),
+  }), [couple1.name, couple2.name, pH]);
   const [peMin, peMax] = paddedAxisRange(Math.min(pe01, pe02), Math.max(pe01, pe02), 8);
 
   // α distribution vs pe (both couples)
@@ -117,6 +124,7 @@ export default function Redox() {
           shapes={alphaView.shapes}
           annotations={alphaView.annotations}
           exportName="equilibria-redox-alfa"
+          exportMetadata={exportMetadata}
         />
       ),
     },

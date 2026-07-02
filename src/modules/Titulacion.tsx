@@ -285,6 +285,15 @@ function AcidBaseTitration() {
     return list;
   }, [curve.equivalenceVolumes, granVeqDetected]);
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Titulación ácido-base',
+    Analito: system.label,
+    Titulante: titrantName,
+    'CA / M': cAnalyte.toFixed(4),
+    'VA / mL': vAnalyte.toFixed(0),
+    'CT / M': cTitrant.toFixed(4),
+  }), [system.label, titrantName, cAnalyte, vAnalyte, cTitrant]);
+
   return (
     <>
       <PanelShell title="Titulación ácido-base" onReset={reset}>
@@ -362,6 +371,7 @@ function AcidBaseTitration() {
                   shapes={shapes}
                   annotations={annotations}
                   exportName="equilibria-titulacion-acidobase"
+                  exportMetadata={exportMetadata}
                 />
               ),
             },
@@ -378,6 +388,7 @@ function AcidBaseTitration() {
                       xRange={[0, vMax]}
                       shapes={granShapes}
                       exportName="equilibria-titulacion-gran"
+                      exportMetadata={exportMetadata}
                     />
                   </div>
                   <p className="hint" style={{ margin: '4px 8px 2px' }}>
@@ -532,6 +543,15 @@ function EdtaTitration() {
   const buretName = edtaInFlask ? label : 'EDTA';
   const flaskName = edtaInFlask ? 'EDTA' : label;
   const loadedMetal = EDTA_METAL_PRESETS.find((p) => p.id === metalId);
+
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Titulación complejométrica (EDTA)',
+    Metal: label,
+    'log Kf': logKf.toFixed(2),
+    pH: pH.toFixed(1),
+    'C / M': cFlask.toFixed(4),
+    'V / mL': vFlask.toFixed(0),
+  }), [label, logKf, pH, cFlask, vFlask]);
   const presetIsUnedited = loadedMetal !== undefined
     && label === loadedMetal.metal
     && logKf === loadedMetal.logKf
@@ -549,6 +569,7 @@ function EdtaTitration() {
           xRange={[0, axis === 'x' ? 2 : vMax]}
           shapes={titShapes}
           exportName="equilibria-titulacion-edta"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -564,7 +585,7 @@ function EdtaTitration() {
         />
       ),
     },
-  ], [titTraces, titShapes, xTitle, vMax, axis, traceY, metalId, logKf, logBetasOH, pH]);
+  ], [titTraces, titShapes, xTitle, vMax, axis, traceY, metalId, logKf, logBetasOH, pH, exportMetadata]);
 
   return (
     <>
@@ -741,6 +762,15 @@ function RedoxTitration() {
   const pHDependent = analyte.mH > 0 || titrant.mH > 0;
   const buretSpecies = direction === 'oxidante' ? titrant.ox : titrant.red;
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Titulación redox',
+    Analito: analyte.name,
+    Titulante: titrant.name,
+    pH: pH.toFixed(1),
+    'CA / M': cAnalyte.toFixed(4),
+    'CT / M': cTitrant.toFixed(4),
+  }), [analyte.name, titrant.name, pH, cAnalyte, cTitrant]);
+
   return (
     <>
       <PanelShell title="Titulación redox" onReset={reset}>
@@ -805,6 +835,7 @@ function RedoxTitration() {
           shapes={shapes}
           annotations={annotations}
           exportName="equilibria-titulacion-redox"
+          exportMetadata={exportMetadata}
         />
         <ResultCardRow items={[
           { label: 'V de equivalencia', value: `${curve.vEq.toFixed(2)} mL`, accent: true },
@@ -1013,6 +1044,13 @@ function PrecipTitration() {
           shapes={shapes}
           annotations={annotations}
           exportName="equilibria-titulacion-precip"
+          exportMetadata={{
+            Módulo: 'Titulación por precipitación',
+            Sal: saltFormula,
+            pKsp: pKsp.toFixed(2),
+            'CA / M': cAnalyte.toFixed(4),
+            'CT / M': cTitrant.toFixed(4),
+          }}
         />
         <ResultCardRow items={[
           { label: 'V de equivalencia', value: `${curve.vEq.toFixed(2)} mL`, accent: true },
@@ -1181,6 +1219,16 @@ function PotenciometricaTitration() {
     [curve.equivalenceVolumes],
   );
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Titulación potenciométrica',
+    Analito: system.label,
+    Titulante: titrantName,
+    'CA / M': cAnalyte.toFixed(4),
+    'VA / mL': vAnalyte.toFixed(0),
+    'CT / M': cTitrant.toFixed(4),
+    'Kref / mV': Kref.toFixed(0),
+  }), [system.label, titrantName, cAnalyte, vAnalyte, cTitrant, Kref]);
+
   const diagrams = [
     {
       id: 'efV',
@@ -1195,6 +1243,7 @@ function PotenciometricaTitration() {
           shapes={efVShapes}
           annotations={efVAnnotations}
           exportName="equilibria-potenciometrica-efV"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -1211,6 +1260,7 @@ function PotenciometricaTitration() {
               xRange={[0, vMax]}
               shapes={granShapes}
               exportName="equilibria-gran"
+              exportMetadata={exportMetadata}
             />
           </div>
           <p className="hint" style={{ margin: '4px 8px 2px' }}>

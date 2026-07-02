@@ -14,8 +14,15 @@ function hasXY(t: Data): t is Data & XYTrace {
  * Converts Plotly traces to a CSV string.
  * Each trace contributes two columns: x_<name> and y_<name>.
  * Rows are aligned to the longest trace; shorter traces get empty cells.
+ * Optional metadata is prepended as comment lines (# key: value) that
+ * spreadsheet apps ignore and pandas can skip with comment='#'.
  */
-export function tracesToCSV(data: Data[], xTitle: string, yTitle: string): string {
+export function tracesToCSV(
+  data: Data[],
+  xTitle: string,
+  yTitle: string,
+  metadata?: Record<string, string>,
+): string {
   const traces = data.filter(hasXY);
   if (traces.length === 0) return '';
 
@@ -26,7 +33,11 @@ export function tracesToCSV(data: Data[], xTitle: string, yTitle: string): strin
     return [`${xTitle}:${name}`, `${yTitle}:${name}`];
   });
 
-  const rows: string[] = [headers.join(',')];
+  const metaLines = metadata
+    ? Object.entries(metadata).map(([k, v]) => `# ${k}: ${v}`)
+    : [];
+
+  const rows: string[] = [...metaLines, headers.join(',')];
   for (let i = 0; i < maxLen; i++) {
     const cells = traces.flatMap((t) => {
       const x = i < t.x.length ? String(t.x[i]) : '';

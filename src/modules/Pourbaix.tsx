@@ -263,6 +263,12 @@ export default function Pourbaix() {
   const [cursorE, setCursorE] = useState(0);
   const [arb, setArb] = useState<ArbitraryCustom>(DEFAULT_ARB);
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Pourbaix',
+    Sistema: useCustom ? `personalizado (${arb.species.find((s) => s.kind === 'ion')?.formula ?? 'M'})` : systemId,
+    'log C': logC.toFixed(1),
+  }), [useCustom, arb.species, systemId, logC]);
+
   useShareEffect('pourbaix', { systemId, useCustom, logC, showWater, cursorPH, cursorE, arb }, (s) => {
     if (s.systemId) setSystemId(s.systemId);
     if (s.useCustom !== undefined) setUseCustom(s.useCustom);
@@ -420,6 +426,7 @@ export default function Pourbaix() {
           shapes={cursorShapes}
           annotations={annotations}
           exportName={`equilibria-lab-pourbaix-${useCustom ? 'custom' : systemId}`}
+          exportMetadata={exportMetadata}
         />
         <ResultCardRow items={[
           { label: 'Especie predominante', value: predominant, accent: true },
