@@ -3,6 +3,7 @@
 
 import { PKW } from './constants';
 import { alphaFractions } from './equilibrium';
+import { logActivityCoefficient } from './activity';
 import { alphaH, alphaOH, alphaL, condLogK, feasibilityWindow } from './conditional';
 
 export { feasibilityWindow };
@@ -167,7 +168,12 @@ export function hydroxideSolCurveMasked(
   stack: SideReactionStack,
   pHRange: [number, number] = [0, 14],
   points = 500,
+  I = 0,
 ): { pHs: number[]; logS: number[] } {
+  // Ksp_app = Ksp_thermo / (γ_M · γ_OH^n) → pKsp_app = pKsp + logγ(n, I) + n·logγ(1, I)
+  const pKspApp = I > 0
+    ? pKsp + logActivityCoefficient(n, I) + n * logActivityCoefficient(1, I)
+    : pKsp;
   const [pHmin, pHmax] = pHRange;
   const pHs: number[] = [];
   const logS: number[] = [];
@@ -175,7 +181,7 @@ export function hydroxideSolCurveMasked(
 
   for (let i = 0; i <= points; i++) {
     const pH = pHmin + ((pHmax - pHmin) * i) / points;
-    const logFreeMetal = -pKsp + n * (PKW - pH);
+    const logFreeMetal = -pKspApp + n * (PKW - pH);
     const br = composeAlphas(pH, stack);
     // α_M for solubility: hydroxo + auxiliary (NH₃, glycinate), without Y-ligand protonation
     const alphaM = br.alphaOH * br.alphaL;
@@ -200,8 +206,9 @@ export function precipitationPHMasked(
   logSThreshold: number,
   pHRange: [number, number] = [0, 14],
   direction: 'falling' | 'rising' = 'falling',
+  I = 0,
 ): number | null {
-  const { pHs, logS } = hydroxideSolCurveMasked(pKsp, n, stack, pHRange, 1000);
+  const { pHs, logS } = hydroxideSolCurveMasked(pKsp, n, stack, pHRange, 1000, I);
   for (let i = 1; i < pHs.length; i++) {
     const crossed =
       direction === 'falling'

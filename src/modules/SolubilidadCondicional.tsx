@@ -13,6 +13,7 @@ import {
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import { alphaOH, hydroxideSolCurve, precipitationPH } from '../lib/conditional';
+import { logActivityCoefficient } from '../lib/activity';
 import {
   defaultSideEditorState,
   hydroxideSolCurveMasked,
@@ -77,6 +78,7 @@ interface State {
   showM2: boolean;
   logSThreshold: number;
   operatingPH: number;
+  ionicStrength: number;
   showPX: boolean;
   ligandX: string;
   logBetasX: number[];
@@ -106,6 +108,7 @@ function defaultState(): State {
     showM2: false,
     logSThreshold: -5,
     operatingPH: 9,
+    ionicStrength: 0,
     showPX: false,
     ligandX: 'NH₃',
     logBetasX: [4.04, 7.47, 10.27],
@@ -157,26 +160,26 @@ export default function SolubilidadCondicional() {
 
   const curve1 = useMemo(
     () => s.showSideMask
-      ? hydroxideSolCurveMasked(s.m1.pKsp, s.m1.n, sideStack, [0, 14], 600)
-      : hydroxideSolCurve(s.m1.pKsp, s.m1.n, s.m1.logBetasOH, [0, 14], 600),
-    [s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.showSideMask, sideStack],
+      ? hydroxideSolCurveMasked(s.m1.pKsp, s.m1.n, sideStack, [0, 14], 600, s.ionicStrength)
+      : hydroxideSolCurve(s.m1.pKsp, s.m1.n, s.m1.logBetasOH, [0, 14], 600, s.ionicStrength),
+    [s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.showSideMask, sideStack, s.ionicStrength],
   );
   const curve2 = useMemo(
-    () => s.showM2 ? hydroxideSolCurve(s.m2.pKsp, s.m2.n, s.m2.logBetasOH, [0, 14], 600) : null,
-    [s.m2.pKsp, s.m2.n, s.m2.logBetasOH, s.showM2],
+    () => s.showM2 ? hydroxideSolCurve(s.m2.pKsp, s.m2.n, s.m2.logBetasOH, [0, 14], 600, s.ionicStrength) : null,
+    [s.m2.pKsp, s.m2.n, s.m2.logBetasOH, s.showM2, s.ionicStrength],
   );
 
   // ── Precipitation pH (first threshold crossing) ───────────────────────────
 
   const pH1precip = useMemo(
     () => s.showSideMask
-      ? precipitationPHMasked(s.m1.pKsp, s.m1.n, sideStack, logSThreshold, [0, 14], 'falling')
-      : precipitationPH(s.m1.pKsp, s.m1.n, s.m1.logBetasOH, logSThreshold, [0, 14], 'falling'),
-    [s.m1, logSThreshold, s.showSideMask, sideStack],
+      ? precipitationPHMasked(s.m1.pKsp, s.m1.n, sideStack, logSThreshold, [0, 14], 'falling', s.ionicStrength)
+      : precipitationPH(s.m1.pKsp, s.m1.n, s.m1.logBetasOH, logSThreshold, [0, 14], 'falling', s.ionicStrength),
+    [s.m1, logSThreshold, s.showSideMask, sideStack, s.ionicStrength],
   );
   const pH2precip = useMemo(
-    () => s.showM2 ? precipitationPH(s.m2.pKsp, s.m2.n, s.m2.logBetasOH, logSThreshold, [0, 14], 'falling') : null,
-    [s.m2, logSThreshold, s.showM2],
+    () => s.showM2 ? precipitationPH(s.m2.pKsp, s.m2.n, s.m2.logBetasOH, logSThreshold, [0, 14], 'falling', s.ionicStrength) : null,
+    [s.m2, logSThreshold, s.showM2, s.ionicStrength],
   );
 
   // Selective window: [pH where M1 precipitates, pH where M2 starts to precipitate]
@@ -332,9 +335,10 @@ export default function SolubilidadCondicional() {
       id: 'custom', name: s.m1.label, formula: s.m1.formula,
       pKsp: s.m1.pKsp, m: 1, x: s.m1.n,
       anionLabel: 'OH⁻', cationLabel: s.m1.label,
+      zCation: s.m1.n, zAnion: 1,
     };
-    return solubilityPXCurve(salt, s.pHForPX, s.logBetasX, 0, 14, 400);
-  }, [s.showPX, s.m1, s.pHForPX, s.logBetasX]);
+    return solubilityPXCurve(salt, s.pHForPX, s.logBetasX, 0, 14, 400, 0, s.ionicStrength);
+  }, [s.showPX, s.m1, s.pHForPX, s.logBetasX, s.ionicStrength]);
 
   // ── Database items ────────────────────────────────────────────────────────
 
@@ -345,6 +349,10 @@ export default function SolubilidadCondicional() {
   // ── pKsp' = f(pH) curve ───────────────────────────────────────────────────
 
   const pKspCurve1 = useMemo(() => {
+    // Apply DH correction: pKsp_app = pKsp + logγ(n, I) + n·logγ(1, I)
+    const pKspApp = s.ionicStrength > 0
+      ? s.m1.pKsp + logActivityCoefficient(s.m1.n, s.ionicStrength) + s.m1.n * logActivityCoefficient(1, s.ionicStrength)
+      : s.m1.pKsp;
     const N = 300;
     const pHs: number[] = [];
     const pKsps: number[] = [];
@@ -352,13 +360,16 @@ export default function SolubilidadCondicional() {
       const pH = 14 * i / N;
       const logA = Math.log10(alphaOH(s.m1.logBetasOH, pH));
       pHs.push(pH);
-      pKsps.push(s.m1.pKsp - logA);
+      pKsps.push(pKspApp - logA);
     }
-    return { pHs, pKsps };
-  }, [s.m1.pKsp, s.m1.logBetasOH]);
+    return { pHs, pKsps, pKspBase: pKspApp };
+  }, [s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.ionicStrength]);
 
   const pKspCurve2 = useMemo(() => {
     if (!s.showM2) return null;
+    const pKspApp = s.ionicStrength > 0
+      ? s.m2.pKsp + logActivityCoefficient(s.m2.n, s.ionicStrength) + s.m2.n * logActivityCoefficient(1, s.ionicStrength)
+      : s.m2.pKsp;
     const N = 300;
     const pHs: number[] = [];
     const pKsps: number[] = [];
@@ -366,10 +377,10 @@ export default function SolubilidadCondicional() {
       const pH = 14 * i / N;
       const logA = Math.log10(alphaOH(s.m2.logBetasOH, pH));
       pHs.push(pH);
-      pKsps.push(s.m2.pKsp - logA);
+      pKsps.push(pKspApp - logA);
     }
-    return { pHs, pKsps };
-  }, [s.showM2, s.m2.pKsp, s.m2.logBetasOH]);
+    return { pHs, pKsps, pKspBase: pKspApp };
+  }, [s.showM2, s.m2.pKsp, s.m2.n, s.m2.logBetasOH, s.ionicStrength]);
 
   const pKspTraces = useMemo(() => {
     const out: import('plotly.js').Data[] = [
@@ -381,11 +392,11 @@ export default function SolubilidadCondicional() {
         hovertemplate: `pKsp' = %{y:.2f}<extra>${s.m1.formula}</extra>`,
       },
       {
-        x: pKspCurve1.pHs, y: pKspCurve1.pHs.map(() => s.m1.pKsp),
+        x: pKspCurve1.pHs, y: pKspCurve1.pHs.map(() => pKspCurve1.pKspBase),
         type: 'scatter', mode: 'lines',
-        name: `pKsp termodinámico (${s.m1.formula})`,
+        name: `pKsp${s.ionicStrength > 0 ? ' (corr. γ)' : ' termodinámico'} (${s.m1.formula})`,
         line: { width: 1.5, color: C1, dash: 'dot' },
-        hovertemplate: `pKsp = ${s.m1.pKsp}<extra>referencia</extra>`,
+        hovertemplate: `pKsp = ${pKspCurve1.pKspBase.toFixed(2)}<extra>referencia</extra>`,
       },
     ];
     if (pKspCurve2) {
@@ -398,13 +409,13 @@ export default function SolubilidadCondicional() {
       });
     }
     return out;
-  }, [pKspCurve1, pKspCurve2, s.m1.formula, s.m1.pKsp, s.m2.formula]);
+  }, [pKspCurve1, pKspCurve2, s.m1.formula, s.m2.formula, s.ionicStrength]);
 
   const pKspYMin = useMemo(() => {
     const all = [...pKspCurve1.pKsps, ...(pKspCurve2?.pKsps ?? [])].filter(Number.isFinite);
     return Math.max(Math.floor(Math.min(...all)) - 1, 0);
   }, [pKspCurve1, pKspCurve2]);
-  const pKspYMax = Math.max(s.m1.pKsp, s.showM2 ? s.m2.pKsp : 0) + 3;
+  const pKspYMax = Math.max(pKspCurve1.pKspBase, pKspCurve2 ? pKspCurve2.pKspBase : 0) + 3;
 
   // ── Diagrams ──────────────────────────────────────────────────────────────
 
@@ -557,6 +568,14 @@ export default function SolubilidadCondicional() {
         </PanelSection>
 
         <PanelSection title="Umbral y operación" icon="⚗">
+          <Slider
+            label="Fuerza iónica I"
+            helpId="ionicStrength"
+            value={s.ionicStrength}
+            min={0} max={0.5} step={0.01}
+            onChange={(v) => setS((p) => ({ ...p, ionicStrength: v }))}
+            decimals={2}
+          />
           <Toggle
             label="Umbral desde concentración analítica C"
             checked={s.useCThreshold}
