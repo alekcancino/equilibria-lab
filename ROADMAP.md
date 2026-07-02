@@ -40,6 +40,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | **Ion exchange: column with multiple zones** | Extend breakthrough curve beyond the ideal single-front model. |
 | **Arbitrary Pourbaix systems** | Allow fully custom species and half-reactions beyond the built-in presets. |
 | **CSV / report export** | Export current chart data and computed values as a downloadable CSV or PDF summary. |
+| **Shareable scenario links** | Encode the current module state in the URL so a configured example can be shared with a single link — useful for teaching and reporting. |
 
 ### Medium-term
 
@@ -49,6 +50,9 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP. |
 | **Competitive precipitation** | Simultaneous solubility of multiple solids sharing a common ion. |
 | **Step-by-step titration animation** | Visual playback of the titration curve point by point. |
+| **Comprehensive constants database** | Import a curated equilibrium-constant set (e.g. Medusa/HALTAFALL, KTH) to expand coverage well beyond the hand-picked presets. Constants are extracted to JSON at build time with citations; only the data is used, never upstream code. |
+| **In-app validation and assumptions** | Surface each module's simplifying assumptions and its validation status (cross-checked against Spana/HALTAFALL) directly in the UI, so results are auditable at a glance. |
+| **Worked-example gallery** | Loadable, solved problems per module to speed onboarding for new users. |
 
 ### Long-term / exploratory
 
@@ -58,8 +62,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | **Surface adsorption** | Constant capacitance model (CCM), diffuse-layer model. |
 | **PHREEQC bridge** | Offline batch validation against PHREEQC as an oracle (not a runtime dependency). |
 | **Reactive kinetics** | One slow reaction + fast equilibrium system. |
-| **Medusa/HALTAFALL thermodynamic database** | Investigate integrating the Medusa database (KTH/Ignasi Puigdomenech) as a constants source. Medusa is open-source (LGPL); need to verify license compatibility, data format (`.db` binary vs exportable), and whether constants can be imported at build time or bundled as JSON for client-side use. |
-| **GeoGebra 2D graphics engine** | Investigate using GeoGebra's 2D rendering engine for interactive diagrams. GeoGebra is open-source under GPL-3.0 (non-commercial) — need to assess whether GPL-3.0 is compatible with this project's MIT license and intended use. If compatible, could replace Plotly for 2D predominance maps and Pourbaix diagrams with richer interactivity. |
+| **Richer 2D interactivity** | Evaluate Plotly `contour`/`heatmap` or a lightweight D3/canvas layer (both MIT/BSD-compatible) for 2D predominance maps and Pourbaix diagrams. GeoGebra was considered but ruled out: its GPL-3.0 licensing is incompatible with this project's MIT license. |
 
 ---
 
