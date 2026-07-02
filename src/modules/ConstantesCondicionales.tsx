@@ -1,6 +1,5 @@
 // Conditional Constants module (Ringbom).
 // Generates the log K' = f(pH) curve and α coefficients for M + Y systems (EDTA by default).
-// Covers QA II.2 + QA III.1 in full.
 
 import { useMemo, useState } from 'react';
 import type { Data, Shape } from 'plotly.js';
@@ -150,8 +149,7 @@ export default function ConstantesCondicionales() {
     return (hi - lo) / (2 * h);
   }, [s.logKf, s.evalPH, stack]);
 
-  // ── Métrica "% + punto de operación" (spec issue #4 · C1) ───────────────────
-  // % formado del complejo M+Y a Co (ligante/complejante en exceso) con log K′(pH).
+  // "% + operating point" metric: fraction formed of M+Y at Co (ligand in excess) using log K′(pH).
   // pH para 10/50/90 % por bisección sobre f(pH) = K'(pH)·Co / (1 + K'(pH)·Co).
   const pctFormado = useMemo(
     () => fractionFormedExcess(logKAtEval, s.co) * 100,

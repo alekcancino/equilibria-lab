@@ -236,7 +236,7 @@ export interface DistributionParams {
 }
 
 /**
- * Distribution coefficient D = [M]_resin / [M′]_sol (QA III 3rd partial exam).
+ * Distribution coefficient D = [M]_resin / [M′]_sol.
  * D = K² · (α_M)^−1 · [H⁺]_bulk² / [H⁺]_resin²
  */
 export function distributionCoefficient(params: DistributionParams): number {

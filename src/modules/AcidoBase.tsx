@@ -156,7 +156,7 @@ export default function AcidoBase() {
         <InfoBox title="Cómo leer estos diagramas">
           <p>
             <strong>DUZP</strong> (zonas de predominio): en cada tramo de pH domina una
-            especie; las fronteras están en los pKa. Es la lectura rápida estilo UNAM.
+            especie; las fronteras están en los pKa.
           </p>
           <p>
             <strong>Distribución α</strong>: fracción de cada especie vs pH; en pH = pKa las

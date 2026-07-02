@@ -1,7 +1,7 @@
 // Data-driven Pourbaix diagram generator.
-// Direct port of pourbaix_core.py (EquilibriaLab, audited): only E° and pKsp
-// are primitive data; every solid-boundary potential is DERIVED via Hess's law,
-// so triple-point closure is a mathematical identity, not a coincidence (lesson from audit P0-4).
+// Data-driven Pourbaix engine: only E° and pKsp are primitive inputs; every
+// solid-boundary potential is DERIVED via Hess's law, so triple-point closure
+// is a mathematical identity (not a numerical coincidence).
 //
 // Golden-suite identities verified against the original project:
 //   Fe(OH)₃/Fe²⁺ E°′ = 0.948 V · Fe(OH)₃/Fe(OH)₂ = 0.179 V · Fe(OH)₂/Fe = −0.056 V

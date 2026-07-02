@@ -1,4 +1,4 @@
-// Unified equilibrium ladder (Baeza/UNAM model): MLⱼ ⇌ MLᵢ + (j−i)L on a p-scale.
+// Unified equilibrium ladder: MLⱼ ⇌ MLᵢ + (j−i)L on a p-scale.
 // Species S₀…Sₙ connected by boundaries (constants) on the p-scale
 // (pH for acid-base, pL for complexation, pe for redox). The SAME engine
 // drives α distribution, the log-C diagram, and the DUZP for all three

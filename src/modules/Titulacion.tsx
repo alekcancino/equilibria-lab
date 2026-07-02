@@ -236,7 +236,7 @@ function AcidBaseTitration() {
   const pHLastEq = lastIdx > 0 ? curve.pHs[lastIdx] : NaN;
   const indicatorOk = pHLastEq >= indicator.range[0] - 1 && pHLastEq <= indicator.range[1] + 1;
 
-  // ── Gráfica de Gran + cuantitatividad (spec issue #4 · C3) ──────────────────
+  // ── Gran plot + quantitativity ───────────────────────────────────────────────
   const gran = useMemo(
     () => granPlot(curve.volumes, curve.pHs, vAnalyte),
     [curve.volumes, curve.pHs, vAnalyte],
@@ -789,7 +789,7 @@ function RedoxTitration() {
         <InfoBox title="Método de cálculo">
           <p>
             Balance de electrones exacto por bisección, convención pe = E/0.05916
-            (Sillén/Baeza). Soporta estequiometría n₁ ≠ n₂ y pe°′ condicional al
+            (Sillén). Soporta estequiometría n₁ ≠ n₂ y pe°′ condicional al
             pH para pares con H⁺ en la semirreacción.
           </p>
         </InfoBox>

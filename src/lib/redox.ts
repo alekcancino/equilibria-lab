@@ -23,7 +23,7 @@ export interface RedoxCouple {
   caveat?: string;
 }
 
-/** pe° = E°/S — Sillén/Baeza convention, consistent with textbooks. */
+/** pe° = E°/S — Sillén convention: n is absorbed into pe°, not repeated. */
 export function peStandard(E0: number): number {
   return E0 / NERNST_S;
 }

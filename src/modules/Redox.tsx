@@ -15,7 +15,7 @@ import type { Zone } from '../lib/ladder';
 
 const PE_POINTS = 400;
 
-/** Redox diagrams: DUZP + α vs pe + prediction scale (Baeza). */
+/** Redox diagrams: DUZP + α vs pe + prediction scale (Sillén pe convention). */
 export default function Redox() {
   const [couple1, setCouple1] = useState<CoupleState>(coupleFromPreset('fe'));
   const [couple2, setCouple2] = useState<CoupleState>(coupleFromPreset('ce'));
@@ -151,7 +151,7 @@ export default function Redox() {
         </PanelSection>
         <InfoBox title="Cómo leer la escala de predicción">
           <p>
-            En la escala de pe (Baeza), cada par se coloca en su pe°′ condicional con el
+            En la escala de pe, cada par se coloca en su pe°′ condicional con el
             oxidante arriba y el reductor abajo. El oxidante del par con pe°′ <em>mayor</em>{' '}
             reacciona espontáneamente con el reductor del par con pe°′ <em>menor</em>,
             con log K = n₁·n₂·Δpe°′. Mueve el pH y observa cómo los pares con H⁺
