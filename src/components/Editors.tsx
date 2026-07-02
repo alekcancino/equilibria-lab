@@ -2,7 +2,7 @@
 // PRIMARY = free label + editable constants with ± buttons.
 // SECONDARY = collapsible database that auto-fills and closes.
 
-import { ConstantList, DbPanel, LabelField, ModelBadge, RefBadge, SelectControl, Slider, ConcSlider } from './Controls';
+import { ConstantList, DbPanel, HelpTip, LabelField, ModelBadge, RefBadge, SelectControl, Slider, ConcSlider } from './Controls';
 import { ACIDS } from '../lib/database';
 import { REDOX_COUPLES } from '../lib/redoxDatabase';
 import { COMPLEX_PRESETS } from '../lib/complexDatabase';
@@ -230,6 +230,7 @@ export function SideReactionEditor({
         <div className="control">
           <div className="control-header">
             <span className="control-label">Concentración del auxiliar</span>
+            <HelpTip id="ligFree" />
           </div>
           <div className="segmented" style={{ marginTop: 6 }}>
             {([
@@ -246,15 +247,19 @@ export function SideReactionEditor({
               </button>
             ))}
           </div>
+          <p className="hint">
+            [L] libre: introduce [L] de equilibrio. Total F: concentración analítica (requiere pKa). pX′ fijo: usa −log[L′] directo.
+          </p>
         </div>
         {state.auxSpecMode === 'free' && (
-          <ConcSlider label="[L] libre (M)" value={state.cAuxFree} onChange={(v) => set('cAuxFree', v)} />
+          <ConcSlider label="[L] libre (M)" helpId="ligFree" value={state.cAuxFree} onChange={(v) => set('cAuxFree', v)} />
         )}
         {state.auxSpecMode === 'total' && (
           <>
             <ConcSlider label="Concentración total F (M)" value={state.cAuxTotal} onChange={(v) => set('cAuxTotal', v)} min={-3} max={1} />
             <ConstantList
               prefix="pKa (ácido conjugado)"
+              helpId="pKa"
               values={state.auxPKas}
               onChange={(v) => set('auxPKas', v)}
               min={0}
@@ -267,7 +272,7 @@ export function SideReactionEditor({
           </>
         )}
         {state.auxSpecMode === 'fixedPX' && (
-          <Slider label="pX′ objetivo" value={state.pXFixed} min={0} max={14} step={0.1} onChange={(v) => set('pXFixed', v)} decimals={1} />
+          <Slider label="pX′ objetivo" helpId="pXprime" value={state.pXFixed} min={0} max={14} step={0.1} onChange={(v) => set('pXFixed', v)} decimals={1} />
         )}
       </details>
 

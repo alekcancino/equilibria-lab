@@ -98,4 +98,12 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     meaning: 'Constante del complejo hidroxo mixto (MY + OH⁻ ⇌ MOHY).',
     units: 'log β, adimensional',
   },
+  ligFree: {
+    meaning: 'Concentración de equilibrio de la forma libre (no complejada) del ligando auxiliar L.',
+    units: 'mol/L (M)',
+  },
+  Kref: {
+    meaning: 'Constante del electrodo de vidrio: potencial de referencia que agrupa la asimetría del electrodo y el potencial de unión líquida. E = K_ref − 59.16·pH·S.',
+    units: 'mV',
+  },
 };
