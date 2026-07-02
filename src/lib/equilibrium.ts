@@ -1,8 +1,25 @@
 // Chemical equilibrium engine: alpha fractions and pH solver via charge balance.
 
 import { KW } from './constants';
+import { activityCoefficient, logActivityCoefficient, apparentPKw } from './activity';
 
 export { KW };
+
+/**
+ * Apparent pKas in concentration units at ionic strength I.
+ * For each dissociation step i: HA^(z0-i) ⇌ H⁺ + A^(z0-i-1)
+ * pKa_i,app = pKa_i + log(γ_donor) - log(γ_acceptor) - log(γ_H)
+ */
+function correctedPKas(pKas: number[], z0: number, I: number): number[] {
+  return pKas.map((pKa, i) => {
+    const zDonor = z0 - i;
+    const zAcceptor = z0 - i - 1;
+    const shift = logActivityCoefficient(Math.abs(zDonor), I)
+      - logActivityCoefficient(Math.abs(zAcceptor), I)
+      - logActivityCoefficient(1, I);
+    return pKa + shift;
+  });
+}
 
 /**
  * An acid-base component: the fully protonated form HnA with charge z0
@@ -40,8 +57,9 @@ export function alphaFractions(h: number, pKas: number[]): number[] {
 }
 
 /**
- * Charge balance of a mixture at a given pH.
+ * Charge balance of a mixture at a given pH (activity pH = −log a_H).
  * extraCations/extraAnions: concentrations of strong spectator ions (Na+, Cl-).
+ * I: ionic strength for Debye–Hückel correction (0 = ideal, γ = 1).
  * Returns net charge; the root f(pH) = 0 is the equilibrium pH.
  */
 export function chargeBalance(
@@ -49,13 +67,20 @@ export function chargeBalance(
   components: AcidBaseComponent[],
   extraCations = 0,
   extraAnions = 0,
+  I = 0,
 ): number {
-  const h = Math.pow(10, -pH);
-  const oh = KW / h;
+  const gammaH  = activityCoefficient(1, I);
+  const gammaOH = activityCoefficient(1, I);
+  // [H+] concentration from activity pH: a_H = γH · [H+]
+  const h = Math.pow(10, -pH) / gammaH;
+  // [OH-] from apparent Kw: [H+][OH-] = Kw / (γH · γOH)
+  const kwApp = Math.pow(10, -apparentPKw(gammaH, gammaOH));
+  const oh = kwApp / h;
   let net = h - oh + extraCations - extraAnions;
   for (const comp of components) {
     if (comp.c <= 0) continue;
-    const alphas = alphaFractions(h, comp.pKas);
+    const pKas = I > 0 ? correctedPKas(comp.pKas, comp.z0, I) : comp.pKas;
+    const alphas = alphaFractions(h, pKas);
     let weighted = 0;
     for (let i = 0; i < alphas.length; i++) {
       weighted += alphas[i] * (comp.z0 - i);
@@ -68,22 +93,24 @@ export function chargeBalance(
 /**
  * Solves the pH of a mixture by bisection on the charge balance.
  * f(pH) is strictly decreasing in pH, so bisection is robust.
+ * I: ionic strength for Debye–Hückel correction (0 = ideal).
  */
 export function solvePH(
   components: AcidBaseComponent[],
   extraCations = 0,
   extraAnions = 0,
+  I = 0,
 ): number {
   let lo = -2;
   let hi = 16;
-  const fLo = chargeBalance(lo, components, extraCations, extraAnions);
-  const fHi = chargeBalance(hi, components, extraCations, extraAnions);
+  const fLo = chargeBalance(lo, components, extraCations, extraAnions, I);
+  const fHi = chargeBalance(hi, components, extraCations, extraAnions, I);
   if (fLo <= 0) return lo;
   if (fHi >= 0) return hi;
   if (fLo * fHi > 0) return NaN;
   for (let i = 0; i < 80; i++) {
     const mid = (lo + hi) / 2;
-    const f = chargeBalance(mid, components, extraCations, extraAnions);
+    const f = chargeBalance(mid, components, extraCations, extraAnions, I);
     if (f > 0) lo = mid;
     else hi = mid;
   }

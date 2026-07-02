@@ -5,6 +5,7 @@
 // equilibrium types — that uniformity is what makes the app intuitive.
 
 import { SPECIES_COLORS } from './database';
+import { logActivityCoefficient } from './activity';
 
 /**
  * α fractions for a one-particle-per-step ladder.
@@ -17,11 +18,31 @@ import { SPECIES_COLORS } from './database';
  *
  * Works in log-space to avoid overflow. Returns α₀…αₙ.
  */
-export function ladderFractions(p: number, boundaries: number[], ascending: boolean): number[] {
+/**
+ * Debye–Hückel shift for acid-base boundary i (pKa_i,app − pKa_i).
+ * boundary i: species (z0−i) ⇌ H⁺ + species (z0−i−1)
+ */
+function pKaShift(z0: number, i: number, I: number): number {
+  const zDonor    = z0 - i;
+  const zAcceptor = z0 - i - 1;
+  return logActivityCoefficient(Math.abs(zDonor), I)
+    - logActivityCoefficient(Math.abs(zAcceptor), I)
+    - logActivityCoefficient(1, I);
+}
+
+/**
+ * α fractions for a one-particle-per-step ladder.
+ * z0: charge of species 0 (needed for activity correction; ignored when I = 0).
+ * I: ionic strength for Debye–Hückel correction (0 = ideal, ascending only).
+ */
+export function ladderFractions(
+  p: number, boundaries: number[], ascending: boolean, z0 = 0, I = 0,
+): number[] {
   const logTerms: number[] = [0];
   let acc = 0;
   for (let i = 0; i < boundaries.length; i++) {
-    acc += ascending ? p - boundaries[i] : boundaries[i] - p;
+    const b = (ascending && I > 0) ? boundaries[i] + pKaShift(z0, i, I) : boundaries[i];
+    acc += ascending ? p - b : b - p;
     logTerms.push(acc);
   }
   const maxLog = Math.max(...logTerms);
@@ -32,9 +53,9 @@ export function ladderFractions(p: number, boundaries: number[], ascending: bool
 
 /** log concentration of each species: log[Sᵢ] = log αᵢ + log C_total. */
 export function ladderLogC(
-  p: number, boundaries: number[], ascending: boolean, logCtotal: number,
+  p: number, boundaries: number[], ascending: boolean, logCtotal: number, z0 = 0, I = 0,
 ): number[] {
-  return ladderFractions(p, boundaries, ascending).map(
+  return ladderFractions(p, boundaries, ascending, z0, I).map(
     (a) => Math.log10(Math.max(a, 1e-30)) + logCtotal,
   );
 }
@@ -50,12 +71,12 @@ export interface Zone {
 
 /** Refines the boundary between two dominant species by bisection (exact p-value). */
 function refineBoundary(
-  lo: number, hi: number, a: number, b: number, boundaries: number[], ascending: boolean,
+  lo: number, hi: number, a: number, b: number,
+  boundaries: number[], ascending: boolean, z0: number, I: number,
 ): number {
-  // root of f(p) = α_b − α_a; f changes sign on [lo, hi]
   for (let i = 0; i < 40; i++) {
     const mid = (lo + hi) / 2;
-    const fr = ladderFractions(mid, boundaries, ascending);
+    const fr = ladderFractions(mid, boundaries, ascending, z0, I);
     if (fr[b] - fr[a] < 0) lo = mid;
     else hi = mid;
   }
@@ -70,6 +91,7 @@ function refineBoundary(
  */
 export function predominanceZones(
   boundaries: number[], labels: string[], pMin: number, pMax: number, ascending: boolean,
+  z0 = 0, I = 0,
 ): Zone[] {
   const N = 2000;
   const zones: Zone[] = [];
@@ -91,10 +113,12 @@ export function predominanceZones(
 
   for (let i = 0; i <= N; i++) {
     const p = pMin + ((pMax - pMin) * i) / N;
-    const a = ladderFractions(p, boundaries, ascending);
+    const a = ladderFractions(p, boundaries, ascending, z0, I);
     const dom = a.indexOf(Math.max(...a));
     if (dom !== curIdx) {
-      const edge = curIdx >= 0 ? refineBoundary(prevP, p, curIdx, dom, boundaries, ascending) : pMin;
+      const edge = curIdx >= 0
+        ? refineBoundary(prevP, p, curIdx, dom, boundaries, ascending, z0, I)
+        : pMin;
       pushZone(edge);
       curIdx = dom;
       zoneStart = edge;

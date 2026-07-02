@@ -45,12 +45,14 @@ export default function Solubilidad() {
   const [useCommon, setUseCommon] = useState(false);
   const [cCommon, setCCommon] = useState(0.01);
   const [pHPoint, setPHPoint] = useState(7);
+  const [ionicStrength, setIonicStrength] = useState(0);
 
-  useShareEffect('solubilidad', { salt, useCommon, cCommon, pHPoint }, (s) => {
+  useShareEffect('solubilidad', { salt, useCommon, cCommon, pHPoint, ionicStrength }, (s) => {
     if (s.salt) setSalt(s.salt);
     if (s.useCommon !== undefined) setUseCommon(s.useCommon);
     if (s.cCommon !== undefined) setCCommon(s.cCommon);
     if (s.pHPoint !== undefined) setPHPoint(s.pHPoint);
+    if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
   });
 
   function reset() {
@@ -58,6 +60,7 @@ export default function Solubilidad() {
     setUseCommon(false);
     setCCommon(0.01);
     setPHPoint(7);
+    setIonicStrength(0);
   }
 
   const common = useCommon ? cCommon : 0;
@@ -77,8 +80,8 @@ export default function Solubilidad() {
     for (let i = 0; i <= PH_POINTS; i++) {
       const pH = (14 * i) / PH_POINTS;
       phs.push(pH);
-      logS.push(Math.log10(solubility(saltDef, pH, common)));
-      if (common > 0) logS0.push(Math.log10(solubility(saltDef, pH, 0)));
+      logS.push(Math.log10(solubility(saltDef, pH, common, ionicStrength)));
+      if (common > 0) logS0.push(Math.log10(solubility(saltDef, pH, 0, ionicStrength)));
     }
     const data: Data[] = [{
       x: phs, y: logS, type: 'scatter', mode: 'lines',
@@ -94,9 +97,9 @@ export default function Solubilidad() {
       });
     }
     return data;
-  }, [saltDef, common]);
+  }, [saltDef, common, ionicStrength]);
 
-  const sAtPoint = solubility(saltDef, pHPoint, common);
+  const sAtPoint = solubility(saltDef, pHPoint, common, ionicStrength);
   const sInvalid = !Number.isFinite(sAtPoint) || sAtPoint <= 0;
 
   const pHMarker = useMemo<Partial<Shape>[]>(() => {
@@ -173,6 +176,11 @@ export default function Solubilidad() {
             <ConcSlider label="Concentración del ion común" value={cCommon} onChange={setCCommon} min={-5} max={-0.5} />
           )}
           <Slider label="Evaluar en pH" value={pHPoint} min={0} max={14} step={0.1} onChange={setPHPoint} decimals={1} />
+          <details className="section-collapse">
+            <summary>Corrección por actividad (Debye–Hückel)</summary>
+            <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
+            <p className="hint">I = 0 → γ = 1 (resultado termodinámico). A I &gt; 0 el pKsp aparente disminuye y la sal se vuelve más soluble.</p>
+          </details>
         </PanelSection>
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
