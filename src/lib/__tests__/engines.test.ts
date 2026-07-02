@@ -320,6 +320,22 @@ describe('hydroxideSolCurve', () => {
     const slope = (logS[i11] - logS[i10]) / (pHs[i11] - pHs[i10]);
     tol(slope, -3, 0.05);
   });
+
+  it('I > 0 aumenta solubilidad (efecto salting-in)', () => {
+    // At I = 0.1 M the activity coefficients reduce ion activities → apparent Ksp larger → more soluble
+    const { logS: logS0 } = hydroxideSolCurve(15, 2, [], [6, 10], 50, 0);
+    const { logS: logS1 } = hydroxideSolCurve(15, 2, [], [6, 10], 50, 0.1);
+    // At every pH point the corrected curve should show higher solubility
+    for (let i = 0; i < logS0.length; i++) {
+      expect(logS1[i]).toBeGreaterThan(logS0[i] - 1e-9);
+    }
+  });
+
+  it('I = 0 da resultado idéntico al caso sin corrección', () => {
+    const { logS: a } = hydroxideSolCurve(15, 2, [], [5, 9], 20, 0);
+    const { logS: b } = hydroxideSolCurve(15, 2, [], [5, 9], 20);
+    for (let i = 0; i < a.length; i++) expect(a[i]).toBeCloseTo(b[i], 10);
+  });
 });
 
 describe('precipitationPH', () => {

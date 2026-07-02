@@ -113,13 +113,14 @@ export function solubilityPXCurve(
   pXMax: number,
   points = 300,
   cCommon = 0,
+  I = 0,
 ): { pXs: number[]; logS: number[] } {
   const pXs: number[] = [];
   const logS: number[] = [];
   for (let i = 0; i <= points; i++) {
     const pX = pXMin + ((pXMax - pXMin) * i) / points;
     pXs.push(pX);
-    logS.push(Math.log10(solubilityVsPX(salt, pH, logBetasM, pX, cCommon)));
+    logS.push(Math.log10(solubilityVsPX(salt, pH, logBetasM, pX, cCommon, I)));
   }
   return { pXs, logS };
 }
