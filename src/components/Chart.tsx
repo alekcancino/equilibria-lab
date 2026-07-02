@@ -32,12 +32,18 @@ export default function Chart(props: ChartProps) {
     if (!el) return;
     const Plotly = await import('plotly.js-basic-dist-min');
     const rect = el.getBoundingClientRect();
-    await Plotly.default.downloadImage(el, {
+    const url = await Plotly.default.toImage(el, {
       format: 'png',
-      filename: exportName,
       width: Math.round(rect.width * 2),
       height: Math.round(rect.height * 2),
     });
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${exportName}.png`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }, [exportName]);
 
   const resetZoom = useCallback(async () => {
