@@ -237,10 +237,14 @@ function nearestRegionName(
   E: number,
 ): string {
   if (regions.length === 0) return '—';
+  // Normalize axes to equal weight: pH spans 0–14, E spans –1.6 to 2.2 (3.8 V)
+  const pHRange = 14, ERange = 3.8;
+  const dist = (r: { labelPH: number; labelE: number }) =>
+    ((pH - r.labelPH) / pHRange) ** 2 + ((E - r.labelE) / ERange) ** 2;
   let best = regions[0];
-  let bestD = (pH - best.labelPH) ** 2 + (E - best.labelE) ** 2;
+  let bestD = dist(best);
   for (const r of regions.slice(1)) {
-    const d = (pH - r.labelPH) ** 2 + (E - r.labelE) ** 2;
+    const d = dist(r);
     if (d < bestD) { best = r; bestD = d; }
   }
   return best.name;

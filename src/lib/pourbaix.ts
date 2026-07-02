@@ -545,7 +545,9 @@ export function buildArbitraryDiagram(
     if (sp.kind !== 'ion') continue;
     const H = ionToSolid.get(sp.formula);
     const pHright = H ? (precipPH.get(H.formula) ?? 14) : 14;
-    const labelPH = Math.max(0.5, pHright / 2);
+    // Place label at 70 % of the ion's domain so the cursor reads the correct species
+    // even when positioned near the right edge of the ionic region (close to precipPH).
+    const labelPH = Math.max(0.5, pHright * 0.7);
     // E label: above the highest boundary ending at this ion as red
     let labelE = 0.4;
     for (const a of affines) {

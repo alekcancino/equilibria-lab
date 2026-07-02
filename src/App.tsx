@@ -9,7 +9,9 @@ import './App.css';
 // Module hooks that implement state serialization will also add ?s=.
 function syncModuleUrl(tabId: string) {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('m') === tabId && !params.has('s')) return;
+  // Return early when the module is already correct so we don't wipe any ?s= state
+  // that the active module serialized. Only replace when actually switching modules.
+  if (params.get('m') === tabId) return;
   const next = new URLSearchParams();
   next.set('m', tabId);
   window.history.replaceState(null, '', `${window.location.pathname}?${next.toString()}`);
