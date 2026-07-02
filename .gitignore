@@ -29,6 +29,7 @@ dist-ssr
 .agents/
 .claude/
 CLAUDE.md
+AGENTS.md
 
 # Deployment
 .vercel
