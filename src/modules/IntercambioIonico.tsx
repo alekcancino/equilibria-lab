@@ -6,7 +6,7 @@ import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider, Toggle } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import {
-  batchIonExchange, breakthroughCurve, isothermCurve, selectivityFromKd,
+  batchIonExchange, breakthroughCurve, craigBreakthrough, isothermCurve, selectivityFromKd,
   exchangeDistributionCurve, optimalElutionPH3C, defaultSideEditorState,
   type SideReactionEditorState,
 } from '../lib/ionExchange';
@@ -39,6 +39,12 @@ export default function IntercambioIonico() {
     st.logBetasOH = [4.97, 8.55];
     return st;
   });
+  const [showCraig, setShowCraig] = useState(false);
+  const [nPlates, setNPlates] = useState(20);
+  const [labelC, setLabelC] = useState('Mg²⁺');
+  const [cC0, setCC0] = useState(0.003);
+  const [kCB, setKCB] = useState(1.7);
+
   const [showElution, setShowElution] = useState(false);
   const [logKfNiY, setLogKfNiY] = useState(18.62);
   const [cEdta, setCEdta] = useState(0.1);
@@ -62,6 +68,11 @@ export default function IntercambioIonico() {
     setResinVolume(0.05);
     setVolume(0.1);
     setFlowRate(0.05);
+    setShowCraig(false);
+    setNPlates(20);
+    setLabelC('Mg²⁺');
+    setCC0(0.003);
+    setKCB(1.7);
   }
 
   const baseParams = useMemo(() => ({
@@ -109,6 +120,19 @@ export default function IntercambioIonico() {
       Math.abs(pH - pHBulk) < Math.abs(distCurve.pHs[best] - pHBulk) ? i : best, 0);
     return distCurve.phi[idx];
   }, [distCurve, pHBulk]);
+
+  const craigResult = useMemo(
+    () => craigBreakthrough({
+      ions: [
+        { label: labelA, c0: cA0, kSel: selectivity },
+        { label: labelC, c0: cC0, kSel: kCB },
+      ],
+      resinCapacity,
+      resinVolume,
+      nPlates,
+    }),
+    [labelA, cA0, selectivity, labelC, cC0, kCB, resinCapacity, resinVolume, nPlates],
+  );
 
   const kselCurve = useMemo(() => {
     const ks: number[] = [];
@@ -211,6 +235,38 @@ export default function IntercambioIonico() {
         />
       ),
     },
+    ...(showCraig && craigResult.bv.length > 0 ? [{
+      id: 'multizona',
+      label: 'Multi-zona',
+      node: (
+        <Chart
+          data={[
+            {
+              x: craigResult.bv,
+              y: craigResult.cRatios[0],
+              type: 'scatter',
+              mode: 'lines',
+              name: labelA,
+              line: { width: 3, color: '#0072B2' },
+              hovertemplate: 'BV = %{x:.1f}<br>C/C₀ = %{y:.3f}<extra></extra>',
+            },
+            {
+              x: craigResult.bv,
+              y: craigResult.cRatios[1],
+              type: 'scatter',
+              mode: 'lines',
+              name: labelC,
+              line: { width: 3, color: '#D55E00' },
+              hovertemplate: 'BV = %{x:.1f}<br>C/C₀ = %{y:.3f}<extra></extra>',
+            },
+          ]}
+          xTitle="Volúmenes de lecho (BV)"
+          yTitle="C / C₀"
+          yRange={[0, 1.05]}
+          exportName="equilibria-ion-exchange-multizona"
+        />
+      ),
+    }] : []),
     ...(showCompetitive ? [{
       id: 'dph',
       label: 'D y φ vs pH',
@@ -332,6 +388,39 @@ export default function IntercambioIonico() {
         )}
         </PanelSection>
 
+        <PanelSection title="Columna multi-zona" icon="📊" collapsible defaultOpen={false}>
+          <Toggle
+            label="Modelo Craig (N platos teóricos)"
+            checked={showCraig}
+            onChange={setShowCraig}
+          />
+          {showCraig && (
+            <div className="mask-section">
+              <Slider
+                label="Platos teóricos N"
+                value={nPlates}
+                min={1}
+                max={50}
+                step={1}
+                onChange={setNPlates}
+                decimals={0}
+              />
+              <p className="hint">N=1 → frente sigmoidal; N mayor → frente más nítido. σ = BV₅₀/√N</p>
+              <LabelField label={`Segundo ion (C, compite con ${labelB})`} value={labelC} onChange={setLabelC} />
+              <ConcSlider label={`[${labelC}] inicial`} value={cC0} onChange={setCC0} min={-4} max={-1} />
+              <Slider
+                label={`Ksel (${labelC}/${labelB})`}
+                value={kCB}
+                min={0.1}
+                max={20}
+                step={0.1}
+                onChange={setKCB}
+                decimals={1}
+              />
+            </div>
+          )}
+        </PanelSection>
+
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
             { label: `[${labelA}] final`, value: formatMolar(eq.cAeq) },
@@ -367,6 +456,10 @@ export default function IntercambioIonico() {
           ...(showCompetitive && showElution
             ? [{ label: 'pH elución', value: elution.pH.toFixed(1) }]
             : []),
+          ...(showCraig && craigResult.bvBreaks.length >= 2 ? [
+            { label: `BV₅₀ ${labelA}`, value: craigResult.bvBreaks[0].toFixed(0) },
+            { label: `BV₅₀ ${labelC}`, value: craigResult.bvBreaks[1].toFixed(0) },
+          ] : []),
         ]} />
       </section>
     </div>
