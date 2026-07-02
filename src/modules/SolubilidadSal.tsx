@@ -122,7 +122,7 @@ function SalEditor({ sal, onChange }: {
 
       <LabelField label="Nombre del sólido" value={sal.name} onChange={(name) => onChange({ name })} />
       <LabelField label="Nombre del anión" value={sal.anionName} onChange={(anionName) => onChange({ anionName })} />
-      <Slider label="pKsp" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
+      <Slider label="pKsp" helpId="pKsp" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
 
       <div className="control">
         <div className="control-header">
@@ -154,6 +154,7 @@ function SalEditor({ sal, onChange }: {
 
       <ConstantList
         prefix="pKa (anión)"
+        helpId="pKa"
         values={sal.pKas}
         onChange={(pKas) => onChange({ pKas })}
         min={0} max={14} maxItems={4} minItems={0} initialValue={7}

@@ -205,6 +205,7 @@ export default function Pourbaix() {
             <LabelField label="Hidróxido (ej. Ni(OH)₂)" value={custom.hydroxide}
               onChange={(hydroxide) => setCustom((c) => ({ ...c, hydroxide }))} />
             <Slider label={`E° (M^n+/M) = ${custom.E0.toFixed(3)} V`}
+              helpId="E0"
               value={custom.E0} min={-2} max={2} step={0.001}
               onChange={(E0) => setCustom((c) => ({ ...c, E0 }))} decimals={3} />
             <div className="control">
@@ -222,6 +223,7 @@ export default function Pourbaix() {
               </div>
             </div>
             <Slider label={`pKsp M(OH)ₙ = ${custom.pKsp.toFixed(1)}`}
+              helpId="pKsp"
               value={custom.pKsp} min={5} max={40} step={0.1}
               onChange={(pKsp) => setCustom((c) => ({ ...c, pKsp }))} decimals={1} />
           </>

@@ -478,7 +478,7 @@ export default function SolubilidadCondicional() {
           </div>
           <LabelField label="Metal" value={s.m1.label} onChange={(v) => setM1({ label: v })} />
           <LabelField label="Fórmula" value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
-          <Slider label="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
+          <Slider label="pKsp" helpId="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
           <div className="control">
             <div className="control-header">
               <span className="control-label">Estequiometría n (M(OH)_n)</span>
@@ -503,6 +503,7 @@ export default function SolubilidadCondicional() {
           >
             <ConstantList
               prefix="log β(OH)"
+              helpId="logBetaOH"
               values={s.m1.logBetasOH}
               onChange={(v) => setM1({ logBetasOH: v })}
               min={-50} max={40} maxItems={5} minItems={0} initialValue={5}
@@ -532,7 +533,7 @@ export default function SolubilidadCondicional() {
               <DbPanel items={dbItems} onSelect={(id) => setM2({ ...fromPreset(id) })} title="Presets M2" />
               <LabelField label="2.º metal" value={s.m2.label} onChange={(v) => setM2({ label: v })} />
               <LabelField label="Fórmula" value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
-              <Slider label="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
+              <Slider label="pKsp" helpId="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
               <div className="control">
                 <div className="control-header">
                   <span className="control-label">Estequiometría n</span>
@@ -645,6 +646,7 @@ export default function SolubilidadCondicional() {
               <Slider label="pH fijo" value={s.pHForPX} min={0} max={14} step={0.1} onChange={(v) => setS((p) => ({ ...p, pHForPX: v }))} decimals={1} />
               <ConstantList
                 prefix="log β(X)"
+                helpId="logBeta"
                 values={s.logBetasX}
                 onChange={(v) => setS((p) => ({ ...p, logBetasX: v }))}
                 min={0} max={25} maxItems={6}
