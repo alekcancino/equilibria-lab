@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { GLOSSARY } from '../lib/glossary';
 
@@ -7,25 +8,46 @@ import { GLOSSARY } from '../lib/glossary';
  * glossary; unknown ids render nothing.
  */
 export function HelpTip({ id }: { id: string }) {
-  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const entry = GLOSSARY[id];
   if (!entry) return null;
+
+  const show = () => {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, left: r.left });
+    }
+  };
+  const hide = () => setPos(null);
+
   return (
-    <span className={open ? 'help-tip open' : 'help-tip'}>
+    <span className="help-tip">
       <button
+        ref={btnRef}
         type="button"
         className="help-tip-btn"
         aria-label={`Ayuda: ${entry.meaning}`}
-        aria-expanded={open}
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o); }}
-        onBlur={() => setOpen(false)}
+        aria-expanded={pos !== null}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (pos) hide(); else show(); }}
       >
         ⓘ
       </button>
-      <span className="help-tip-pop" role="tooltip">
-        <span className="help-tip-meaning">{entry.meaning}</span>
-        <span className="help-tip-units">{entry.units}</span>
-      </span>
+      {pos && createPortal(
+        <span
+          className="help-tip-pop"
+          role="tooltip"
+          style={{ position: 'fixed', top: pos.top, left: pos.left, opacity: 1, transform: 'translateY(0)' }}
+        >
+          <span className="help-tip-meaning">{entry.meaning}</span>
+          <span className="help-tip-units">{entry.units}</span>
+        </span>,
+        document.body,
+      )}
     </span>
   );
 }
