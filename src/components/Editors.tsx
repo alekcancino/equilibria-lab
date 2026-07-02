@@ -297,7 +297,7 @@ export function SideReactionEditor({
           }}
           decimals={2}
         />
-        <p className="hint">Ej. ZnHY (19,44) y ZnOHY (4,54) del parcial 1 QA III 2025-2.</p>
+        <p className="hint">Ej. ZnHY (log β = 19,44) para protonación del complejo, ZnOHY (4,54) para complejo hidroxo.</p>
       </details>
     </>
   );

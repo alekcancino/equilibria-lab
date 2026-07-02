@@ -1,6 +1,5 @@
 // Conditional solubility of metal hydroxides.
 // Core use case: selective separation (precipitate M1 while M2 stays in solution).
-// Covers QA II.5 + QA III.2.
 
 import { useMemo, useState } from 'react';
 import type { Data, Shape } from 'plotly.js';
@@ -88,7 +87,7 @@ interface State {
   hydroxoOpen: boolean;
 }
 
-// ── Presets anfóteros (spec issue #4 · C4) ───────────────────────────────────
+// ── Amphoteric presets ────────────────────────────────────────────────────────
 // Cargan pKsp + log β_OH del hidroxo-complejo aniónico y EXPANDEN la sección
 // "Complejos hidroxo de M1" para que la curva U se vea sin abrir nada a mano.
 interface AnfoteroPreset { id: string; label: string; metal: MetalState; }

@@ -272,7 +272,7 @@ export default function Pourbaix() {
           yRange={[-1.6, 2.2]}
           shapes={cursorShapes}
           annotations={annotations}
-          exportName={`quimeq-pourbaix-${useCustom ? 'custom' : systemId}`}
+          exportName={`equilibria-lab-pourbaix-${useCustom ? 'custom' : systemId}`}
         />
         <ResultCardRow items={[
           { label: 'Especie predominante', value: predominant, accent: true },

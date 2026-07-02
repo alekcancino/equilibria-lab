@@ -1,5 +1,5 @@
 {
-  "_comment": "Pourbaix system definitions (S1.4/S1.5). Only PRIMITIVE data live here: E0 of base couples (Bard, Parsons & Jordan 1985; Pourbaix 1966 for Cu2O dissolution), pKsp (Stumm & Morgan 1996). All solid-phase boundary potentials are DERIVED by Hess's law in pourbaix_core.py -> triple points close by construction (audit P0-4). Clip references: 'clip_min'/'clip_max' accept a solid id (vertical precipitation pH) or {'line': boundary_id} (intersection pH of the two affine lines). Verticals accept 'E_min_ref'/'E_max_ref' (line ids evaluated at the vertical's pH). 'excluded_species' lists deliberate simplifications shown to the user (S1.5).",
+  "_comment": "Pourbaix system definitions. Only PRIMITIVE data live here: E0 of base couples (Bard, Parsons & Jordan 1985; Pourbaix 1966 for Cu2O dissolution), pKsp (Stumm & Morgan 1996). All solid-phase boundary potentials are DERIVED by Hess's law in pourbaix.ts — triple points close by construction. Clip references: 'clip_min'/'clip_max' accept a solid id (vertical precipitation pH) or {'line': boundary_id} (intersection pH of the two affine lines). Verticals accept 'E_min_ref'/'E_max_ref' (line ids evaluated at the vertical's pH). 'excluded_species' lists deliberate simplifications shown to the user.",
 
   "fe": {
     "name": "Fe-H₂O",
@@ -33,7 +33,7 @@
 
   "cu": {
     "name": "Cu-H₂O",
-    "note": "Includes the Cu₂O field (S1.5). Dissolution of cuprite: ½Cu₂O + H⁺ ⇌ Cu⁺ + ½H₂O, log K = −0.84 (Pourbaix 1966). All boundaries derived from E°(Cu²⁺/Cu⁺)=0.153 V, E°(Cu⁺/Cu)=0.521 V, Ksp(Cu(OH)₂)=10⁻¹⁹·⁵.",
+    "note": "Includes the Cu₂O (cuprite) field. Dissolution: ½Cu₂O + H⁺ ⇌ Cu⁺ + ½H₂O, log K = −0.84 (Pourbaix 1966). All boundaries derived from E°(Cu²⁺/Cu⁺)=0.153 V, E°(Cu⁺/Cu)=0.521 V, Ksp(Cu(OH)₂)=10⁻¹⁹·⁵.",
     "excluded_species": ["CuO (tenorite; Cu(OH)₂ used)", "CuO₂²⁻ / HCuO₂⁻ (amphoteric)"],
     "couples": {
       "cu2cu":  { "ox": "Cu²⁺", "red": "Cu(s)", "E0": 0.337, "n": 2 },
@@ -157,7 +157,7 @@
 
   "cr": {
     "name": "Cr-H₂O",
-    "note": "Includes the Cr(VI) field (S1.5) using the monomeric couple HCrO₄⁻ + 7H⁺ + 3e⁻ → Cr³⁺ + 4H₂O, E° = 1.350 V (Pourbaix 1966). Chromate protonation steps (pKa ≈ 0.7, 6.45) and the Cr₂O₇²⁻ dimer are neglected. Cr(III) boundaries derived from E° + Ksp(Cr(OH)₃)=10⁻³⁰.",
+    "note": "Includes the Cr(VI) field using the monomeric couple HCrO₄⁻ + 7H⁺ + 3e⁻ → Cr³⁺ + 4H₂O, E° = 1.350 V (Pourbaix 1966). Chromate protonation steps (pKa ≈ 0.7, 6.45) and the Cr₂O₇²⁻ dimer are neglected. Cr(III) boundaries derived from E° + Ksp(Cr(OH)₃)=10⁻³⁰.",
     "excluded_species": ["Cr₂O₇²⁻ (dimer; HCrO₄⁻ used)", "CrO₄²⁻ branch (pKa 6.45 neglected)", "Cr(OH)₄⁻ (amphoteric)"],
     "couples": {
       "cr3cr2": { "ox": "Cr³⁺", "red": "Cr²⁺", "E0": -0.407, "n": 1 },

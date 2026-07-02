@@ -72,7 +72,7 @@ Legend: **●●●** thorough · **●●○** partial · **●○○** basic �
 
 ## Numerical validation
 
-The calculation engines have been cross-validated against Spana/HALTAFALL reference outputs. See [`VALIDACION-Y-CONGRUENCIA.md`](VALIDACION-Y-CONGRUENCIA.md) for the full set of golden cases and benchmark comparisons.
+The calculation engines have been cross-validated against Spana/HALTAFALL reference outputs. See [`VALIDATION.md`](VALIDATION.md) for the full set of golden cases and benchmark comparisons.
 
 ---
 

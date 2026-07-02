@@ -3,12 +3,12 @@ import {
   elutionAtPH3C, optimalElutionPH3C, defaultSideStack, type Elution3CParams,
 } from '../sideReactions';
 
-// QA III third-exam system: Ni on resin, recovery with EDTA.
+// Ni²⁺ on cation-exchange resin, recovery with EDTA (Harris, ch. 26).
 function niElutionParams(): Elution3CParams {
   const stack = defaultSideStack(); // EDTA pKas
   stack.hydrolysis = { logBetasOH: [4.97, 8.55] }; // Ni(OH)
   return {
-    nNiResin: 2e-5,   // mol Ni en resina (0,2 L · 0,1 mM)
+    nNiResin: 2e-5,   // mol Ni on resin (0.2 L · 0.1 mM)
     vEdta: 0.2,       // L
     cEdta: 0.1,       // M EDTA
     logKfNiY: 18.56,
@@ -18,8 +18,8 @@ function niElutionParams(): Elution3CParams {
   };
 }
 
-describe('elutionAtPH3C — balance 3 compartimentos', () => {
-  it('conserva masa: m + chelate + resinHeld = C_Ni', () => {
+describe('elutionAtPH3C — 3-compartment mass balance', () => {
+  it('mass is conserved: m + chelate + resinHeld = C_Ni', () => {
     const p = niElutionParams();
     const r = elutionAtPH3C(p, 6);
     const cNi = p.nNiResin / p.vEdta;
@@ -27,7 +27,7 @@ describe('elutionAtPH3C — balance 3 compartimentos', () => {
     expect(Math.abs(sum - cNi) / cNi).toBeLessThan(1e-3);
   });
 
-  it('la fracción eluida está en [0, 1]', () => {
+  it('eluted fraction is in [0, 1]', () => {
     const p = niElutionParams();
     for (const pH of [2, 4, 6, 8, 10, 12]) {
       const f = elutionAtPH3C(p, pH).fractionEluted;
@@ -36,7 +36,7 @@ describe('elutionAtPH3C — balance 3 compartimentos', () => {
     }
   });
 
-  it('más EDTA elucionante → más Ni recuperado (a pH ácido, elución parcial)', () => {
+  it('more EDTA → more Ni recovered (at acidic pH, partial elution)', () => {
     // At pH 2 the resin retains Ni (large D, hBulk > hResin): elution is partial,
     // so the amount of EDTA matters.
     const p = niElutionParams();
@@ -45,7 +45,7 @@ describe('elutionAtPH3C — balance 3 compartimentos', () => {
     expect(high).toBeGreaterThan(low);
   });
 
-  it('resina más selectiva (K² mayor) retiene más Ni → no más eluido', () => {
+  it('more selective resin (higher K²) retains more Ni → less eluted', () => {
     const p = niElutionParams();
     const weak = elutionAtPH3C({ ...p, kSelSquared: 1 }, 2).fractionEluted;
     const strong = elutionAtPH3C({ ...p, kSelSquared: 1000 }, 2).fractionEluted;
@@ -54,7 +54,7 @@ describe('elutionAtPH3C — balance 3 compartimentos', () => {
 });
 
 describe('optimalElutionPH3C', () => {
-  it('devuelve un pH óptimo dentro del rango y una curva monótona en tamaño', () => {
+  it('returns an optimal pH within range and a monotone-sized curve', () => {
     const p = niElutionParams();
     const r = optimalElutionPH3C(p, [2, 12], 100);
     expect(r.pH).toBeGreaterThanOrEqual(2);

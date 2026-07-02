@@ -1,4 +1,4 @@
-// Conditional potential E°' = f(pH) — module ④ (QA II.3 + QA II.4).
+// Conditional potential E°' = f(pH).
 // Shows how the formal potential changes with pH due to H⁺ in the half-reaction.
 // Slope is −0.05916·mH/n V/pH.
 //
@@ -466,7 +466,7 @@ export default function PotencialCondicional() {
                   { label: `E a pM′ = ${st.pMPrimeTarget.toFixed(1)}`, value: `${electrodeE.toFixed(3)} V` },
                 ]} />
               )}
-              <p className="hint">Ordinario QA III: Ni²⁺/Ni a pGly′ = 4 con ligando auxiliar en escala condicional.</p>
+              <p className="hint">Ej. Ni²⁺/Ni con glicinato como ligando auxiliar (pGly′ = 4) en la escala condicional.</p>
             </div>
           )}
         </PanelSection>

@@ -191,8 +191,8 @@ export default function Complejos() {
   const domIdx = alphasEq.indexOf(Math.max(...alphasEq));
   const nBarEq = bjerrumNumber(pLEqClipped, sys.logBetas);
 
-  // Métricas "% + punto de operación" (spec issue #4 · C1). Para un complejo 1:1
-  // % formado = ñ·100 y % disociado = (1−ñ)·100; el pL para 50 % = log β₁.
+  // "% + operating point" metrics. For a 1:1 complex:
+  // % formed = ñ·100, % dissociated = (1−ñ)·100; pL at 50 % = log β₁.
   const pctFormado = percentFormed(pLEqClipped, sys.logBetas);
   const pctDisociado = percentDissociated(pLEqClipped, sys.logBetas);
   const pL50 = pLForPercentFormed(sys.logBetas, 50);

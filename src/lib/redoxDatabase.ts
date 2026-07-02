@@ -1,5 +1,4 @@
 // Redox couples with standard potentials and bibliographic references.
-// Inherited and verified from the EquilibriaLab project (constants.json, audited).
 // Single list: any couple can be analyte or titrant in either direction.
 
 import type { RedoxCouple } from './redox';

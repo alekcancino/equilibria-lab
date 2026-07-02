@@ -40,7 +40,7 @@ export function titratableProtons(pKas: number[]): number {
 /**
  * pH vs. volume curve. The titrant enters the charge balance as a spectator ion
  * (Na⁺ from NaOH or Cl⁻ from HCl); pH is solved exactly at each point with
- * dilution included (lesson from audit P0-5).
+ * dilution included at every point.
  */
 export function titrationCurve(params: TitrationParams): TitrationCurve {
   const { analyte, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax } = params;
