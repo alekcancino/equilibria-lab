@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useShareEffect } from '../hooks/useShareableState';
 import type { Data, Annotations, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -97,6 +98,16 @@ export default function Pourbaix() {
   const [custom, setCustom] = useState<SimpleCustom>({
     ionName: 'M²⁺', metalName: 'M', hydroxide: 'M(OH)₂',
     E0: -0.257, n: 2, pKsp: 15.8,
+  });
+
+  useShareEffect('pourbaix', { systemId, useCustom, logC, showWater, cursorPH, cursorE, custom }, (s) => {
+    if (s.systemId) setSystemId(s.systemId);
+    if (s.useCustom !== undefined) setUseCustom(s.useCustom);
+    if (s.logC !== undefined) setLogC(s.logC);
+    if (s.showWater !== undefined) setShowWater(s.showWater);
+    if (s.cursorPH !== undefined) setCursorPH(s.cursorPH);
+    if (s.cursorE !== undefined) setCursorE(s.cursorE);
+    if (s.custom) setCustom(s.custom);
   });
 
   function reset() {

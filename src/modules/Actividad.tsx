@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useShareEffect } from '../hooks/useShareableState';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -25,6 +26,14 @@ export default function Actividad() {
   // 'electrolyte' la deriva del electrolito binario z:z (comportamiento previo).
   const [iMode, setIMode] = useState<'impose' | 'electrolyte'>('electrolyte');
   const [iDirect, setIDirect] = useState(0.2);
+
+  useShareEffect('actividad', { cIon, z, pH, iMode, iDirect }, (s) => {
+    if (s.cIon !== undefined) setCIon(s.cIon);
+    if (s.z !== undefined) setZ(s.z);
+    if (s.pH !== undefined) setPH(s.pH);
+    if (s.iMode) setIMode(s.iMode);
+    if (s.iDirect !== undefined) setIDirect(s.iDirect);
+  });
 
   function reset() {
     setCIon(0.1);

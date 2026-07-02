@@ -14,7 +14,8 @@
 //   • Amphoteric (8-HQ): D has a bell-shaped maximum
 //   • Non-ionisable (I₂): D constant = Kd
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useShareableState } from '../hooks/useShareableState';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -272,7 +273,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ExtraccionLiquido() {
-  const [st, setSt] = useState(defaultState);
+  const [st, setSt] = useShareableState('extraccion', defaultState());
   const set = <K extends keyof ReturnType<typeof defaultState>>(
     k: K, v: ReturnType<typeof defaultState>[K]
   ) => setSt((p) => ({ ...p, [k]: v }));

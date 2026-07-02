@@ -1,9 +1,19 @@
-import { lazy, Suspense, useState, type ComponentType } from 'react';
+import { lazy, Suspense, useState, useEffect, type ComponentType } from 'react';
 import { version } from '../package.json';
 import BrandLogo from './components/BrandLogo';
 import MobileNav from './components/MobileNav';
 import { useActivityNote } from './context/ActivityContext';
 import './App.css';
+
+// Keep ?m=<tabId> in the URL whenever the active tab changes.
+// Module hooks that implement state serialization will also add ?s=.
+function syncModuleUrl(tabId: string) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('m') === tabId && !params.has('s')) return;
+  const next = new URLSearchParams();
+  next.set('m', tabId);
+  window.history.replaceState(null, '', `${window.location.pathname}?${next.toString()}`);
+}
 
 const AcidoBase              = lazy(() => import('./modules/AcidoBase'));
 const Complejos              = lazy(() => import('./modules/Complejos'));
@@ -55,12 +65,22 @@ const SECTIONS: Section[] = [
   },
 ];
 
+function initialTabState(): { sectionId: string; tabBySection: Record<string, string> } {
+  const defaults = Object.fromEntries(SECTIONS.map((s) => [s.id, s.tabs[0].id]));
+  const m = new URLSearchParams(window.location.search).get('m');
+  if (m) {
+    for (const section of SECTIONS) {
+      const tab = section.tabs.find((t) => t.id === m);
+      if (tab) return { sectionId: section.id, tabBySection: { ...defaults, [section.id]: tab.id } };
+    }
+  }
+  return { sectionId: 'simples', tabBySection: defaults };
+}
+
 export default function App() {
   const { showActivityNote, setShowActivityNote } = useActivityNote();
-  const [sectionId, setSectionId] = useState('simples');
-  const [tabBySection, setTabBySection] = useState<Record<string, string>>(
-    Object.fromEntries(SECTIONS.map((s) => [s.id, s.tabs[0].id])),
-  );
+  const [sectionId, setSectionId] = useState(() => initialTabState().sectionId);
+  const [tabBySection, setTabBySection] = useState<Record<string, string>>(() => initialTabState().tabBySection);
 
   const section = SECTIONS.find((s) => s.id === sectionId)!;
   const tabId = tabBySection[sectionId];
@@ -71,6 +91,9 @@ export default function App() {
   const setTabId = (id: string) => {
     setTabBySection({ ...tabBySection, [sectionId]: id });
   };
+
+  // Sync ?m= whenever the active tab changes (modules override with ?s= via their own hook).
+  useEffect(() => { syncModuleUrl(tabId); }, [tabId]);
 
   return (
     <div className="app">

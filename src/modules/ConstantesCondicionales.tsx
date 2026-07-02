@@ -1,7 +1,8 @@
 // Conditional Constants module (Ringbom).
 // Generates the log K' = f(pH) curve and α coefficients for M + Y systems (EDTA by default).
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useShareableState } from '../hooks/useShareableState';
 import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -76,7 +77,7 @@ const PH_MIN = 1;
 const PH_MAX = 14;
 
 export default function ConstantesCondicionales() {
-  const [s, setS] = useState<CondState>(defaultState);
+  const [s, setS] = useShareableState<CondState>('condicionalesedta', defaultState());
 
   const set = <K extends keyof CondState>(k: K, v: CondState[K]) =>
     setS((prev) => ({ ...prev, [k]: v }));

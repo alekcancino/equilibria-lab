@@ -8,7 +8,8 @@
 //   3. Disproportionation: the intermediate species in a Latimer diagram is unstable
 //      when E°'(right) > E°'(left).
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useShareableState } from '../hooks/useShareableState';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -83,7 +84,7 @@ function defaultState() {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PotencialCondicional() {
-  const [st, setSt] = useState(defaultState);
+  const [st, setSt] = useShareableState('potencialcond', defaultState());
 
   const set = <K extends keyof ReturnType<typeof defaultState>>(
     k: K, v: ReturnType<typeof defaultState>[K]

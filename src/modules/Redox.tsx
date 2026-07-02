@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useShareEffect } from '../hooks/useShareableState';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -20,6 +21,12 @@ export default function Redox() {
   const [couple1, setCouple1] = useState<CoupleState>(coupleFromPreset('fe'));
   const [couple2, setCouple2] = useState<CoupleState>(coupleFromPreset('ce'));
   const [pH, setPH] = useState(0);
+
+  useShareEffect('redox', { couple1, couple2, pH }, (s) => {
+    if (s.couple1) setCouple1(s.couple1);
+    if (s.couple2) setCouple2(s.couple2);
+    if (s.pH !== undefined) setPH(s.pH);
+  });
 
   function reset() {
     setCouple1(coupleFromPreset('fe'));

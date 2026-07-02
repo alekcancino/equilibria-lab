@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useShareEffect } from '../hooks/useShareableState';
 import type { Data, Shape } from 'plotly.js';
 import PanelShell from '../components/PanelShell';
 import Chart from '../components/Chart';
@@ -20,6 +21,12 @@ export default function AcidoBase() {
   const [system, setSystem] = useState<AcidSystem>(defaultAcidSystem());
   const [conc, setConc] = useState(0.1);
   const [showSystemPH, setShowSystemPH] = useState(false);
+
+  useShareEffect('acidobase', { system, conc, showSystemPH }, (s) => {
+    if (s.system) setSystem(s.system);
+    if (s.conc !== undefined) setConc(s.conc);
+    if (s.showSystemPH !== undefined) setShowSystemPH(s.showSystemPH);
+  });
 
   function reset() { setSystem(defaultAcidSystem()); setConc(0.1); setShowSystemPH(false); }
 
