@@ -5,7 +5,7 @@ import PanelShell from '../components/PanelShell';
 import Chart from '../components/Chart';
 import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, PanelSection, ResultCardRow, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, PanelSection, ResultCardRow, Slider, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
@@ -21,21 +21,25 @@ export default function AcidoBase() {
   const [system, setSystem] = useState<AcidSystem>(defaultAcidSystem());
   const [conc, setConc] = useState(0.1);
   const [showSystemPH, setShowSystemPH] = useState(false);
+  const [ionicStrength, setIonicStrength] = useState(0);
 
-  useShareEffect('acidobase', { system, conc, showSystemPH }, (s) => {
+  useShareEffect('acidobase', { system, conc, showSystemPH, ionicStrength }, (s) => {
     if (s.system) setSystem(s.system);
     if (s.conc !== undefined) setConc(s.conc);
     if (s.showSystemPH !== undefined) setShowSystemPH(s.showSystemPH);
+    if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
   });
 
-  function reset() { setSystem(defaultAcidSystem()); setConc(0.1); setShowSystemPH(false); }
+  function reset() {
+    setSystem(defaultAcidSystem()); setConc(0.1); setShowSystemPH(false); setIonicStrength(0);
+  }
 
   const labels = systemLabels(system);
   const logCtotal = Math.log10(conc);
 
   const pHSystem = useMemo(
-    () => solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }]),
-    [system, conc],
+    () => solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }], 0, 0, ionicStrength),
+    [system, conc, ionicStrength],
   );
   const pHInvalid = !Number.isFinite(pHSystem);
 
@@ -46,7 +50,7 @@ export default function AcidoBase() {
     for (let i = 0; i <= PH_POINTS; i++) {
       const pH = (14 * i) / PH_POINTS;
       phs.push(pH);
-      ladderFractions(pH, system.pKas, true).forEach((a, j) => series[j].push(a));
+      ladderFractions(pH, system.pKas, true, system.z0, ionicStrength).forEach((a, j) => series[j].push(a));
     }
     return series.map((ys, j) => ({
       x: phs, y: ys, type: 'scatter', mode: 'lines',
@@ -54,7 +58,7 @@ export default function AcidoBase() {
       line: { width: 3, color: SPECIES_COLORS[j % SPECIES_COLORS.length] },
       hovertemplate: `α = %{y:.3f}<extra>${labels[j] ?? ''}</extra>`,
     }));
-  }, [system, labels]);
+  }, [system, labels, ionicStrength]);
 
   // logC vs pH diagram (Sillén) with H₃O⁺/OH⁻ lines
   const logCTraces = useMemo<Data[]>(() => {
@@ -65,7 +69,7 @@ export default function AcidoBase() {
     for (let i = 0; i <= PH_POINTS; i++) {
       const pH = (14 * i) / PH_POINTS;
       phs.push(pH);
-      ladderLogC(pH, system.pKas, true, logCtotal).forEach((lc, j) => series[j].push(lc));
+      ladderLogC(pH, system.pKas, true, logCtotal, system.z0, ionicStrength).forEach((lc, j) => series[j].push(lc));
       hLine.push(-pH);
       ohLine.push(pH - 14);
     }
@@ -80,11 +84,11 @@ export default function AcidoBase() {
       { x: phs, y: ohLine, type: 'scatter', mode: 'lines', name: 'OH⁻', line: { width: 2, color: '#95a5a6', dash: 'dot' } },
     );
     return data;
-  }, [system, labels, logCtotal]);
+  }, [system, labels, logCtotal, ionicStrength]);
 
   const zones = useMemo(
-    () => predominanceZones(system.pKas, labels, 0, 14, true),
-    [system, labels],
+    () => predominanceZones(system.pKas, labels, 0, 14, true, system.z0, ionicStrength),
+    [system, labels, ionicStrength],
   );
 
   const systemShape = useMemo<Partial<Shape>[]>(() => {
@@ -93,7 +97,7 @@ export default function AcidoBase() {
   }, [showSystemPH, pHSystem]);
 
   const alphasAtPH = Number.isFinite(pHSystem)
-    ? ladderFractions(pHSystem, system.pKas, true)
+    ? ladderFractions(pHSystem, system.pKas, true, system.z0, ionicStrength)
     : system.pKas.map(() => 0);
   const domIdx = alphasAtPH.indexOf(Math.max(...alphasAtPH));
 
@@ -150,6 +154,11 @@ export default function AcidoBase() {
         <PanelSection title="Condiciones" icon="⚗">
           <ConcSlider label="Concentración analítica" value={conc} onChange={setConc} />
           <Toggle label="Marcar pH de la disolución pura" checked={showSystemPH} onChange={setShowSystemPH} />
+          <details className="section-collapse">
+            <summary>Corrección por actividad (Debye–Hückel)</summary>
+            <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
+            <p className="hint">I = 0 → γ = 1 (resultado termodinámico). A I &gt; 0.1 M los pKa aparentes aumentan y el pH calculado cambia.</p>
+          </details>
         </PanelSection>
         {showActivityNote && (
           <InfoBox title="Actividad vs concentración">

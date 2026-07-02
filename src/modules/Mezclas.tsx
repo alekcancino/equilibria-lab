@@ -28,14 +28,16 @@ export default function Mezclas() {
   const [cTitrant, setCTitrant] = useState(0.1);
   const [vSample, setVSample] = useState(25);
   const [showDerivative, setShowDerivative] = useState(false);
+  const [ionicStrength, setIonicStrength] = useState(0);
 
-  useShareEffect('mezclas', { rows, titrate, titrantIsAcid, cTitrant, vSample, showDerivative }, (s) => {
+  useShareEffect('mezclas', { rows, titrate, titrantIsAcid, cTitrant, vSample, showDerivative, ionicStrength }, (s) => {
     if (s.rows) setRows(s.rows);
     if (s.titrate !== undefined) setTitrate(s.titrate);
     if (s.titrantIsAcid !== undefined) setTitrantIsAcid(s.titrantIsAcid);
     if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
     if (s.vSample !== undefined) setVSample(s.vSample);
     if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
+    if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
   });
 
   function reset() {
@@ -45,6 +47,7 @@ export default function Mezclas() {
     setCTitrant(0.1);
     setVSample(25);
     setShowDerivative(false);
+    setIonicStrength(0);
   }
 
   const updateRow = (i: number, patch: Partial<MixRow>) => {
@@ -71,9 +74,9 @@ export default function Mezclas() {
 
   const pHMix = useMemo(() => {
     const { comps, cations, anions } = buildComponents(1);
-    return solvePH(comps, cations, anions);
+    return solvePH(comps, cations, anions, ionicStrength);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows]);
+  }, [rows, ionicStrength]);
   const pHInvalid = !Number.isFinite(pHMix);
 
   const speciation = useMemo(() => {
@@ -107,14 +110,14 @@ export default function Mezclas() {
       const { comps, cations, anions } = buildComponents(vSample / vTotal);
       const titrantConc = (cTitrant * vt) / vTotal;
       const pH = titrantIsAcid
-        ? solvePH(comps, cations, anions + titrantConc)
-        : solvePH(comps, cations + titrantConc, anions);
+        ? solvePH(comps, cations, anions + titrantConc, ionicStrength)
+        : solvePH(comps, cations + titrantConc, anions, ionicStrength);
       volumes.push(vt);
       pHs.push(pH);
     }
     return { volumes, pHs, vMax };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, titrate, titrantIsAcid, cTitrant, vSample]);
+  }, [rows, titrate, titrantIsAcid, cTitrant, vSample, ionicStrength]);
 
   const traces = useMemo<Data[]>(() => {
     if (!curve) return [];
@@ -243,6 +246,11 @@ export default function Mezclas() {
             <Toggle label="Mostrar derivada dpH/dV" checked={showDerivative} onChange={setShowDerivative} />
           </>
         )}
+        <details className="section-collapse">
+          <summary>Corrección por actividad (Debye–Hückel)</summary>
+          <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
+          <p className="hint">I = 0 → γ = 1 (resultado termodinámico). Aplica a pH de mezcla y curva de titulación.</p>
+        </details>
         </PanelSection>
 
         <InfoBox title="¿Qué puedo simular aquí?">

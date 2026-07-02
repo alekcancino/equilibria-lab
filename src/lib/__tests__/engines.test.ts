@@ -615,3 +615,64 @@ describe('activity', () => {
     expect(activityCoefficient(1, 0)).toBeCloseTo(1, 10);
   });
 });
+
+// ── Activity correction: regression at I=0, correction at I>0 ────────────────
+
+describe('solvePH activity correction', () => {
+  const comp: AcidBaseComponent = { c: 0.1, z0: 0, pKas: [4.76] };
+
+  it('regression: I=0 produces same pH as no I argument', () => {
+    const pH0 = solvePH([comp]);
+    const pHI0 = solvePH([comp], 0, 0, 0);
+    expect(Math.abs(pH0 - pHI0)).toBeLessThan(1e-9);
+  });
+
+  it('I=0.1 shifts pH upward (acid appears weaker at finite ionic strength)', () => {
+    const pH0 = solvePH([comp], 0, 0, 0);
+    const pHI = solvePH([comp], 0, 0, 0.1);
+    // Debye-Hückel lowers γ → pKa_app > pKa → higher equilibrium pH
+    expect(pHI).toBeGreaterThan(pH0);
+  });
+
+  it('I=0.1: pH shift for acetic acid 0.1 M is in 0.05–0.25 range', () => {
+    const pH0 = solvePH([comp], 0, 0, 0);
+    const pHI = solvePH([comp], 0, 0, 0.1);
+    const delta = pHI - pH0;
+    expect(delta).toBeGreaterThan(0.05);
+    expect(delta).toBeLessThan(0.25);
+  });
+});
+
+describe('solubility activity correction', () => {
+  const agcl = SALTS.find((s) => s.id === 'agcl')!;
+
+  it('regression: I=0 produces same solubility as no I argument', () => {
+    const s0 = solubility(agcl, 7);
+    const sI0 = solubility(agcl, 7, 0, 0);
+    expect(Math.abs(s0 - sI0) / s0).toBeLessThan(1e-9);
+  });
+
+  it('I=0.1 increases solubility of AgCl (salting-in effect)', () => {
+    const s0 = solubility(agcl, 7, 0, 0);
+    const sI = solubility(agcl, 7, 0, 0.1);
+    expect(sI).toBeGreaterThan(s0);
+  });
+});
+
+describe('ladderFractions activity correction', () => {
+  it('regression: I=0 matches original behavior', () => {
+    const pKa = 4.76;
+    const origAlphas = ladderFractions(4.76, [pKa], true);
+    const newAlphas  = ladderFractions(4.76, [pKa], true, 0, 0);
+    origAlphas.forEach((a, i) => expect(Math.abs(a - newAlphas[i])).toBeLessThan(1e-12));
+  });
+
+  it('I=0.1: at pH=pKa the apparent crossing point shifts above pKa', () => {
+    const pKa = 4.76;
+    // At pH = pKa and I=0, α_acid = α_base = 0.5 (exact crossing).
+    // At pH = pKa and I=0.1, pKa_app > pKa, so [pH < pKa_app] → species 0 still dominates slightly.
+    const [a0_ideal] = ladderFractions(pKa, [pKa], true, 0, 0);
+    const [a0_corrected] = ladderFractions(pKa, [pKa], true, 0, 0.1);
+    expect(a0_corrected).toBeGreaterThan(a0_ideal);
+  });
+});

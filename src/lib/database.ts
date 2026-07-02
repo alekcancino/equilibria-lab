@@ -112,17 +112,20 @@ export interface SaltPreset {
   /** how many protons the anion can accept (index of free species in alphas) */
   anionLabel: string;
   cationLabel: string;
+  /** Ion charges for Debye-Hückel activity correction of Ksp (defaults to 1 if omitted) */
+  zCation?: number;
+  zAnion?: number;
 }
 
 export const SALTS: SaltPreset[] = [
-  { id: 'agcl', name: 'Cloruro de plata', formula: 'AgCl', pKsp: 9.74, m: 1, x: 1, anionLabel: 'Cl⁻', cationLabel: 'Ag⁺' },
-  { id: 'agbr', name: 'Bromuro de plata', formula: 'AgBr', pKsp: 12.30, m: 1, x: 1, anionLabel: 'Br⁻', cationLabel: 'Ag⁺' },
-  { id: 'baso4', name: 'Sulfato de bario', formula: 'BaSO₄', pKsp: 9.96, m: 1, x: 1, anionPKas: [1.99], anionLabel: 'SO₄²⁻', cationLabel: 'Ba²⁺' },
-  { id: 'caco3', name: 'Carbonato de calcio', formula: 'CaCO₃', pKsp: 8.54, m: 1, x: 1, anionPKas: [6.35, 10.33], anionLabel: 'CO₃²⁻', cationLabel: 'Ca²⁺' },
-  { id: 'caf2', name: 'Fluoruro de calcio', formula: 'CaF₂', pKsp: 10.50, m: 1, x: 2, anionPKas: [3.17], anionLabel: 'F⁻', cationLabel: 'Ca²⁺' },
-  { id: 'mgoh2', name: 'Hidróxido de magnesio', formula: 'Mg(OH)₂', pKsp: 11.15, m: 1, x: 2, anionPKas: [15.7], anionLabel: 'OH⁻', cationLabel: 'Mg²⁺' },
-  { id: 'caox', name: 'Oxalato de calcio', formula: 'CaC₂O₄', pKsp: 8.60, m: 1, x: 1, anionPKas: [1.25, 4.27], anionLabel: 'C₂O₄²⁻', cationLabel: 'Ca²⁺' },
-  { id: 'pbi2', name: 'Yoduro de plomo', formula: 'PbI₂', pKsp: 8.10, m: 1, x: 2, anionLabel: 'I⁻', cationLabel: 'Pb²⁺' },
+  { id: 'agcl', name: 'Cloruro de plata', formula: 'AgCl', pKsp: 9.74, m: 1, x: 1, anionLabel: 'Cl⁻', cationLabel: 'Ag⁺', zCation: 1, zAnion: 1 },
+  { id: 'agbr', name: 'Bromuro de plata', formula: 'AgBr', pKsp: 12.30, m: 1, x: 1, anionLabel: 'Br⁻', cationLabel: 'Ag⁺', zCation: 1, zAnion: 1 },
+  { id: 'baso4', name: 'Sulfato de bario', formula: 'BaSO₄', pKsp: 9.96, m: 1, x: 1, anionPKas: [1.99], anionLabel: 'SO₄²⁻', cationLabel: 'Ba²⁺', zCation: 2, zAnion: 2 },
+  { id: 'caco3', name: 'Carbonato de calcio', formula: 'CaCO₃', pKsp: 8.54, m: 1, x: 1, anionPKas: [6.35, 10.33], anionLabel: 'CO₃²⁻', cationLabel: 'Ca²⁺', zCation: 2, zAnion: 2 },
+  { id: 'caf2', name: 'Fluoruro de calcio', formula: 'CaF₂', pKsp: 10.50, m: 1, x: 2, anionPKas: [3.17], anionLabel: 'F⁻', cationLabel: 'Ca²⁺', zCation: 2, zAnion: 1 },
+  { id: 'mgoh2', name: 'Hidróxido de magnesio', formula: 'Mg(OH)₂', pKsp: 11.15, m: 1, x: 2, anionPKas: [15.7], anionLabel: 'OH⁻', cationLabel: 'Mg²⁺', zCation: 2, zAnion: 1 },
+  { id: 'caox', name: 'Oxalato de calcio', formula: 'CaC₂O₄', pKsp: 8.60, m: 1, x: 1, anionPKas: [1.25, 4.27], anionLabel: 'C₂O₄²⁻', cationLabel: 'Ca²⁺', zCation: 2, zAnion: 2 },
+  { id: 'pbi2', name: 'Yoduro de plomo', formula: 'PbI₂', pKsp: 8.10, m: 1, x: 2, anionLabel: 'I⁻', cationLabel: 'Pb²⁺', zCation: 2, zAnion: 1 },
 ];
 
 /** Color for system markers (pH, pe, equilibrium lines) — Okabe-Ito pink */
