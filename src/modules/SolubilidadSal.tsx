@@ -38,6 +38,13 @@ const PRESETS: Preset[] = [
   { id: 'baso4',   name: 'BaSO₄',      anionName: 'SO₄²⁻',  pKsp: 9.97,  p: 1, q: 1, zM: 2, pKas: [1.99],               color: '#888888' },
   { id: 'pbso4',   name: 'PbSO₄',      anionName: 'SO₄²⁻',  pKsp: 7.79,  p: 1, q: 1, zM: 2, pKas: [1.99],               color: '#555555' },
   { id: 'agcl',    name: 'AgCl',        anionName: 'Cl⁻',    pKsp: 9.74,  p: 1, q: 1, zM: 1, pKas: [],                   color: '#999999' },
+  { id: 'agbr',    name: 'AgBr',        anionName: 'Br⁻',    pKsp: 12.30, p: 1, q: 1, zM: 1, pKas: [],                   color: '#888888' },
+  { id: 'agi',     name: 'AgI',         anionName: 'I⁻',     pKsp: 16.08, p: 1, q: 1, zM: 1, pKas: [],                   color: '#555555' },
+  { id: 'ag2cro4', name: 'Ag₂CrO₄',   anionName: 'CrO₄²⁻', pKsp: 11.89, p: 2, q: 1, zM: 1, pKas: [0.74, 6.51],         color: '#D55E00' },
+  { id: 'pbco3',   name: 'PbCO₃',      anionName: 'CO₃²⁻',  pKsp: 13.13, p: 1, q: 1, zM: 2, pKas: [6.35, 10.33],        color: '#555555' },
+  { id: 'pbcro4',  name: 'PbCrO₄',    anionName: 'CrO₄²⁻',  pKsp: 13.75, p: 1, q: 1, zM: 2, pKas: [0.74, 6.51],         color: '#F0A500' },
+  { id: 'srco3',   name: 'SrCO₃',      anionName: 'CO₃²⁻',  pKsp: 9.60,  p: 1, q: 1, zM: 2, pKas: [6.35, 10.33],        color: '#CC79A7' },
+  { id: 'srso4',   name: 'SrSO₄',      anionName: 'SO₄²⁻',  pKsp: 6.49,  p: 1, q: 1, zM: 2, pKas: [1.99],               color: '#009E73' },
 ];
 
 // ── Editable state ─────────────────────────────────────────────────────────────

@@ -135,4 +135,12 @@ export const EDTA_METAL_PRESETS: EdtaMetalPreset[] = [
   { id: 'fe3', metal: 'Fe³⁺', logKf: 25.10, logBetasOH: [11.81, 21.68, 30.67],       group: 'M³⁺' },
   { id: 'al',  metal: 'Al³⁺', logKf: 16.13, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'M³⁺' },
   { id: 'ga',  metal: 'Ga³⁺', logKf: 20.27, logBetasOH: [11.4, 22.1, 30.7],           group: 'M³⁺' },
+  { id: 'cr',  metal: 'Cr³⁺', logKf: 23.40, logBetasOH: [10.07, 17.83, 24.0],          group: 'M³⁺' },
+  { id: 'bi',  metal: 'Bi³⁺', logKf: 27.94, logBetasOH: [12.4, 23.3, 30.5],            group: 'M³⁺' },
+  { id: 'in',  metal: 'In³⁺', logKf: 24.95, logBetasOH: [10.0, 20.3],                  group: 'M³⁺' },
+  { id: 'la',  metal: 'La³⁺', logKf: 15.50, logBetasOH: [5.5],                          group: 'Lantánidos' },
+  { id: 'ce3', metal: 'Ce³⁺', logKf: 15.98, logBetasOH: [5.0],                          group: 'Lantánidos' },
+  { id: 'ba',  metal: 'Ba²⁺', logKf:  7.86, logBetasOH: [],                             group: 'M²⁺' },
+  { id: 'sr',  metal: 'Sr²⁺', logKf:  8.63, logBetasOH: [],                             group: 'M²⁺' },
+  { id: 'th',  metal: 'Th⁴⁺', logKf: 23.20, logBetasOH: [11.80, 22.60, 32.20, 38.50],  group: 'M⁴⁺' },
 ];
