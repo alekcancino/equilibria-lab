@@ -75,6 +75,15 @@ export default function IntercambioIonico() {
     setKCB(1.7);
   }
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Intercambio iónico',
+    Resina: resinId,
+    'Ión A': labelA,
+    'Ión B': labelB,
+    'K_BA': selectivity.toFixed(2),
+    'Capacidad / meq g⁻¹': resinCapacity.toFixed(2),
+  }), [resinId, labelA, labelB, selectivity, resinCapacity]);
+
   const baseParams = useMemo(() => ({
     cB0, selectivityAB: selectivity, resinCapacity, resinVolume, volume,
   }), [cB0, selectivity, resinCapacity, resinVolume, volume]);
@@ -166,6 +175,7 @@ export default function IntercambioIonico() {
           xTitle=""
           yTitle="Concentración (M) o fracción en resina"
           exportName="equilibria-ion-exchange-bars"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -186,6 +196,7 @@ export default function IntercambioIonico() {
           xTitle={`[${labelA}] en equilibrio (M)`}
           yTitle="q en resina (eq/L)"
           exportName="equilibria-ion-exchange-isotherm"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -207,6 +218,7 @@ export default function IntercambioIonico() {
           yTitle="C / C₀ en el efluente"
           yRange={[0, 1.05]}
           exportName="equilibria-ion-exchange-breakthrough"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -232,6 +244,7 @@ export default function IntercambioIonico() {
             line: { color: '#7F8C8D', width: 2, dash: 'dash' },
           }]}
           exportName="equilibria-ion-exchange-ksel"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -264,6 +277,7 @@ export default function IntercambioIonico() {
           yTitle="C / C₀"
           yRange={[0, 1.05]}
           exportName="equilibria-ion-exchange-multizona"
+          exportMetadata={exportMetadata}
         />
       ),
     }] : []),
@@ -286,6 +300,7 @@ export default function IntercambioIonico() {
           xTitle="pH"
           yTitle="log D"
           exportName="equilibria-ion-exchange-dph"
+          exportMetadata={exportMetadata}
         />
       ),
     }] : []),
@@ -308,6 +323,7 @@ export default function IntercambioIonico() {
             line: { color: '#CC79A7', width: 2, dash: 'dashdot' },
           }]}
           exportName="equilibria-ion-exchange-elution"
+          exportMetadata={exportMetadata}
         />
       ),
     }] : []),

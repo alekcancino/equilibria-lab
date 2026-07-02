@@ -101,6 +101,14 @@ export default function Complejos() {
   const n = sys.logBetas.length;
   const stepwise = useMemo(() => logBetasToStepwise(sys.logBetas), [sys.logBetas]);
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Complejos',
+    Metal: sys.metalLabel || 'M',
+    Ligante: sys.ligandLabel || 'L',
+    'CM / M': cM.toFixed(4),
+    'CL / M': cL.toFixed(4),
+  }), [sys.metalLabel, sys.ligandLabel, cM, cL]);
+
   // pL range: 0 to logβₙ + 3
   const pLmax = useMemo(() => Math.max(sys.logBetas[n - 1] + 3, 6), [sys.logBetas, n]);
   const xMax = scaleX(pLmax);
@@ -221,6 +229,7 @@ export default function Complejos() {
           yRange={[0, 1.02]}
           shapes={equilShape}
           exportName="equilibria-complejos-equilibrio"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -250,6 +259,7 @@ export default function Complejos() {
           yRange={[0, 1.02]}
           shapes={equilShape}
           exportName="equilibria-complejos-alfa"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -265,6 +275,7 @@ export default function Complejos() {
           yRange={[0, n + 0.2]}
           shapes={showEquil && pLEq < pLmax + 1 ? [{ type: 'line', x0: scaleX(pLEqClipped), x1: scaleX(pLEqClipped), y0: 0, y1: n + 0.2, line: { color: '#CC79A7', width: 2, dash: 'dashdot' } }] : []}
           exportName="equilibria-complejos-bjerrum"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -280,6 +291,7 @@ export default function Complejos() {
           yRange={[-12, 0.5]}
           shapes={equilShapeLogC}
           exportName="equilibria-complejos-logc"
+          exportMetadata={exportMetadata}
         />
       ),
     },

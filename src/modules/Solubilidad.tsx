@@ -73,6 +73,13 @@ export default function Solubilidad() {
     anionLabel: salt.anionLabel, cationLabel: salt.cationLabel,
   }), [salt]);
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Solubilidad',
+    Sal: salt.label,
+    pKsp: salt.pKsp.toFixed(2),
+    'I / M': ionicStrength.toFixed(3),
+  }), [salt.label, salt.pKsp, ionicStrength]);
+
   const traces = useMemo<Data[]>(() => {
     const phs: number[] = [];
     const logS: number[] = [];
@@ -207,6 +214,7 @@ export default function Solubilidad() {
           xRange={[0, 14]}
           shapes={pHMarker}
           exportName="equilibria-solubilidad"
+          exportMetadata={exportMetadata}
         />
         <ResultCardRow items={[
           {

@@ -144,6 +144,13 @@ export default function SolubilidadCondicional() {
     setS((prev) => ({ ...prev, m1: { ...p.metal, logBetasOH: [...p.metal.logBetasOH] }, hydroxoOpen: true }));
   }
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Solubilidad condicional',
+    'Hidróxido 1': s.m1.formula,
+    'pKsp 1': s.m1.pKsp.toFixed(2),
+    ...(s.showM2 ? { 'Hidróxido 2': s.m2.formula, 'pKsp 2': s.m2.pKsp.toFixed(2) } : {}),
+  }), [s.m1.formula, s.m1.pKsp, s.showM2, s.m2.formula, s.m2.pKsp]);
+
   // ── Solubility curves ─────────────────────────────────────────────────────
 
   const sideStack = useMemo(() => {
@@ -421,6 +428,7 @@ export default function SolubilidadCondicional() {
           yRange={[yMin, yMax]}
           shapes={shapes}
           exportName="equilibria-sol-cond"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -435,6 +443,7 @@ export default function SolubilidadCondicional() {
           xRange={[0, 14]}
           yRange={[pKspYMin, pKspYMax]}
           exportName="equilibria-pksp-cond"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -453,6 +462,7 @@ export default function SolubilidadCondicional() {
           xRange={[0, 14]}
           yRange={[yMin, yMax]}
           exportName="equilibria-sol-px"
+          exportMetadata={exportMetadata}
         />
       ),
     }] : []),

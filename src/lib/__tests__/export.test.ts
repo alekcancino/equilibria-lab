@@ -36,4 +36,20 @@ describe('tracesToCSV', () => {
     const csv = tracesToCSV(data as never, 'pH', 's');
     expect(csv.split('\n')[0]).toBe('pH:Ca;Mg,s:Ca;Mg');
   });
+
+  it('antepone metadatos como líneas de comentario', () => {
+    const data = [{ name: 'A', x: [1], y: [2] }];
+    const meta = { Módulo: 'AcidoBase', 'C / M': '0.01' };
+    const csv = tracesToCSV(data as never, 'pH', 'α', meta);
+    const rows = csv.split('\n');
+    expect(rows[0]).toBe('# Módulo: AcidoBase');
+    expect(rows[1]).toBe('# C / M: 0.01');
+    expect(rows[2]).toBe('pH:A,α:A');
+    expect(rows[3]).toBe('1,2');
+  });
+
+  it('sin metadatos el output es el mismo que antes', () => {
+    const data = [{ name: 'A', x: [1], y: [2] }];
+    expect(tracesToCSV(data as never, 'pH', 'α')).toBe('pH:A,α:A\n1,2');
+  });
 });

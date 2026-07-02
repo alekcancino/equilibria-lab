@@ -112,6 +112,14 @@ export default function ConstantesCondicionales() {
 
   // ── Curvas ─────────────────────────────────────────────────────────────────
 
+  const exportMetadata = useMemo(() => ({
+    Módulo: 'Constantes condicionales (EDTA)',
+    Metal: s.metalLabel,
+    'log Kf': s.logKf.toFixed(2),
+    'pH evaluación': s.evalPH.toFixed(1),
+    'Co / M': s.co.toFixed(4),
+  }), [s.metalLabel, s.logKf, s.evalPH, s.co]);
+
   const stack = useMemo(() => sideStackFromEditor(s.side), [s.side]);
 
   const curve1 = useMemo(() =>
@@ -315,6 +323,7 @@ export default function ConstantesCondicionales() {
           yRange={[yMin, yMax]}
           shapes={logKShapes}
           exportName="equilibria-cond-logk"
+          exportMetadata={exportMetadata}
         />
       ),
     },
@@ -328,6 +337,7 @@ export default function ConstantesCondicionales() {
           yTitle="log α"
           xRange={[PH_MIN, PH_MAX]}
           exportName="equilibria-cond-alpha"
+          exportMetadata={exportMetadata}
         />
       ),
     },
