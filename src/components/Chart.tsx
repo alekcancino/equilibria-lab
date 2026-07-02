@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useRef } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import PlotToolbar from './PlotToolbar';
+import { tracesToCSV, downloadCSV } from '../lib/export';
 
 const PlotChart = lazy(() => import('./PlotChart'));
 
@@ -13,7 +14,7 @@ export interface ChartProps {
   shapes?: Partial<Shape>[];
   annotations?: Partial<Annotations>[];
   showLegend?: boolean;
-  /** File name when exporting PNG */
+  /** File name when exporting PNG and CSV */
   exportName?: string;
 }
 
@@ -49,13 +50,18 @@ export default function Chart(props: ChartProps) {
     });
   }, []);
 
+  const exportCsv = useCallback(() => {
+    const csv = tracesToCSV(props.data, props.xTitle, props.yTitle);
+    if (csv) downloadCSV(csv, exportName);
+  }, [props.data, props.xTitle, props.yTitle, exportName]);
+
   return (
     <div className="chart-shell">
       <div className="chart-plot">
         <Suspense fallback={<div className="chart-loading">Cargando gráfica…</div>}>
           <PlotChart {...props} onGraphDiv={onGraphDiv} />
         </Suspense>
-        <PlotToolbar onResetZoom={resetZoom} onExport={exportPng} />
+        <PlotToolbar onResetZoom={resetZoom} onExport={exportPng} onExportCSV={exportCsv} />
       </div>
     </div>
   );
