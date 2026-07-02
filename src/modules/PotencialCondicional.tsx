@@ -422,7 +422,7 @@ export default function PotencialCondicional() {
               <LabelField label="Forma oxidada (Ox)" value={st.pxOxLabel} onChange={(v) => set('pxOxLabel', v)} />
               <LabelField label="Forma reducida (Red)" value={st.pxRedLabel} onChange={(v) => set('pxRedLabel', v)} />
               <LabelField label="Ligando X" value={st.pxLigandLabel} onChange={(v) => set('pxLigandLabel', v)} />
-              <Slider label="E° del par (V)" value={st.pxE0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('pxE0', v)} decimals={3} />
+              <Slider label="E° del par (V)" helpId="E0" value={st.pxE0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('pxE0', v)} decimals={3} />
               <div className="control">
                 <div className="control-header">
                   <span className="control-label">n (electrones)</span>
@@ -435,10 +435,10 @@ export default function PotencialCondicional() {
                 </div>
               </div>
               <Disclosure title="log β de Ox con X">
-                <ConstantList prefix="log β(Ox)" values={st.pxLogBetasOx} onChange={(v) => set('pxLogBetasOx', v)} min={0} max={35} maxItems={6} />
+                <ConstantList prefix="log β(Ox)" helpId="logBeta" values={st.pxLogBetasOx} onChange={(v) => set('pxLogBetasOx', v)} min={0} max={35} maxItems={6} />
               </Disclosure>
               <Disclosure title="log β de Red con X">
-                <ConstantList prefix="log β(Red)" values={st.pxLogBetasRed} onChange={(v) => set('pxLogBetasRed', v)} min={0} max={35} maxItems={6} />
+                <ConstantList prefix="log β(Red)" helpId="logBeta" values={st.pxLogBetasRed} onChange={(v) => set('pxLogBetasRed', v)} min={0} max={35} maxItems={6} />
               </Disclosure>
               <p className="hint">
                 Preset: Fe³⁺/Fe²⁺ + F⁻ · E° = +0.771 V · log β(Fe³⁺) = [5.28, 9.30, 12.06] · log β(Fe²⁺) = [1.0]
@@ -455,10 +455,10 @@ export default function PotencialCondicional() {
           />
           {st.showElectrode && (
             <div className="mask-section">
-              <Slider label="E° (V)" value={st.e0Metal} min={-1} max={2} step={0.01} onChange={(v) => set('e0Metal', v)} decimals={3} />
-              <Slider label="n (electrones)" value={st.nElectrode} min={1} max={4} step={1} onChange={(v) => set('nElectrode', v)} decimals={0} />
-              <Slider label="m H⁺ en semirreacción" value={st.mHElectrode} min={0} max={4} step={1} onChange={(v) => set('mHElectrode', v)} decimals={0} />
-              <Slider label="pM′ objetivo" value={st.pMPrimeTarget} min={0} max={14} step={0.1} onChange={(v) => set('pMPrimeTarget', v)} decimals={1} />
+              <Slider label="E° (V)" helpId="E0" value={st.e0Metal} min={-1} max={2} step={0.01} onChange={(v) => set('e0Metal', v)} decimals={3} />
+              <Slider label="n (electrones)" helpId="n" value={st.nElectrode} min={1} max={4} step={1} onChange={(v) => set('nElectrode', v)} decimals={0} />
+              <Slider label="m H⁺ en semirreacción" helpId="mH" value={st.mHElectrode} min={0} max={4} step={1} onChange={(v) => set('mHElectrode', v)} decimals={0} />
+              <Slider label="pM′ objetivo" helpId="pMprime" value={st.pMPrimeTarget} min={0} max={14} step={0.1} onChange={(v) => set('pMPrimeTarget', v)} decimals={1} />
               <Slider label="pH del electrodo" value={st.pHElectrode} min={0} max={14} step={0.1} onChange={(v) => set('pHElectrode', v)} decimals={1} />
               {electrodeE !== null && (
                 <ResultCard items={[

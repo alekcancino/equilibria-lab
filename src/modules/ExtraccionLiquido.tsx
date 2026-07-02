@@ -22,6 +22,7 @@ import DiagramTabs from '../components/DiagramTabs';
 import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
 import { SPECIES_COLORS } from '../lib/database';
+import { formatSci } from '../lib/format';
 
 // ── Presets ───────────────────────────────────────────────────────────────────
 
@@ -221,7 +222,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
 
       {a.type === 'acid' ? (
         <>
-          <Slider label="log Kd" value={a.logKd} min={-2} max={6} step={0.05} onChange={(v) => onChange({ logKd: v })} decimals={2} />
+          <Slider label="log Kd" helpId="Kd" value={a.logKd} min={-2} max={6} step={0.05} onChange={(v) => onChange({ logKd: v })} decimals={2} />
           <ConstantList
             prefix="pKa"
             values={a.pKas}
@@ -246,7 +247,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
         </>
       ) : (
         <>
-          <Slider label="log K_ex" value={a.logKd} min={-2} max={20} step={0.1} onChange={(v) => onChange({ logKd: v })} decimals={2} />
+          <Slider label="log K_ex" helpId="Kex" value={a.logKd} min={-2} max={20} step={0.1} onChange={(v) => onChange({ logKd: v })} decimals={2} />
           <div className="control">
             <div className="control-header">
               <span className="control-label">n (carga del metal)</span>
@@ -495,7 +496,7 @@ export default function ExtraccionLiquido() {
             onChange={(v) => set('showDimer', v)}
           />
           {st.showDimer && st.a1.type === 'acid' && (
-            <Slider label="log K₂ (dímero)" value={st.logK2} min={-1} max={4} step={0.1} onChange={(v) => set('logK2', v)} decimals={1} />
+            <Slider label="log K₂ (dímero)" helpId="logK2" value={st.logK2} min={-1} max={4} step={0.1} onChange={(v) => set('logK2', v)} decimals={1} />
           )}
           <Slider label="pH del cursor" value={st.pH} min={0} max={14} step={0.1} onChange={(v) => set('pH', v)} decimals={1} />
           <Slider label="Vaq (mL)" value={st.Vaq} min={1} max={50} step={1} onChange={(v) => set('Vaq', v)} decimals={0} />
@@ -506,7 +507,7 @@ export default function ExtraccionLiquido() {
 
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
-            { label: `D a pH ${st.pH.toFixed(1)}`, value: D1cur >= 0.001 ? D1cur.toFixed(3) : D1cur.toExponential(2) },
+            { label: `D a pH ${st.pH.toFixed(1)}`, value: D1cur >= 0.001 ? D1cur.toFixed(3) : formatSci(D1cur) },
             { label: `log D`, value: D1cur > 0 ? Math.log10(D1cur).toFixed(2) : '< −10' },
             { label: `%E · n=1  (Vorg/Vaq=${r.toFixed(1)})`, value: `${pE1cur.toFixed(1)} %` },
             { label: `%E · n=2`, value: `${percentEn(D1cur, r, 2).toFixed(1)} %` },

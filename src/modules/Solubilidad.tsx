@@ -7,6 +7,7 @@ import {
   ResultCard, ResultCardRow, SelectControl, Slider, Toggle,
 } from '../components/Controls';
 import { SALTS, type SaltPreset } from '../lib/database';
+import { formatMolar } from '../lib/format';
 import { solubility } from '../lib/solubility';
 
 const PH_POINTS = 300;
@@ -109,7 +110,7 @@ export default function Solubilidad() {
             additions={[useCommon && 'ion común']}
           />
           <LabelField label="Sal (nombre libre)" value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
-          <Slider label="pKsp" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
+          <Slider label="pKsp" helpId="pKsp" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
           <SelectControl
             label="Estequiometría MmXx"
             value={`${salt.m},${salt.x}`}
@@ -169,7 +170,7 @@ export default function Solubilidad() {
           <ResultCard items={[
             {
               label: `Solubilidad a pH ${pHPoint.toFixed(1)}`,
-              value: sInvalid ? 'Sin raíz en Ksp (revisar parámetros)' : `${sAtPoint.toExponential(2)} M`,
+              value: sInvalid ? 'Sin raíz en Ksp (revisar parámetros)' : formatMolar(sAtPoint),
             },
             { label: 'Equilibrio', value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
           ]} />
@@ -194,7 +195,7 @@ export default function Solubilidad() {
         <ResultCardRow items={[
           {
             label: `s a pH ${pHPoint.toFixed(1)}`,
-            value: sInvalid ? '—' : `${sAtPoint.toExponential(2)} M`,
+            value: sInvalid ? '—' : formatMolar(sAtPoint),
             accent: true,
           },
           { label: 'pKsp', value: salt.pKsp.toFixed(2) },

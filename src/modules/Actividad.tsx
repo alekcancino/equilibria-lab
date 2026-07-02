@@ -12,7 +12,7 @@ import {
   activityCoefficient,
   apparentPKw,
 } from '../lib/activity';
-import { formatMolar } from '../lib/format';
+import { formatMolar, formatSci } from '../lib/format';
 
 const I_POINTS = 200;
 
@@ -124,7 +124,7 @@ export default function Actividad() {
           </div>
           {iMode === 'impose' ? (
             <>
-              <ConcSlider label="Fuerza iónica I impuesta" value={iDirect} onChange={setIDirect} min={-3} max={0} />
+              <ConcSlider label="Fuerza iónica I impuesta" helpId="ionicStrength" value={iDirect} onChange={setIDirect} min={-3} max={0} />
               <p className="hint">I fija: cambiar la carga z no altera I (útil para leer γ a I constante).</p>
             </>
           ) : (
@@ -134,13 +134,13 @@ export default function Actividad() {
         </PanelSection>
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
-            { label: 'Fuerza iónica I', value: `${I.toExponential(2)} M` },
+            { label: 'Fuerza iónica I', value: formatMolar(I) },
             { label: 'γ (z = 1)', value: gamma1.toFixed(3) },
             { label: 'γ (z = 2)', value: gamma2.toFixed(3) },
             { label: 'γ (z = 3)', value: gamma3.toFixed(3) },
             { label: `log γ (z = ${z})`, value: logGamma.toFixed(3) },
             { label: 'pKw aparente', value: pKwApp.toFixed(2) },
-            { label: 'a_H ≈ γ·[H⁺]', value: (gammaH * Math.pow(10, -pH)).toExponential(2) },
+            { label: 'a_H ≈ γ·[H⁺]', value: formatSci(gammaH * Math.pow(10, -pH)) },
           ]} />
         </PanelSection>
         <InfoBox title="Debye-Hückel extendida">

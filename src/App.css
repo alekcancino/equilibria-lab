@@ -563,6 +563,74 @@ html, body, #root {
 
 .control-label { color: var(--text); }
 
+/* Contextual help: ⓘ trigger + tooltip on cryptic variable labels */
+.help-tip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.help-tip-btn {
+  margin-left: 5px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: help;
+  opacity: 0.6;
+  transition: opacity var(--duration-fast, 150ms), color var(--duration-fast, 150ms);
+}
+
+.help-tip-btn:hover,
+.help-tip-btn:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+  outline: none;
+}
+
+.help-tip-pop {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: max-content;
+  max-width: 220px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-3px);
+  transition: opacity var(--duration-fast, 150ms) var(--ease-out, ease),
+              transform var(--duration-fast, 150ms) var(--ease-out, ease);
+}
+
+.help-tip:hover .help-tip-pop,
+.help-tip-btn:focus-visible + .help-tip-pop,
+.help-tip.open .help-tip-pop {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.help-tip-units {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .help-tip-pop { transition: none; }
+}
+
 .control-value {
   display: inline-flex;
   align-items: baseline;

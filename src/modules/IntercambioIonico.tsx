@@ -11,6 +11,7 @@ import {
   type SideReactionEditorState,
 } from '../lib/ionExchange';
 import { sideStackFromEditor } from '../lib/sideReactions';
+import { formatMolar } from '../lib/format';
 import { APPLICATION_PRESETS, RESIN_PRESETS } from '../lib/ionExchangeDatabase';
 
 /** Ion exchange: selectivity, batch, isotherm, and column breakthrough. */
@@ -296,8 +297,8 @@ export default function IntercambioIonico() {
         <LabelField label="Catión B" value={labelB} onChange={setLabelB} />
         <ConcSlider label={`[${labelA}] inicial`} value={cA0} onChange={setCA0} min={-4} max={-1} />
         <ConcSlider label={`[${labelB}] inicial`} value={cB0} onChange={setCB0} min={-4} max={-1} />
-        <Slider label="Ksel (A sobre B)" value={selectivity} min={0.1} max={50} step={0.1} onChange={setSelectivity} decimals={1} />
-        <Slider label="Capacidad de resina (eq/L)" value={resinCapacity} min={0.5} max={5} step={0.1} onChange={setResinCapacity} decimals={1} />
+        <Slider label="Ksel (A sobre B)" helpId="Ksel" value={selectivity} min={0.1} max={50} step={0.1} onChange={setSelectivity} decimals={1} />
+        <Slider label="Capacidad de resina (eq/L)" helpId="capacity" value={resinCapacity} min={0.5} max={5} step={0.1} onChange={setResinCapacity} decimals={1} />
         <Slider label="Volumen de resina (L)" value={resinVolume} min={0.01} max={0.2} step={0.01} onChange={setResinVolume} decimals={2} />
         <Slider label="Volumen de solución (L)" value={volume} min={0.05} max={0.5} step={0.01} onChange={setVolume} decimals={2} />
         <Slider label="Caudal (L/min, columna)" value={flowRate} min={0.01} max={0.2} step={0.01} onChange={setFlowRate} decimals={2} />
@@ -311,7 +312,7 @@ export default function IntercambioIonico() {
         />
         {showCompetitive && (
           <div className="mask-section">
-            <Slider label="K²_H/M" value={kHSquared} min={0.1} max={20} step={0.1} onChange={setKHSquared} decimals={1} />
+            <Slider label="K²_H/M" helpId="K2HM" value={kHSquared} min={0.1} max={20} step={0.1} onChange={setKHSquared} decimals={1} />
             <Slider label="pH bulk" value={pHBulk} min={1} max={14} step={0.1} onChange={setPHBulk} decimals={1} />
             <ConcSlider label="[H⁺]_resina (M)" value={hResin} onChange={setHResin} min={-4} max={-1} />
             <Slider label="CI (meq/g)" value={ciMeq} min={1} max={10} step={0.5} onChange={setCiMeq} decimals={1} />
@@ -333,8 +334,8 @@ export default function IntercambioIonico() {
 
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
-            { label: `[${labelA}] final`, value: `${eq.cAeq.toExponential(2)} M` },
-            { label: `[${labelB}] final`, value: `${eq.cBeq.toExponential(2)} M` },
+            { label: `[${labelA}] final`, value: formatMolar(eq.cAeq) },
+            { label: `[${labelB}] final`, value: formatMolar(eq.cBeq) },
             { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(1)} %` },
             { label: 'Ksel (referencia)', value: selectivityFromKd(selectivity, 1).toFixed(1) },
             ...(showCompetitive ? [

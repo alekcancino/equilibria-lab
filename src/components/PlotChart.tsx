@@ -58,6 +58,7 @@ export default function PlotChart({
         ticks: 'outside',
         tickcolor: gridColor,
         ticklen: 4,
+        exponentformat: 'power',
       },
       yaxis: {
         title: { text: yTitle, font: { size: fontSize + 2, family: fontFamily, color: textColor } },
@@ -69,6 +70,7 @@ export default function PlotChart({
         ticks: 'outside',
         tickcolor: gridColor,
         ticklen: 4,
+        exponentformat: 'power',
       },
       showlegend: legendNeeded,
       legend: {
