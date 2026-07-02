@@ -3,70 +3,232 @@ import { useShareEffect } from '../hooks/useShareableState';
 import type { Data, Annotations, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
-import { InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Slider, Toggle } from '../components/Controls';
-import { availableSystems, buildSystem, waterLines, S_NERNST } from '../lib/pourbaix';
+import {
+  InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow,
+  SelectControl, Slider, Toggle,
+} from '../components/Controls';
+import {
+  availableSystems, buildSystem, buildArbitraryDiagram, waterLines,
+  type ArbSpecies, type ArbCouple,
+} from '../lib/pourbaix';
 import { formatMolar } from '../lib/format';
 
-// ── Simple custom system (M^n+ / M + M(OH)n) ─────────────────────────────────
+// ── Arbitrary custom system types ─────────────────────────────────────────────
 
-interface SimpleCustom {
-  ionName: string;     // "Ni²⁺"
-  metalName: string;   // "Ni"
-  hydroxide: string;   // "Ni(OH)₂"
-  E0: number;          // E°(M^n+/M) in V
-  n: number;           // electrons
-  pKsp: number;        // pKsp of M(OH)n
+interface ArbitraryCustom {
+  species: ArbSpecies[];
+  couples: ArbCouple[];
 }
 
-function buildSimpleDiagram(p: SimpleCustom, logC: number): { data: Data[]; annotations: Partial<Annotations>[] } {
-  const S = S_NERNST;
-  const E_dep = p.E0 + (S / p.n) * logC;                     // aqueous boundary (horizontal)
-  const pH_p = 14 - (p.pKsp + logC) / p.n;                   // precipitation pH at logC
-  const E0_sol = p.E0 + S * (14 - p.pKsp / p.n);             // standard potential M(OH)n/M
-  const E_sol = (pH: number) => E0_sol - S * pH;              // solid boundary vs pH
+const DEFAULT_ARB: ArbitraryCustom = {
+  species: [
+    { kind: 'ion',      formula: 'M²⁺',    z: 2 },
+    { kind: 'hydroxide',formula: 'M(OH)₂', z: 2, pKsp: 15.8, ionRef: 'M²⁺' },
+    { kind: 'metal',    formula: 'M' },
+  ],
+  couples: [
+    { ox: 'M²⁺', red: 'M', E0: -0.257, n: 2 },
+  ],
+};
 
-  const COLOR_AQ = '#0072B2';
-  const COLOR_V  = '#D55E00';
-  const COLOR_SO = '#009E73';
+// ── Species editor ─────────────────────────────────────────────────────────────
 
-  const data: Data[] = [
-    {
-      x: [0, pH_p], y: [E_dep, E_dep], type: 'scatter', mode: 'lines',
-      name: `${p.ionName}/${p.metalName}`,
-      line: { width: 2.5, color: COLOR_AQ },
-      hovertemplate: `${p.ionName} + ${p.n}e⁻ → ${p.metalName}(s)<extra>frontera acuosa</extra>`,
-    },
-    {
-      x: [pH_p, pH_p], y: [E_sol(pH_p), E_dep], type: 'scatter', mode: 'lines',
-      name: `precipitación ${p.hydroxide}`,
-      line: { width: 2.5, color: COLOR_V, dash: 'dot' },
-      hovertemplate: `pH = ${pH_p.toFixed(1)} — precipita ${p.hydroxide}<extra>frontera vertical</extra>`,
-    },
-    {
-      x: [pH_p, 14], y: [E_sol(pH_p), E_sol(14)], type: 'scatter', mode: 'lines',
-      name: `${p.hydroxide}/${p.metalName}`,
-      line: { width: 2.5, color: COLOR_SO },
-      hovertemplate: `${p.hydroxide} + ${p.n}H⁺ + ${p.n}e⁻ → ${p.metalName} + ${p.n}H₂O<extra>frontera sólido</extra>`,
-    },
-  ];
+function SpeciesEditor({
+  species,
+  onChange,
+}: {
+  species: ArbSpecies[];
+  onChange: (s: ArbSpecies[]) => void;
+}) {
+  const ions = species.filter((s) => s.kind === 'ion');
 
-  const annotations: Partial<Annotations>[] = [
-    { x: pH_p / 2,      y: E_dep + 0.12, text: `<b>${p.ionName}</b>`,    showarrow: false, font: { size: 12, color: '#2c3e50' } },
-    { x: (pH_p + 14) / 2, y: E_sol((pH_p + 14) / 2) + 0.15, text: `<b>${p.hydroxide}</b>`, showarrow: false, font: { size: 12, color: '#2c3e50' } },
-    { x: (pH_p + 14) / 2, y: E_sol((pH_p + 14) / 2) - 0.3,  text: `<b>${p.metalName}(s)</b>`, showarrow: false, font: { size: 12, color: '#2c3e50' } },
-  ];
+  function update(idx: number, patch: Partial<ArbSpecies>) {
+    const next = species.map((s, i) => (i === idx ? { ...s, ...patch } as ArbSpecies : s));
+    onChange(next);
+  }
+  function remove(idx: number) {
+    onChange(species.filter((_, i) => i !== idx));
+  }
+  function addIon() {
+    onChange([...species, { kind: 'ion', formula: 'X²⁺', z: 2 }]);
+  }
+  function addHydrox() {
+    const ref = ions[0]?.formula ?? '';
+    onChange([...species, { kind: 'hydroxide', formula: 'X(OH)₂', z: 2, pKsp: 15, ionRef: ref }]);
+  }
+  function addMetal() {
+    onChange([...species, { kind: 'metal', formula: 'X' }]);
+  }
 
-  return { data, annotations };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {species.map((sp, i) => (
+        <div key={i} className="editor-card" style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="editor-title" style={{ fontSize: 12, color: sp.kind === 'ion' ? '#0072B2' : sp.kind === 'hydroxide' ? '#D55E00' : '#009E73', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              {sp.kind === 'ion' ? 'Ion' : sp.kind === 'hydroxide' ? 'Hidróxido' : 'Metal'}
+            </span>
+            <button onClick={() => remove(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 14, padding: '0 2px' }}>✕</button>
+          </div>
+
+          <div className="control">
+            <div className="control-header">
+              <span className="control-label">Fórmula</span>
+            </div>
+            <input
+              className="label-input"
+              value={sp.formula}
+              onChange={(e) => update(i, { formula: e.target.value })}
+              style={{ width: '100%', marginTop: 4 }}
+            />
+          </div>
+
+          {sp.kind === 'ion' && (
+            <div className="control">
+              <div className="control-header">
+                <span className="control-label">Carga z</span>
+                <span className="control-value">{sp.z}</span>
+              </div>
+              <div className="segmented" style={{ marginTop: 4 }}>
+                {[1, 2, 3, 4].map((v) => (
+                  <button key={v} className={sp.z === v ? 'seg-btn active' : 'seg-btn'}
+                    onClick={() => update(i, { z: v })}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {sp.kind === 'hydroxide' && (
+            <>
+              <div className="control">
+                <div className="control-header">
+                  <span className="control-label">Carga z</span>
+                  <span className="control-value">{sp.z}</span>
+                </div>
+                <div className="segmented" style={{ marginTop: 4 }}>
+                  {[1, 2, 3, 4].map((v) => (
+                    <button key={v} className={sp.z === v ? 'seg-btn active' : 'seg-btn'}
+                      onClick={() => update(i, { z: v })}>
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <Slider
+                label={`pKsp = ${sp.pKsp.toFixed(1)}`}
+                value={sp.pKsp} min={2} max={50} step={0.1}
+                onChange={(pKsp) => update(i, { pKsp })}
+                decimals={1}
+              />
+              <div className="control">
+                <div className="control-header">
+                  <span className="control-label">Ion de referencia</span>
+                </div>
+                <select
+                  className="select-control"
+                  value={sp.ionRef}
+                  onChange={(e) => update(i, { ionRef: e.target.value })}
+                  style={{ marginTop: 4, width: '100%' }}
+                >
+                  {ions.map((ion) => (
+                    <option key={ion.formula} value={ion.formula}>{ion.formula}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+        </div>
+      ))}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button className="btn-secondary" onClick={addIon} style={{ fontSize: 12 }}>+ Ion</button>
+        <button className="btn-secondary" onClick={addHydrox} style={{ fontSize: 12 }}>+ Hidróxido</button>
+        <button className="btn-secondary" onClick={addMetal} style={{ fontSize: 12 }}>+ Metal</button>
+      </div>
+    </div>
+  );
 }
 
-function customRegionAt(p: SimpleCustom, logC: number, pH: number, E: number): string {
-  const S = S_NERNST;
-  const E_dep = p.E0 + (S / p.n) * logC;
-  const pH_p = 14 - (p.pKsp + logC) / p.n;
-  const E0_sol = p.E0 + S * (14 - p.pKsp / p.n);
-  const E_sol = E0_sol - S * pH;
-  if (pH < pH_p) return E > E_dep ? p.ionName : `${p.metalName}(s)`;
-  return E > E_sol ? p.hydroxide : `${p.metalName}(s)`;
+// ── Couple editor ──────────────────────────────────────────────────────────────
+
+function CoupleEditorArb({
+  couples,
+  species,
+  onChange,
+}: {
+  couples: ArbCouple[];
+  species: ArbSpecies[];
+  onChange: (c: ArbCouple[]) => void;
+}) {
+  const ions   = species.filter((s) => s.kind === 'ion').map((s) => s.formula);
+  const metals = species.filter((s) => s.kind === 'metal').map((s) => s.formula);
+  const redOpts = [...ions, ...metals];
+
+  function update(idx: number, patch: Partial<ArbCouple>) {
+    onChange(couples.map((c, i) => (i === idx ? { ...c, ...patch } : c)));
+  }
+  function remove(idx: number) {
+    onChange(couples.filter((_, i) => i !== idx));
+  }
+  function addCouple() {
+    const ox = ions[0] ?? '';
+    const red = metals[0] ?? ions[1] ?? '';
+    onChange([...couples, { ox, red, E0: 0, n: 2 }]);
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {couples.map((c, i) => (
+        <div key={i} className="editor-card" style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: '#0072B2', fontWeight: 700 }}>
+              Par redox {i + 1}
+            </span>
+            <button onClick={() => remove(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 14, padding: '0 2px' }}>✕</button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="control" style={{ flex: 1 }}>
+              <div className="control-header"><span className="control-label">Ox (izq.)</span></div>
+              <select className="select-control" value={c.ox} onChange={(e) => update(i, { ox: e.target.value })} style={{ marginTop: 4, width: '100%' }}>
+                {ions.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+            <div className="control" style={{ flex: 1 }}>
+              <div className="control-header"><span className="control-label">Red (der.)</span></div>
+              <select className="select-control" value={c.red} onChange={(e) => update(i, { red: e.target.value })} style={{ marginTop: 4, width: '100%' }}>
+                {redOpts.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <Slider
+            label={`E° = ${c.E0.toFixed(3)} V`}
+            value={c.E0} min={-2} max={2} step={0.001}
+            onChange={(E0) => update(i, { E0 })}
+            decimals={3}
+          />
+
+          <div className="control">
+            <div className="control-header">
+              <span className="control-label">Electrones n</span>
+              <span className="control-value">{c.n}</span>
+            </div>
+            <div className="segmented" style={{ marginTop: 4 }}>
+              {[1, 2, 3, 4].map((v) => (
+                <button key={v} className={c.n === v ? 'seg-btn active' : 'seg-btn'}
+                  onClick={() => update(i, { n: v })}>
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+      <button className="btn-secondary" onClick={addCouple} style={{ fontSize: 12 }}>+ Par redox</button>
+    </div>
+  );
 }
 
 function nearestRegionName(
@@ -75,10 +237,14 @@ function nearestRegionName(
   E: number,
 ): string {
   if (regions.length === 0) return '—';
+  // Normalize axes to equal weight: pH spans 0–14, E spans –1.6 to 2.2 (3.8 V)
+  const pHRange = 14, ERange = 3.8;
+  const dist = (r: { labelPH: number; labelE: number }) =>
+    ((pH - r.labelPH) / pHRange) ** 2 + ((E - r.labelE) / ERange) ** 2;
   let best = regions[0];
-  let bestD = (pH - best.labelPH) ** 2 + (E - best.labelE) ** 2;
+  let bestD = dist(best);
   for (const r of regions.slice(1)) {
-    const d = (pH - r.labelPH) ** 2 + (E - r.labelE) ** 2;
+    const d = dist(r);
     if (d < bestD) { best = r; bestD = d; }
   }
   return best.name;
@@ -95,29 +261,26 @@ export default function Pourbaix() {
   const [showWater, setShowWater] = useState(false);
   const [cursorPH, setCursorPH] = useState(7);
   const [cursorE, setCursorE] = useState(0);
-  const [custom, setCustom] = useState<SimpleCustom>({
-    ionName: 'M²⁺', metalName: 'M', hydroxide: 'M(OH)₂',
-    E0: -0.257, n: 2, pKsp: 15.8,
-  });
+  const [arb, setArb] = useState<ArbitraryCustom>(DEFAULT_ARB);
 
-  useShareEffect('pourbaix', { systemId, useCustom, logC, showWater, cursorPH, cursorE, custom }, (s) => {
+  useShareEffect('pourbaix', { systemId, useCustom, logC, showWater, cursorPH, cursorE, arb }, (s) => {
     if (s.systemId) setSystemId(s.systemId);
     if (s.useCustom !== undefined) setUseCustom(s.useCustom);
     if (s.logC !== undefined) setLogC(s.logC);
     if (s.showWater !== undefined) setShowWater(s.showWater);
     if (s.cursorPH !== undefined) setCursorPH(s.cursorPH);
     if (s.cursorE !== undefined) setCursorE(s.cursorE);
-    if (s.custom) setCustom(s.custom);
+    if (s.arb) setArb(s.arb);
   });
 
   function reset() {
     setSystemId('fe');
-    setUseCustom(true);
+    setUseCustom(false);
     setLogC(-2);
     setShowWater(false);
     setCursorPH(7);
     setCursorE(0);
-    setCustom({ ionName: 'M²⁺', metalName: 'M', hydroxide: 'M(OH)₂', E0: -0.257, n: 2, pKsp: 15.8 });
+    setArb(DEFAULT_ARB);
   }
 
   const diagram = useMemo(
@@ -125,31 +288,27 @@ export default function Pourbaix() {
     [systemId, logC, useCustom],
   );
 
-  const customDiagram = useMemo(
-    () => (useCustom ? buildSimpleDiagram(custom, logC) : null),
-    [custom, logC, useCustom],
+  const arbDiagram = useMemo(
+    () => (useCustom ? buildArbitraryDiagram(arb.species, arb.couples, logC) : null),
+    [arb, logC, useCustom],
   );
 
   const { traces, annotations } = useMemo(() => {
     const data: Data[] = [];
     const ann: Partial<Annotations>[] = [];
 
-    if (diagram) {
-      diagram.lines.forEach((l) =>
+    const src = diagram ?? arbDiagram;
+    if (src) {
+      src.lines.forEach((l) =>
         data.push({
           x: l.pH, y: l.E, type: 'scatter', mode: 'lines', name: l.name,
           line: { width: 2.5, color: l.color },
           hovertemplate: `${l.equation}<extra>${l.name}</extra>`,
         }),
       );
-      diagram.regions.forEach((r) =>
+      src.regions.forEach((r) =>
         ann.push({ x: r.labelPH, y: r.labelE, text: `<b>${r.name}</b>`, showarrow: false, font: { size: 13, color: '#2c3e50' } }),
       );
-    }
-
-    if (customDiagram) {
-      customDiagram.data.forEach((d) => data.push(d));
-      customDiagram.annotations.forEach((a) => ann.push(a));
     }
 
     if (showWater) {
@@ -162,13 +321,13 @@ export default function Pourbaix() {
     }
 
     return { traces: data, annotations: ann };
-  }, [diagram, customDiagram, showWater]);
+  }, [diagram, arbDiagram, showWater]);
 
   const predominant = useMemo(() => {
-    if (useCustom) return customRegionAt(custom, logC, cursorPH, cursorE);
-    if (diagram) return nearestRegionName(diagram.regions, cursorPH, cursorE);
-    return '—';
-  }, [useCustom, custom, logC, cursorPH, cursorE, diagram]);
+    const src = diagram ?? arbDiagram;
+    if (!src) return '—';
+    return nearestRegionName(src.regions, cursorPH, cursorE);
+  }, [diagram, arbDiagram, cursorPH, cursorE]);
 
   const cursorShapes = useMemo<Partial<Shape>[]>(() => [
     {
@@ -185,82 +344,57 @@ export default function Pourbaix() {
     <div className="module">
       <PanelShell title="Diagrama de Pourbaix" onReset={reset}>
         <PanelSection title="Sistema" icon="⚛">
-        <ModelBadge
-          model={useCustom ? 'sistema simple Mⁿ⁺ / M / M(OH)ₙ' : 'sistema metal–agua de múltiples especies'}
-          additions={[!useCustom && 'especies de base de datos', showWater && 'estabilidad del agua']}
-        />
+          <ModelBadge
+            model={useCustom ? 'sistema arbitrario (N parejas + N sólidos)' : 'sistema metal–agua de múltiples especies'}
+            additions={[!useCustom && 'especies de base de datos', showWater && 'estabilidad del agua']}
+          />
 
-        <Toggle label="Modo personalizado (sistema propio)" checked={useCustom} onChange={setUseCustom} />
+          <Toggle label="Modo personalizado (sistema propio)" checked={useCustom} onChange={setUseCustom} />
 
-        {!useCustom ? (
-          <>
-            <SelectControl
-              label="Sistema metal–H₂O"
-              value={systemId}
-              options={systems.map((s) => ({ value: s.id, label: s.name }))}
-              onChange={setSystemId}
-            />
-            {diagram && diagram.excluded.length > 0 && (
-              <p className="badge warn">
-                Diagrama simplificado — especies excluidas: {diagram.excluded.join(', ')}
-              </p>
-            )}
-          </>
-        ) : (
-          <>
-            <p className="editor-title" style={{ color: '#0072B2' }}>Sistema M^n⁺ / M / M(OH)ₙ</p>
-            <LabelField label="Ion disuelto (ej. Ni²⁺)" value={custom.ionName}
-              onChange={(ionName) => setCustom((c) => ({ ...c, ionName }))} />
-            <LabelField label="Metal (ej. Ni)" value={custom.metalName}
-              onChange={(metalName) => setCustom((c) => ({ ...c, metalName }))} />
-            <LabelField label="Hidróxido (ej. Ni(OH)₂)" value={custom.hydroxide}
-              onChange={(hydroxide) => setCustom((c) => ({ ...c, hydroxide }))} />
-            <Slider label={`E° (M^n+/M) = ${custom.E0.toFixed(3)} V`}
-              helpId="E0"
-              value={custom.E0} min={-2} max={2} step={0.001}
-              onChange={(E0) => setCustom((c) => ({ ...c, E0 }))} decimals={3} />
-            <div className="control">
-              <div className="control-header">
-                <span className="control-label">Electrones transferidos n</span>
-                <span className="control-value">{custom.n}</span>
-              </div>
-              <div className="segmented" style={{ marginTop: 4 }}>
-                {[1, 2, 3, 4].map((v) => (
-                  <button key={v} className={custom.n === v ? 'seg-btn active' : 'seg-btn'}
-                    onClick={() => setCustom((c) => ({ ...c, n: v }))}>
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Slider label={`pKsp M(OH)ₙ = ${custom.pKsp.toFixed(1)}`}
-              helpId="pKsp"
-              value={custom.pKsp} min={5} max={40} step={0.1}
-              onChange={(pKsp) => setCustom((c) => ({ ...c, pKsp }))} decimals={1} />
-          </>
-        )}
+          {!useCustom ? (
+            <>
+              <SelectControl
+                label="Sistema metal–H₂O"
+                value={systemId}
+                options={systems.map((s) => ({ value: s.id, label: s.name }))}
+                onChange={setSystemId}
+              />
+              {diagram && diagram.excluded.length > 0 && (
+                <p className="badge warn">
+                  Diagrama simplificado — especies excluidas: {diagram.excluded.join(', ')}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="editor-title" style={{ color: '#0072B2', marginBottom: 6 }}>Especies</p>
+              <SpeciesEditor species={arb.species} onChange={(species) => setArb((a) => ({ ...a, species }))} />
+              <p className="editor-title" style={{ color: '#0072B2', marginTop: 12, marginBottom: 6 }}>Pares redox fundamentales</p>
+              <CoupleEditorArb couples={arb.couples} species={arb.species} onChange={(couples) => setArb((a) => ({ ...a, couples }))} />
+            </>
+          )}
         </PanelSection>
 
         <PanelSection title="Condiciones" icon="⚗">
-        <Slider
-          label={`log C de especies disueltas (${formatMolar(Math.pow(10, logC))})`}
-          value={logC} min={-6} max={0} step={0.5}
-          onChange={setLogC}
-          decimals={1}
-        />
-        <Toggle label="Líneas de estabilidad del agua" checked={showWater} onChange={setShowWater} />
+          <Slider
+            label={`log C de especies disueltas (${formatMolar(Math.pow(10, logC))})`}
+            value={logC} min={-6} max={0} step={0.5}
+            onChange={setLogC}
+            decimals={1}
+          />
+          <Toggle label="Líneas de estabilidad del agua" checked={showWater} onChange={setShowWater} />
         </PanelSection>
 
         <PanelSection title="Cursor" icon="✦">
-        <Slider label="pH del cursor" value={cursorPH} min={0} max={14} step={0.1} onChange={setCursorPH} decimals={1} />
-        <Slider label="E del cursor (V)" value={cursorE} min={-1.6} max={2.2} step={0.05} onChange={setCursorE} decimals={2} />
+          <Slider label="pH del cursor" value={cursorPH} min={0} max={14} step={0.1} onChange={setCursorPH} decimals={1} />
+          <Slider label="E del cursor (V)" value={cursorE} min={-1.6} max={2.2} step={0.05} onChange={setCursorE} decimals={2} />
         </PanelSection>
 
         <PanelSection title="Resultado" icon="∑">
-        <ResultCard items={[
-          { label: 'Condiciones', value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
-          { label: 'Especie predominante (aprox.)', value: predominant },
-        ]} />
+          <ResultCard items={[
+            { label: 'Condiciones', value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
+            { label: 'Especie predominante (aprox.)', value: predominant },
+          ]} />
         </PanelSection>
 
         <InfoBox title="¿Cómo se construye este diagrama?">
@@ -271,8 +405,8 @@ export default function Pourbaix() {
             cierran exactamente — pasa el cursor por cada línea para ver su ecuación.
           </p>
           <p>
-            En modo personalizado ingresa cualquier metal con geometría
-            M^n⁺ / M / M(OH)ₙ. Baja log C para ver cómo se expande el dominio acuoso.
+            En modo personalizado agrega cualquier número de iones, hidróxidos y pares redox.
+            Las fronteras sólido/metal y sólido/sólido se generan automáticamente.
           </p>
         </InfoBox>
       </PanelShell>
