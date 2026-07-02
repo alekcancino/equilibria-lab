@@ -1,8 +1,8 @@
-/* design-system/tokens.css */
-/* Tokens de diseño — Estilo Distill.pub / TED */
+/* design/tokens.css */
+/* Design tokens — Distill.pub / TED style */
 
 :root {
-  /* Colores */
+  /* Colors */
   --color-navy-dark: #1B2631;
   --color-teal: #1A8F85;
   --color-text-primary: #2C3E50;
@@ -11,12 +11,12 @@
   --color-purple: #8E44AD;
   --color-white: #FFFFFF;
 
-  /* Tipografía */
+  /* Typography */
   --font-heading: Georgia, serif;
   --font-body: Calibri, sans-serif;
   --font-code: Consolas, monospace;
 
-  /* Escala tipográfica */
+  /* Type scale */
   --font-size-title: 42px;
   --font-size-h1: 30px;
   --font-size-h2: 24px;

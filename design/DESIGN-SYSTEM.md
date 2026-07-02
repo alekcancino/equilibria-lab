@@ -1,66 +1,66 @@
-# Sistema de Diseño — Estilo Distill.pub / TED
+# Design System — Distill.pub / TED style
 
-Referencia visual para presentaciones, documentos y materiales académicos.
-Inspirado en la estética de Distill.pub: limpio, tipográfico, con datos como protagonistas.
-
----
-
-## Principios de diseño
-
-1. **Fondos blancos por default.** Las diapositivas oscuras (navy) se reservan para momentos de impacto narrativo — apertura, cierre, transiciones clave — no para contenido técnico denso.
-2. **Las visualizaciones de datos son el foco.** Gráficas, diagramas y ecuaciones son protagonistas; el texto las acompaña, no al revés.
-3. **Máximo 3 colores por diapositiva.** Evita el ruido visual; un color dominante + un acento + texto.
-4. **Layouts limpios y minimalistas.** Espacio en blanco generoso, jerarquía clara, sin elementos decorativos innecesarios.
-5. **Tipografía como herramienta de jerarquía**, no solo de estilo.
+Visual reference for presentations, documents, and academic materials.
+Inspired by Distill.pub aesthetics: clean, typographic, data-first.
 
 ---
 
-## Paleta de colores
+## Design principles
 
-| Color | Hex | Uso |
+1. **White backgrounds by default.** Dark (navy) slides are reserved for narrative impact moments — opening, closing, key transitions — not for dense technical content.
+2. **Data visualizations are the focus.** Charts, diagrams, and equations are the heroes; text supports them, not the other way around.
+3. **Maximum 3 colors per slide.** Avoid visual noise: one dominant color + one accent + text.
+4. **Clean, minimalist layouts.** Generous whitespace, clear hierarchy, no unnecessary decorative elements.
+5. **Typography as a hierarchy tool**, not just a style choice.
+
+---
+
+## Color palette
+
+| Color | Hex | Use |
 |---|---|---|
-| Navy oscuro (fondo) | `#1B2631` | Fondo de diapositivas de impacto narrativo |
-| Teal (acento principal) | `#1A8F85` | Acentos, títulos destacados, líneas de datos primarias |
-| Texto primario (sobre blanco) | `#2C3E50` | Cuerpo de texto, títulos en fondo claro |
-| Texto secundario/terciario | `#7F8C8D` | Captions, notas, texto de apoyo |
-| Púrpura (acento secundario) | `#8E44AD` | Acento ocasional para diferenciar series de datos |
-| Blanco | `#FFFFFF` | Fondo por default |
+| Dark navy (background) | `#1B2631` | Narrative-impact slide backgrounds |
+| Teal (primary accent) | `#1A8F85` | Accents, featured headings, primary data lines |
+| Primary text (on white) | `#2C3E50` | Body text, headings on light backgrounds |
+| Secondary / tertiary text | `#7F8C8D` | Captions, notes, supporting text |
+| Purple (secondary accent) | `#8E44AD` | Occasional accent to distinguish data series |
+| White | `#FFFFFF` | Default background |
 
-> Regla de oro: nunca más de 3 de estos colores activos en una sola diapositiva.
+> Golden rule: never more than 3 of these colors active on a single slide.
 
 ---
 
-## Tipografía
+## Typography
 
-| Familia | Uso |
+| Family | Use |
 |---|---|
-| **Georgia** (serif) | Títulos y encabezados |
-| **Calibri** (sans-serif) | Cuerpo de texto y contenido general |
-| **Consolas** (monospace) | Código, fórmulas y ecuaciones |
+| **Georgia** (serif) | Titles and headings |
+| **Calibri** (sans-serif) | Body text and general content |
+| **Consolas** (monospace) | Code, formulas, and equations |
 
-### Escala tipográfica (PPTX)
+### Type scale (PPTX)
 
-| Tamaño | Uso |
+| Size | Use |
 |---|---|
-| 42pt | Título de portada |
-| 30pt | H1 — título de diapositiva |
-| 24pt | H2 — subtítulo / sección |
-| 14pt | Body — texto general |
-| 11pt | Caption — notas al pie, fuentes |
+| 42pt | Cover title |
+| 30pt | H1 — slide title |
+| 24pt | H2 — subtitle / section |
+| 14pt | Body — general text |
+| 11pt | Caption — footnotes, sources |
 
 ---
 
-## Stack técnico
+## Technical stack
 
-- **PptxGenJS** — generación programática de las diapositivas
-- **sharp** — renderizado de SVG a PNG
-- **react-icons** — iconografía vectorial
-- Gráficas custom en SVG (no charts genéricos de librería) para mantener control total del estilo
+- **PptxGenJS** — programmatic slide generation
+- **sharp** — SVG-to-PNG rendering
+- **react-icons** — vector iconography
+- Custom SVG charts (not generic library charts) to maintain full style control
 
 ---
 
-## Notas de aplicación
+## Application notes
 
-- Las ecuaciones multivariadas (ej. Beer-Lambert) usan rich text runs para subíndices/superíndices correctos, nunca texto plano con números pegados.
-- Las gráficas espectrales distinguen especies por color + estilo de línea (sólida gruesa vs. punteada fina), no solo por color, para que la diferencia se entienda incluso en escala de grises.
-- Evitar área bajo la curva (area fills) en gráficas de espectros superpuestos; usar solo líneas + anotaciones de picos.
+- Multivariate equations (e.g. Beer–Lambert) use rich-text runs for correct subscripts/superscripts — never plain text with digits concatenated.
+- Spectral charts distinguish species by color **and** line style (thick solid vs. thin dashed), not by color alone, so the difference reads even in grayscale.
+- Avoid area fills in overlapping spectrum charts; use lines + peak annotations only.

@@ -99,8 +99,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and contribution
 | --- | --- |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, architecture, contribution workflow, academic references. |
 | [ROADMAP.md](ROADMAP.md) | Planned features and how to suggest new ones. |
-| [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Detailed technical reference for the stack and engines. |
-| [docs/VALIDACION-Y-CONGRUENCIA.md](docs/VALIDACION-Y-CONGRUENCIA.md) | Numerical validation and benchmark comparisons (SPANA/HALTAFALL). |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Detailed technical reference for the stack and engines. |
+| [docs/VALIDATION.md](docs/VALIDATION.md) | Numerical validation and benchmark comparisons (Spana/HALTAFALL). |
 | [docs/RELATED-PROJECTS.md](docs/RELATED-PROJECTS.md) | Comparison with other open-source equilibrium tools. |
 | [CHANGELOG.md](CHANGELOG.md) | Version history. |
 
