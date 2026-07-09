@@ -77,7 +77,7 @@ export const COMPLEX_PRESETS: ComplexPreset[] = [
  * E.g.: metalLabel="M", ligandLabel="L" → ["M", "ML", "ML₂", "ML₃"]
  */
 const SUB = '₀₁₂₃₄₅₆₇₈₉';
-const toSub = (n: number) =>
+export const toSub = (n: number) =>
   String(n).split('').map((d) => SUB[parseInt(d)]).join('');
 
 export function genericComplexLabels(metalLabel: string, ligandLabel: string, n: number): string[] {
