@@ -23,6 +23,7 @@ function syncModuleUrl(viewId: string | null) {
 
 const AcidoBase              = lazy(() => import('./modules/AcidoBase'));
 const Complejos              = lazy(() => import('./modules/Complejos'));
+const EspeciacionMetal       = lazy(() => import('./modules/EspeciacionMetal'));
 const Redox                  = lazy(() => import('./modules/Redox'));
 const Solubilidad            = lazy(() => import('./modules/Solubilidad'));
 const Pourbaix               = lazy(() => import('./modules/Pourbaix'));
@@ -66,6 +67,7 @@ const HUBS: Hub[] = [
     assumptions: 'Complejos mononucleares MLₙ · α de Ringbom para reacciones parásitas · cotejado con Harris y Ringbom.',
     views: [
       { id: 'complejos', label: 'Equilibrio (pL)', component: Complejos },
+      { id: 'especiacion', label: 'Especiación vs pH', component: EspeciacionMetal },
       { id: 'condicionalesedta', label: 'K′ condicional', component: ConstantesCondicionales },
     ],
   },
