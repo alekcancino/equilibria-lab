@@ -10,7 +10,9 @@ import { peConditional, peStandard, alphaRedox, redoxTitrationCurve, conditional
 import { electrodePotential, stackFromLegacy } from '../sideReactions';
 import { granPlot, titrationCurve, titratableProtons, firstDerivative } from '../titration';
 import { ladderFractions, ladderLogC, predominanceZones } from '../ladder';
-import { anionFreeFraction, solubility, solubilityVsPX } from '../solubility';
+import {
+  anionFreeFraction, solubility, solubilityVsPX, acidSolidSolubility, baseSolidSolubility,
+} from '../solubility';
 import { precipTitrationCurve, mohrEndpointPAg } from '../precipTitration';
 import { buildSystem, availableSystems, waterLines } from '../pourbaix';
 import { batchIonExchange, isothermCurve, breakthroughCurve } from '../ionExchange';
@@ -434,6 +436,39 @@ describe('solubility', () => {
     const sPure = solubility(agcl, 7, 0);
     const sCommon = solubility(agcl, 7, 0.01);
     expect(sCommon).toBeLessThan(sPure);
+  });
+});
+
+// Molecular acid/base solid solubility (ROADMAP B-6): S = S0·(1 + 10^±(pH-pKa)).
+// Golden case: benzoic acid, S0 = 0.0278 M, pKa = 4.2 (Martin, Physical Pharmacy).
+describe('acidSolidSolubility / baseSolidSolubility', () => {
+  const S0 = 0.0278;
+  const pKa = 4.2;
+
+  it('ácido benzoico a pH ≪ pKa → S ≈ S0 (forma no ionizada domina)', () => {
+    tol(acidSolidSolubility(S0, pKa, 1), S0, 1e-4);
+  });
+
+  it('a pH = pKa, S = 2·S0 para ambos modelos (mitad ionizada)', () => {
+    tol(acidSolidSolubility(S0, pKa, pKa), 2 * S0, 1e-9);
+    tol(baseSolidSolubility(S0, pKa, pKa), 2 * S0, 1e-9);
+  });
+
+  it('sólido ácido: S crece con el pH (más base conjugada soluble)', () => {
+    const sLow = acidSolidSolubility(S0, pKa, 2);
+    const sHigh = acidSolidSolubility(S0, pKa, 7);
+    expect(sHigh).toBeGreaterThan(sLow);
+  });
+
+  it('sólido básico: S decrece con el pH (menos forma protonada soluble)', () => {
+    const sLow = baseSolidSolubility(S0, pKa, 2);
+    const sHigh = baseSolidSolubility(S0, pKa, 7);
+    expect(sHigh).toBeLessThan(sLow);
+  });
+
+  it('simetría: ácido(pH) === base(2·pKa − pH) reflejado en pKa', () => {
+    const pH = 6;
+    tol(acidSolidSolubility(S0, pKa, pH), baseSolidSolubility(S0, pKa, 2 * pKa - pH), 1e-9);
   });
 });
 
