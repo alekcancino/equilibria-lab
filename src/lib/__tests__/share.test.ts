@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { defaultAcidSystem, isValidAcidSystem } from '../editorModels';
 
 // Encode/decode logic mirrored from useShareableState.ts for unit testing.
 function encodeState(obj: unknown): string {
@@ -65,5 +66,26 @@ describe('URL state encode/decode', () => {
     const encoded = encodeState(null);
     const decoded = decodeState(encoded, defaultState);
     expect(decoded).toEqual(defaultState);
+  });
+});
+
+describe('Mezclas rows migration', () => {
+  // decodeState does NOT validate row shape — Mezclas.tsx's restore callback
+  // is the safety layer, gated on isValidAcidSystem per row. These tests pin
+  // both halves of that contract.
+
+  it('an old-format row ({acidId}) decodes but fails isValidAcidSystem', () => {
+    const oldState = { rows: [{ acidId: 'acetic', conc: 0.05, startIndex: 0 }] };
+    const decoded = decodeState(encodeState(oldState), { rows: [] as unknown[] });
+    const row = decoded.rows[0] as { system?: unknown };
+    expect(row).toBeDefined();
+    expect(isValidAcidSystem(row.system)).toBe(false);
+  });
+
+  it('a current-format row round-trips exactly and passes validation', () => {
+    const state = { rows: [{ system: defaultAcidSystem(), conc: 0.05, startIndex: 0 }] };
+    const decoded = decodeState(encodeState(state), state);
+    expect(decoded).toEqual(state);
+    expect(isValidAcidSystem((decoded.rows[0] as { system: unknown }).system)).toBe(true);
   });
 });

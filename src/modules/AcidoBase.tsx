@@ -7,7 +7,7 @@ import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, PanelSection, ResultCardRow, Slider, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
-import { defaultAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
+import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
 import { ladderFractions, ladderLogC, predominanceZones } from '../lib/ladder';
 import { solvePH, saltCounterIons, defaultStartIndex } from '../lib/equilibrium';
@@ -24,7 +24,11 @@ export default function AcidoBase() {
   const [ionicStrength, setIonicStrength] = useState(0);
 
   useShareEffect('acidobase', { system, conc, showSystemPH, ionicStrength }, (s) => {
-    if (s.system) setSystem(s.system);
+    // A malformed/stale system (untrusted URL) NaN-poisons solvePH into a
+    // silent bogus pH instead of an error — same class of bug fixed in
+    // Mezclas.tsx, guarded here too since this module restores AcidSystem
+    // the same way.
+    if (isValidAcidSystem(s.system)) setSystem(s.system);
     if (s.conc !== undefined) setConc(s.conc);
     if (s.showSystemPH !== undefined) setShowSystemPH(s.showSystemPH);
     if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);

@@ -5,12 +5,17 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Slider, Toggle } from '../components/Controls';
-import { ACIDS, type AcidPreset } from '../lib/database';
+import { AcidSystemEditor } from '../components/Editors';
+import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from '../lib/equilibrium';
 import { firstDerivative } from '../lib/titration';
 
 interface MixRow {
-  acidId: string;
+  /** Stable React key, independent of array position — each row now hosts a
+   * stateful AcidSystemEditor (DbPanel/Avanzado open state lives in the DOM),
+   * so an index key would reattach that UI state to the wrong row on delete. */
+  id: number;
+  system: AcidSystem;
   conc: number;
   /** Ladder index prepared as the starting species (0 = fully protonated form) */
   startIndex: number;
@@ -18,20 +23,29 @@ interface MixRow {
 
 const MAX_ROWS = 4;
 
-// r.startIndex comes from shareable URL state, which may be stale (a link
-// from before this field existed) — fall back rather than let an
-// out-of-range/undefined index propagate NaN into solvePH.
-function validStartIndex(preset: AcidPreset, startIndex: number): number {
-  return Number.isInteger(startIndex) && startIndex >= 0 && startIndex <= preset.pKas.length
+let nextRowId = 0;
+
+// r.startIndex may be stale: from a shared URL predating the field, or left
+// behind when the user shrinks the pKa list in the editor — fall back rather
+// than let an out-of-range/undefined index propagate NaN into solvePH.
+function validStartIndex(system: AcidSystem, startIndex: number): number {
+  return Number.isInteger(startIndex) && startIndex >= 0 && startIndex <= system.pKas.length
     ? startIndex
-    : defaultStartIndex(preset.z0, preset.pKas.length);
+    : defaultStartIndex(system.z0, system.pKas.length);
 }
 
-const INITIAL_ROWS: MixRow[] = [{ acidId: 'acetic', conc: 0.05, startIndex: 0 }];
+const newRow = (): MixRow => ({ id: nextRowId++, system: defaultAcidSystem(), conc: 0.05, startIndex: 0 });
+
+// The system label is free text (AcidSystemEditor's LabelField has no
+// minimum length) — fall back rather than show a blank CSV column or
+// result-card row when the user clears it.
+function rowLabel(system: AcidSystem): string {
+  return system.label.trim() || 'Sistema sin nombre';
+}
 
 /** Multicomponent mixtures: mixture pH and its titration curve. */
 export default function Mezclas() {
-  const [rows, setRows] = useState<MixRow[]>([...INITIAL_ROWS]);
+  const [rows, setRows] = useState<MixRow[]>([newRow()]);
   const [titrate, setTitrate] = useState(false);
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cTitrant, setCTitrant] = useState(0.1);
@@ -40,7 +54,24 @@ export default function Mezclas() {
   const [ionicStrength, setIonicStrength] = useState(0);
 
   useShareEffect('mezclas', { rows, titrate, titrantIsAcid, cTitrant, vSample, showDerivative, ionicStrength }, (s) => {
-    if (s.rows) setRows(s.rows);
+    // Rows come from an untrusted URL and the shape changed over time
+    // (pre-custom links carried {acidId} without a system) — sanitize each
+    // row or fall back to a default one; never let a malformed system reach
+    // solvePH (NaN there converges to a silent bogus pH, not an error).
+    if (Array.isArray(s.rows)) {
+      const restored = s.rows.slice(0, MAX_ROWS).map((raw): MixRow => {
+        const r = raw as Partial<MixRow>;
+        if (!isValidAcidSystem(r.system)) return newRow();
+        const system = { ...r.system, pKas: [...r.system.pKas] };
+        return {
+          id: nextRowId++,
+          system,
+          conc: typeof r.conc === 'number' && Number.isFinite(r.conc) && r.conc > 0 ? r.conc : 0.05,
+          startIndex: validStartIndex(system, r.startIndex ?? NaN),
+        };
+      });
+      setRows(restored.length > 0 ? restored : [newRow()]);
+    }
     if (s.titrate !== undefined) setTitrate(s.titrate);
     if (s.titrantIsAcid !== undefined) setTitrantIsAcid(s.titrantIsAcid);
     if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
@@ -50,7 +81,7 @@ export default function Mezclas() {
   });
 
   function reset() {
-    setRows([...INITIAL_ROWS]);
+    setRows([newRow()]);
     setTitrate(false);
     setTitrantIsAcid(false);
     setCTitrant(0.1);
@@ -71,10 +102,9 @@ export default function Mezclas() {
     let cations = 0;
     let anions = 0;
     for (const r of rows) {
-      const preset = ACIDS.find((a) => a.id === r.acidId)!;
       const c = r.conc * dilution;
-      comps.push({ c, z0: preset.z0, pKas: preset.pKas });
-      const ions = saltCounterIons(preset.z0, validStartIndex(preset, r.startIndex));
+      comps.push({ c, z0: r.system.z0, pKas: r.system.pKas });
+      const ions = saltCounterIons(r.system.z0, validStartIndex(r.system, r.startIndex));
       cations += ions.cations * c;
       anions += ions.anions * c;
     }
@@ -83,7 +113,7 @@ export default function Mezclas() {
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Mezclas ácido-base',
-    Componentes: rows.map((r) => ACIDS.find((a) => a.id === r.acidId)?.name ?? r.acidId).join(' + '),
+    Componentes: rows.map((r) => rowLabel(r.system)).join(' + '),
     'I / M': ionicStrength.toFixed(3),
   }), [rows, ionicStrength]);
 
@@ -101,12 +131,11 @@ export default function Mezclas() {
     const h = Math.pow(10, -pHMix);
     const items: { label: string; value: string }[] = [{ label: 'pH de la mezcla', value: pHMix.toFixed(2) }];
     for (const r of rows) {
-      const preset = ACIDS.find((a) => a.id === r.acidId)!;
-      const alphas = alphaFractions(h, preset.pKas);
+      const alphas = alphaFractions(h, r.system.pKas);
       const dominant = alphas.indexOf(Math.max(...alphas));
       items.push({
-        label: `${preset.name.split(' (')[0]}`,
-        value: `${preset.speciesLabels[dominant]} (α = ${alphas[dominant].toFixed(2)})`,
+        label: rowLabel(r.system).split(' (')[0],
+        value: `${systemLabels(r.system)[dominant]} (α = ${alphas[dominant].toFixed(2)})`,
       });
     }
     return items;
@@ -171,8 +200,7 @@ export default function Mezclas() {
       const h = Math.pow(10, -pH);
       let beta = 2.303 * (Kw / h + h);
       for (const r of rows) {
-        const preset = ACIDS.find((a) => a.id === r.acidId)!;
-        const alphas = alphaFractions(h, preset.pKas);
+        const alphas = alphaFractions(h, r.system.pKas);
         let variance = 0;
         for (let ii = 0; ii < alphas.length; ii++) {
           for (let jj = ii + 1; jj < alphas.length; jj++) {
@@ -200,39 +228,44 @@ export default function Mezclas() {
           additions={[titrate && 'titulación', titrate && showDerivative && 'derivada']}
         />
         {rows.map((r, i) => {
-          const preset = ACIDS.find((a) => a.id === r.acidId)!;
-          const startIndex = validStartIndex(preset, r.startIndex);
+          const startIndex = validStartIndex(r.system, r.startIndex);
+          const labels = systemLabels(r.system);
           return (
-            <div key={i} className="mix-row">
+            <div key={r.id} className="mix-row">
               <div className="mix-row-header">
                 <span className="control-label">Componente {i + 1}</span>
                 {rows.length > 1 && (
                   <button className="mini-btn" onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>
                 )}
               </div>
-              <SelectControl
-                label=""
-                value={r.acidId}
-                options={ACIDS.filter((a) => !a.strong).map((a) => ({ value: a.id, label: a.name }))}
-                onChange={(v) => {
-                  const p = ACIDS.find((a) => a.id === v)!;
-                  updateRow(i, { acidId: v, startIndex: defaultStartIndex(p.z0, p.pKas.length) });
+              <AcidSystemEditor
+                system={r.system}
+                showModel={false}
+                allowAquaCations
+                onChange={(sys) => {
+                  const shapeChanged = sys.z0 !== r.system.z0 || sys.pKas.length !== r.system.pKas.length;
+                  updateRow(i, {
+                    system: sys,
+                    startIndex: shapeChanged ? defaultStartIndex(sys.z0, sys.pKas.length) : r.startIndex,
+                  });
                 }}
               />
               <ConcSlider label="Concentración" value={r.conc} onChange={(v) => updateRow(i, { conc: v })} min={-4} max={0} />
               <SelectControl
                 label="Forma de partida"
                 value={String(startIndex)}
-                options={Array.from({ length: preset.pKas.length + 1 }, (_, lvl) => {
-                  const { cations, anions } = saltCounterIons(preset.z0, lvl);
+                options={Array.from({ length: r.system.pKas.length + 1 }, (_, lvl) => {
+                  const { cations, anions } = saltCounterIons(r.system.z0, lvl);
                   const mult = (n: number) => (n > 1 ? ` ${n}×` : '');
-                  const anionName = preset.aquaCation ? 'nitrato' : 'cloruro';
+                  // A ladder that never reaches a neutral species is an
+                  // aqua-acid cation, conventionally prepared as a nitrate.
+                  const anionName = r.system.z0 > r.system.pKas.length ? 'nitrato' : 'cloruro';
                   const suffix = anions > 0
                     ? ` (sal de ${anionName}${mult(anions)})`
                     : cations > 0
                       ? ` (sal sódica${mult(cations)})`
                       : '';
-                  return { value: String(lvl), label: `${preset.speciesLabels[lvl]}${suffix}` };
+                  return { value: String(lvl), label: `${labels[lvl]}${suffix}` };
                 })}
                 onChange={(v) => updateRow(i, { startIndex: parseInt(v, 10) })}
               />
@@ -242,7 +275,7 @@ export default function Mezclas() {
         {rows.length < MAX_ROWS && (
           <button
             className="add-btn"
-            onClick={() => setRows([...rows, { acidId: 'acetic', conc: 0.05, startIndex: 0 }])}
+            onClick={() => setRows([...rows, newRow()])}
           >
             + Agregar componente
           </button>
@@ -277,8 +310,11 @@ export default function Mezclas() {
         <InfoBox title="¿Qué puedo simular aquí?">
           <p>
             Hasta 4 sistemas ácido-base coexistiendo: el pH se resuelve con el balance de
-            cargas global de la mezcla, sin aproximaciones. El slider de sal te permite
-            partir de NaHCO₃, Na₂HPO₄, NH₄Cl, etc., sin tener que pensarlo como "ácido + base".
+            cargas global de la mezcla, sin aproximaciones. Cada componente es totalmente
+            editable — nombre libre, pKas y carga z₀ — y la base de datos solo auto-rellena
+            valores de partida. "Forma de partida" te permite disolver la sal de cualquier
+            forma intermedia (NaHCO₃, Na₂HPO₄, NH₄Cl…) agregando el contraión espectador
+            correcto automáticamente.
           </p>
           <p>
             Prueba carbonato + amonio (agua natural), o cítrico + fosfato (bebidas), y
