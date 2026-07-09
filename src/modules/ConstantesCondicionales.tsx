@@ -1,8 +1,9 @@
 // Conditional Constants module (Ringbom).
 // Generates the log K' = f(pH) curve and α coefficients for M + Y systems (EDTA by default).
 
-import { useMemo } from 'react';
-import { useShareableState } from '../hooks/useShareableState';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useShareableState, hasSharedUrlState } from '../hooks/useShareableState';
+import { useComplejosCarryOver, type ComplejosCarryOver } from '../context/ComplejosCarryOverContext';
 import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -41,6 +42,7 @@ interface CondState {
   extraReactions: PrimaryReaction[];
   evalPH: number;
   co: number;
+  targetPct: number;
 }
 
 function defaultState(): CondState {
@@ -57,7 +59,23 @@ function defaultState(): CondState {
     extraReactions: [],
     evalPH: 10,
     co: 0.1,
+    targetPct: 99.9,
   };
+}
+
+const MODULE_ID = 'condicionalesedta';
+
+/** Seeds a fresh mount from the hub's cross-view carry-over: metal identity
+ * and hydrolysis only (this module's ligand is always EDTA by convention,
+ * so the generic ligand/ladder carry-over doesn't apply here). */
+function seedFromCarryOver(c: ComplejosCarryOver): CondState {
+  const base = defaultState();
+  if (hasSharedUrlState(MODULE_ID)) return base;
+  if (c.metalLabel) base.metalLabel = c.metalLabel;
+  if (c.logBetasOH && c.logBetasOH.length > 0) {
+    base.side = { ...base.side, showOH: true, logBetasOH: [...c.logBetasOH] };
+  }
+  return base;
 }
 
 // ── Colores ──────────────────────────────────────────────────────────────────
@@ -77,10 +95,28 @@ const PH_MIN = 1;
 const PH_MAX = 14;
 
 export default function ConstantesCondicionales() {
-  const [s, setS] = useShareableState<CondState>('condicionalesedta', defaultState());
+  const { carryOver, setCarryOver } = useComplejosCarryOver();
+  // Computed once at mount — seedFromCarryOver is only ever consumed by
+  // useShareableState's own internal lazy useState initializer, but eagerly
+  // recomputing it (re-parsing the URL, re-allocating CondState) on every
+  // render would be wasted work.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const seed = useMemo(() => seedFromCarryOver(carryOver), []);
+  const [s, setS] = useShareableState<CondState>(MODULE_ID, seed);
 
   const set = <K extends keyof CondState>(k: K, v: CondState[K]) =>
     setS((prev) => ({ ...prev, [k]: v }));
+
+  useEffect(() => {
+    // Gate on actual data, not just the showOH Disclosure flag — see the
+    // matching comment in EspeciacionMetal.tsx's push effect.
+    const hasOH = s.side.showOH && s.side.logBetasOH.length > 0;
+    setCarryOver((prev) => ({
+      ...prev,
+      metalLabel: s.metalLabel,
+      logBetasOH: hasOH ? s.side.logBetasOH : undefined,
+    }));
+  }, [s.metalLabel, s.side.showOH, s.side.logBetasOH, setCarryOver]);
 
   function reset() { setS(defaultState()); }
 
@@ -164,15 +200,21 @@ export default function ConstantesCondicionales() {
     () => fractionFormedExcess(logKAtEval, s.co) * 100,
     [logKAtEval, s.co],
   );
-  const phForPct = useMemo(() => {
-    const metric = (pH: number) =>
-      fractionFormedExcess(condLogKPrimary(s.logKf, pH, stack), s.co) * 100;
-    return {
-      p10: operatingPoint(metric, 10, PH_MIN, PH_MAX),
-      p50: operatingPoint(metric, 50, PH_MIN, PH_MAX),
-      p90: operatingPoint(metric, 90, PH_MIN, PH_MAX),
-    };
-  }, [s.logKf, stack, s.co]);
+  const formedMetric = useCallback(
+    (pH: number) => fractionFormedExcess(condLogKPrimary(s.logKf, pH, stack), s.co) * 100,
+    [s.logKf, stack, s.co],
+  );
+  const phForPct = useMemo(() => ({
+    p10: operatingPoint(formedMetric, 10, PH_MIN, PH_MAX),
+    p50: operatingPoint(formedMetric, 50, PH_MIN, PH_MAX),
+    p90: operatingPoint(formedMetric, 90, PH_MIN, PH_MAX),
+  }), [formedMetric]);
+  // P6: free-form masking target (0.1 % = negligible reaction, 99.9 % = fully
+  // masked — the standard pair asked in selective-masking problems).
+  const phForTarget = useMemo(
+    () => operatingPoint(formedMetric, s.targetPct, PH_MIN, PH_MAX),
+    [formedMetric, s.targetPct],
+  );
   const fmtPH = (v: number) => (Number.isFinite(v) ? v.toFixed(2) : '—');
 
   // ── Resultado ──────────────────────────────────────────────────────────────
@@ -444,6 +486,28 @@ export default function ConstantesCondicionales() {
           % formado a Co: fracción del metal complejada con el ligante en exceso;
           pH 10/50/90 % marcan la ventana de la reacción.
         </p>
+        <Slider
+          label="% formado objetivo (enmascaramiento)"
+          value={s.targetPct}
+          min={0.01}
+          max={99.99}
+          step={0.01}
+          onChange={(v) => set('targetPct', v)}
+          decimals={2}
+          unit="%"
+        />
+        <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+          <button className="preset-chip" onClick={() => set('targetPct', 0.1)}>
+            0.1 % (reacción despreciable)
+          </button>
+          <button className="preset-chip" onClick={() => set('targetPct', 99.9)}>
+            99.9 % (enmascarado)
+          </button>
+        </div>
+        <p className="hint">
+          ¿A qué pH el metal queda {s.targetPct.toFixed(2)} % formado con el ligante en exceso?
+          — pregunta estándar de enmascaramiento selectivo.
+        </p>
         </PanelSection>
 
         <PanelSection title="Parámetros" icon="⚙">
@@ -521,6 +585,7 @@ export default function ConstantesCondicionales() {
           { label: 'Ventana óptima', value: feasWin ? `pH ${feasWin[0].toFixed(1)}–${feasWin[1].toFixed(1)}` : 'No supera el umbral' },
           { label: `% formado a Co (pH ${s.evalPH.toFixed(1)})`, value: `${pctFormado.toFixed(1)} %` },
           { label: 'pH para 10 / 50 / 90 %', value: `${fmtPH(phForPct.p10)} / ${fmtPH(phForPct.p50)} / ${fmtPH(phForPct.p90)}` },
+          { label: `pH para ${s.targetPct.toFixed(2)} % formado`, value: fmtPH(phForTarget) },
           {
             label: 'Factibilidad',
             value: verdict.text,

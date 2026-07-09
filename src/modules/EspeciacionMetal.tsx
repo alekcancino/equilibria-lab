@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { useShareEffect } from '../hooks/useShareableState';
+import { useEffect, useMemo, useState } from 'react';
+import { useShareEffect, hasSharedUrlState } from '../hooks/useShareableState';
+import { useComplejosCarryOver, type ComplejosCarryOver } from '../context/ComplejosCarryOverContext';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -16,6 +17,7 @@ import { toSub } from '../lib/complexDatabase';
 
 const PH_RANGE: [number, number] = [0, 14];
 const PH_POINTS = 300;
+const MODULE_ID = 'especiacion';
 
 interface SpeciationState {
   metalLabel: string;
@@ -72,6 +74,22 @@ function effectiveLabels(s: SpeciationState): string[] {
   return genericLabels(s.metalLabel, s.ligandLabel, s.logBetasOH.length, nL);
 }
 
+/** Seeds a fresh mount from the hub's cross-view carry-over: metal hydrolysis
+ * (shared with K′ condicional) and ligand/ladder (shared with Equilibrio pL's
+ * auxiliary-ligand slot) — see ComplejosCarryOverContext for the field mapping. */
+function seedFromCarryOver(c: ComplejosCarryOver): SpeciationState {
+  const base = defaultState();
+  if (hasSharedUrlState(MODULE_ID)) return base;
+  if (c.metalLabel) base.metalLabel = c.metalLabel;
+  if (c.logBetasOH && c.logBetasOH.length > 0) base.logBetasOH = [...c.logBetasOH];
+  if (c.ligandLabel && c.logBetas && c.logBetas.length > 0) {
+    base.showAux = true;
+    base.ligandLabel = c.ligandLabel;
+    base.logBetasL = [...c.logBetas];
+  }
+  return base;
+}
+
 function toSystem(s: SpeciationState): MetalSpeciationSystem {
   return {
     metalLabel: s.metalLabel || 'M', cM: s.cM, logBetasOH: s.logBetasOH,
@@ -84,8 +102,26 @@ function toSystem(s: SpeciationState): MetalSpeciationSystem {
  * ligand (M–L), species-by-species — the α distribution changes shape as the
  * metal shifts from free ion to hydroxo-complexes to auxiliary complexes. */
 export default function EspeciacionMetal() {
-  const [sys, setSys] = useState<SpeciationState>(defaultState);
+  const { carryOver, setCarryOver } = useComplejosCarryOver();
+  const [sys, setSys] = useState<SpeciationState>(() => seedFromCarryOver(carryOver));
   const [pHRead, setPHRead] = useState(7);
+
+  useEffect(() => {
+    // Gate on actual data (array length), not just the Disclosure's open
+    // flag — opening "Ligando auxiliar" without entering anything, or
+    // clearing it back to empty, must clear the field from the shared
+    // context (push undefined) instead of leaving a stale ladder behind.
+    const hasAux = sys.showAux && sys.logBetasL.length > 0;
+    setCarryOver((prev) => ({
+      ...prev,
+      // Skip the untouched placeholder so it doesn't overwrite a more
+      // meaningful metal name (e.g. ConstantesCondicionales' 'Ca²⁺' default).
+      ...(sys.metalLabel !== 'M' ? { metalLabel: sys.metalLabel } : {}),
+      logBetasOH: sys.logBetasOH.length > 0 ? sys.logBetasOH : undefined,
+      ligandLabel: hasAux ? sys.ligandLabel : undefined,
+      logBetas: hasAux ? sys.logBetasL : undefined,
+    }));
+  }, [sys.metalLabel, sys.logBetasOH, sys.showAux, sys.ligandLabel, sys.logBetasL, setCarryOver]);
 
   useShareEffect('especiacion', { sys, pHRead }, (s) => {
     if (s.sys) setSys(s.sys);
