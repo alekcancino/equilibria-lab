@@ -2,7 +2,7 @@
 // The analyte may be an acid or a base; the strong titrant may be basic (NaOH)
 // or acidic (HCl) — all four combinations are valid.
 
-import { solvePH, type AcidBaseComponent } from './equilibrium';
+import { solvePH, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from './equilibrium';
 
 export interface TitrationParams {
   /** Analyte system (any HnA/B with pKas) */
@@ -61,13 +61,11 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
       extraCations += analyteConc;
     } else {
       components.push({ c: analyteConc, z0: analyte.z0, pKas: analyte.pKas });
-      // An aqua-acid cation (z0=+3 with fewer hydrolysis steps modeled than
-      // its charge, e.g. Fe³⁺) never reaches a neutral species in its own
-      // ladder — it was dissolved as a salt (Fe(NO₃)₃) and always carries
-      // z0·analyteConc of inert counter-anion charge. Ordinary acids/bases
-      // (z0 ≤ pKas.length) are unaffected: this adds 0 for every existing
-      // preset, matching the fix already applied to AcidoBase.tsx.
-      if (analyte.z0 > analyte.pKas.length) extraAnions += analyte.z0 * analyteConc;
+      // Same counter-ion accounting as AcidoBase.tsx's "pH disolución pura" —
+      // see saltCounterIons/defaultStartIndex in equilibrium.ts.
+      const { cations, anions } = saltCounterIons(analyte.z0, defaultStartIndex(analyte.z0, analyte.pKas.length));
+      extraCations += cations * analyteConc;
+      extraAnions += anions * analyteConc;
     }
     const titrantConc = (cTitrant * vb) / vTotal;
     if (titrantIsAcid) extraAnions += titrantConc;

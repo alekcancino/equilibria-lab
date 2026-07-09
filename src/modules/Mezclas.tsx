@@ -6,19 +6,19 @@ import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Slider, Toggle } from '../components/Controls';
 import { ACIDS } from '../lib/database';
-import { solvePH, alphaFractions, type AcidBaseComponent } from '../lib/equilibrium';
+import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from '../lib/equilibrium';
 import { firstDerivative } from '../lib/titration';
 
 interface MixRow {
   acidId: string;
   conc: number;
-  /** Protons already neutralised during preparation (0 = pure acid, 1 = monosodium salt, ...) */
-  saltLevel: number;
+  /** Ladder index prepared as the starting species (0 = fully protonated form) */
+  startIndex: number;
 }
 
 const MAX_ROWS = 4;
 
-const INITIAL_ROWS: MixRow[] = [{ acidId: 'acetic', conc: 0.05, saltLevel: 0 }];
+const INITIAL_ROWS: MixRow[] = [{ acidId: 'acetic', conc: 0.05, startIndex: 0 }];
 
 /** Multicomponent mixtures: mixture pH and its titration curve. */
 export default function Mezclas() {
@@ -54,8 +54,9 @@ export default function Mezclas() {
     setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   };
 
-  // Components + spectator ions from salts (Na⁺ per proton neutralised,
-  // or Cl⁻ if the "salt" of a base is its protonated form, e.g. NH₄Cl).
+  // Components + spectator ions from the salt each row was prepared as —
+  // see saltCounterIons/defaultStartIndex in equilibrium.ts (shared with
+  // AcidoBase.tsx and titration.ts).
   const buildComponents = (dilution: number) => {
     const comps: AcidBaseComponent[] = [];
     let cations = 0;
@@ -64,10 +65,9 @@ export default function Mezclas() {
       const preset = ACIDS.find((a) => a.id === r.acidId)!;
       const c = r.conc * dilution;
       comps.push({ c, z0: preset.z0, pKas: preset.pKas });
-      // saltLevel protons removed with NaOH during preparation → Na⁺ spectator
-      if (preset.z0 === 0) cations += r.saltLevel * c;
-      // for bases (z0=1): saltLevel=1 means starting from the salt (BH⁺Cl⁻) → Cl⁻
-      else anions += r.saltLevel * c;
+      const ions = saltCounterIons(preset.z0, r.startIndex);
+      cations += ions.cations * c;
+      anions += ions.anions * c;
     }
     return { comps, cations, anions };
   };
@@ -192,7 +192,6 @@ export default function Mezclas() {
         />
         {rows.map((r, i) => {
           const preset = ACIDS.find((a) => a.id === r.acidId)!;
-          const maxSalt = preset.z0 === 0 ? preset.pKas.length : 1;
           return (
             <div key={i} className="mix-row">
               <div className="mix-row-header">
@@ -204,33 +203,35 @@ export default function Mezclas() {
               <SelectControl
                 label=""
                 value={r.acidId}
-                // Aqua-acid cations (Fe³⁺, Al³⁺) need a counter-anion this
-                // module's saltLevel/maxSalt charge-balance wiring doesn't
-                // account for — keep them AcidoBase-only for now.
-                options={ACIDS.filter((a) => !a.strong && !a.aquaCation).map((a) => ({ value: a.id, label: a.name }))}
-                onChange={(v) => updateRow(i, { acidId: v, saltLevel: 0 })}
+                options={ACIDS.filter((a) => !a.strong).map((a) => ({ value: a.id, label: a.name }))}
+                onChange={(v) => {
+                  const p = ACIDS.find((a) => a.id === v)!;
+                  updateRow(i, { acidId: v, startIndex: defaultStartIndex(p.z0, p.pKas.length) });
+                }}
               />
               <ConcSlider label="Concentración" value={r.conc} onChange={(v) => updateRow(i, { conc: v })} min={-4} max={0} />
-              {maxSalt > 0 && (
-                <SelectControl
-                  label="Forma de partida"
-                  value={String(r.saltLevel)}
-                  options={Array.from({ length: maxSalt + 1 }, (_, lvl) => ({
-                    value: String(lvl),
-                    label: preset.z0 === 0
-                      ? `${preset.speciesLabels[lvl]}${lvl > 0 ? ` (sal sódica ${lvl}×)` : ''}`
-                      : `${preset.speciesLabels[1 - lvl]}${lvl > 0 ? ' (sal de cloruro)' : ''}`,
-                  }))}
-                  onChange={(v) => updateRow(i, { saltLevel: parseInt(v, 10) })}
-                />
-              )}
+              <SelectControl
+                label="Forma de partida"
+                value={String(r.startIndex)}
+                options={Array.from({ length: preset.pKas.length + 1 }, (_, lvl) => {
+                  const { cations, anions } = saltCounterIons(preset.z0, lvl);
+                  const mult = (n: number) => (n > 1 ? ` ${n}×` : '');
+                  const suffix = anions > 0
+                    ? ` (sal de cloruro${mult(anions)})`
+                    : cations > 0
+                      ? ` (sal sódica${mult(cations)})`
+                      : '';
+                  return { value: String(lvl), label: `${preset.speciesLabels[lvl]}${suffix}` };
+                })}
+                onChange={(v) => updateRow(i, { startIndex: parseInt(v, 10) })}
+              />
             </div>
           );
         })}
         {rows.length < MAX_ROWS && (
           <button
             className="add-btn"
-            onClick={() => setRows([...rows, { acidId: 'acetic', conc: 0.05, saltLevel: 0 }])}
+            onClick={() => setRows([...rows, { acidId: 'acetic', conc: 0.05, startIndex: 0 }])}
           >
             + Agregar componente
           </button>
