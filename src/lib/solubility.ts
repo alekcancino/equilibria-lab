@@ -104,6 +104,27 @@ export function solubilityVsPX(
   return Math.pow(10, (lo + hi) / 2);
 }
 
+/**
+ * Solubility of a molecular (non-ionic) weak-acid solid HA(s), e.g. benzoic
+ * acid: the intrinsic solubility S₀ is the concentration of the un-ionized
+ * form alone; above pKa the conjugate base A⁻ pulls more solid into
+ * solution, so total solubility grows as pH rises:
+ *   S = S₀ · (1 + 10^(pH−pKa))
+ */
+export function acidSolidSolubility(S0: number, pKa: number, pH: number): number {
+  return S0 * (1 + Math.pow(10, pH - pKa));
+}
+
+/**
+ * Solubility of a molecular weak-base solid B(s), e.g. an amine: below the
+ * pKa of its conjugate acid BH⁺, protonation pulls more solid into
+ * solution, so total solubility grows as pH falls:
+ *   S = S₀ · (1 + 10^(pKa−pH))
+ */
+export function baseSolidSolubility(S0: number, pKa: number, pH: number): number {
+  return S0 * (1 + Math.pow(10, pKa - pH));
+}
+
 /** log s = f(pX) curve over a pX sweep. */
 export function solubilityPXCurve(
   salt: SaltPreset,
