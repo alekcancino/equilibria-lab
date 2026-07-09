@@ -112,7 +112,7 @@ function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
   const chartTraces = useMemo<Data[]>(() => [
     {
       x: curveMY.pHs, y: curveMY.logKs, type: 'scatter', mode: 'lines',
-      name: "log K′(M-EDTA)", line: { width: 3, color: '#2c3e50' },
+      name: "log K′(M-EDTA)", line: { width: 3, color: '#7B5CD6' },
       hovertemplate: "log K′(MY) = %{y:.2f}<extra>M-EDTA</extra>",
     },
     ...indCurves.map((c, i) => ({

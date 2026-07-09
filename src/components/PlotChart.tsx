@@ -28,7 +28,8 @@ function plotToken(name: string, fallback: string): string {
 function axisBounds(range?: [number, number]): { minallowed?: number; maxallowed?: number } {
   if (!range) return {};
   const [a, b] = range;
-  const pad = Math.abs(b - a) * 0.05;
+  // A degenerate range (a === b) would otherwise clamp the axis to zero width.
+  const pad = Math.max(Math.abs(b - a) * 0.05, 0.5);
   return { minallowed: Math.min(a, b) - pad, maxallowed: Math.max(a, b) + pad };
 }
 
@@ -116,8 +117,11 @@ export default function PlotChart({
       hovermode: mobile ? 'closest' : 'x unified',
       shapes: themedShapes,
       annotations: themedAnnotations,
+      // Stable across theme toggles so Plotly keeps the user's current zoom/pan
+      // instead of snapping back to xRange/yRange on every re-render.
+      uirevision: exportName,
     };
-  }, [mobile, theme, xTitle, yTitle, xRange, yRange, showLegend, themedShapes, themedAnnotations, themedData.length]);
+  }, [mobile, theme, xTitle, yTitle, xRange, yRange, showLegend, themedShapes, themedAnnotations, themedData.length, exportName]);
 
   return (
     <Plot

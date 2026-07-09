@@ -250,14 +250,16 @@ export default function App() {
           </p>
         </details>
         <span className="footer-meta">
-          <label className="footer-toggle">
-            <input
-              type="checkbox"
-              checked={showActivityNote}
-              onChange={(e) => setShowActivityNote(e.target.checked)}
-            />
-            Mostrar corrección γ
-          </label>
+          {activeViewId === 'acidobase' && (
+            <label className="footer-toggle">
+              <input
+                type="checkbox"
+                checked={showActivityNote}
+                onChange={(e) => setShowActivityNote(e.target.checked)}
+              />
+              Mostrar corrección γ
+            </label>
+          )}
           <span className="footer-version">v{version}</span>
         </span>
       </footer>

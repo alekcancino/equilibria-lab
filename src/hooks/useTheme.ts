@@ -29,7 +29,21 @@ export function useTheme(): Theme {
   useEffect(() => {
     const onChange = (e: Event) => setTheme((e as CustomEvent<Theme>).detail);
     window.addEventListener(EVENT, onChange);
-    return () => window.removeEventListener(EVENT, onChange);
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const onSystemChange = (e: MediaQueryListEvent) => {
+      // Only follow the system when the user never chose a theme explicitly.
+      let stored: string | null = null;
+      try { stored = localStorage.getItem(STORAGE_KEY); } catch { /* private mode */ }
+      if (stored === 'light' || stored === 'dark') return;
+      applyTheme(e.matches ? 'dark' : 'light');
+    };
+    media.addEventListener('change', onSystemChange);
+
+    return () => {
+      window.removeEventListener(EVENT, onChange);
+      media.removeEventListener('change', onSystemChange);
+    };
   }, []);
 
   return theme;

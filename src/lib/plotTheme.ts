@@ -22,22 +22,37 @@ const SERIES_DARK: Record<string, string> = {
 
 /** Ink/guide colors hardcoded in modules: light hex → dark equivalent. */
 const INK_DARK: Record<string, string> = {
-  '#2C3E50': '#CBD5E1', // annotation ink (equivalence lines, P.E. labels)
-  '#2c3e50': '#CBD5E1',
-  '#7F8C8D': '#94A3B8',
+  '#2c3e50': '#CBD5E1', // annotation ink only — never reuse this hex for a data series
+  '#7f8c8d': '#94A3B8',
   '#999999': '#7C8BA3',
   '#95a5a6': '#7C8BA3',
   '#aaaaaa': '#5A6B85',
   '#e8ecef': '#2A3A55',
 };
 
-const DARK_MAP: Record<string, string> = { ...SERIES_DARK, ...INK_DARK };
+/**
+ * Per-preset series hexes that aren't part of SPECIES_COLORS (SolubilidadSal
+ * ran out of validated slots at 10 presets). Only one preset is ever plotted
+ * at a time, so cross-series CVD separation doesn't apply — these just need
+ * to stay legible against the dark plot surface (#16203A).
+ */
+const EXTRA_SERIES_DARK: Record<string, string> = {
+  '#888888': '#A8B3C2',
+  '#555555': '#9AA6B8',
+  '#f0a500': '#FFC233',
+};
+
+// Keys are matched case-insensitively (module literals aren't consistently cased).
+const DARK_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries({ ...SERIES_DARK, ...INK_DARK, ...EXTRA_SERIES_DARK })
+    .map(([hex, dark]) => [hex.toLowerCase(), dark]),
+);
 
 // Data-carrying keys that never hold colors — skipped to avoid walking huge arrays.
 const SKIP_KEYS = new Set(['x', 'y', 'z', 'text', 'customdata', 'hovertemplate', 'hovertext', 'name']);
 
 function walk(value: unknown): unknown {
-  if (typeof value === 'string') return DARK_MAP[value] ?? value;
+  if (typeof value === 'string') return DARK_MAP[value.toLowerCase()] ?? value;
   if (Array.isArray(value)) return value.map(walk);
   if (value !== null && typeof value === 'object') {
     const out: Record<string, unknown> = {};
