@@ -48,6 +48,11 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
   const volumes: number[] = [];
   const pHs: number[] = [];
 
+  // Same counter-ion accounting as AcidoBase.tsx's "pH disolución pura" —
+  // see saltCounterIons/defaultStartIndex in equilibrium.ts. z0/pKas are
+  // fixed for the whole curve, so the ratio is computed once outside the loop.
+  const analyteIons = saltCounterIons(analyte.z0, defaultStartIndex(analyte.z0, analyte.pKas.length));
+
   for (let i = 0; i <= points; i++) {
     const vb = (vMax * i) / points;
     const vTotal = vAnalyte + vb;
@@ -61,11 +66,8 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
       extraCations += analyteConc;
     } else {
       components.push({ c: analyteConc, z0: analyte.z0, pKas: analyte.pKas });
-      // Same counter-ion accounting as AcidoBase.tsx's "pH disolución pura" —
-      // see saltCounterIons/defaultStartIndex in equilibrium.ts.
-      const { cations, anions } = saltCounterIons(analyte.z0, defaultStartIndex(analyte.z0, analyte.pKas.length));
-      extraCations += cations * analyteConc;
-      extraAnions += anions * analyteConc;
+      extraCations += analyteIons.cations * analyteConc;
+      extraAnions += analyteIons.anions * analyteConc;
     }
     const titrantConc = (cTitrant * vb) / vTotal;
     if (titrantIsAcid) extraAnions += titrantConc;

@@ -17,9 +17,9 @@ export interface AcidPreset {
   /** true if it is a strong acid/base (pKa not applicable for titration) */
   strong?: boolean;
   /** true for a hydrated M³⁺ cation acid (Fe³⁺, Al³⁺) whose modeled pKas
-   * don't reach a neutral species — only AcidoBase.tsx's "pH disolución
-   * pura" accounts for the counter-anion this needs, so it's opt-in
-   * (AcidSystemEditor's allowAquaCations) rather than shown everywhere. */
+   * don't reach a neutral species. Gated by AcidSystemEditor's
+   * allowAquaCations in AcidoBase.tsx/Titulacion.tsx; Mezclas.tsx bypasses
+   * that editor and shows these presets unconditionally. */
   aquaCation?: boolean;
 }
 

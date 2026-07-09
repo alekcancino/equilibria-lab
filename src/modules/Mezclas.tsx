@@ -5,7 +5,7 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Slider, Toggle } from '../components/Controls';
-import { ACIDS } from '../lib/database';
+import { ACIDS, type AcidPreset } from '../lib/database';
 import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from '../lib/equilibrium';
 import { firstDerivative } from '../lib/titration';
 
@@ -17,6 +17,15 @@ interface MixRow {
 }
 
 const MAX_ROWS = 4;
+
+// r.startIndex comes from shareable URL state, which may be stale (a link
+// from before this field existed) — fall back rather than let an
+// out-of-range/undefined index propagate NaN into solvePH.
+function validStartIndex(preset: AcidPreset, startIndex: number): number {
+  return Number.isInteger(startIndex) && startIndex >= 0 && startIndex <= preset.pKas.length
+    ? startIndex
+    : defaultStartIndex(preset.z0, preset.pKas.length);
+}
 
 const INITIAL_ROWS: MixRow[] = [{ acidId: 'acetic', conc: 0.05, startIndex: 0 }];
 
@@ -65,7 +74,7 @@ export default function Mezclas() {
       const preset = ACIDS.find((a) => a.id === r.acidId)!;
       const c = r.conc * dilution;
       comps.push({ c, z0: preset.z0, pKas: preset.pKas });
-      const ions = saltCounterIons(preset.z0, r.startIndex);
+      const ions = saltCounterIons(preset.z0, validStartIndex(preset, r.startIndex));
       cations += ions.cations * c;
       anions += ions.anions * c;
     }
@@ -192,6 +201,7 @@ export default function Mezclas() {
         />
         {rows.map((r, i) => {
           const preset = ACIDS.find((a) => a.id === r.acidId)!;
+          const startIndex = validStartIndex(preset, r.startIndex);
           return (
             <div key={i} className="mix-row">
               <div className="mix-row-header">
@@ -212,12 +222,13 @@ export default function Mezclas() {
               <ConcSlider label="Concentración" value={r.conc} onChange={(v) => updateRow(i, { conc: v })} min={-4} max={0} />
               <SelectControl
                 label="Forma de partida"
-                value={String(r.startIndex)}
+                value={String(startIndex)}
                 options={Array.from({ length: preset.pKas.length + 1 }, (_, lvl) => {
                   const { cations, anions } = saltCounterIons(preset.z0, lvl);
                   const mult = (n: number) => (n > 1 ? ` ${n}×` : '');
+                  const anionName = preset.aquaCation ? 'nitrato' : 'cloruro';
                   const suffix = anions > 0
-                    ? ` (sal de cloruro${mult(anions)})`
+                    ? ` (sal de ${anionName}${mult(anions)})`
                     : cations > 0
                       ? ` (sal sódica${mult(cations)})`
                       : '';
@@ -292,7 +303,7 @@ export default function Mezclas() {
               />
             ) : (
               <div className="empty-plot">
-                <p>pH de la mezcla: <strong>{pHMix.toFixed(2)}</strong></p>
+                <p>pH de la mezcla: <strong>{pHInvalid ? '—' : pHMix.toFixed(2)}</strong></p>
                 <p className="hint">Activa la curva de titulación para ver la gráfica.</p>
               </div>
             ),
