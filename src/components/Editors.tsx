@@ -141,11 +141,16 @@ export function SideReactionEditor({
   onChange,
   showLigandPKas = true,
   ligandTitle = 'pKas del ligante Y (EDTA por defecto)',
+  showComplexSection = true,
 }: {
   state: SideReactionEditorState;
   onChange: (s: SideReactionEditorState) => void;
   showLigandPKas?: boolean;
   ligandTitle?: string;
+  /** Hide "Protonación / hidrólisis del complejo MY" — that section only
+   * affects α_Y (via alphaComplex), which is meaningless where there's no
+   * primary M–Y complex (e.g. a bare redox Ox/Red side-reaction stack). */
+  showComplexSection?: boolean;
 }) {
   const set = <K extends keyof SideReactionEditorState>(k: K, v: SideReactionEditorState[K]) =>
     onChange({ ...state, [k]: v });
@@ -276,40 +281,42 @@ export function SideReactionEditor({
         )}
       </details>
 
-      <details
-        className="section-collapse"
-        open={state.showComplex}
-        onToggle={(e) => set('showComplex', (e.target as HTMLDetailsElement).open)}
-      >
-        <summary className="section-collapse-title">Protonación / hidrólisis del complejo MY</summary>
-        <Slider
-          label="log K (MY + H⁺ ⇌ MHY)"
-          helpId="logKprotonation"
-          value={state.logBetaProtonation ?? 0}
-          min={0}
-          max={30}
-          step={0.01}
-          onChange={(v) => {
-            set('logBetaProtonation', v);
-            if (!state.showComplex) set('showComplex', true);
-          }}
-          decimals={2}
-        />
-        <Slider
-          label="log β (MY + OH⁻ ⇌ MOHY)"
-          helpId="logBetaHydroxy"
-          value={state.logBetaHydroxy ?? 0}
-          min={-10}
-          max={20}
-          step={0.01}
-          onChange={(v) => {
-            set('logBetaHydroxy', v);
-            if (!state.showComplex) set('showComplex', true);
-          }}
-          decimals={2}
-        />
-        <p className="hint">Ej. ZnHY (log β = 19,44) para protonación del complejo, ZnOHY (4,54) para complejo hidroxo.</p>
-      </details>
+      {showComplexSection && (
+        <details
+          className="section-collapse"
+          open={state.showComplex}
+          onToggle={(e) => set('showComplex', (e.target as HTMLDetailsElement).open)}
+        >
+          <summary className="section-collapse-title">Protonación / hidrólisis del complejo MY</summary>
+          <Slider
+            label="log K (MY + H⁺ ⇌ MHY)"
+            helpId="logKprotonation"
+            value={state.logBetaProtonation ?? 0}
+            min={0}
+            max={30}
+            step={0.01}
+            onChange={(v) => {
+              set('logBetaProtonation', v);
+              if (!state.showComplex) set('showComplex', true);
+            }}
+            decimals={2}
+          />
+          <Slider
+            label="log β (MY + OH⁻ ⇌ MOHY)"
+            helpId="logBetaHydroxy"
+            value={state.logBetaHydroxy ?? 0}
+            min={-10}
+            max={20}
+            step={0.01}
+            onChange={(v) => {
+              set('logBetaHydroxy', v);
+              if (!state.showComplex) set('showComplex', true);
+            }}
+            decimals={2}
+          />
+          <p className="hint">Ej. ZnHY (log β = 19,44) para protonación del complejo, ZnOHY (4,54) para complejo hidroxo.</p>
+        </details>
+      )}
     </>
   );
 }

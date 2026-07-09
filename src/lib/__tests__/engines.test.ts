@@ -6,8 +6,8 @@ import {
   alphaH, alphaOH, condLogK, condLogKCurve, feasibilityWindow,
   hydroxideSolCurve, precipitationPH,
 } from '../conditional';
-import { peConditional, peStandard, alphaRedox, redoxTitrationCurve } from '../redox';
-import { electrodePotential } from '../sideReactions';
+import { peConditional, peStandard, alphaRedox, redoxTitrationCurve, conditionalEprime } from '../redox';
+import { electrodePotential, stackFromLegacy } from '../sideReactions';
 import { granPlot, titrationCurve, titratableProtons, firstDerivative } from '../titration';
 import { ladderFractions, ladderLogC, predominanceZones } from '../ladder';
 import { anionFreeFraction, solubility, solubilityVsPX } from '../solubility';
@@ -208,6 +208,44 @@ describe('peConditional', () => {
     expect(pe0).toBeGreaterThan(pe7);
     // Δpe°′ = (mH/n)·ΔpH = (8/5)·7 = 11.2
     tol(pe0 - pe7, 11.2, 0.1);
+  });
+});
+
+describe('conditionalEprime (E°′=f(pH) con complejación por estado)', () => {
+  const couple = { E0: 1.82, n: 1, mH: 0 }; // Co³⁺/Co²⁺, no protons in the half-reaction
+
+  it('sin pilas de reacciones parásitas, es idéntico a E°−S·(mH/n)·pH', () => {
+    const withStacks = conditionalEprime(couple, 5, undefined, undefined);
+    const plain = couple.E0 - 0.05916 * (couple.mH / couple.n) * 5;
+    tol(withStacks, plain, 1e-9);
+  });
+
+  it('pilas idénticas en Ox y Red se cancelan (E°′ no cambia)', () => {
+    const stack = stackFromLegacy([], [6.0], [], 0);
+    const same = conditionalEprime(couple, 7, stack, stack);
+    const plain = conditionalEprime(couple, 7, undefined, undefined);
+    tol(same, plain, 1e-9);
+  });
+
+  it('complejar solo el oxidante estabiliza Ox y baja E°′ (oxidante más débil)', () => {
+    const oxStack = stackFromLegacy([], [], [10, 18, 24], 1); // fuerte β para Ox
+    const base = conditionalEprime(couple, 7, undefined, undefined);
+    const complexed = conditionalEprime(couple, 7, oxStack, undefined);
+    expect(complexed).toBeLessThan(base);
+  });
+
+  it('complejar solo el reductor estabiliza Red y sube E°′ (oxidante más fuerte)', () => {
+    const redStack = stackFromLegacy([], [], [10, 18, 24], 1);
+    const base = conditionalEprime(couple, 7, undefined, undefined);
+    const complexed = conditionalEprime(couple, 7, undefined, redStack);
+    expect(complexed).toBeGreaterThan(base);
+  });
+
+  // Vera, Problemas de Química Analítica, P7 (Co³⁺/Co²⁺ + etilendiamina):
+  // α_En(H) a pH 4 = 10^9.41, a partir de pKa(enH₂²⁺)=7.3, pKa(enH⁺)=10.11.
+  it('α_En(H) a pH 4 = 10^9.41 (Vera P7, vía alphaH)', () => {
+    const aEnH = alphaH([7.3, 10.11], 4);
+    tol(Math.log10(aEnH), 9.41, 0.02);
   });
 });
 
