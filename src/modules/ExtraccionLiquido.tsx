@@ -37,23 +37,28 @@ interface ExtractionPreset {
   pKas: number[];
   neutralIdx: number;
   system: string;
+  reference?: string;
   // quelato
   n?: number;
   logCHL?: number;
 }
 
+// Nota de datos: el logKd de la ditizona (id 'dithizone') difiere ~100x entre esta base (4.00) y
+// el valor reportado en Baeza/Garcia, Quimica Analitica I-II-III (2021) (10^6, log=6) -- ver
+// docs/testing/BOOK-QA-LOG.md hallazgo B-7. Sin una tercera fuente que desempate, se deja sin
+// `reference` (dithizone y pb_dithiz) en vez de afirmar una cita que podria estar mal.
 const PRESETS: ExtractionPreset[] = [
-  { id: 'benzoico',  label: 'Ácido benzoico',         formula: 'C₆H₅COOH', type: 'acid',    logKd:  2.22, pKas: [4.20],         neutralIdx: 0, system: 'CHCl₃/H₂O' },
-  { id: 'salicilico',label: 'Ácido salicílico',       formula: 'HOC₆H₄COOH',type: 'acid',   logKd:  2.40, pKas: [3.00, 13.40], neutralIdx: 0, system: 'CHCl₃/H₂O' },
-  { id: 'aspirina',  label: 'Ácido acetilsalicílico', formula: 'HC₉H₇O₄',  type: 'acid',    logKd:  1.70, pKas: [3.50],         neutralIdx: 0, system: 'CHCl₃/H₂O' },
-  { id: 'acetico',   label: 'Ácido acético',           formula: 'CH₃COOH',  type: 'acid',    logKd: -0.23, pKas: [4.76],         neutralIdx: 0, system: 'Et₂O/H₂O'  },
-  { id: '8hq',       label: '8-Hidroxiquinolina',      formula: 'HQ',        type: 'acid',    logKd:  2.70, pKas: [5.13, 9.89],  neutralIdx: 1, system: 'CHCl₃/H₂O' },
+  { id: 'benzoico',  label: 'Ácido benzoico',         formula: 'C₆H₅COOH', type: 'acid',    logKd:  2.22, pKas: [4.20],         neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
+  { id: 'salicilico',label: 'Ácido salicílico',       formula: 'HOC₆H₄COOH',type: 'acid',   logKd:  2.40, pKas: [3.00, 13.40], neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
+  { id: 'aspirina',  label: 'Ácido acetilsalicílico', formula: 'HC₉H₇O₄',  type: 'acid',    logKd:  1.70, pKas: [3.50],         neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
+  { id: 'acetico',   label: 'Ácido acético',           formula: 'CH₃COOH',  type: 'acid',    logKd: -0.23, pKas: [4.76],         neutralIdx: 0, system: 'Et₂O/H₂O',  reference: 'Harris, QCA' },
+  { id: '8hq',       label: '8-Hidroxiquinolina',      formula: 'HQ',        type: 'acid',    logKd:  2.70, pKas: [5.13, 9.89],  neutralIdx: 1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },
   { id: 'dithizone', label: 'Ditizona',                formula: 'H₂Dz',     type: 'acid',    logKd:  4.00, pKas: [4.47],         neutralIdx: 0, system: 'CHCl₃/H₂O' },
-  { id: 'I2',        label: 'Yodo molecular',          formula: 'I₂',        type: 'acid',    logKd:  2.83, pKas: [],             neutralIdx: 0, system: 'CCl₄/H₂O'  },
+  { id: 'I2',        label: 'Yodo molecular',          formula: 'I₂',        type: 'acid',    logKd:  2.83, pKas: [],             neutralIdx: 0, system: 'CCl₄/H₂O',  reference: 'Harris, QCA' },
   // Metal chelates — D = K_ex · [HL]^n · 10^(n·pH)
-  { id: 'cu_8hq',    label: 'Cu²⁺ + 8-HQ',            formula: 'Cu(Ox)₂',   type: 'chelate', logKd:  9.10, pKas: [], neutralIdx: 0, n: 2, logCHL: -1, system: 'CHCl₃/H₂O' },
-  { id: 'zn_8hq',    label: 'Zn²⁺ + 8-HQ',            formula: 'Zn(Ox)₂',   type: 'chelate', logKd:  8.70, pKas: [], neutralIdx: 0, n: 2, logCHL: -1, system: 'CHCl₃/H₂O' },
-  { id: 'fe_8hq',    label: 'Fe³⁺ + 8-HQ',            formula: 'Fe(Ox)₃',   type: 'chelate', logKd: 12.10, pKas: [], neutralIdx: 0, n: 3, logCHL: -1, system: 'CHCl₃/H₂O' },
+  { id: 'cu_8hq',    label: 'Cu²⁺ + 8-HQ',            formula: 'Cu(Ox)₂',   type: 'chelate', logKd:  9.10, pKas: [], neutralIdx: 0, n: 2, logCHL: -1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },
+  { id: 'zn_8hq',    label: 'Zn²⁺ + 8-HQ',            formula: 'Zn(Ox)₂',   type: 'chelate', logKd:  8.70, pKas: [], neutralIdx: 0, n: 2, logCHL: -1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },
+  { id: 'fe_8hq',    label: 'Fe³⁺ + 8-HQ',            formula: 'Fe(Ox)₃',   type: 'chelate', logKd: 12.10, pKas: [], neutralIdx: 0, n: 3, logCHL: -1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },
   { id: 'pb_dithiz', label: 'Pb²⁺ + Ditizona',         formula: 'Pb(HDz)₂', type: 'chelate', logKd:  6.30, pKas: [], neutralIdx: 0, n: 2, logCHL: -2, system: 'CHCl₃/H₂O' },
 ];
 
@@ -209,7 +214,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
           <button
             key={p.id}
             className="preset-chip"
-            title={`${p.system}  logKd=${p.logKd}`}
+            title={`${p.system}  logKd=${p.logKd}${p.reference ? `  ·  Fuente: ${p.reference}` : ''}`}
             onClick={() => onChange({
               label: p.label, type: p.type, logKd: p.logKd,
               pKas: [...p.pKas], neutralIdx: p.neutralIdx,

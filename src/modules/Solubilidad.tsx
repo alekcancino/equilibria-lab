@@ -33,7 +33,7 @@ function saltFromPreset(p: SaltPreset): SaltState {
     anionPKas: p.anionPKas ? [...p.anionPKas] : [],
     anionLabel: p.anionLabel,
     cationLabel: p.cationLabel,
-    reference: 'Harris, 9.ª ed.; Stumm & Morgan (1996)',
+    reference: 'Harris; Stumm & Morgan (1996)',
   };
 }
 

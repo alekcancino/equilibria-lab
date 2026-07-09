@@ -413,8 +413,8 @@ export default function PotencialCondicional() {
 
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
-            { label: `E°'(${st.couple1.name}) a pH ${st.pH.toFixed(1)}`, value: `${E1cur.toFixed(3)} V  (pe°′ ${(E1cur/S).toFixed(1)})` },
-            { label: `E°'(${st.couple2.name}) a pH ${st.pH.toFixed(1)}`, value: `${E2cur.toFixed(3)} V  (pe°′ ${(E2cur/S).toFixed(1)})` },
+            { label: `E°'(${st.couple1.name}) a pH ${st.pH.toFixed(1)}`, value: `${E1cur.toFixed(3)} V  (pe°′ ${(E1cur/S).toFixed(1)})`, helpId: 'Eprime' },
+            { label: `E°'(${st.couple2.name}) a pH ${st.pH.toFixed(1)}`, value: `${E2cur.toFixed(3)} V  (pe°′ ${(E2cur/S).toFixed(1)})`, helpId: 'Eprime' },
             { label: 'Cruce de pares 1–2', value: cross12 !== null ? `pH ${cross12.toFixed(2)}` : 'Paralelos (sin cruce)' },
             {
               label: 'Reacción espontánea',
@@ -504,8 +504,8 @@ export default function PotencialCondicional() {
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="eprime" />
         <ResultCardRow items={[
-          { label: `E°' ${st.couple1.ox}/${st.couple1.red}`, value: Number.isFinite(E1cur) ? `${E1cur.toFixed(3)} V` : '—', accent: true },
-          { label: `E°' ${st.couple2.ox}/${st.couple2.red}`, value: Number.isFinite(E2cur) ? `${E2cur.toFixed(3)} V` : '—' },
+          { label: `E°' ${st.couple1.ox}/${st.couple1.red}`, value: Number.isFinite(E1cur) ? `${E1cur.toFixed(3)} V` : '—', accent: true, helpId: 'Eprime' },
+          { label: `E°' ${st.couple2.ox}/${st.couple2.red}`, value: Number.isFinite(E2cur) ? `${E2cur.toFixed(3)} V` : '—', helpId: 'Eprime' },
           { label: 'Cruce 1–2', value: cross12 !== null ? `pH ${cross12.toFixed(1)}` : '—' },
         ]} />
       </section>

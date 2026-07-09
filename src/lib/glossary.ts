@@ -106,4 +106,24 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     meaning: 'Constante del electrodo de vidrio: potencial de referencia que agrupa la asimetría del electrodo y el potencial de unión líquida. E = K_ref − 59.16·pH·S.',
     units: 'mV',
   },
+  pKwApp: {
+    meaning: 'Kw corregido por fuerza iónica: K′w = Kw/(γH⁺·γOH⁻). Como γ < 1, K′w crece (pK′w baja) al aumentar I.',
+    units: 'adimensional',
+  },
+  KspPrime: {
+    meaning: 'Producto de solubilidad condicional: Ksp′ = Ksp/(αM·αX), ya corregido por reacciones laterales del catión y/o del anión.',
+    units: 'adimensional',
+  },
+  duzp: {
+    meaning: 'Diagrama Unidimensional de Zonas de Predominio: cada tramo del eje muestra qué especie domina; las fronteras están en los pKa/pM/pL.',
+    units: 'n/a',
+  },
+  gran: {
+    meaning: 'Función de Gran: transforma la curva de titulación en un tramo lineal cuyo cruce con cero da el volumen de equivalencia experimental.',
+    units: 'n/a',
+  },
+  Eprime: {
+    meaning: 'Potencial normal condicional: E°′ = E° − S·(mH/n)·pH, ya corregido por el efecto del pH sobre la semirreacción.',
+    units: 'V (vs ENH)',
+  },
 };

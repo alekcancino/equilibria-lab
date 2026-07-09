@@ -1,6 +1,6 @@
 // Database of metallochromic indicators for complexometric titrations.
-// Source: Harris, Quantitative Chemical Analysis 9th ed., Table 12-3;
-//         Skoog, Principles of Analytical Chemistry 9th ed.
+// Source: Harris, Quantitative Chemical Analysis, Table 12-3;
+//         Skoog, Principles of Analytical Chemistry.
 //
 // logK(MIn): formation constant of the M-In complex referenced to the fully
 // deprotonated In^(n-) form of the indicator.
@@ -110,7 +110,7 @@ export const METAL_INDICATORS: MetalIndicator[] = [
 export const INDICATOR_BY_ID = Object.fromEntries(METAL_INDICATORS.map((ind) => [ind.id, ind]));
 
 // ── Metal presets for EDTA titrations ────────────────────────────────────────
-// Source: Harris QCA 9th ed., Table 12-1; Ringbom.
+// Source: Harris QCA, Table 12-1; Ringbom.
 // logBetasOH: formation constants of the metal's hydroxo complexes β₁, β₂, …
 
 export interface EdtaMetalPreset {

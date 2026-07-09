@@ -17,7 +17,7 @@ export function defaultAcidSystem(): AcidSystem {
   return {
     label: p.name, z0: p.z0, pKas: [...p.pKas],
     speciesLabels: [...p.speciesLabels],
-    reference: 'Harris, Quantitative Chemical Analysis, 9.ª ed.',
+    reference: 'Harris, Quantitative Chemical Analysis',
   };
 }
 
@@ -28,7 +28,7 @@ export function acidSystemFromPreset(id: string, strongWithoutPKa = false): Acid
     z0: strongWithoutPKa && p.strong ? (p.isBase ? 1 : 0) : p.z0,
     pKas: strongWithoutPKa && p.strong ? [] : [...p.pKas],
     speciesLabels: strongWithoutPKa && p.strong ? null : [...p.speciesLabels],
-    reference: 'Harris, Quantitative Chemical Analysis, 9.ª ed.',
+    reference: 'Harris, Quantitative Chemical Analysis',
   };
 }
 

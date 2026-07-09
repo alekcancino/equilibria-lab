@@ -190,6 +190,14 @@ export default function AcidoBase() {
             La línea rosa marca el pH real de la disolución pura.
           </p>
         </InfoBox>
+        <InfoBox title="¿Disolviste la sal de una forma intermedia?">
+          <p>
+            Este módulo siempre disuelve la forma <strong>más protonada</strong> (z₀) directamente.
+            Para calcular el pH de la sal de una forma intermedia o final de un sistema poliprótico
+            (ej. NaHCO₃, Na₂HPO₄, KHP) usa <strong>Mezclas</strong> — ahí el selector
+            "Forma de partida" agrega el contraión espectador correcto automáticamente.
+          </p>
+        </InfoBox>
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} />
