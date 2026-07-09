@@ -44,10 +44,19 @@ export default function AcidoBase() {
     'I / M': ionicStrength.toFixed(3),
   }), [system.label, conc, ionicStrength]);
 
-  const pHSystem = useMemo(
-    () => solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }], 0, 0, ionicStrength),
-    [system, conc, ionicStrength],
-  );
+  const pHSystem = useMemo(() => {
+    // "pH disolución pura" assumes you dissolve whichever end of the ladder
+    // is electrically neutral (z0=0 acids: the first/most-protonated form;
+    // NH₃-type bases: the last form, reached after z0 proton-loss steps). An
+    // aqua-acid cation (Fe³⁺, z0=+3) with fewer modeled hydrolysis steps than
+    // its charge never reaches neutral — it can only be dissolved as a salt
+    // with an inert counter-anion (e.g. NO₃⁻ for Fe(NO₃)₃), contributing
+    // z0·c of anion charge (fixed by the parent cation's charge, independent
+    // of how much subsequently hydrolyzes).
+    const hasNeutralSpecies = system.z0 <= system.pKas.length;
+    const extraAnions = hasNeutralSpecies ? 0 : system.z0 * conc;
+    return solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }], 0, extraAnions, ionicStrength);
+  }, [system, conc, ionicStrength]);
   const pHInvalid = !Number.isFinite(pHSystem);
 
   // α distribution vs pH
@@ -156,7 +165,7 @@ export default function AcidoBase() {
     <div className="module">
       <PanelShell title="Equilibrio ácido-base" onReset={reset}>
         <PanelSection title="Sistema" icon="⚛">
-          <AcidSystemEditor system={system} onChange={setSystem} />
+          <AcidSystemEditor system={system} onChange={setSystem} allowAquaCations />
         </PanelSection>
         <PanelSection title="Condiciones" icon="⚗">
           <ConcSlider label="Concentración analítica" value={conc} onChange={setConc} />

@@ -204,7 +204,10 @@ export default function Mezclas() {
               <SelectControl
                 label=""
                 value={r.acidId}
-                options={ACIDS.filter((a) => !a.strong).map((a) => ({ value: a.id, label: a.name }))}
+                // Aqua-acid cations (Fe³⁺, Al³⁺) need a counter-anion this
+                // module's saltLevel/maxSalt charge-balance wiring doesn't
+                // account for — keep them AcidoBase-only for now.
+                options={ACIDS.filter((a) => !a.strong && !a.aquaCation).map((a) => ({ value: a.id, label: a.name }))}
                 onChange={(v) => updateRow(i, { acidId: v, saltLevel: 0 })}
               />
               <ConcSlider label="Concentración" value={r.conc} onChange={(v) => updateRow(i, { conc: v })} min={-4} max={0} />
