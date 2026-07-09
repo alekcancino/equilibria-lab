@@ -79,12 +79,60 @@
   --duration-fast: 150ms;
   --duration-normal: 200ms;
 
+  /* Card & chrome gradients (flat dark equivalents in [data-theme="dark"]) */
+  --topbar-grad: linear-gradient(180deg, #FFFFFF 0%, #FBFBFE 100%);
+  --surface-grad: linear-gradient(180deg, #FFFFFF 0%, #FCFCFF 100%);
+  --content-wash: radial-gradient(130% 100% at 92% -12%, #ECEEFF 0%, rgba(236, 238, 255, 0) 48%);
+
   /* Plotly chrome */
   --plot-bg: #ffffff;
   --plot-grid: #EEF2F8;
   --plot-axis: #CBD5E1;
   --plot-font-size: 13px;
   --plot-font-size-mobile: 12px;
+}
+
+/* Dark theme — slate-900 canvas, mid-tone accents. Series colors for charts
+   are remapped separately in lib/plotTheme.ts (validated against #16203A). */
+:root[data-theme="dark"] {
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --surface-alt: #253349;
+  --border: #334155;
+  --text: #E2E8F0;
+  --text-muted: #94A3B8;
+  --accent: #818CF8;
+  --accent-hover: #A5B4FC;
+  --accent-soft: rgba(99, 102, 241, 0.18);
+  --accent-violet: #818CF8;
+  --accent-teal: #818CF8;
+  --ok: #34D399;
+  --ok-soft: rgba(16, 185, 129, 0.16);
+  --warn: #FBBF24;
+
+  --accent-2: #A78BFA;
+  --bg-grad:
+    radial-gradient(120% 92% at 88% -12%, rgba(99, 102, 241, 0.14) 0%, rgba(99, 102, 241, 0) 44%),
+    radial-gradient(80% 65% at 2% 108%, rgba(45, 212, 191, 0.08) 0%, rgba(45, 212, 191, 0) 42%),
+    var(--bg);
+  --glass-bg: rgba(15, 23, 42, 0.72);
+  --glass-border: rgba(51, 65, 85, 0.82);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.28), 0 6px 16px rgba(0, 0, 0, 0.36);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.28), 0 6px 18px -4px rgba(0, 0, 0, 0.42);
+  --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.30), 0 22px 48px -12px rgba(0, 0, 0, 0.55);
+  --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.28);
+
+  --page-bg: #0B1120;
+
+  --topbar-grad: linear-gradient(180deg, #1B2740 0%, #182338 100%);
+  --surface-grad: linear-gradient(180deg, #202D45 0%, #1E293B 100%);
+  --content-wash: radial-gradient(130% 100% at 92% -12%, rgba(99, 102, 241, 0.10) 0%, rgba(99, 102, 241, 0) 48%);
+
+  --plot-bg: #16203A;
+  --plot-grid: #26334D;
+  --plot-axis: #3D4C68;
 }
 
 @media (max-width: 800px) {

@@ -231,7 +231,7 @@ export default function IntercambioIonico() {
             type: 'scatter',
             mode: 'lines',
             name: 'C/C₀',
-            line: { width: 3, color: '#2C3E50' },
+            line: { width: 3, color: '#0072B2' },
             hovertemplate: 'BV = %{x:.2f}<br>C/C₀ = %{y:.3f}<extra></extra>',
           }]}
           xTitle="Volúmenes de lecho (BV)"

@@ -2,18 +2,22 @@ import { lazy, Suspense, useState, useEffect, type ComponentType } from 'react';
 import { version } from '../package.json';
 import BrandLogo from './components/BrandLogo';
 import MobileNav from './components/MobileNav';
+import Home from './components/Home';
+import ThemeToggle from './components/ThemeToggle';
 import { useActivityNote } from './context/ActivityContext';
 import './App.css';
 
-// Keep ?m=<tabId> in the URL whenever the active tab changes.
+// Keep ?m=<viewId> in the URL whenever the active view changes.
 // Module hooks that implement state serialization will also add ?s=.
-function syncModuleUrl(tabId: string) {
+function syncModuleUrl(viewId: string | null) {
   const params = new URLSearchParams(window.location.search);
-  // Return early when the module is already correct so we don't wipe any ?s= state
-  // that the active module serialized. Only replace when actually switching modules.
-  if (params.get('m') === tabId) return;
+  if (params.get('m') === viewId) return;
+  if (viewId === null) {
+    window.history.replaceState(null, '', window.location.pathname);
+    return;
+  }
   const next = new URLSearchParams();
-  next.set('m', tabId);
+  next.set('m', viewId);
   window.history.replaceState(null, '', `${window.location.pathname}?${next.toString()}`);
 }
 
@@ -32,135 +36,207 @@ const Titulacion             = lazy(() => import('./modules/Titulacion'));
 const IntercambioIonico      = lazy(() => import('./modules/IntercambioIonico'));
 const Actividad              = lazy(() => import('./modules/Actividad'));
 
-interface Tab { id: string; label: string; component: ComponentType }
-interface Section { id: string; label: string; tabs: Tab[] }
+interface View { id: string; label: string; component: ComponentType }
 
-const SECTIONS: Section[] = [
+export interface HubMeta {
+  id: string;
+  label: string;
+  /** One-line description shown on the home card. */
+  desc: string;
+  /** Hub-specific model assumptions + validation sources (assumptions badge). */
+  assumptions: string;
+}
+
+interface Hub extends HubMeta { views: View[] }
+
+// View ids are the historical ?m= module ids so every shared link keeps working.
+const HUBS: Hub[] = [
   {
-    id: 'simples', label: 'Equilibrios simples',
-    tabs: [
-      { id: 'acidobase', label: 'Ácido-base', component: AcidoBase },
-      { id: 'complejos', label: 'Complejos', component: Complejos },
-      { id: 'redox', label: 'Redox', component: Redox },
-      { id: 'solubilidad', label: 'Solubilidad', component: Solubilidad },
+    id: 'acidobase', label: 'Ácido-base',
+    desc: 'pH, distribución de especies y diagramas de un sistema o de mezclas.',
+    assumptions: 'Balance de cargas exacto (bisección) · pKa por etapa · cotejado con Spana/HALTAFALL y Harris.',
+    views: [
+      { id: 'acidobase', label: 'Sistema único', component: AcidoBase },
+      { id: 'mezclas', label: 'Mezclas', component: Mezclas },
     ],
   },
   {
-    id: 'multiples', label: 'Equilibrios múltiples',
-    tabs: [
-      { id: 'pourbaix', label: 'Redox–pH (Pourbaix)', component: Pourbaix },
-      { id: 'mezclas', label: 'Mezclas ácido-base', component: Mezclas },
-      { id: 'condicionalesedta', label: 'Constantes condicionales', component: ConstantesCondicionales },
-      { id: 'solcond', label: 'Precipitación selectiva', component: SolubilidadCondicional },
-      { id: 'potencialcond', label: 'Potencial condicional', component: PotencialCondicional },
-      { id: 'extraccion', label: 'Extracción líquido-líquido', component: ExtraccionLiquido },
-      { id: 'ionexchange', label: 'Intercambio iónico', component: IntercambioIonico },
-      { id: 'actividad', label: 'Actividad / Debye-Hückel', component: Actividad },
+    id: 'complejos', label: 'Complejos',
+    desc: 'Formación de complejos, número de Bjerrum y constantes condicionales.',
+    assumptions: 'Complejos mononucleares MLₙ · α de Ringbom para reacciones parásitas · cotejado con Harris y Ringbom.',
+    views: [
+      { id: 'complejos', label: 'Equilibrio (pL)', component: Complejos },
+      { id: 'condicionalesedta', label: 'K′ condicional', component: ConstantesCondicionales },
+    ],
+  },
+  {
+    id: 'redox', label: 'Redox',
+    desc: 'Escala de predicción, potencial condicional E°′ y diagramas de Pourbaix.',
+    assumptions: 'pe = E/0.05916 V (convención de Sillén) · E°′ = f(pH) por mH/n · Pourbaix data-driven vía ley de Hess · cotejado con HALTAFALL.',
+    views: [
+      { id: 'redox', label: 'Escala y DUZP', component: Redox },
+      { id: 'potencialcond', label: 'E°′ condicional', component: PotencialCondicional },
+      { id: 'pourbaix', label: 'Pourbaix (E–pH)', component: Pourbaix },
+    ],
+  },
+  {
+    id: 'solubilidad', label: 'Solubilidad',
+    desc: 'Ksp, efecto del pH e ion común, hidróxidos anfóteros y precipitación selectiva.',
+    assumptions: 'Sólidos iónicos MmXx con Ksp · anión básico y complejos hidroxo vía α · cotejado con Harris y Stumm & Morgan.',
+    views: [
+      { id: 'solubilidad', label: 'Ksp e ion común', component: Solubilidad },
       { id: 'solsal', label: 'Solubilidad y pH', component: SolubilidadSal },
+      { id: 'solcond', label: 'Precipitación selectiva', component: SolubilidadCondicional },
+    ],
+  },
+  {
+    id: 'separaciones', label: 'Separaciones',
+    desc: 'Extracción líquido-líquido e intercambio iónico condicionados por el pH.',
+    assumptions: 'Reparto de la especie neutra (D = Kd·α) · resina con balance en 3 compartimentos · cotejado con Harris y Ringbom.',
+    views: [
+      { id: 'extraccion', label: 'Extracción L–L', component: ExtraccionLiquido },
+      { id: 'ionexchange', label: 'Intercambio iónico', component: IntercambioIonico },
     ],
   },
   {
     id: 'titulaciones', label: 'Titulaciones',
-    tabs: [
-      { id: 'titulacion', label: 'Titulaciones', component: Titulacion },
+    desc: 'Curvas de valoración ácido-base, EDTA, redox, precipitación y potenciométricas.',
+    assumptions: 'pH/pM/pe exactos punto a punto con dilución · función de Gran y cuantitatividad · cotejado con Harris y Spana.',
+    views: [
+      { id: 'titulacion', label: 'Curvas de titulación', component: Titulacion },
+    ],
+  },
+  {
+    id: 'actividad', label: 'Actividad',
+    desc: 'Coeficientes γ de Debye–Hückel, fuerza iónica y pKw aparente.',
+    assumptions: 'Debye–Hückel extendida (a ≈ 3 Å) válida a I ≲ 0.1 M · K′w = Kw/(γH·γOH) · cotejado con Harris.',
+    views: [
+      { id: 'actividad', label: 'Debye–Hückel', component: Actividad },
     ],
   },
 ];
 
-function initialTabState(): { sectionId: string; tabBySection: Record<string, string> } {
-  const defaults = Object.fromEntries(SECTIONS.map((s) => [s.id, s.tabs[0].id]));
+function findHubByView(viewId: string): Hub | undefined {
+  return HUBS.find((h) => h.views.some((v) => v.id === viewId));
+}
+
+function initialViewId(): string | null {
   const m = new URLSearchParams(window.location.search).get('m');
-  if (m) {
-    for (const section of SECTIONS) {
-      const tab = section.tabs.find((t) => t.id === m);
-      if (tab) return { sectionId: section.id, tabBySection: { ...defaults, [section.id]: tab.id } };
-    }
-  }
-  return { sectionId: 'simples', tabBySection: defaults };
+  if (m && findHubByView(m)) return m;
+  return null; // no (valid) module in the URL → home
 }
 
 export default function App() {
   const { showActivityNote, setShowActivityNote } = useActivityNote();
-  const [sectionId, setSectionId] = useState(() => initialTabState().sectionId);
-  const [tabBySection, setTabBySection] = useState<Record<string, string>>(() => initialTabState().tabBySection);
+  const [activeViewId, setActiveViewId] = useState<string | null>(initialViewId);
+  // Remember the last visited view per hub so hub tabs return where you left off.
+  const [viewByHub, setViewByHub] = useState<Record<string, string>>(() => {
+    const defaults = Object.fromEntries(HUBS.map((h) => [h.id, h.views[0].id]));
+    const v = initialViewId();
+    if (v) {
+      const hub = findHubByView(v)!;
+      defaults[hub.id] = v;
+    }
+    return defaults;
+  });
 
-  const section = SECTIONS.find((s) => s.id === sectionId)!;
-  const tabId = tabBySection[sectionId];
-  const tab = section.tabs.find((t) => t.id === tabId) ?? section.tabs[0];
-  const ActiveModule = tab.component;
-  const showSubTabs = section.tabs.length > 1;
+  const hub = activeViewId ? findHubByView(activeViewId) : undefined;
+  const view = hub?.views.find((v) => v.id === activeViewId);
+  const showSubTabs = (hub?.views.length ?? 0) > 1;
 
-  const setTabId = (id: string) => {
-    setTabBySection({ ...tabBySection, [sectionId]: id });
+  const openView = (viewId: string) => {
+    const h = findHubByView(viewId);
+    if (!h) return;
+    setViewByHub((prev) => ({ ...prev, [h.id]: viewId }));
+    setActiveViewId(viewId);
   };
 
-  // Sync ?m= whenever the active tab changes (modules override with ?s= via their own hook).
-  useEffect(() => { syncModuleUrl(tabId); }, [tabId]);
+  const openHub = (hubId: string) => {
+    const h = HUBS.find((x) => x.id === hubId);
+    if (!h) return;
+    setActiveViewId(viewByHub[h.id] ?? h.views[0].id);
+  };
+
+  const goHome = () => setActiveViewId(null);
+
+  // Sync ?m= whenever the active view changes (modules override with ?s= via their own hook).
+  useEffect(() => { syncModuleUrl(activeViewId); }, [activeViewId]);
 
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">
+        <button type="button" className="brand brand-btn" onClick={goHome} aria-label="Ir al inicio">
           <BrandLogo size={32} className="brand-logo" />
           <div className="brand-text">
             <h1>Equilibria Lab</h1>
             <span className="brand-sub">Simulador de equilibrio químico</span>
           </div>
-        </div>
+        </button>
         <MobileNav
-          sections={SECTIONS.map(({ id, label }) => ({ id, label }))}
-          sectionId={sectionId}
-          onSectionChange={setSectionId}
-          tabs={section.tabs.map(({ id, label }) => ({ id, label }))}
-          tabId={tabId}
-          onTabChange={setTabId}
+          sections={HUBS.map(({ id, label }) => ({ id, label }))}
+          sectionId={hub?.id ?? ''}
+          onSectionChange={openHub}
+          tabs={(hub?.views ?? []).map(({ id, label }) => ({ id, label }))}
+          tabId={activeViewId ?? ''}
+          onTabChange={openView}
           showTabs={showSubTabs}
         />
-        <nav className="sections desktop-only" role="tablist" aria-label="Secciones">
-          {SECTIONS.map((s) => {
-            const selected = sectionId === s.id;
+        <nav className="sections desktop-only" role="tablist" aria-label="Temas">
+          {HUBS.map((h) => {
+            const selected = hub?.id === h.id;
             return (
               <button
-                key={s.id}
+                key={h.id}
                 role="tab"
                 type="button"
                 aria-selected={selected}
                 className={selected ? 'section-btn active' : 'section-btn'}
-                onClick={() => setSectionId(s.id)}
+                onClick={() => openHub(h.id)}
               >
-                {s.label}
+                {h.label}
               </button>
             );
           })}
         </nav>
+        <ThemeToggle />
       </header>
 
-      {showSubTabs && (
+      {hub && showSubTabs && (
         <div className="subnav desktop-only">
-          <div className="subnav-tabs" role="tablist" aria-label={`Módulos de ${section.label}`}>
-            {section.tabs.map((t) => {
-              const selected = tabId === t.id;
+          <div className="subnav-tabs" role="tablist" aria-label={`Vistas de ${hub.label}`}>
+            {hub.views.map((v) => {
+              const selected = activeViewId === v.id;
               return (
                 <button
-                  key={t.id}
+                  key={v.id}
                   role="tab"
                   type="button"
                   aria-selected={selected}
                   className={selected ? 'subnav-tab active' : 'subnav-tab'}
-                  onClick={() => setTabId(t.id)}
+                  onClick={() => openView(v.id)}
                 >
-                  {t.label}
+                  {v.label}
                 </button>
               );
             })}
           </div>
+          <details className="hub-assumptions">
+            <summary>ⓘ Supuestos</summary>
+            <p>{hub.assumptions}</p>
+          </details>
         </div>
       )}
 
       <main className="content">
-        <Suspense fallback={<div className="module-loading">Cargando…</div>}>
-          <ActiveModule />
-        </Suspense>
+        {view ? (
+          <Suspense fallback={<div className="module-loading">Cargando…</div>}>
+            <view.component />
+          </Suspense>
+        ) : (
+          <Home hubs={HUBS.map(({ id, label, desc, views }) => ({
+            id, label, desc, views: views.map(({ id: vid, label: vlabel }) => ({ id: vid, label: vlabel })),
+          }))} onOpenView={openView} />
+        )}
       </main>
 
       <footer className="assumptions">
@@ -170,17 +246,20 @@ export default function App() {
             T = 25 °C · actividades ≈ concentraciones · K<sub>w</sub> = 10⁻¹⁴ ·
             constantes de Harris, Skoog, Bard 1985 y Stumm &amp; Morgan 1996 ·
             exporta gráficas con el botón flotante sobre la gráfica
+            {hub && <> · <strong>{hub.label}:</strong> {hub.assumptions}</>}
           </p>
         </details>
         <span className="footer-meta">
-          <label className="footer-toggle">
-            <input
-              type="checkbox"
-              checked={showActivityNote}
-              onChange={(e) => setShowActivityNote(e.target.checked)}
-            />
-            Mostrar corrección γ
-          </label>
+          {activeViewId === 'acidobase' && (
+            <label className="footer-toggle">
+              <input
+                type="checkbox"
+                checked={showActivityNote}
+                onChange={(e) => setShowActivityNote(e.target.checked)}
+              />
+              Mostrar corrección γ
+            </label>
+          )}
           <span className="footer-version">v{version}</span>
         </span>
       </footer>
