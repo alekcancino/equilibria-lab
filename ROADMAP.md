@@ -33,7 +33,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 
 ### Data and export
 
-- Equilibrium constants database: formation constants, E° values, Ksp, pKa — sourced from Medusa/HYDRA and NIST SRD-46 (cited per entry)
+- Equilibrium constants database: formation constants, E° values, Ksp, pKa — sourced from Harris (*Quantitative Chemical Analysis*) and Skoog (*Analytical Chemistry*)
 - CSV export with metadata headers on every chart (module, system, conditions, date)
 - Shareable scenario links: full module state encoded in the URL
 
@@ -50,6 +50,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP to two chemical axes. |
 | **Competitive precipitation** | Simultaneous solubility of multiple solids sharing a common ion; separation-window analysis. |
+| **Expanded constants database (Medusa/HYDRA, NIST SRD-46)** | Cross-check and expand the current Harris/Skoog-sourced constants against Medusa/HYDRA and NIST SRD-46, with per-entry provenance citations. |
 
 ### Medium-term
 
