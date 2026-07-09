@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
-import { useShareEffect } from '../hooks/useShareableState';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useShareEffect, hasSharedUrlState } from '../hooks/useShareableState';
+import { useComplejosCarryOver, type ComplejosCarryOver } from '../context/ComplejosCarryOverContext';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -25,6 +26,7 @@ import {
 } from '../lib/complexDatabase';
 
 const PL_POINTS = 400;
+const MODULE_ID = 'complejos';
 
 interface ComplexState {
   metalLabel: string;
@@ -42,6 +44,17 @@ function defaultState(): ComplexState {
     speciesLabels: null,
     reference: null,
   };
+}
+
+/** Seeds a fresh mount from the hub's cross-view carry-over (metal + generic
+ * ligand ladder only — see ComplejosCarryOverContext for the field mapping). */
+function seedFromCarryOver(c: ComplejosCarryOver): ComplexState {
+  const base = defaultState();
+  if (hasSharedUrlState(MODULE_ID)) return base;
+  if (c.metalLabel) base.metalLabel = c.metalLabel;
+  if (c.ligandLabel) base.ligandLabel = c.ligandLabel;
+  if (c.logBetas && c.logBetas.length > 0) base.logBetas = [...c.logBetas];
+  return base;
 }
 
 function fromPreset(p: ComplexPreset): ComplexState {
@@ -63,13 +76,25 @@ function effectiveLabels(s: ComplexState): string[] {
 
 /** Multi-ligand complexation equilibrium: DUZP + α distribution + Bjerrum + logC. */
 export default function Complejos() {
-  const [sys, setSys] = useState<ComplexState>(defaultState);
+  const { carryOver, setCarryOver } = useComplejosCarryOver();
+  const [sys, setSys] = useState<ComplexState>(() => seedFromCarryOver(carryOver));
   const [cM, setCM] = useState(0.01);
   const [cL, setCL] = useState(0.04);
   const [showEquil, setShowEquil] = useState(true);
   const [showPXPrime, setShowPXPrime] = useState(false);
   const [pHScale, setPHScale] = useState(10);
   const [side, setSide] = useState<SideReactionEditorState>(defaultSideEditorState);
+
+  useEffect(() => {
+    // Don't push the untouched placeholder ('M'/'L') — otherwise the very
+    // first tab switch out of a fresh Complejos mount pollutes the other two
+    // views with a meaningless logβ=8 stub before the user has done anything.
+    const touched = sys.metalLabel !== 'M' || sys.ligandLabel !== 'L';
+    if (!touched) return;
+    setCarryOver((prev) => ({
+      ...prev, metalLabel: sys.metalLabel, ligandLabel: sys.ligandLabel, logBetas: sys.logBetas,
+    }));
+  }, [sys.metalLabel, sys.ligandLabel, sys.logBetas, setCarryOver]);
 
   useShareEffect('complejos', { sys, cM, cL, showEquil, showPXPrime, pHScale, side }, (s) => {
     if (s.sys) setSys(s.sys);

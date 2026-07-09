@@ -25,6 +25,14 @@ function readUrlState<T>(moduleId: string, defaultState: T): T {
   return decodeState(s, defaultState);
 }
 
+/** True when the current URL carries a restorable ?m=<moduleId>&s=… snapshot
+ * for this module — used to skip cross-view carry-over seeding when a share
+ * link (or a previous visit's own state) already determines the initial state. */
+export function hasSharedUrlState(moduleId: string): boolean {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('m') === moduleId && !!params.get('s');
+}
+
 function writeUrl(moduleId: string, state: unknown): void {
   const params = new URLSearchParams();
   params.set('m', moduleId);
