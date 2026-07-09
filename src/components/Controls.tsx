@@ -415,19 +415,23 @@ export function ModelBadge({
   );
 }
 
-/** Reserved for internal metadata; not rendered in the UI. */
-export function RefBadge(props: { reference?: string }) {
-  void props.reference;
-  return null;
+/** Shows the literature citation for an unedited database preset. */
+export function RefBadge({ reference }: { reference?: string }) {
+  if (!reference) return null;
+  return (
+    <p className="ref-badge">
+      <strong>Fuente:</strong> {reference}
+    </p>
+  );
 }
 
 /** Highlighted numeric result card (e.g. pH at equivalence point). */
-export function ResultCard({ items }: { items: { label: ReactNode; value: string }[] }) {
+export function ResultCard({ items }: { items: { label: ReactNode; value: string; helpId?: string }[] }) {
   return (
     <div className="result-card">
       {items.map((it, i) => (
         <div key={i} className="result-item">
-          <span className="result-label">{it.label}</span>
+          <span className="result-label">{it.label}{it.helpId && <HelpTip id={it.helpId} />}</span>
           <span className="result-value">{it.value}</span>
         </div>
       ))}
@@ -513,7 +517,7 @@ export function Disclosure({
 export function ResultCardRow({
   items,
 }: {
-  items: { label: ReactNode; value: ReactNode; accent?: boolean }[];
+  items: { label: ReactNode; value: ReactNode; accent?: boolean; helpId?: string }[];
 }) {
   // Rendered as a slim metric header that sits ABOVE the plot (via CSS order),
   // reading as the chart card's header row. The `accent` item is emphasized in
@@ -523,7 +527,7 @@ export function ResultCardRow({
     <div className="result-row">
       {items.map((it, i) => (
         <div key={i} className={it.accent ? 'metric accent' : 'metric'}>
-          <span className="metric-k">{it.label}</span>
+          <span className="metric-k">{it.label}{it.helpId && <HelpTip id={it.helpId} />}</span>
           <span className="metric-v">{it.value}</span>
         </div>
       ))}

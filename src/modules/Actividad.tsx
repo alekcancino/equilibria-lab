@@ -156,7 +156,7 @@ export default function Actividad() {
             { label: 'γ (z = 2)', value: gamma2.toFixed(3) },
             { label: 'γ (z = 3)', value: gamma3.toFixed(3) },
             { label: `log γ (z = ${z})`, value: logGamma.toFixed(3) },
-            { label: 'pKw aparente', value: pKwApp.toFixed(2) },
+            { label: 'pKw aparente', value: pKwApp.toFixed(2), helpId: 'pKwApp' },
             { label: 'a_H ≈ γ·[H⁺]', value: formatSci(gammaH * Math.pow(10, -pH)) },
           ]} />
         </PanelSection>
@@ -178,7 +178,7 @@ export default function Actividad() {
           { label: 'γ (z = 1)', value: Number.isFinite(gamma1) ? gamma1.toFixed(3) : '—' },
           { label: 'γ (z = 2)', value: Number.isFinite(gamma2) ? gamma2.toFixed(2) : '—' },
           { label: 'γ (z = 3)', value: Number.isFinite(gamma3) ? gamma3.toFixed(2) : '—' },
-          { label: 'pKw aparente', value: Number.isFinite(pKwApp) ? pKwApp.toFixed(2) : '—' },
+          { label: 'pKw aparente', value: Number.isFinite(pKwApp) ? pKwApp.toFixed(2) : '—', helpId: 'pKwApp' },
         ]} />
       </section>
     </div>

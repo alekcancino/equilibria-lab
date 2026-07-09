@@ -49,6 +49,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | **In-app validation and assumptions** | Surface each module's simplifying assumptions and its cross-check status (validated against Spana/HALTAFALL) directly in the UI, so results are auditable at a glance. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP to two chemical axes. |
+| **Molecular acid/base solid solubility** | Solubility of a neutral organic acid/base solid (intrinsic S₀ + pH-dependent ionization, e.g. benzoic acid, barbiturates) — the mirror case of the existing ionic-salt Ksp model, where solubility rises with pH instead of falling. Not covered by the current `SaltPreset`/`solubility.ts` model. |
 | **Competitive precipitation** | Simultaneous solubility of multiple solids sharing a common ion; separation-window analysis. |
 
 ### Medium-term

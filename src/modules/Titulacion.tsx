@@ -402,7 +402,7 @@ function AcidBaseTitration() {
         />
         <ResultCardRow items={[
           { label: 'pH en equivalencia', value: Number.isFinite(pHLastEq) ? pHLastEq.toFixed(2) : '—', accent: true },
-          { label: 'Veq (Gran)', value: Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—' },
+          { label: 'Veq (Gran)', value: Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—', helpId: 'gran' },
           { label: 'q (cuantitatividad)', value: Number.isFinite(qPercent) ? `${qPercent >= 99.95 ? qPercent.toFixed(3) : qPercent.toFixed(1)} %` : '—' },
           ...(Number.isFinite(granErrorPct)
             ? [{ label: '% error P.E.', value: `${granErrorPct.toFixed(2)} %` }]
@@ -624,7 +624,7 @@ function EdtaTitration() {
             }))}
             onSelect={applyPreset}
           />
-          <RefBadge reference={presetIsUnedited ? 'Harris, QCA 9.ª ed., tabla 12-1; Ringbom.' : undefined} />
+          <RefBadge reference={presetIsUnedited ? 'Harris, QCA, tabla 12-1; Ringbom.' : undefined} />
         </PanelSection>
         <PanelSection title="Condiciones" icon="⚗">
           <Slider label="pH del tampón" value={pH} min={1} max={13} step={0.1} onChange={setPH} decimals={1} />
@@ -978,7 +978,7 @@ function PrecipTitration() {
           <LabelField label="Anión analito" value={anionName} onChange={setAnionName} />
           <LabelField label="Fórmula del precipitado" value={saltFormula} onChange={setSaltFormula} />
           <Slider label="pKsp del precipitado" helpId="pKsp" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
-          <RefBadge reference={presetIsUnedited ? 'Harris, QCA 9.ª ed., cap. 16; Skoog, Fundamentos de Química Analítica.' : undefined} />
+          <RefBadge reference={presetIsUnedited ? 'Harris, QCA, cap. 16; Skoog, Fundamentos de Química Analítica.' : undefined} />
         </PanelSection>
 
         <PanelSection title="Condiciones" icon="⚗">

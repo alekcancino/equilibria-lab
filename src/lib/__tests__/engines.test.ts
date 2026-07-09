@@ -7,6 +7,7 @@ import {
   hydroxideSolCurve, precipitationPH,
 } from '../conditional';
 import { peConditional, peStandard, alphaRedox, redoxTitrationCurve } from '../redox';
+import { electrodePotential } from '../sideReactions';
 import { granPlot, titrationCurve, titratableProtons, firstDerivative } from '../titration';
 import { ladderFractions, ladderLogC, predominanceZones } from '../ladder';
 import { anionFreeFraction, solubility, solubilityVsPX } from '../solubility';
@@ -207,6 +208,22 @@ describe('peConditional', () => {
     expect(pe0).toBeGreaterThan(pe7);
     // Δpe°′ = (mH/n)·ΔpH = (8/5)·7 = 11.2
     tol(pe0 - pe7, 11.2, 0.1);
+  });
+});
+
+describe('electrodePotential', () => {
+  // Harris, QCA 8th ed., §13 "Nernst Equation for a Complete Reaction" (p.310-311):
+  // Ag+ + e- ⇌ Ag(s), E°=0.799V, [Ag+]=0.50M → E=0.781V.
+  it('Ag+/Ag(s) a [Ag+]=0.50 M → E=0.781 V (Harris)', () => {
+    const pAg = -Math.log10(0.50);
+    const E = electrodePotential(0.799, 1, pAg);
+    tol(E, 0.781, 0.001);
+  });
+
+  it('E decrece al diluir (menos oxidante, pM más alto)', () => {
+    const eConc = electrodePotential(0.799, 1, -Math.log10(1.0));
+    const eDilute = electrodePotential(0.799, 1, -Math.log10(1e-6));
+    expect(eDilute).toBeLessThan(eConc);
   });
 });
 

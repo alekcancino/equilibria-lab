@@ -164,6 +164,12 @@ export default function Redox() {
             { label: 'log K', value: logK.toFixed(1) },
           ]} />
         </PanelSection>
+        <InfoBox title="Cómo leer estos diagramas">
+          <p>
+            <strong>DUZP</strong> (zonas de predominio): en cada tramo de pe domina una
+            especie; las fronteras están en los pe°′ condicionales de cada par.
+          </p>
+        </InfoBox>
         <InfoBox title="Cómo leer la escala de predicción">
           <p>
             En la escala de pe, cada par se coloca en su pe°′ condicional con el

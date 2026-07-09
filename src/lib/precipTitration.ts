@@ -1,7 +1,7 @@
 // Argentometric titration: Ag⁺ + X⁻ → AgX↓ (1:1 stoichiometry)
 // Computes pAg (and pX) curve vs. volume of AgNO₃ added.
 // Scope: 1:1 reactions only (m:x = 1:1); other stoichiometries are not modelled.
-// Source: Harris QCA 9th ed. ch. 16; Skoog PAQUI.
+// Source: Harris QCA ch. 16; Skoog PAQUI.
 
 export interface PrecipParams {
   pKsp: number;       // pKsp of the precipitate (e.g. 9.74 for AgCl)

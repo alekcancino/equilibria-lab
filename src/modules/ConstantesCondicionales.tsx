@@ -515,8 +515,8 @@ export default function ConstantesCondicionales() {
         <PanelSection title="Resultado" icon="∑">
         <ResultCard items={[
           { label: 'pH óptimo', value: pHopt.toFixed(1) },
-          { label: 'log K\'máx', value: logKmax.toFixed(1) },
-          { label: `log K′ a pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(2) },
+          { label: 'log K\'máx', value: logKmax.toFixed(1), helpId: 'logKprime' },
+          { label: `log K′ a pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(2), helpId: 'logKprime' },
           { label: `pendiente d(log K′)/dpH a pH ${s.evalPH.toFixed(1)}`, value: slopeAtEval.toFixed(2) },
           { label: 'Ventana óptima', value: feasWin ? `pH ${feasWin[0].toFixed(1)}–${feasWin[1].toFixed(1)}` : 'No supera el umbral' },
           { label: `% formado a Co (pH ${s.evalPH.toFixed(1)})`, value: `${pctFormado.toFixed(1)} %` },
@@ -552,8 +552,8 @@ export default function ConstantesCondicionales() {
           { label: `% formado a Co`, value: `${pctFormado.toFixed(1)} %`, accent: true },
           { label: 'pH 50 %', value: fmtPH(phForPct.p50) },
           { label: 'pH óptimo', value: pHopt.toFixed(1) },
-          { label: "log K′máx", value: logKmax.toFixed(1) },
-          { label: `log K′ pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(1) },
+          { label: "log K′máx", value: logKmax.toFixed(1), helpId: 'logKprime' },
+          { label: `log K′ pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(1), helpId: 'logKprime' },
         ]} />
       </section>
     </div>
