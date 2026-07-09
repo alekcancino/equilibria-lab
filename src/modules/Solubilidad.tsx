@@ -4,12 +4,13 @@ import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import {
-  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, PanelSection, RefBadge,
+  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, RefBadge,
   ResultCard, ResultCardRow, Segmented, Slider, Toggle,
 } from '../components/Controls';
 import { SALTS, type SaltPreset } from '../lib/database';
 import { formatMolar } from '../lib/format';
 import { solubility, acidSolidSolubility, baseSolidSolubility } from '../lib/solubility';
+import { toSub } from '../lib/complexDatabase';
 
 const PH_POINTS = 300;
 
@@ -187,33 +188,9 @@ export default function Solubilidad() {
               />
               <LabelField label="Sal (nombre libre)" value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
               <Slider label="pKsp" helpId="pKsp" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
-              <div className="control">
-                <div className="control-header">
-                  <span className="control-label">Estequiometría MmXx — coef. catión m</span>
-                  <span className="control-value">{salt.m}</span>
-                </div>
-                <div className="segmented" style={{ marginTop: 4 }}>
-                  {[1, 2, 3, 4].map((n) => (
-                    <button key={n} className={salt.m === n ? 'seg-btn active' : 'seg-btn'} onClick={() => edited({ m: n })}>
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="control">
-                <div className="control-header">
-                  <span className="control-label">Estequiometría MmXx — coef. anión x</span>
-                  <span className="control-value">{salt.x}</span>
-                </div>
-                <div className="segmented" style={{ marginTop: 4 }}>
-                  {[1, 2, 3, 4].map((n) => (
-                    <button key={n} className={salt.x === n ? 'seg-btn active' : 'seg-btn'} onClick={() => edited({ x: n })}>
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <p className="hint">M{salt.m > 1 ? salt.m : ''}X{salt.x > 1 ? salt.x : ''} — ej. AgCl (1:1), CaF₂ (1:2), Fe(OH)₃ (1:3), Ag₂CrO₄ (2:1).</p>
+              <NumberSegmented label="Estequiometría MmXx — coef. catión m" value={salt.m} options={[1, 2, 3, 4]} onChange={(m) => edited({ m })} />
+              <NumberSegmented label="Estequiometría MmXx — coef. anión x" value={salt.x} options={[1, 2, 3, 4]} onChange={(x) => edited({ x })} />
+              <p className="hint">M{salt.m > 1 ? toSub(salt.m) : ''}X{salt.x > 1 ? toSub(salt.x) : ''} — ej. AgCl (1:1), CaF₂ (1:2), Fe(OH)₃ (1:3), Ag₂CrO₄ (2:1).</p>
               <p className="hint">pKa del ácido conjugado del anión (vacío si el anión no es básico):</p>
               {salt.anionPKas.length > 0 ? (
                 <ConstantList

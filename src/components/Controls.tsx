@@ -223,6 +223,32 @@ export function Segmented({
   );
 }
 
+/** Segmented picker for a small integer stoichiometric coefficient/charge
+ * (e.g. m, x, p, q, zM), wrapped in the standard label+value control shell. */
+export function NumberSegmented({
+  label, value, options, onChange, suffix = '', hint,
+}: {
+  label: string;
+  value: number;
+  options: number[];
+  onChange: (n: number) => void;
+  suffix?: string;
+  hint?: ReactNode;
+}) {
+  return (
+    <div className="control">
+      <div className="control-header">
+        <span className="control-label">{label}</span>
+        <span className="control-value">{value}{suffix}</span>
+      </div>
+      <div style={{ marginTop: 4 }}>
+        <Segmented options={options.map((n) => ({ value: String(n), label: String(n) }))} value={String(value)} onChange={(v) => onChange(Number(v))} />
+      </div>
+      {hint && <p className="hint">{hint}</p>}
+    </div>
+  );
+}
+
 /** Free-text field for naming the compound/system. */
 export function LabelField({
   label, value, onChange, helpId,
