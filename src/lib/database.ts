@@ -131,8 +131,13 @@ export const SALTS: SaltPreset[] = [
 /** Color for system markers (pH, pe, equilibrium lines) — Okabe-Ito pink */
 export const MARKER_COLOR = '#CC79A7';
 
-/** Okabe-Ito palette (colorblind-safe) for species series */
+/**
+ * Species series palette: six core Okabe-Ito hues (colorblind-safe) plus
+ * violet/olive extras — the old slate/gray slots 7-8 failed the palette
+ * lightness/chroma validation in both themes. Dark-mode equivalents are
+ * remapped centrally in lib/plotTheme.ts.
+ */
 export const SPECIES_COLORS = [
   '#0072B2', '#D55E00', '#009E73', '#CC79A7',
-  '#E69F00', '#56B4E9', '#2C3E50', '#999999',
+  '#E69F00', '#56B4E9', '#7B5CD6', '#9A6A00',
 ];

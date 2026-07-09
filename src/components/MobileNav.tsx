@@ -31,13 +31,14 @@ export default function MobileNav({
   return (
     <div className="mobile-nav">
       <label className="mobile-nav-field">
-        <span className="mobile-nav-label">Sección</span>
+        <span className="mobile-nav-label">Tema</span>
         <select
           className="mobile-nav-select"
           value={sectionId}
           onChange={(e) => onSectionChange(e.target.value)}
-          aria-label="Sección del simulador"
+          aria-label="Tema del simulador"
         >
+          {sectionId === '' && <option value="" disabled>Inicio</option>}
           {sections.map((s) => (
             <option key={s.id} value={s.id}>{s.label}</option>
           ))}
@@ -45,7 +46,7 @@ export default function MobileNav({
       </label>
       {showTabs && (
         <label className="mobile-nav-field">
-          <span className="mobile-nav-label">Módulo</span>
+          <span className="mobile-nav-label">Vista</span>
           <select
             className="mobile-nav-select"
             value={tabId}
