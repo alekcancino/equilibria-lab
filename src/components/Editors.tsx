@@ -21,12 +21,12 @@ export function AcidSystemEditor({
   includeStrong?: boolean;
   allowNoConstants?: boolean;
   showModel?: boolean;
-  /** Expose z0=+3 (aqua-acid cations, Fe³⁺/Al³⁺) and their presets. Only
-   * AcidoBase.tsx's "pH disolución pura" accounts for the counter-anion an
-   * aqua-acid cation's ladder needs when it doesn't reach a neutral species —
-   * Mezclas.tsx and Titulacion.tsx have their own, unrelated charge-balance
-   * wiring (saltLevel / analyteKind) that was never updated for z0=+3, so
-   * this stays off by default rather than silently mis-computing there. */
+  /** Expose z0=+3 (aqua-acid cations, Fe³⁺/Al³⁺) and their presets. Defaults
+   * to false since not every AcidSystemEditor caller wants cationic acids
+   * in its dropdown; AcidoBase.tsx and Titulacion.tsx opt in explicitly.
+   * Mezclas.tsx doesn't use this editor at all — it resolves presets and
+   * counter-ions directly via saltCounterIons/defaultStartIndex in
+   * equilibrium.ts, so it isn't gated by this prop. */
   allowAquaCations?: boolean;
 }) {
   const presets = ACIDS.filter((a) => (includeStrong || !a.strong) && (allowAquaCations || !a.aquaCation));

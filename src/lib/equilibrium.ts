@@ -116,3 +116,33 @@ export function solvePH(
   }
   return (lo + hi) / 2;
 }
+
+/**
+ * Counter-ions needed to prepare the species at ladder index `startIndex` of
+ * an M(z0, pKas) system (0 = fully protonated, charge z0; pKas.length = least
+ * protonated species, charge z0−pKas.length) as an electrically-neutral salt:
+ * a species with residual positive charge was dissolved with that many
+ * inert anions (Cl⁻, NO₃⁻…); negative charge, that many inert cations (Na⁺…);
+ * charge exactly 0 needs none (the "free" neutral acid or base form).
+ *
+ * This single formula covers every case without branching on the sign of z0:
+ * a neutral acid (z0=0, index 0), a protonatable base (0<z0≤pKas.length,
+ * index=z0 is the free base), and an aqua-acid cation that never reaches a
+ * neutral species within its modeled pKas (z0>pKas.length, e.g. Fe³⁺ — every
+ * reachable index still carries residual positive charge).
+ */
+export function saltCounterIons(z0: number, startIndex: number): { cations: number; anions: number } {
+  const charge = z0 - startIndex;
+  return charge < 0 ? { cations: -charge, anions: 0 } : { cations: 0, anions: charge };
+}
+
+/**
+ * Sensible default starting ladder index: the neutral species when the
+ * ladder reaches one (z0 ≤ pKas.length — ordinary acids/bases dissolve
+ * "bare", no counter-ion), otherwise the fully-protonated original ion
+ * (aqua-acid cations, which never reach neutral — e.g. Fe³⁺ itself, the
+ * most intuitive starting point, rather than an already-hydrolyzed form).
+ */
+export function defaultStartIndex(z0: number, pKasLength: number): number {
+  return z0 <= pKasLength ? z0 : 0;
+}

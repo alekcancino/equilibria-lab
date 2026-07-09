@@ -10,7 +10,7 @@ import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
 import { ladderFractions, ladderLogC, predominanceZones } from '../lib/ladder';
-import { solvePH } from '../lib/equilibrium';
+import { solvePH, saltCounterIons, defaultStartIndex } from '../lib/equilibrium';
 import { useActivityNote } from '../context/ActivityContext';
 
 const PH_POINTS = 400;
@@ -45,17 +45,13 @@ export default function AcidoBase() {
   }), [system.label, conc, ionicStrength]);
 
   const pHSystem = useMemo(() => {
-    // "pH disolución pura" assumes you dissolve whichever end of the ladder
-    // is electrically neutral (z0=0 acids: the first/most-protonated form;
-    // NH₃-type bases: the last form, reached after z0 proton-loss steps). An
-    // aqua-acid cation (Fe³⁺, z0=+3) with fewer modeled hydrolysis steps than
-    // its charge never reaches neutral — it can only be dissolved as a salt
-    // with an inert counter-anion (e.g. NO₃⁻ for Fe(NO₃)₃), contributing
-    // z0·c of anion charge (fixed by the parent cation's charge, independent
-    // of how much subsequently hydrolyzes).
-    const hasNeutralSpecies = system.z0 <= system.pKas.length;
-    const extraAnions = hasNeutralSpecies ? 0 : system.z0 * conc;
-    return solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }], 0, extraAnions, ionicStrength);
+    // "pH disolución pura" dissolves the system at its default ladder index
+    // (the neutral species when one exists; the parent ion itself for an
+    // aqua-acid cation that never reaches neutral, e.g. Fe³⁺) — see
+    // saltCounterIons/defaultStartIndex in equilibrium.ts for the general
+    // derivation, shared with titration.ts's analyte handling.
+    const { cations, anions } = saltCounterIons(system.z0, defaultStartIndex(system.z0, system.pKas.length));
+    return solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }], cations * conc, anions * conc, ionicStrength);
   }, [system, conc, ionicStrength]);
   const pHInvalid = !Number.isFinite(pHSystem);
 

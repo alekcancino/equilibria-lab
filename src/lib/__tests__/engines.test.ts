@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { solvePH, alphaFractions } from '../equilibrium';
+import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex } from '../equilibrium';
 import { complexFractions, bjerrumNumber, solvePL } from '../complexation';
 import { alphaY4, edtaTitrationCurve, EDTA_PKAS } from '../edta';
 import {
@@ -66,6 +66,35 @@ describe('solvePH', () => {
   it('HCl 0.1 M → pH ≈ 1.00', () => {
     const pH = solvePH([], 0, 0.1);
     tol(pH, 1.0, 0.05);
+  });
+});
+
+describe('saltCounterIons / defaultStartIndex', () => {
+  it('ácido acético (z0=0, 1 pKa): índice 0 = ácido puro, sin contraión', () => {
+    expect(saltCounterIons(0, 0)).toEqual({ cations: 0, anions: 0 });
+    expect(defaultStartIndex(0, 1)).toBe(0);
+  });
+
+  it('ácido fosfórico (z0=0, 3 pKas): índice 2 = sal disódica, 2 Na⁺', () => {
+    expect(saltCounterIons(0, 2)).toEqual({ cations: 2, anions: 0 });
+  });
+
+  it('amoniaco (z0=1, 1 pKa): índice 1 = base libre (NH₃), índice 0 = NH₄Cl', () => {
+    expect(saltCounterIons(1, 1)).toEqual({ cations: 0, anions: 0 });
+    expect(saltCounterIons(1, 0)).toEqual({ cations: 0, anions: 1 });
+    expect(defaultStartIndex(1, 1)).toBe(1); // defaults to the free base
+  });
+
+  it('Fe³⁺ (z0=3, 1 pKa, catión acuo-ácido): nunca llega a carga 0', () => {
+    expect(saltCounterIons(3, 0)).toEqual({ cations: 0, anions: 3 }); // Fe³⁺ puro (FeCl₃)
+    expect(saltCounterIons(3, 1)).toEqual({ cations: 0, anions: 2 }); // FeOH²⁺
+    expect(defaultStartIndex(3, 1)).toBe(0); // defaults to the parent ion, not FeOH²⁺
+  });
+
+  it('coincide con el fix ya verificado de AcidoBase/titration: Fe³⁺ 0.1 M → pH 1.65', () => {
+    const { anions } = saltCounterIons(3, defaultStartIndex(3, 1));
+    const pH = solvePH([{ c: 0.1, z0: 3, pKas: [2.2] }], 0, anions * 0.1);
+    tol(pH, 1.65, 0.02);
   });
 });
 
