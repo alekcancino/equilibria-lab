@@ -10,16 +10,16 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 
 ### Core equilibria
 
-- Acid–base: α fractions, log *C*–pH diagram, predominance zone diagram (DUZP), pure solution pH
+- Acid–base: α fractions, log *C*–pH diagram, predominance zone diagram (DUZP), pure solution pH, aqua-acid cations (Fe³⁺, Al³⁺)
 - Complexation: multi-ligand systems, Bjerrum number, α distributions, log *C* vs pL
 - Redox: α vs pe, spontaneous-reaction prediction, conditional pe°′
-- Solubility: log *s* vs pH with conditional Ksp, common-ion effect; Debye–Hückel activity corrections applied to the solver
+- Solubility: log *s* vs pH with conditional Ksp, common-ion effect, molecular acid/base solid solubility (pH-dependent ionization); Debye–Hückel activity corrections applied to the solver
 - Activity: ionic strength, γ vs *I* (extended Debye–Hückel); corrections wired to solubility, complexation, and conditional-constant engines
 
 ### Coupled equilibria
 
 - Pourbaix diagrams: *E*–pH for Fe, Cu, Mn, Zn, Cr and fully custom N-species / N-couples systems with auto-derived boundaries
-- Acid–base mixtures: up to four coexisting systems, buffer capacity β = *f*(pH)
+- Acid–base mixtures: up to four coexisting systems, any starting salt form per component, buffer capacity β = *f*(pH)
 - Conditional constants: log *K*′ = *f*(pH), side reactions, masking, feasibility window (Ringbom)
 - Selective precipitation: log *s* = *f*(pH) and log *s* = *f*(pX), separation windows, redissolution
 - Conditional potential: *E*°′ = *f*(pH), disproportionation (Latimer), *E*°′ = *f*(pX)
@@ -49,7 +49,6 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | **In-app validation and assumptions** | Surface each module's simplifying assumptions and its cross-check status (validated against Spana/HALTAFALL) directly in the UI, so results are auditable at a glance. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP to two chemical axes. |
-| **Molecular acid/base solid solubility** | Solubility of a neutral organic acid/base solid (intrinsic S₀ + pH-dependent ionization, e.g. benzoic acid, barbiturates) — the mirror case of the existing ionic-salt Ksp model, where solubility rises with pH instead of falling. Not covered by the current `SaltPreset`/`solubility.ts` model. |
 | **Competitive precipitation** | Simultaneous solubility of multiple solids sharing a common ion; separation-window analysis. |
 
 ### Medium-term
