@@ -11,6 +11,10 @@ import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex, type AcidB
 import { firstDerivative } from '../lib/titration';
 
 interface MixRow {
+  /** Stable React key, independent of array position — each row now hosts a
+   * stateful AcidSystemEditor (DbPanel/Avanzado open state lives in the DOM),
+   * so an index key would reattach that UI state to the wrong row on delete. */
+  id: number;
   system: AcidSystem;
   conc: number;
   /** Ladder index prepared as the starting species (0 = fully protonated form) */
@@ -18,6 +22,8 @@ interface MixRow {
 }
 
 const MAX_ROWS = 4;
+
+let nextRowId = 0;
 
 // r.startIndex may be stale: from a shared URL predating the field, or left
 // behind when the user shrinks the pKa list in the editor — fall back rather
@@ -28,7 +34,14 @@ function validStartIndex(system: AcidSystem, startIndex: number): number {
     : defaultStartIndex(system.z0, system.pKas.length);
 }
 
-const newRow = (): MixRow => ({ system: defaultAcidSystem(), conc: 0.05, startIndex: 0 });
+const newRow = (): MixRow => ({ id: nextRowId++, system: defaultAcidSystem(), conc: 0.05, startIndex: 0 });
+
+// The system label is free text (AcidSystemEditor's LabelField has no
+// minimum length) — fall back rather than show a blank CSV column or
+// result-card row when the user clears it.
+function rowLabel(system: AcidSystem): string {
+  return system.label.trim() || 'Sistema sin nombre';
+}
 
 /** Multicomponent mixtures: mixture pH and its titration curve. */
 export default function Mezclas() {
@@ -51,6 +64,7 @@ export default function Mezclas() {
         if (!isValidAcidSystem(r.system)) return newRow();
         const system = { ...r.system, pKas: [...r.system.pKas] };
         return {
+          id: nextRowId++,
           system,
           conc: typeof r.conc === 'number' && Number.isFinite(r.conc) && r.conc > 0 ? r.conc : 0.05,
           startIndex: validStartIndex(system, r.startIndex ?? NaN),
@@ -99,7 +113,7 @@ export default function Mezclas() {
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Mezclas ácido-base',
-    Componentes: rows.map((r) => r.system.label).join(' + '),
+    Componentes: rows.map((r) => rowLabel(r.system)).join(' + '),
     'I / M': ionicStrength.toFixed(3),
   }), [rows, ionicStrength]);
 
@@ -120,7 +134,7 @@ export default function Mezclas() {
       const alphas = alphaFractions(h, r.system.pKas);
       const dominant = alphas.indexOf(Math.max(...alphas));
       items.push({
-        label: `${r.system.label.split(' (')[0]}`,
+        label: rowLabel(r.system).split(' (')[0],
         value: `${systemLabels(r.system)[dominant]} (α = ${alphas[dominant].toFixed(2)})`,
       });
     }
@@ -217,7 +231,7 @@ export default function Mezclas() {
           const startIndex = validStartIndex(r.system, r.startIndex);
           const labels = systemLabels(r.system);
           return (
-            <div key={i} className="mix-row">
+            <div key={r.id} className="mix-row">
               <div className="mix-row-header">
                 <span className="control-label">Componente {i + 1}</span>
                 {rows.length > 1 && (

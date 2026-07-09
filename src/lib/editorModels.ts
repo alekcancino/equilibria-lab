@@ -74,7 +74,10 @@ export function isValidAcidSystem(x: unknown): x is AcidSystem {
   if (typeof x !== 'object' || x === null) return false;
   const s = x as Record<string, unknown>;
   return typeof s.label === 'string'
-    && typeof s.z0 === 'number' && Number.isInteger(s.z0) && s.z0 >= 0 && s.z0 <= 4
+    // 0–3: the only z0 values AcidSystemEditor's select can ever produce
+    // (Editors.tsx); a higher value would pass validation but render with
+    // no matching <option>, desyncing the control from the real state.
+    && typeof s.z0 === 'number' && Number.isInteger(s.z0) && s.z0 >= 0 && s.z0 <= 3
     && Array.isArray(s.pKas) && s.pKas.every((p) => typeof p === 'number' && Number.isFinite(p))
     && (s.speciesLabels == null || (Array.isArray(s.speciesLabels) && s.speciesLabels.every((l) => typeof l === 'string')))
     && (s.reference == null || typeof s.reference === 'string');

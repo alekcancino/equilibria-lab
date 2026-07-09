@@ -21,6 +21,9 @@ describe('isValidAcidSystem', () => {
     expect(isValidAcidSystem({ ...base, pKas: ['4.76'] })).toBe(false);
     expect(isValidAcidSystem({ ...base, z0: 1.5 })).toBe(false);
     expect(isValidAcidSystem({ ...base, z0: -1 })).toBe(false);
+    // z0=4 would pass a naive range check but AcidSystemEditor's z0 select
+    // (Editors.tsx) never offers it — max is 3 (aqua-acid cations).
+    expect(isValidAcidSystem({ ...base, z0: 4 })).toBe(false);
     expect(isValidAcidSystem({ ...base, z0: 5 })).toBe(false);
     expect(isValidAcidSystem({ ...base, label: 42 })).toBe(false);
     expect(isValidAcidSystem({ ...base, speciesLabels: [1, 2] })).toBe(false);
