@@ -14,15 +14,28 @@ import type { SideReactionEditorState } from '../lib/sideReactions';
 
 export function AcidSystemEditor({
   system, onChange, includeStrong = false, allowNoConstants = false, showModel = true,
+  allowAquaCations = false,
 }: {
   system: AcidSystem;
   onChange: (s: AcidSystem) => void;
   includeStrong?: boolean;
   allowNoConstants?: boolean;
   showModel?: boolean;
+  /** Expose z0=+3 (aqua-acid cations, Fe³⁺/Al³⁺) and their presets. Only
+   * AcidoBase.tsx's "pH disolución pura" accounts for the counter-anion an
+   * aqua-acid cation's ladder needs when it doesn't reach a neutral species —
+   * Mezclas.tsx and Titulacion.tsx have their own, unrelated charge-balance
+   * wiring (saltLevel / analyteKind) that was never updated for z0=+3, so
+   * this stays off by default rather than silently mis-computing there. */
+  allowAquaCations?: boolean;
 }) {
-  const presets = ACIDS.filter((a) => includeStrong || !a.strong);
-  const role = system.z0 > 0 ? 'base' : 'ácido';
+  const presets = ACIDS.filter((a) => (includeStrong || !a.strong) && (allowAquaCations || !a.aquaCation));
+  // z0 > 0 alone doesn't mean "base": an aqua-acid cation (Fe³⁺, Al³⁺, z0=+3)
+  // is chemically an acid even though its most-protonated form is cationic.
+  // The tell is whether the modeled pKas actually reach a neutral species
+  // (charge 0) — a protonated base (BH⁺/B, BH₂²⁺/BH⁺/B…) always does; an
+  // aqua-acid with only its first hydrolysis step modeled stays cationic.
+  const role = system.z0 > 0 && system.z0 - system.pKas.length <= 0 ? 'base' : 'ácido';
   const classification = system.pKas.length === 0
     ? `${role} fuerte`
     : system.pKas.length === 1
@@ -47,7 +60,11 @@ export function AcidSystemEditor({
         values={system.pKas}
         min={-2}
         max={16}
-        minItems={allowNoConstants ? 0 : 1}
+        // An aqua-acid cation (z0≥3) with zero pKas is chemically ill-defined
+        // (no charge/anion convention applies) and downstream analyteKind
+        // classification (Titulacion.tsx) special-cases only z0=1 as "strong
+        // base" — never let the pKa list empty out for these.
+        minItems={system.z0 >= 3 ? 1 : allowNoConstants ? 0 : 1}
         initialValue={system.z0 > 0 ? 9.25 : 4.76}
         onChange={(pKas) => {
           const shouldRename = allowNoConstants && isGenericSystemLabel(system.label);
@@ -70,6 +87,7 @@ export function AcidSystemEditor({
             { value: '0', label: '0 — ácido neutro (HnA)' },
             { value: '1', label: '+1 — base protonada (BH⁺)' },
             { value: '2', label: '+2 — diamina protonada (BH₂²⁺)' },
+            ...(allowAquaCations ? [{ value: '3', label: '+3 — catión acuo-ácido (M³⁺, ej. Fe³⁺, Al³⁺)' }] : []),
           ]}
           onChange={(v) => {
             const z0 = parseInt(v, 10);

@@ -16,6 +16,11 @@ export interface AcidPreset {
   isBase?: boolean;
   /** true if it is a strong acid/base (pKa not applicable for titration) */
   strong?: boolean;
+  /** true for a hydrated M³⁺ cation acid (Fe³⁺, Al³⁺) whose modeled pKas
+   * don't reach a neutral species — only AcidoBase.tsx's "pH disolución
+   * pura" accounts for the counter-anion this needs, so it's opt-in
+   * (AcidSystemEditor's allowAquaCations) rather than shown everywhere. */
+  aquaCation?: boolean;
 }
 
 export const ACIDS: AcidPreset[] = [
@@ -78,6 +83,16 @@ export const ACIDS: AcidPreset[] = [
   {
     id: 'naoh', name: 'Hidróxido de sodio (fuerte)', formula: 'NaOH', z0: 0, pKas: [15.7],
     speciesLabels: ['NaOH', 'OH⁻'], isBase: true, strong: true,
+  },
+  {
+    // Aqua-acid cations: the hydrated M³⁺ ion is itself a weak acid
+    // (Fe(H₂O)₆³⁺ ⇌ Fe(H₂O)₅OH²⁺ + H⁺) — z0=+3, first hydrolysis step only.
+    id: 'fe3aq', name: 'Fe³⁺ (acuo-ácido)', formula: '[Fe(H₂O)₆]³⁺', z0: 3, pKas: [2.2],
+    speciesLabels: ['Fe³⁺', 'FeOH²⁺'], aquaCation: true,
+  },
+  {
+    id: 'al3aq', name: 'Al³⁺ (acuo-ácido)', formula: '[Al(H₂O)₆]³⁺', z0: 3, pKas: [5.0],
+    speciesLabels: ['Al³⁺', 'AlOH²⁺'], aquaCation: true,
   },
 ];
 

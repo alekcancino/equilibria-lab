@@ -532,6 +532,18 @@ describe('titrationCurve', () => {
     });
     tol(curve.pHs[0], 2.87, 0.05);
   });
+
+  it('Fe³⁺ 0.1 M (catión acuo-ácido, z0=3 > pKas.length=1) → pH inicial ≈ 1.65', () => {
+    // Same golden value as AcidoBase.tsx's "pH disolución pura" for the Fe³⁺
+    // preset — the analyte's own z0·c counter-anion must be added even
+    // before any titrant is dosed (v=0), or the ladder never balances.
+    const curve = titrationCurve({
+      analyte: { z0: 3, pKas: [2.2] },
+      titrantIsAcid: false,
+      cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 50, points: 50,
+    });
+    tol(curve.pHs[0], 1.65, 0.05);
+  });
 });
 
 describe('firstDerivative', () => {
