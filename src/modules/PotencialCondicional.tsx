@@ -8,7 +8,7 @@
 //   3. Disproportionation: the intermediate species in a Latimer diagram is unstable
 //      when E°'(right) > E°'(left).
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useShareableState } from '../hooks/useShareableState';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
@@ -19,7 +19,7 @@ import { CoupleEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
 import { NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
-import { alphaL } from '../lib/conditional';
+import { alphaH, alphaL } from '../lib/conditional';
 import {
   defaultSideEditorState, electrodePotential, e0PrimeAtPH,
 } from '../lib/sideReactions';
@@ -71,6 +71,11 @@ function defaultState() {
     pxLogBetasOx: [5.28, 9.30, 12.06],   // FeF²⁺, FeF₂⁺, FeF₃
     pxLogBetasRed: [1.0],                  // FeF⁺ (weak)
     showPX: false,
+    // pX′ condicional: X itself protonates (e.g. NH₃/NH₄⁺) — the axis shifts
+    // from free [X] to total analytical X at a fixed pH.
+    showPXPrime: false,
+    pxPKasX: [9.25],
+    pxPHFixed: 7,
     showElectrode: false,
     e0Metal: 0.25,
     nElectrode: 2,
@@ -279,13 +284,26 @@ export default function PotencialCondicional() {
     return st.pxE0 + (S / st.pxN) * Math.log10(aRed / aOx);
   }), [pXs, st.pxE0, st.pxN, st.pxLogBetasOx, st.pxLogBetasRed]);
 
+  // pX′ condicional (Baeza §2.8.1): X itself protonates (e.g. NH₃/NH₄⁺), so
+  // the analytical (total) concentration needed for a given FREE [X] is
+  // cX_total = [X]_free · α_X(H) ⇒ pX′ = pX_free − log(α_X(H)). The shift is
+  // constant at a fixed pH (same pattern as Complejos.tsx's scaleX for pL′).
+  const alphaXH = useMemo(
+    () => (st.showPXPrime ? alphaH(st.pxPKasX, st.pxPHFixed) : 1),
+    [st.showPXPrime, st.pxPKasX, st.pxPHFixed],
+  );
+  const scalePX = useCallback((pX: number) => pX - Math.log10(alphaXH), [alphaXH]);
+  const pxAxisLabel = st.showPXPrime
+    ? `pX′ condicional (pH ${st.pxPHFixed.toFixed(1)})`
+    : `p[${st.pxLigandLabel}]`;
+
   const EpxMin = Math.min(...EpxCurve) - 0.1;
   const EpxMax = st.pxE0 + 0.05;
 
   const pxShapes = useMemo<Partial<import('plotly.js').Shape>[]>(() => [{
-    type: 'line', x0: 0, x1: 14, y0: st.pxE0, y1: st.pxE0,
+    type: 'line', x0: scalePX(0), x1: scalePX(14), y0: st.pxE0, y1: st.pxE0,
     line: { color: '#aaaaaa', width: 1.5, dash: 'dot' },
-  }], [st.pxE0]);
+  }], [st.pxE0, scalePX]);
 
   // ── Diagram tabs ──────────────────────────────────────────────────────────
 
@@ -314,18 +332,18 @@ export default function PotencialCondicional() {
       node: (
         <Chart
           data={[{
-            x: pXs, y: EpxCurve, type: 'scatter', mode: 'lines',
+            x: pXs.map(scalePX), y: EpxCurve, type: 'scatter', mode: 'lines',
             name: `E°'(${st.pxOxLabel}/${st.pxRedLabel})`,
             line: { width: 3, color: C3 },
             hovertemplate: `E°' = %{y:.3f} V<extra>pX=%{x:.1f}</extra>`,
           }]}
-          xTitle={`p[${st.pxLigandLabel}]`}
+          xTitle={pxAxisLabel}
           yTitle="E°' (V vs ENH)"
-          xRange={[0, 14]}
+          xRange={[scalePX(0), scalePX(14)]}
           yRange={[EpxMin, EpxMax]}
           shapes={pxShapes}
           annotations={[{
-            x: 13, y: st.pxE0 + 0.02,
+            x: scalePX(13), y: st.pxE0 + 0.02,
             text: `E° = ${st.pxE0.toFixed(3)} V`,
             showarrow: false, font: { size: 11, color: '#888' },
           }]}
@@ -354,7 +372,7 @@ export default function PotencialCondicional() {
     },
   ];
     return st.showPX ? all : all.filter((d) => d.id !== 'epx');
-  }, [Eprimetraces, eMin, eMax, logKShapes, logKAnnotations, st.showPX, pXs, EpxCurve, st.pxOxLabel, st.pxRedLabel, st.pxLigandLabel, EpxMin, EpxMax, pxShapes, st.pxE0, escalaTraces, escalaPeMin, escalaPeMax, escalaShapes, escalaAnnotations, st.pH, escalaN, exportMetadata]);
+  }, [Eprimetraces, eMin, eMax, logKShapes, logKAnnotations, st.showPX, pXs, scalePX, pxAxisLabel, EpxCurve, st.pxOxLabel, st.pxRedLabel, EpxMin, EpxMax, pxShapes, st.pxE0, escalaTraces, escalaPeMin, escalaPeMax, escalaShapes, escalaAnnotations, st.pH, escalaN, exportMetadata]);
 
   return (
     <div className="module">
@@ -362,7 +380,11 @@ export default function PotencialCondicional() {
         <PanelSection title="Sistema" icon="⚛">
           <ModelBadge
             model="comparación E°′ = f(pH) entre dos pares"
-            additions={[st.showCouple3 && 'Latimer y dismutación', st.showPX && 'efecto de ligando X']}
+            additions={[
+              st.showCouple3 && 'Latimer y dismutación',
+              st.showPX && 'efecto de ligando X',
+              st.showPX && st.showPXPrime && 'pX′ condicional',
+            ]}
           />
 
           <CoupleEditor title="Par 1" couple={st.couple1} onChange={(c) => set('couple1', c)} />
@@ -455,6 +477,18 @@ export default function PotencialCondicional() {
               <p className="hint">
                 Preset: Fe³⁺/Fe²⁺ + F⁻ · E° = +0.771 V · log β(Fe³⁺) = [5.28, 9.30, 12.06] · log β(Fe²⁺) = [1.0]
               </p>
+              <Toggle
+                label="Escala pX′ condicional (protonación de X)"
+                checked={st.showPXPrime}
+                onChange={(v) => set('showPXPrime', v)}
+              />
+              {st.showPXPrime && (
+                <div className="mask-section">
+                  <Slider label="pH fijo" value={st.pxPHFixed} min={0} max={14} step={0.1} onChange={(v) => set('pxPHFixed', v)} decimals={1} />
+                  <ConstantList prefix="pKa (ácido conjugado de X)" helpId="pKa" values={st.pxPKasX} onChange={(v) => set('pxPKasX', v)} min={0} max={14} maxItems={4} minItems={1} initialValue={9.25} />
+                  <p className="hint">pX′ = pX − log α_X(H). NH₃/NH₄⁺: pKa ≈ 9.25 (Baeza §2.8.1).</p>
+                </div>
+              )}
             </div>
           )}
         </PanelSection>
@@ -497,6 +531,11 @@ export default function PotencialCondicional() {
           <p>
             <strong>Dismutación (diagrama de Latimer):</strong> si E°'(derecho) &gt; E°'(izquierdo),
             la especie intermedia es inestable y reacciona consigo misma (ej. Cu⁺ → Cu²⁺ + Cu⁰).
+          </p>
+          <p>
+            <strong>pX′ condicional:</strong> cuando el ligando X se protona (NH₃/NH₄⁺, F⁻/HF…),
+            el eje pasa de p[X] libre a pX′ = −log(concentración analítica total) a un pH fijo —
+            se necesita más X total para lograr la misma [X] libre cuanto más se protona.
           </p>
         </InfoBox>
       </PanelShell>
