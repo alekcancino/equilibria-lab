@@ -64,6 +64,22 @@ export function systemLabels(sys: AcidSystem): string[] {
   return genericSpeciesLabels(sys.pKas.length, sys.z0);
 }
 
+/**
+ * Runtime shape check for AcidSystem coming from untrusted sources (shared
+ * URLs). Modules that persist AcidSystem in ?s= state must validate on
+ * restore: pre-custom Mezclas links carried {acidId} rows without a system,
+ * and an invalid/missing system NaN-poisons solvePH into a silent bogus pH.
+ */
+export function isValidAcidSystem(x: unknown): x is AcidSystem {
+  if (typeof x !== 'object' || x === null) return false;
+  const s = x as Record<string, unknown>;
+  return typeof s.label === 'string'
+    && typeof s.z0 === 'number' && Number.isInteger(s.z0) && s.z0 >= 0 && s.z0 <= 4
+    && Array.isArray(s.pKas) && s.pKas.every((p) => typeof p === 'number' && Number.isFinite(p))
+    && (s.speciesLabels == null || (Array.isArray(s.speciesLabels) && s.speciesLabels.every((l) => typeof l === 'string')))
+    && (s.reference == null || typeof s.reference === 'string');
+}
+
 export interface CoupleState extends RedoxCouple {
   reference: string;
 }
