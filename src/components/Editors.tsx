@@ -60,7 +60,11 @@ export function AcidSystemEditor({
         values={system.pKas}
         min={-2}
         max={16}
-        minItems={allowNoConstants ? 0 : 1}
+        // An aqua-acid cation (z0≥3) with zero pKas is chemically ill-defined
+        // (no charge/anion convention applies) and downstream analyteKind
+        // classification (Titulacion.tsx) special-cases only z0=1 as "strong
+        // base" — never let the pKa list empty out for these.
+        minItems={system.z0 >= 3 ? 1 : allowNoConstants ? 0 : 1}
         initialValue={system.z0 > 0 ? 9.25 : 4.76}
         onChange={(pKas) => {
           const shouldRename = allowNoConstants && isGenericSystemLabel(system.label);

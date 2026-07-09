@@ -318,7 +318,7 @@ function AcidBaseTitration() {
             }`}
             additions={[showIndicator && 'indicador visual', showDerivative && 'derivada']}
           />
-          <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} />
+          <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} allowAquaCations />
         </PanelSection>
         <PanelSection title="Condiciones" icon="⚗">
           <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
@@ -1298,7 +1298,7 @@ function PotenciometricaTitration() {
             }`}
             additions={[showDeriv1 && 'primera derivada', showDeriv2 && 'segunda derivada']}
           />
-          <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} />
+          <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} allowAquaCations />
         </PanelSection>
         <PanelSection title="Condiciones" icon="⚗">
           <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
