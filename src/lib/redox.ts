@@ -2,6 +2,7 @@
 // pe° = E°/0.05916 always — n is absorbed into pe°, not repeated in the formula.
 
 import { NERNST_S } from './constants';
+import { composeAlphas, type SideReactionStack } from './sideReactions';
 
 export { NERNST_S };
 
@@ -34,6 +35,30 @@ export function peStandard(E0: number): number {
  */
 export function peConditional(couple: RedoxCouple, pH: number): number {
   return peStandard(couple.E0) - (couple.mH / couple.n) * pH;
+}
+
+/**
+ * Conditional formal potential E°'(pH) with complexation/hydrolysis on BOTH
+ * the oxidized and reduced forms (Ringbom-style, reusing composeAlphas — the
+ * same α_M mechanism ConstantesCondicionales.tsx already uses for M-Y
+ * complexes, applied here per redox state instead of per metal/ligand):
+ *
+ *   E = E° + (S/n)·log([Ox]_free/[Red]_free), and [X]_free = [X]_total/α_X
+ *   ⇒ E°'(total-concentration basis) = E° + (S/n)·log(α_Red/α_Ox)
+ *
+ * combined multiplicatively with the existing proton term. Each stack is
+ * optional; omitting one is equivalent to α=1 (no effect on that form).
+ */
+export function conditionalEprime(
+  couple: Pick<RedoxCouple, 'E0' | 'n' | 'mH'>,
+  pH: number,
+  oxStack?: SideReactionStack,
+  redStack?: SideReactionStack,
+): number {
+  const base = couple.E0 - NERNST_S * (couple.mH / couple.n) * pH;
+  const aOx = oxStack ? composeAlphas(pH, oxStack).alphaM : 1;
+  const aRed = redStack ? composeAlphas(pH, redStack).alphaM : 1;
+  return base + (NERNST_S / couple.n) * Math.log10(aRed / aOx);
 }
 
 /**

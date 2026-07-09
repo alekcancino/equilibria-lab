@@ -15,13 +15,13 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, LabelField, PanelSection, ResultCardRow, Disclosure } from '../components/Controls';
-import { CoupleEditor } from '../components/Editors';
+import { CoupleEditor, SideReactionEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
-import { NERNST_S } from '../lib/redox';
+import { NERNST_S, conditionalEprime } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
 import { alphaH, alphaL } from '../lib/conditional';
 import {
-  defaultSideEditorState, electrodePotential, e0PrimeAtPH,
+  defaultSideEditorState, electrodePotential, e0PrimeAtPH, sideStackFromEditor,
 } from '../lib/sideReactions';
 
 const S = NERNST_S;     // 0.05916 V
@@ -47,6 +47,33 @@ function crossoverPH(c1: CoupleState, c2: CoupleState): number | null {
   return pH >= 0 && pH <= 14 ? pH : null;
 }
 
+/**
+ * Every pH where two ALREADY-SAMPLED E°'(pH) curves cross, by linear
+ * interpolation at each sign change of (Es1 − Es2), ascending pH. A linear
+ * (uncomplexed) couple crosses another line at most once, but once
+ * complexation bends a curve it can cross more than once — callers that only
+ * want "the" crossover take index 0, but should also check `.length > 1` to
+ * warn the user rather than silently dropping later crossings.
+ */
+function numericCrossings(pHs: number[], Es1: number[], Es2: number[]): number[] {
+  const crossings: number[] = [];
+  for (let i = 1; i < pHs.length; i++) {
+    const d0 = Es1[i - 1] - Es2[i - 1];
+    const d1 = Es1[i] - Es2[i];
+    if (d0 === 0) {
+      crossings.push(pHs[i - 1]);
+    } else if ((d0 > 0) !== (d1 > 0)) {
+      const t = d0 / (d0 - d1);
+      crossings.push(pHs[i - 1] + t * (pHs[i] - pHs[i - 1]));
+    }
+  }
+  return crossings;
+}
+
+function numericCrossover(pHs: number[], Es1: number[], Es2: number[]): number | null {
+  return numericCrossings(pHs, Es1, Es2)[0] ?? null;
+}
+
 // ── Colors ────────────────────────────────────────────────────────────────────
 
 const C1 = SPECIES_COLORS[0]; // orange
@@ -62,6 +89,13 @@ function defaultState() {
     showCouple3: false,
     couple3: coupleFromPreset('cu1'),
     pH: 2,
+    // E°'=f(pH) with complexation on par 1 (Ox and/or Red hydrolyze or bind
+    // an auxiliary ligand) — reuses the same composeAlphas machinery as
+    // ConstantesCondicionales.tsx, applied per redox state instead of per
+    // metal/ligand. Off by default: curve stays the plain proton-only line.
+    showComplexPH1: false,
+    oxSide1: defaultSideEditorState(),
+    redSide1: defaultSideEditorState(),
     // E°' = f(pX): effect of ligand X on the couple's potential
     pxE0: 0.771,          // E° Fe³⁺/Fe²⁺ por defecto
     pxN: 1,
@@ -103,13 +137,27 @@ export default function PotencialCondicional() {
     'Par 2': st.couple2.name,
     ...(st.showCouple3 ? { 'Par 3': st.couple3.name } : {}),
     pH: st.pH.toFixed(1),
-  }), [st.couple1.name, st.couple2.name, st.showCouple3, st.couple3.name, st.pH]);
+    ...(st.showComplexPH1 ? { 'Complejación par 1': 'activa (ver panel Complejación del par 1)' } : {}),
+  }), [st.couple1.name, st.couple2.name, st.showCouple3, st.couple3.name, st.pH, st.showComplexPH1]);
 
   // ── E°' = f(pH) curves ────────────────────────────────────────────────────
 
   const pHs = useMemo(() => Array.from({ length: PH_POINTS + 1 }, (_, i) => 14 * i / PH_POINTS), []);
 
-  const E1s = useMemo(() => pHs.map((pH) => Eprime(st.couple1, pH)), [pHs, st.couple1]);
+  const oxStack1 = useMemo(
+    () => (st.showComplexPH1 ? sideStackFromEditor(st.oxSide1) : undefined),
+    [st.showComplexPH1, st.oxSide1],
+  );
+  const redStack1 = useMemo(
+    () => (st.showComplexPH1 ? sideStackFromEditor(st.redSide1) : undefined),
+    [st.showComplexPH1, st.redSide1],
+  );
+  // conditionalEprime(couple, pH, undefined, undefined) === Eprime(couple, pH)
+  // exactly (tested), so par 1 always goes through it — no branching needed.
+  const E1s = useMemo(
+    () => pHs.map((pH) => conditionalEprime(st.couple1, pH, oxStack1, redStack1)),
+    [pHs, st.couple1, oxStack1, redStack1],
+  );
   const E2s = useMemo(() => pHs.map((pH) => Eprime(st.couple2, pH)), [pHs, st.couple2]);
   const E3s = useMemo(
     () => st.showCouple3 ? pHs.map((pH) => Eprime(st.couple3, pH)) : null,
@@ -117,20 +165,37 @@ export default function PotencialCondicional() {
   );
 
   // ── Crossover ─────────────────────────────────────────────────────────────
+  // Complexation makes par 1's curve non-linear, so any crossing involving it
+  // needs the numeric (sampled) crossing instead of the closed-form line
+  // intersection — cross23 (par 2 vs par 3) is never affected by par 1.
 
-  const cross12 = useMemo(() => crossoverPH(st.couple1, st.couple2), [st.couple1, st.couple2]);
-  const cross13 = useMemo(
-    () => st.showCouple3 ? crossoverPH(st.couple1, st.couple3) : null,
-    [st.couple1, st.couple3, st.showCouple3],
+  const cross12 = useMemo(
+    () => (st.showComplexPH1 ? numericCrossover(pHs, E1s, E2s) : crossoverPH(st.couple1, st.couple2)),
+    [st.showComplexPH1, pHs, E1s, E2s, st.couple1, st.couple2],
   );
+  const cross13 = useMemo(() => {
+    if (!st.showCouple3) return null;
+    if (st.showComplexPH1) return E3s ? numericCrossover(pHs, E1s, E3s) : null;
+    return crossoverPH(st.couple1, st.couple3);
+  }, [st.showCouple3, st.showComplexPH1, pHs, E1s, E3s, st.couple1, st.couple3]);
   const cross23 = useMemo(
     () => st.showCouple3 ? crossoverPH(st.couple2, st.couple3) : null,
     [st.couple2, st.couple3, st.showCouple3],
   );
+  // Only the numeric (complexation-active) path can cross more than once —
+  // surface it so "the crossover" doesn't silently understate the curve.
+  const cross12HasMore = useMemo(
+    () => (st.showComplexPH1 ? numericCrossings(pHs, E1s, E2s).length > 1 : false),
+    [st.showComplexPH1, pHs, E1s, E2s],
+  );
+  const cross13HasMore = useMemo(
+    () => (st.showComplexPH1 && st.showCouple3 && E3s ? numericCrossings(pHs, E1s, E3s).length > 1 : false),
+    [st.showComplexPH1, st.showCouple3, pHs, E1s, E3s],
+  );
 
   // ── E°' at the cursor pH ──────────────────────────────────────────────────
 
-  const E1cur = Eprime(st.couple1, st.pH);
+  const E1cur = conditionalEprime(st.couple1, st.pH, oxStack1, redStack1);
   const E2cur = Eprime(st.couple2, st.pH);
   const E3cur = st.showCouple3 ? Eprime(st.couple3, st.pH) : null;
 
@@ -174,15 +239,17 @@ export default function PotencialCondicional() {
         line: { color: '#CC79A7', width: 1.5, dash: 'dashdot' },
       },
     ];
-    // vertical line at crossover 1–2
+    // vertical line at crossover 1–2 — must read couple1's ACTUAL curve
+    // (conditionalEprime, not the plain line) once complexation bends it.
     if (cross12 !== null) {
       out.push({
-        type: 'line', x0: cross12, x1: cross12, y0: eMin - 10, y1: Eprime(st.couple1, cross12) + 0.05,
+        type: 'line', x0: cross12, x1: cross12, y0: eMin - 10,
+        y1: conditionalEprime(st.couple1, cross12, oxStack1, redStack1) + 0.05,
         line: { color: '#aaaaaa', width: 1, dash: 'dot' },
       });
     }
     return out;
-  }, [st.pH, cross12, eMin, eMax, st.couple1]);
+  }, [st.pH, cross12, eMin, eMax, st.couple1, oxStack1, redStack1]);
 
   const logKAnnotations = useMemo<Partial<Annotations>[]>(() => {
     const out: Partial<Annotations>[] = [
@@ -194,7 +261,7 @@ export default function PotencialCondicional() {
     ];
     if (cross12 !== null) {
       out.push({
-        x: cross12, y: Eprime(st.couple1, cross12),
+        x: cross12, y: conditionalEprime(st.couple1, cross12, oxStack1, redStack1),
         text: `×  pH ${cross12.toFixed(1)}`,
         showarrow: false,
         font: { size: 11, color: '#7F8C8D' },
@@ -202,7 +269,7 @@ export default function PotencialCondicional() {
       });
     }
     return out;
-  }, [st.pH, cross12, eMax, st.couple1]);
+  }, [st.pH, cross12, eMax, st.couple1, oxStack1, redStack1]);
 
   // ── E°' = f(pH) traces ────────────────────────────────────────────────────
 
@@ -382,6 +449,7 @@ export default function PotencialCondicional() {
             model="comparación E°′ = f(pH) entre dos pares"
             additions={[
               st.showCouple3 && 'Latimer y dismutación',
+              st.showComplexPH1 && 'complejación por estado (par 1)',
               st.showPX && 'efecto de ligando X',
               st.showPX && st.showPXPrime && 'pX′ condicional',
             ]}
@@ -389,6 +457,34 @@ export default function PotencialCondicional() {
 
           <CoupleEditor title="Par 1" couple={st.couple1} onChange={(c) => set('couple1', c)} />
           <CoupleEditor title="Par 2" couple={st.couple2} onChange={(c) => set('couple2', c)} />
+        </PanelSection>
+
+        <PanelSection title="Complejación del par 1" icon="✦">
+          <Toggle
+            label="E°'=f(pH) con complejación (par 1)"
+            checked={st.showComplexPH1}
+            onChange={(v) => set('showComplexPH1', v)}
+          />
+          {st.showComplexPH1 && (
+            <div className="mask-section">
+              <Disclosure title={`Reacciones parásitas de ${st.couple1.ox} (oxidante)`}>
+                <SideReactionEditor
+                  state={st.oxSide1} onChange={(s) => set('oxSide1', s)}
+                  showLigandPKas={false} showComplexSection={false}
+                />
+              </Disclosure>
+              <Disclosure title={`Reacciones parásitas de ${st.couple1.red} (reductor)`}>
+                <SideReactionEditor
+                  state={st.redSide1} onChange={(s) => set('redSide1', s)}
+                  showLigandPKas={false} showComplexSection={false}
+                />
+              </Disclosure>
+              <p className="hint">
+                Cada forma (Ox y Red) puede hidrolizar y/o unir un ligando auxiliar; el cruce
+                y el pH del cursor pasan a usar el punto de intersección numérico de las curvas.
+              </p>
+            </div>
+          )}
         </PanelSection>
 
         <PanelSection title="Condiciones" icon="⚗">
@@ -424,7 +520,10 @@ export default function PotencialCondicional() {
                 </div>
               )}
               {cross13 !== null && (
-                <p className="hint">Cruce par 1–3: pH {cross13.toFixed(1)} (dismutación se invierte)</p>
+                <p className="hint">
+                  Cruce par 1–3: pH {cross13.toFixed(1)} (dismutación se invierte)
+                  {cross13HasMore && ' — hay más de un cruce en este intervalo, se muestra el primero'}
+                </p>
               )}
               {cross23 !== null && (
                 <p className="hint">Cruce par 2–3: pH {cross23.toFixed(1)}</p>
@@ -437,7 +536,12 @@ export default function PotencialCondicional() {
           <ResultCard items={[
             { label: `E°'(${st.couple1.name}) a pH ${st.pH.toFixed(1)}`, value: `${E1cur.toFixed(3)} V  (pe°′ ${(E1cur/S).toFixed(1)})`, helpId: 'Eprime' },
             { label: `E°'(${st.couple2.name}) a pH ${st.pH.toFixed(1)}`, value: `${E2cur.toFixed(3)} V  (pe°′ ${(E2cur/S).toFixed(1)})`, helpId: 'Eprime' },
-            { label: 'Cruce de pares 1–2', value: cross12 !== null ? `pH ${cross12.toFixed(2)}` : 'Paralelos (sin cruce)' },
+            {
+              label: 'Cruce de pares 1–2',
+              value: cross12 !== null
+                ? `pH ${cross12.toFixed(2)}${cross12HasMore ? ' (hay más de uno)' : ''}`
+                : 'Paralelos (sin cruce)',
+            },
             {
               label: 'Reacción espontánea',
               value: `${strongest.c.ox} + ${weakest.c.red} · log K' = ${logKcur.toFixed(1)}`,
@@ -523,14 +627,21 @@ export default function PotencialCondicional() {
             <code> E°' = E° − 0.05916·(m/n)·pH</code>. La pendiente es −59.16·m/n mV/pH.
           </p>
           <p>
-            El <strong>cruce de dos rectas</strong> marca el pH donde la reacción cambia de
-            dirección: por encima del cruce, el orden de oxidante/reductor se invierte. Este
-            efecto es crucial en análisis volumétrico (el mismo oxidante puede ser selectivo a un
-            pH y no a otro).
+            El <strong>cruce</strong> (de dos rectas, o de las curvas reales si hay complejación
+            activa en el par 1) marca el pH donde la reacción cambia de dirección: por encima
+            del cruce, el orden de oxidante/reductor se invierte. Este efecto es crucial en
+            análisis volumétrico (el mismo oxidante puede ser selectivo a un pH y no a otro).
           </p>
           <p>
             <strong>Dismutación (diagrama de Latimer):</strong> si E°'(derecho) &gt; E°'(izquierdo),
             la especie intermedia es inestable y reacciona consigo misma (ej. Cu⁺ → Cu²⁺ + Cu⁰).
+          </p>
+          <p>
+            <strong>Complejación por estado:</strong> si el oxidante o el reductor del par 1
+            hidroliza o se une a un ligando auxiliar, <code>E°' = E° − 0.05916·(m/n)·pH +
+            (0.05916/n)·log(α_Red/α_Ox)</code> — complejar el oxidante lo estabiliza y baja
+            E°' (oxidante más débil); complejar el reductor lo hace más fuerte como reductor
+            y sube E°'. La curva deja de ser una recta.
           </p>
           <p>
             <strong>pX′ condicional:</strong> cuando el ligando X se protona (NH₃/NH₄⁺, F⁻/HF…),
