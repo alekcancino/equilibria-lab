@@ -34,7 +34,11 @@ export function hydrogenActivity(pH: number, gammaH = 1): number {
   return gammaH * Math.pow(10, -pH);
 }
 
-/** Apparent pKw with activity correction (simplified model). */
+/**
+ * Apparent pKw with activity correction: Kw = a_H·a_OH = [H⁺]γ_H·[OH⁻]γ_OH is
+ * constant, so the concentration product [H⁺][OH⁻] = Kw/(γ_H·γ_OH) grows as
+ * γ < 1 (higher ionic strength) → pKw′ = pKw + log(γ_H·γ_OH) (pKw′ < pKw).
+ */
 export function apparentPKw(gammaH: number, gammaOH: number): number {
-  return PKW - Math.log10(gammaH * gammaOH);
+  return PKW + Math.log10(gammaH * gammaOH);
 }

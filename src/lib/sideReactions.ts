@@ -431,15 +431,14 @@ export function optimalElutionPH3C(
   return { pH: best.pH, fractionEluted: best.frac, logKprime: best.logKp, pHs, fractions };
 }
 
-/** Nernst electrode potential: E = E°′ − (S/n) log([Ox]/[Red]) at fixed pH; E°′ from the couple. */
+/** Nernst electrode potential for M^n+ + n e⁻ ⇌ M(s): E = E°′ − (S/n)·pM, pM = −log[M]. */
 export function electrodePotential(
   e0Prime: number,
   n: number,
   pM: number,
 ): number {
   const s = 0.05916;
-  const m = Math.pow(10, -pM);
-  return e0Prime - (s / n) * Math.log10(Math.max(m, 1e-30));
+  return e0Prime - (s / n) * pM;
 }
 
 /** E°′(pH) for a couple with mH protons: E°′ = E° − S·(mH/n)·pH. */

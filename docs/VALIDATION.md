@@ -74,6 +74,10 @@ Cross-references between engine formulas (`src/lib/`), unit tests
 | pe from Eh = −500 mV | −8.4525 | Fe.out HALTAFALL −8.4526 | 10⁻⁴ |
 | Fe(OH)₃/Fe²⁺, E°′ (log C = 0) | 0.948 V | Pourbaix audited | test ±0.02 V |
 | Ca–EDTA, log K′f pH 10 | ≈ 10.2 | Ringbom | test ±0.2 |
+| Ca–EDTA (log Kf=10.65), free [Ca²⁺] in 0.10 M CaY²⁻ at pH 10.00/8.00/6.00 | 2.74×10⁻⁶ / 2.31×10⁻⁵ / 3.51×10⁻⁴ M | Harris, *Quantitative Chemical Analysis*, 8th ed., worked example §11-2 | ~1–3% |
+| NH₃ 0.10 M, pKa(NH₄⁺)=9.245 | pH 11.120 | Harris, *QCA*, 8th ed., §8-4 worked example | 0 |
+| KHP (hydrogen phthalate) 0.10/0.010/0.002 M, pK1=2.950/pK2=5.408 | pH 4.182 / 4.205 / 4.285 | Harris, *QCA*, 8th ed., §9-2 worked example | ~0.002–0.005 |
+| Histidine 0.10 M, pK1=1.6/pK2=5.97/pK3=9.28, all 4 protonation states | pH 1.41 / 3.83 / 7.62 / 11.14 | Harris, *QCA*, 8th ed., §9-3 worked example | 0 |
 
 Run tests:
 
