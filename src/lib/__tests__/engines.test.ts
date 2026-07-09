@@ -466,6 +466,13 @@ describe('solubility', () => {
     const sCommon = solubility(agcl, 7, 0.01);
     expect(sCommon).toBeLessThan(sPure);
   });
+
+  it('estequiometría M₂X₃ arbitraria (UI ahora expone m,x libres): Ksp = m^m·x^x·s^(m+x)', () => {
+    const m2x3 = { id: 'm2x3', name: 'M₂X₃', formula: 'M₂X₃', pKsp: 40, m: 2, x: 3, anionLabel: 'X', cationLabel: 'M' };
+    const s = solubility(m2x3, 7, 0);
+    const expectedLogS = (-40 - Math.log10(2 ** 2 * 3 ** 3)) / (2 + 3);
+    tol(Math.log10(s), expectedLogS, 1e-6);
+  });
 });
 
 // Molecular acid/base solid solubility (ROADMAP B-6): S = S0·(1 + 10^±(pH-pKa)).

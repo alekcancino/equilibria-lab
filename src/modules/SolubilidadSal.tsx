@@ -5,7 +5,7 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConstantList, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard,
+  ConstantList, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard,
   ResultCardRow, Slider, Toggle,
 } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
@@ -135,33 +135,22 @@ function SalEditor({ sal, onChange }: {
       <LabelField label="Nombre del anión" value={sal.anionName} onChange={(anionName) => onChange({ anionName })} />
       <Slider label="pKsp" helpId="pKsp" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
 
-      <div className="control">
-        <div className="control-header">
-          <span className="control-label">Estequiometría p (catión)</span>
-          <span className="control-value">{sal.p}</span>
-        </div>
-        <div className="segmented" style={{ marginTop: 4 }}>
-          {[1, 2, 3].map((n) => (
-            <button key={n} className={sal.p === n ? 'seg-btn active' : 'seg-btn'} onClick={() => onChange({ p: n })}>
-              {n}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="control">
-        <div className="control-header">
-          <span className="control-label">Estequiometría q (anión)</span>
-          <span className="control-value">{sal.q}</span>
-        </div>
-        <div className="segmented" style={{ marginTop: 4 }}>
-          {[1, 2, 3].map((n) => (
-            <button key={n} className={sal.q === n ? 'seg-btn active' : 'seg-btn'} onClick={() => onChange({ q: n })}>
-              {n}
-            </button>
-          ))}
-        </div>
-      </div>
+      <NumberSegmented label="Estequiometría p (catión)" value={sal.p} options={[1, 2, 3]} onChange={(p) => onChange({ p })} />
+      <NumberSegmented label="Estequiometría q (anión)" value={sal.q} options={[1, 2, 3]} onChange={(q) => onChange({ q })} />
+      <NumberSegmented
+        label="Carga del catión zM"
+        value={sal.zM}
+        suffix="+"
+        options={[1, 2, 3, 4]}
+        onChange={(zM) => onChange({ zM })}
+        hint={(
+          <>
+            Solo afecta la corrección por actividad (I &gt; 0) — a I = 0 no cambia la curva.
+            Carga del anión implícita por electroneutralidad: zX = p·zM/q = {((sal.p * sal.zM) / sal.q).toFixed(2)}
+            {!Number.isInteger((sal.p * sal.zM) / sal.q) && ' (no entero — revisa p, q y zM)'}.
+          </>
+        )}
+      />
 
       <ConstantList
         prefix="pKa (anión)"

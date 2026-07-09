@@ -4,12 +4,13 @@ import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import {
-  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, PanelSection, RefBadge,
-  ResultCard, ResultCardRow, Segmented, SelectControl, Slider, Toggle,
+  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, RefBadge,
+  ResultCard, ResultCardRow, Segmented, Slider, Toggle,
 } from '../components/Controls';
 import { SALTS, type SaltPreset } from '../lib/database';
 import { formatMolar } from '../lib/format';
 import { solubility, acidSolidSolubility, baseSolidSolubility } from '../lib/solubility';
+import { toSub } from '../lib/complexDatabase';
 
 const PH_POINTS = 300;
 
@@ -187,19 +188,9 @@ export default function Solubilidad() {
               />
               <LabelField label="Sal (nombre libre)" value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
               <Slider label="pKsp" helpId="pKsp" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
-              <SelectControl
-                label="Estequiometría MmXx"
-                value={`${salt.m},${salt.x}`}
-                options={[
-                  { value: '1,1', label: 'MX (1:1) — AgCl, CaCO₃' },
-                  { value: '1,2', label: 'MX₂ (1:2) — CaF₂, PbI₂' },
-                  { value: '1,3', label: 'MX₃ (1:3) — Fe(OH)₃' },
-                ]}
-                onChange={(v) => {
-                  const [m, x] = v.split(',').map(Number);
-                  edited({ m, x });
-                }}
-              />
+              <NumberSegmented label="Estequiometría MmXx — coef. catión m" value={salt.m} options={[1, 2, 3, 4]} onChange={(m) => edited({ m })} />
+              <NumberSegmented label="Estequiometría MmXx — coef. anión x" value={salt.x} options={[1, 2, 3, 4]} onChange={(x) => edited({ x })} />
+              <p className="hint">M{salt.m > 1 ? toSub(salt.m) : ''}X{salt.x > 1 ? toSub(salt.x) : ''} — ej. AgCl (1:1), CaF₂ (1:2), Fe(OH)₃ (1:3), Ag₂CrO₄ (2:1).</p>
               <p className="hint">pKa del ácido conjugado del anión (vacío si el anión no es básico):</p>
               {salt.anionPKas.length > 0 ? (
                 <ConstantList

@@ -7,7 +7,7 @@ import PanelShell from '../components/PanelShell';
 import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConcSlider, ConstantList, Disclosure, InfoBox, LabelField,
+  ConcSlider, ConstantList, Disclosure, InfoBox, LabelField, LabelList,
   ModelBadge, PanelSection, RefBadge, ResultCard, ResultCardRow, Slider, SystemPresetPicker,
 } from '../components/Controls';
 import { SPECIES_COLORS } from '../lib/database';
@@ -70,8 +70,11 @@ function genericLabels(metalLabel: string, ligandLabel: string, nOH: number, nL:
 function effectiveLabels(s: SpeciationState): string[] {
   const nL = s.showAux ? s.logBetasL.length : 0;
   const total = 1 + s.logBetasOH.length + nL;
-  if (s.speciesLabels && s.speciesLabels.length === total) return s.speciesLabels;
-  return genericLabels(s.metalLabel, s.ligandLabel, s.logBetasOH.length, nL);
+  const generic = genericLabels(s.metalLabel, s.ligandLabel, s.logBetasOH.length, nL);
+  if (!s.speciesLabels || s.speciesLabels.length !== total) return generic;
+  // LabelList's LabelField has no minimum length — fall back per-entry
+  // rather than show a blank chart legend / result-card species name.
+  return s.speciesLabels.map((l, i) => l.trim() || generic[i]);
 }
 
 /** Seeds a fresh mount from the hub's cross-view carry-over: metal hydrolysis
@@ -323,6 +326,18 @@ export default function EspeciacionMetal() {
             onChange={(pKasL) => setSys({ ...sys, pKasL })}
           />
           <p className="hint">NH₃/NH₄⁺: pKa ≈ 9,25. Sin pKa: se asume el ligando ya libre (sin protonación).</p>
+        </Disclosure>
+
+        <Disclosure title="Nombres de especies">
+          <LabelList
+            prefix="Especie"
+            values={labels}
+            onChange={(speciesLabels) => setSys({ ...sys, speciesLabels })}
+          />
+          <p className="hint">
+            Solo cambia cómo se muestran las especies en gráficas y resultados, no el cálculo.
+            Editar una constante (log β, metal, ligando) restablece los nombres genéricos.
+          </p>
         </Disclosure>
 
         <PanelSection title="Lectura" icon="∑">
