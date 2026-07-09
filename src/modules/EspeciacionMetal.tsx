@@ -7,7 +7,7 @@ import PanelShell from '../components/PanelShell';
 import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConcSlider, ConstantList, Disclosure, InfoBox, LabelField,
+  ConcSlider, ConstantList, Disclosure, InfoBox, LabelField, LabelList,
   ModelBadge, PanelSection, RefBadge, ResultCard, ResultCardRow, Slider, SystemPresetPicker,
 } from '../components/Controls';
 import { SPECIES_COLORS } from '../lib/database';
@@ -323,6 +323,18 @@ export default function EspeciacionMetal() {
             onChange={(pKasL) => setSys({ ...sys, pKasL })}
           />
           <p className="hint">NH₃/NH₄⁺: pKa ≈ 9,25. Sin pKa: se asume el ligando ya libre (sin protonación).</p>
+        </Disclosure>
+
+        <Disclosure title="Nombres de especies">
+          <LabelList
+            prefix="Especie"
+            values={labels}
+            onChange={(speciesLabels) => setSys({ ...sys, speciesLabels })}
+          />
+          <p className="hint">
+            Solo cambia cómo se muestran las especies en gráficas y resultados, no el cálculo.
+            Editar una constante (log β, metal, ligando) restablece los nombres genéricos.
+          </p>
         </Disclosure>
 
         <PanelSection title="Lectura" icon="∑">

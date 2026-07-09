@@ -11,21 +11,21 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 ### Core equilibria
 
 - Acid–base: α fractions, log *C*–pH diagram, predominance zone diagram (DUZP), pure solution pH, aqua-acid cations (Fe³⁺, Al³⁺)
-- Complexation: multi-ligand systems, Bjerrum number, α distributions, log *C* vs pL
+- Complexation: multi-ligand systems, Bjerrum number, α distributions, log *C* vs pL, editable per-species labels
 - Redox: α vs pe, spontaneous-reaction prediction, conditional pe°′
-- Solubility: log *s* vs pH with conditional Ksp, common-ion effect, molecular acid/base solid solubility (pH-dependent ionization); Debye–Hückel activity corrections applied to the solver
+- Solubility: log *s* vs pH with conditional Ksp, common-ion effect, molecular acid/base solid solubility (pH-dependent ionization), free MmXx stoichiometry; Debye–Hückel activity corrections applied to the solver
 - Activity: ionic strength, γ vs *I* (extended Debye–Hückel); corrections wired to solubility, complexation, and conditional-constant engines
 
 ### Coupled equilibria
 
 - Pourbaix diagrams: *E*–pH for Fe, Cu, Mn, Zn, Cr and fully custom N-species / N-couples systems with auto-derived boundaries
-- Acid–base mixtures: up to four coexisting systems, any starting salt form per component, buffer capacity β = *f*(pH)
+- Acid–base mixtures: up to four coexisting systems, each fully user-editable (free label, pKa list, z₀ incl. aqua-cations, database presets as auto-fill), any starting salt form per component, buffer capacity β = *f*(pH)
 - Conditional constants: log *K*′ = *f*(pH), side reactions, masking, feasibility window (Ringbom)
 - Selective precipitation: log *s* = *f*(pH) and log *s* = *f*(pX), separation windows, redissolution
 - Conditional potential: *E*°′ = *f*(pH), disproportionation (Latimer), *E*°′ = *f*(pX)
 - Liquid–liquid extraction: partition, chelates, successive extractions, preconcentration
 - Ion exchange: batch equilibrium, isotherm, Craig *N*-plate multi-zone column model, breakthrough and elution curves
-- Solubility vs pH: conditional solubility of salts, side-by-side system comparison
+- Solubility vs pH: conditional solubility of salts, side-by-side system comparison, editable cation charge
 
 ### Titrations (unified module)
 
@@ -51,6 +51,9 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP to two chemical axes. |
 | **Competitive precipitation** | Simultaneous solubility of multiple solids sharing a common ion; separation-window analysis. |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |
+| **Editable Pourbaix presets** | "Edit this system" button seeding custom mode from a preset. Lossy converter (presets carry authored boundaries/oxide solids the custom mode doesn't model); feasible as an approximate seed for hydroxide-only systems. |
+| **Saved custom systems** | Persist user-built systems (beyond URL share links) across sessions, e.g. localStorage, for every module with an editor. |
+| **Precipitation titration stoichiometry** | The precipitation-titration engine is fixed to 1:1 analyte:titrant; support MmXx ratios. |
 
 ### Medium-term
 

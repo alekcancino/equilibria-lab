@@ -163,6 +163,21 @@ function SalEditor({ sal, onChange }: {
         </div>
       </div>
 
+      <div className="control">
+        <div className="control-header">
+          <span className="control-label">Carga del catión zM</span>
+          <span className="control-value">{sal.zM}+</span>
+        </div>
+        <div className="segmented" style={{ marginTop: 4 }}>
+          {[1, 2, 3, 4].map((n) => (
+            <button key={n} className={sal.zM === n ? 'seg-btn active' : 'seg-btn'} onClick={() => onChange({ zM: n })}>
+              {n}
+            </button>
+          ))}
+        </div>
+        <p className="hint">Solo afecta la corrección por actividad (I &gt; 0) — a I = 0 no cambia la curva.</p>
+      </div>
+
       <ConstantList
         prefix="pKa (anión)"
         helpId="pKa"

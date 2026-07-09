@@ -248,6 +248,32 @@ export function LabelField({
 }
 
 /**
+ * Editable list of free-text labels — the string-array counterpart of
+ * ConstantList. No +/- buttons: the count is dictated by the constants it
+ * labels (e.g. one per species in a ladder), not user-managed directly.
+ */
+export function LabelList({
+  prefix, values, onChange,
+}: {
+  prefix: string;
+  values: string[];
+  onChange: (v: string[]) => void;
+}) {
+  return (
+    <div className="constant-list">
+      {values.map((v, i) => (
+        <LabelField
+          key={i}
+          label={`${prefix} ${i + 1}`}
+          value={v}
+          onChange={(nv) => onChange(values.map((x, j) => (j === i ? nv : x)))}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
  * Editable list of constants (pKa, log β, ...) with ± buttons.
  * Each row: slider + numeric field + remove button.
  */
