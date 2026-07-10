@@ -15,6 +15,7 @@ import DiagramTabs from '../components/DiagramTabs';
 import { INDICATORS } from '../lib/database';
 import { formatSci } from '../lib/format';
 import { firstDerivative, granPlot, granVeq, quantitativity, secondDerivative, titrationCurve, titratableProtons } from '../lib/titration';
+import type { GammaModel } from '../lib/activity';
 import { alphaY4, edtaAtFraction, edtaTitrationCurve, EDTA_PKAS } from '../lib/edta';
 import { defaultSideEditorState, type SideReactionEditorState } from '../lib/sideReactions';
 import { redoxTitrationCurve } from '../lib/redox';
@@ -22,6 +23,15 @@ import { precipTitrationCurve, mohrEndpointPAg, PRECIP_PRESETS } from '../lib/pr
 import { condLogKCurve, alphaH, alphaOH } from '../lib/conditional';
 import { METAL_INDICATORS, EDTA_METAL_PRESETS, type MetalIndicator } from '../lib/indicatorDatabase';
 import { SYSTEM_PRESETS, sideFromPreset, systemPresetById } from '../lib/systemPresets';
+
+const GAMMA_MODELS: { value: GammaModel; label: string }[] = [
+  { value: 'dh', label: 'D-H extendida' },
+  { value: 'davies', label: 'Davies' },
+  { value: 'guntelberg', label: 'Güntelberg' },
+];
+function isValidGammaModel(v: unknown): v is GammaModel {
+  return v === 'dh' || v === 'davies' || v === 'guntelberg';
+}
 
 type Mode = 'acidobase' | 'edta' | 'redox' | 'precip' | 'potenciometrica';
 
@@ -193,8 +203,13 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
   const [indicatorId, setIndicatorId] = useState('phenolphthalein');
   const [showIndicator, setShowIndicator] = useState(false);
   const [showDerivative, setShowDerivative] = useState(false);
+  const [ionicStrength, setIonicStrength] = useState(0);
+  const [gammaModel, setGammaModel] = useState<GammaModel>('dh');
 
-  useShareEffect('titulacion', { mode, system, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, indicatorId, showIndicator, showDerivative }, (s) => {
+  useShareEffect('titulacion', {
+    mode, system, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, indicatorId, showIndicator, showDerivative,
+    ionicStrength, gammaModel,
+  }, (s) => {
     if (isValidAcidSystem(s.system)) setSystem(s.system);
     if (s.titrantIsAcid !== undefined) setTitrantIsAcid(s.titrantIsAcid);
     if (s.cAnalyte !== undefined) setCAnalyte(s.cAnalyte);
@@ -203,12 +218,15 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     if (s.indicatorId) setIndicatorId(s.indicatorId);
     if (s.showIndicator !== undefined) setShowIndicator(s.showIndicator);
     if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
+    if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
+    if (isValidGammaModel(s.gammaModel)) setGammaModel(s.gammaModel);
   });
 
   function reset() {
     setSystem(strongAcidSystem()); setTitrantIsAcid(false);
     setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
     setIndicatorId('phenolphthalein'); setShowIndicator(false); setShowDerivative(false);
+    setIonicStrength(0); setGammaModel('dh');
   }
 
   const indicator = INDICATORS.find((i) => i.id === indicatorId)!;
@@ -223,9 +241,9 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
   const curve = useMemo(
     () => titrationCurve({
       analyte: { z0: system.z0, pKas: system.pKas, kind: analyteKind },
-      titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax,
+      titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, I: ionicStrength, model: gammaModel,
     }),
-    [system, analyteKind, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax],
+    [system, analyteKind, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, ionicStrength, gammaModel],
   );
 
   const { traces, shapes, annotations, eqInfo } = useMemo(() => {
@@ -332,7 +350,9 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     'CA / M': cAnalyte.toFixed(4),
     'VA / mL': vAnalyte.toFixed(0),
     'CT / M': cTitrant.toFixed(4),
-  }), [system.label, titrantName, cAnalyte, vAnalyte, cTitrant]);
+    'I / M': ionicStrength.toFixed(3),
+    'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel,
+  }), [system.label, titrantName, cAnalyte, vAnalyte, cTitrant, ionicStrength, gammaModel]);
 
   return (
     <>
@@ -374,6 +394,18 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
           />
           <Toggle label="Mostrar zona de vire" checked={showIndicator} onChange={setShowIndicator} />
           <Toggle label="Mostrar derivada dpH/dV" checked={showDerivative} onChange={setShowDerivative} />
+          <details className="section-collapse">
+            <summary>Corrección por actividad</summary>
+            <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
+            <div style={{ marginTop: 6 }}>
+              <Segmented
+                options={GAMMA_MODELS}
+                value={gammaModel}
+                onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}
+              />
+            </div>
+            <p className="hint">I = 0 → γ = 1 (resultado termodinámico). Desplaza toda la curva pH = f(V), no solo la equivalencia.</p>
+          </details>
         </PanelSection>
         <PanelSection title="Resultado" icon="∑">
           {eqInfo.length > 0 && <ResultCard items={eqInfo} />}

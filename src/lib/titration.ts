@@ -3,6 +3,9 @@
 // or acidic (HCl) — all four combinations are valid.
 
 import { solvePH, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from './equilibrium';
+import type { GammaModel } from './activity';
+
+export type { GammaModel };
 
 export interface TitrationParams {
   /** Analyte system (any HnA/B with pKas) */
@@ -23,6 +26,10 @@ export interface TitrationParams {
   vMax: number;
   /** Number of curve points */
   points?: number;
+  /** Ionic strength for Debye–Hückel/Davies/Güntelberg correction (0 = ideal) */
+  I?: number;
+  /** Activity model at I > 0 (default extended D-H, unchanged from before this param existed) */
+  model?: GammaModel;
 }
 
 export interface TitrationCurve {
@@ -43,7 +50,7 @@ export function titratableProtons(pKas: number[]): number {
  * dilution included at every point.
  */
 export function titrationCurve(params: TitrationParams): TitrationCurve {
-  const { analyte, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax } = params;
+  const { analyte, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, I = 0, model = 'dh' } = params;
   const points = params.points ?? 600;
   const volumes: number[] = [];
   const pHs: number[] = [];
@@ -72,7 +79,7 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
     const titrantConc = (cTitrant * vb) / vTotal;
     if (titrantIsAcid) extraAnions += titrantConc;
     else extraCations += titrantConc;
-    const pH = solvePH(components, extraCations, extraAnions);
+    const pH = solvePH(components, extraCations, extraAnions, I, model);
     volumes.push(vb);
     pHs.push(pH);
   }
