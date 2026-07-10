@@ -101,7 +101,7 @@ npm test
 | Conditional constants | **High** | Ringbom explicit in the engine |
 | Conditional potential | **High** | Conditional Nernst |
 | Selective precipitation | **High** | Competitive module selects solid phases by combination testing (HALTAFALL style); the pH-based module still treats each solid independently |
-| Titrations (5 modes) | **High–medium** | Spana titrates with full equilibrium |
+| Titrations (5 modes) | **High–medium** | Acid-base, redox, and precipitation solve exact point-by-point equilibria; EDTA still freezes K′f at one pH |
 | L-L extraction / ion exchange | **Low in Spana** | Own modules (Spana barely covers these) |
 
 ---
