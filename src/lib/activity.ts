@@ -76,6 +76,29 @@ export const ION_SIZES: { label: string; z: number; a: number }[] = [
   { label: 'PO₄³⁻ / Fe(CN)₆³⁻', z: 3, a: 4 },
 ];
 
+/**
+ * Activity-corrected overall formation constants (concentration basis).
+ * β°ᵢ = a_MLᵢ/(a_M·a_Lⁱ) is thermodynamic, so the concentration quotient is
+ * β′ᵢ = β°ᵢ·γ_M·γ_Lⁱ/γ_MLᵢ → log β′ᵢ = log β°ᵢ + log γ_M + i·log γ_L − log γ_MLᵢ,
+ * with z(MLᵢ) = zM + i·zL. For oppositely charged ions the free-ion γ product
+ * outweighs γ_ML (charge cancellation), so β′ < β° at I > 0 — the ionic
+ * atmosphere stabilizes the free ions more than the complex.
+ * Extended Debye-Hückel (a = 3 Å), consistent with the engine-side pKsp
+ * corrections in conditional.ts/sideReactions.ts. A neutral ligand (zL = 0)
+ * with i·zL = 0 gives zero correction, as it should in a z-only γ model.
+ * For a single reaction M + Y ⇌ MY pass [logKf] and take element 0.
+ */
+export function correctedLogBetas(logBetas: number[], zM: number, zL: number, I: number): number[] {
+  if (I <= 0) return [...logBetas];
+  return logBetas.map((b, idx) => {
+    const i = idx + 1;
+    return b
+      + logActivityCoefficient(Math.abs(zM), I)
+      + i * logActivityCoefficient(Math.abs(zL), I)
+      - logActivityCoefficient(Math.abs(zM + i * zL), I);
+  });
+}
+
 /** Effective pH from a_H (activity). */
 export function pHFromActivity(aH: number): number {
   return -Math.log10(Math.max(aH, 1e-30));

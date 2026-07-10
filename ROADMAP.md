@@ -20,7 +20,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 
 - Pourbaix diagrams: *E*–pH for Fe, Cu, Mn, Zn, Cr and fully custom N-species / N-couples systems with auto-derived boundaries; "edit this system" seeds custom mode from any preset (lossless for hydroxide-only systems — Fe, Zn, Ni, Cr; partial for systems with a disproportionation/oxide solid — Cu, Mn, Pb — with an inline warning listing what wasn't carried over)
 - Acid–base mixtures: up to four coexisting systems, each fully user-editable (free label, pKa list, z₀ incl. aqua-cations, database presets as auto-fill), any starting salt form per component, buffer capacity β = *f*(pH)
-- Conditional constants: log *K*′ = *f*(pH), side reactions, masking, feasibility window (Ringbom)
+- Conditional constants: log *K*′ = *f*(pH), side reactions, masking, feasibility window (Ringbom), optional activity correction of *K*f at *I* > 0
 - Selective precipitation: log *s* = *f*(pH) and log *s* = *f*(pX), separation windows, redissolution
 - Conditional potential: *E*°′ = *f*(pH), disproportionation (Latimer), *E*°′ = *f*(pX)
 - Liquid–liquid extraction: partition, chelates, successive extractions, preconcentration

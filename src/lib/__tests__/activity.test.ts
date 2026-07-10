@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  activityCoefficient, apparentPKw, gammaDavies, gammaGuntelberg, ION_SIZES,
+  activityCoefficient, apparentPKw, correctedLogBetas, gammaDavies, gammaGuntelberg,
+  logActivityCoefficient, ION_SIZES,
 } from '../activity';
 
 const tol = (val: number, expected: number, delta = 0.02) =>
@@ -60,6 +61,32 @@ describe('ION_SIZES (Kielland)', () => {
     tol(activityCoefficient(h.z, 0.1, h.a), 0.83, 0.01);
     const ca = ION_SIZES.find((x) => x.label.startsWith('Ca²⁺'))!;
     tol(activityCoefficient(ca.z, 0.1, ca.a), 0.405, 0.01);
+  });
+});
+
+// log β′ = log β° + log γ_M + i·log γ_L − log γ_MLᵢ (concentration-basis constants).
+describe('correctedLogBetas', () => {
+  it('Ca²⁺ + Y⁴⁻ → CaY²⁻ (log Kf 10.65, I=0.1): la corrección neta es +log γ(4) — γ(2) se cancela', () => {
+    // z(MY) = 2 − 4 = −2, so log K′ = 10.65 + logγ(2) + logγ(4) − logγ(2) = 10.65 + logγ(4).
+    const kPrime = correctedLogBetas([10.65], 2, -4, 0.1)[0];
+    tol(kPrime, 10.65 + logActivityCoefficient(4, 0.1), 1e-12);
+    // γ < 1 → the concentration-basis K′ is SMALLER (≈ 8.68): net charge builds up.
+    tol(kPrime, 8.68, 0.01);
+  });
+
+  it('ligando neutro (zL=0): corrección exactamente cero a cualquier I', () => {
+    expect(correctedLogBetas([8, 14], 2, 0, 0.5)).toEqual([8, 14]);
+  });
+
+  it('I=0 devuelve las β ideales sin tocar', () => {
+    expect(correctedLogBetas([4.04, 7.47], 2, -1, 0)).toEqual([4.04, 7.47]);
+  });
+
+  it('complejo neutro ML₂ (M²⁺ + 2L⁻): β′ < β° — formar un neutro desde iones se desfavorece a I>0', () => {
+    // z(ML₂) = 0 → γ_ML = 1, so log β′₂ = log β₂ + log γ(2) + 2·log γ(1).
+    const [, b2] = correctedLogBetas([5, 10], 2, -1, 0.1);
+    expect(b2).toBeLessThan(10);
+    tol(b2, 10 + logActivityCoefficient(2, 0.1) + 2 * logActivityCoefficient(1, 0.1), 1e-12);
   });
 });
 

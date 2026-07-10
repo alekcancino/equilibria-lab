@@ -4,12 +4,13 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useShareableState, hasSharedUrlState } from '../hooks/useShareableState';
 import { useComplejosCarryOver, type ComplejosCarryOver } from '../context/ComplejosCarryOverContext';
+import { correctedLogBetas } from '../lib/activity';
 import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  Slider, ConcSlider, DbPanel, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, Toggle,
+  Slider, ConcSlider, DbPanel, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Toggle,
 } from '../components/Controls';
 import { fractionFormedExcess, operatingPoint } from '../lib/metrics';
 import { SideReactionEditor } from '../components/Editors';
@@ -43,6 +44,9 @@ interface CondState {
   evalPH: number;
   co: number;
   targetPct: number;
+  useActivity: boolean;
+  ionicI: number;
+  zM: number;
 }
 
 function defaultState(): CondState {
@@ -60,6 +64,9 @@ function defaultState(): CondState {
     evalPH: 10,
     co: 0.1,
     targetPct: 99.9,
+    useActivity: false,
+    ionicI: 0.1,
+    zM: 2,
   };
 }
 
@@ -152,47 +159,58 @@ export default function ConstantesCondicionales() {
     Módulo: 'Constantes condicionales (EDTA)',
     Metal: s.metalLabel,
     'log Kf': s.logKf.toFixed(2),
+    ...(s.useActivity ? { 'I / M': s.ionicI.toFixed(4), zM: String(s.zM) } : {}),
     'pH evaluación': s.evalPH.toFixed(1),
     'Co / M': s.co.toFixed(4),
-  }), [s.metalLabel, s.logKf, s.evalPH, s.co]);
+  }), [s.metalLabel, s.logKf, s.evalPH, s.co, s.useActivity, s.ionicI, s.zM]);
 
   const stack = useMemo(() => sideStackFromEditor(s.side), [s.side]);
 
+  // Activity-corrected formation constants (EDTA is Y^4- so zY = -4); the same
+  // (zM, zY) correction is applied to every M-Y reaction shown so the Ringbom
+  // comparisons stay consistent. The sliders keep the ideal (I = 0) values.
+  const corrK = useCallback(
+    (logK: number) => (s.useActivity ? correctedLogBetas([logK], s.zM, -4, s.ionicI)[0] : logK),
+    [s.useActivity, s.zM, s.ionicI],
+  );
+  const logKfEff = corrK(s.logKf);
+  const logKf2Eff = corrK(s.logKf2);
+
   const curve1 = useMemo(() =>
-    condLogKCurveFromStack(s.logKf, stack, [PH_MIN, PH_MAX], PH_POINTS),
-    [s.logKf, stack],
+    condLogKCurveFromStack(logKfEff, stack, [PH_MIN, PH_MAX], PH_POINTS),
+    [logKfEff, stack],
   );
 
   const multiCurves = useMemo(() => {
     if (!s.showMulti || s.extraReactions.length === 0) return null;
-    const reactions = [{ label: s.metalLabel, logKf: s.logKf }, ...s.extraReactions];
+    const reactions = [{ label: s.metalLabel, logKf: logKfEff }, ...s.extraReactions.map((r) => ({ ...r, logKf: corrK(r.logKf) }))];
     return condLogKCurveMulti(reactions, stack, [PH_MIN, PH_MAX], PH_POINTS);
-  }, [s.showMulti, s.extraReactions, s.metalLabel, s.logKf, stack]);
+  }, [s.showMulti, s.extraReactions, s.metalLabel, logKfEff, corrK, stack]);
 
   const curve2 = useMemo(() =>
     s.showMask
       ? condLogKCurveFromStack(
-          s.logKf2,
+          logKf2Eff,
           { ligandPKas: [...s.side.ligandPKas], hydrolysis: s.logBetasOH2.length ? { logBetasOH: s.logBetasOH2 } : undefined },
           [PH_MIN, PH_MAX],
           PH_POINTS,
         )
       : null,
-    [s.showMask, s.logKf2, s.side.ligandPKas, s.logBetasOH2],
+    [s.showMask, logKf2Eff, s.side.ligandPKas, s.logBetasOH2],
   );
 
   const logKAtEval = useMemo(
-    () => condLogKPrimary(s.logKf, s.evalPH, stack),
-    [s.logKf, s.evalPH, stack],
+    () => condLogKPrimary(logKfEff, s.evalPH, stack),
+    [logKfEff, s.evalPH, stack],
   );
 
   /** Local slope d(log K′)/dpH at the evaluation pH (linear segment, 2nd-order). */
   const slopeAtEval = useMemo(() => {
     const h = 0.25;
-    const lo = condLogKPrimary(s.logKf, Math.max(PH_MIN, s.evalPH - h), stack);
-    const hi = condLogKPrimary(s.logKf, Math.min(PH_MAX, s.evalPH + h), stack);
+    const lo = condLogKPrimary(logKfEff, Math.max(PH_MIN, s.evalPH - h), stack);
+    const hi = condLogKPrimary(logKfEff, Math.min(PH_MAX, s.evalPH + h), stack);
     return (hi - lo) / (2 * h);
-  }, [s.logKf, s.evalPH, stack]);
+  }, [logKfEff, s.evalPH, stack]);
 
   // "% + operating point" metric: fraction formed of M+Y at Co (ligand in excess) using log K′(pH).
   // pH para 10/50/90 % por bisección sobre f(pH) = K'(pH)·Co / (1 + K'(pH)·Co).
@@ -201,8 +219,8 @@ export default function ConstantesCondicionales() {
     [logKAtEval, s.co],
   );
   const formedMetric = useCallback(
-    (pH: number) => fractionFormedExcess(condLogKPrimary(s.logKf, pH, stack), s.co) * 100,
-    [s.logKf, stack, s.co],
+    (pH: number) => fractionFormedExcess(condLogKPrimary(logKfEff, pH, stack), s.co) * 100,
+    [logKfEff, stack, s.co],
   );
   const phForPct = useMemo(() => ({
     p10: operatingPoint(formedMetric, 10, PH_MIN, PH_MAX),
@@ -398,6 +416,7 @@ export default function ConstantesCondicionales() {
             s.side.showComplex && 'protonación del complejo',
             s.showMask && 'competencia entre metales',
             s.showMulti && 'varias reacciones principales',
+            s.useActivity && `K′f corregida a I = ${s.ionicI.toPrecision(2)} M`,
           ]}
         />
         <LabelField label="Metal (M)" value={s.metalLabel} onChange={(v) => set('metalLabel', v)} />
@@ -529,6 +548,23 @@ export default function ConstantesCondicionales() {
           </div>
           <p className="hint">6 = reacción cuantitativa · 8 = titulación nítida (0.01 M)</p>
         </div>
+
+        <Toggle
+          label="Corrección de actividad (K′f a I > 0)"
+          checked={s.useActivity}
+          onChange={(v) => set('useActivity', v)}
+        />
+        {s.useActivity && (
+          <div className="mask-section">
+            <ConcSlider label="Fuerza iónica I" helpId="ionicStrength" value={s.ionicI} onChange={(v) => set('ionicI', v)} min={-3} max={0} />
+            <NumberSegmented label="Carga del metal (zM)" value={s.zM} options={[1, 2, 3, 4]} onChange={(v) => set('zM', v)} />
+            <p className="hint">
+              log K′f = log Kf + log γ_M + log γ_Y − log γ(MY), con Y⁴⁻ (zY = −4) y
+              z(MY) = zM − 4 (Debye–Hückel extendida, a = 3 Å). La misma corrección se
+              aplica a todos los metales mostrados (se asume la misma zM).
+            </p>
+          </div>
+        )}
 
         {/* 2nd metal — comparison / masking */}
         <Toggle
