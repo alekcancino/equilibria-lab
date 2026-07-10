@@ -10,6 +10,8 @@
 // Species order is fixed: [M, ML₁…MLₙ, MX₁…MXₘ].
 
 import { alphaH } from './conditional';
+import { SPECIES_COLORS } from './database';
+import type { Zone } from './ladder';
 import type { LigandSpec, SideReactionEditorState } from './sideReactions';
 
 /**
@@ -246,6 +248,69 @@ export function twoLigandCurve(
     out.push({ pL, pX, fractions, nBarL, nBarX });
   }
   return out;
+}
+
+/**
+ * Predominance zones over the pL axis for the coupled two-ligand system —
+ * sweep + bisection refinement, same technique as speciation.ts's
+ * predominanceZonesVsPH (each sample needs a pX solve, so there's no
+ * closed-form ladder to evaluate).
+ */
+export function twoLigandPredominanceZones(
+  cM: number,
+  logBetasL: number[],
+  x: XBranch,
+  pH: number,
+  labels: string[],
+  pLRange: [number, number],
+): Zone[] {
+  const [pMin, pMax] = pLRange;
+  const N = 1500;
+  const fractionsAt = (pL: number) =>
+    twoLigandFractions(pL, solvePXAtPL(pL, cM, x, pH, logBetasL), logBetasL, x.logBetasX);
+  const refine = (lo: number, hi: number, a: number, b: number): number => {
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      const fr = fractionsAt(mid);
+      if (fr[b] - fr[a] < 0) lo = mid;
+      else hi = mid;
+    }
+    return (lo + hi) / 2;
+  };
+
+  const zones: Zone[] = [];
+  let curIdx = -1;
+  let zoneStart = pMin;
+  let prevP = pMin;
+
+  const pushZone = (end: number) => {
+    if (curIdx >= 0 && end > zoneStart) {
+      zones.push({
+        label: labels[curIdx] ?? `S${curIdx}`,
+        index: curIdx,
+        pStart: zoneStart,
+        pEnd: end,
+        color: SPECIES_COLORS[curIdx % SPECIES_COLORS.length],
+      });
+    }
+  };
+
+  for (let i = 0; i <= N; i++) {
+    const pL = pMin + ((pMax - pMin) * i) / N;
+    const fr = fractionsAt(pL);
+    const max = Math.max(...fr);
+    // indexOf(NaN) = -1 doubles as the "no dominant species" sentinel.
+    const dom = Number.isNaN(max) ? -1 : fr.indexOf(max);
+    if (dom !== curIdx) {
+      const edge = curIdx >= 0 && dom >= 0 ? refine(prevP, pL, curIdx, dom) : pL;
+      pushZone(edge);
+      curIdx = dom;
+      zoneStart = edge;
+    }
+    prevP = pL;
+  }
+  pushZone(pMax);
+  return zones;
 }
 
 /** Builds the X branch from the shared SideReactionEditor state; null = X disabled/empty. */

@@ -159,6 +159,7 @@ export function SideReactionEditor({
   showLigandPKas = true,
   ligandTitle = 'pKas del ligante Y (EDTA por defecto)',
   showComplexSection = true,
+  showHydrolysisSection = true,
 }: {
   state: SideReactionEditorState;
   onChange: (s: SideReactionEditorState) => void;
@@ -168,6 +169,9 @@ export function SideReactionEditor({
    * affects α_Y (via alphaComplex), which is meaningless where there's no
    * primary M–Y complex (e.g. a bare redox Ox/Red side-reaction stack). */
   showComplexSection?: boolean;
+  /** Hide "Hidrólisis del metal α_M(OH)" — the coupled X-M-L engine only
+   * consumes the auxiliary-ligand section (OH enters as X with fixed pX). */
+  showHydrolysisSection?: boolean;
 }) {
   const set = <K extends keyof SideReactionEditorState>(k: K, v: SideReactionEditorState[K]) =>
     onChange({ ...state, [k]: v });
@@ -191,6 +195,7 @@ export function SideReactionEditor({
         </details>
       )}
 
+      {showHydrolysisSection && (
       <details
         className="section-collapse"
         open={state.showOH}
@@ -212,6 +217,7 @@ export function SideReactionEditor({
           initialValue={5}
         />
       </details>
+      )}
 
       <details
         className="section-collapse"
