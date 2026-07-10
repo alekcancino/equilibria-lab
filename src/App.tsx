@@ -33,6 +33,7 @@ const SolubilidadCondicional = lazy(() => import('./modules/SolubilidadCondicion
 const PotencialCondicional   = lazy(() => import('./modules/PotencialCondicional'));
 const ExtraccionLiquido      = lazy(() => import('./modules/ExtraccionLiquido'));
 const SolubilidadSal         = lazy(() => import('./modules/SolubilidadSal'));
+const PrecipitacionCompetitiva = lazy(() => import('./modules/PrecipitacionCompetitiva'));
 const Titulacion             = lazy(() => import('./modules/Titulacion'));
 const IntercambioIonico      = lazy(() => import('./modules/IntercambioIonico'));
 const Actividad              = lazy(() => import('./modules/Actividad'));
@@ -95,6 +96,7 @@ const HUBS: Hub[] = [
       { id: 'solubilidad', label: 'Ksp e ion común', component: Solubilidad },
       { id: 'solsal', label: 'Solubilidad y pH', component: SolubilidadSal },
       { id: 'solcond', label: 'Precipitación selectiva', component: SolubilidadCondicional },
+      { id: 'solcomp', label: 'Competitiva (2 sales)', component: PrecipitacionCompetitiva },
     ],
   },
   {
