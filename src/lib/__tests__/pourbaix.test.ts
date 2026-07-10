@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildArbitraryDiagram, S_NERNST, type ArbSpecies, type ArbCouple } from '../pourbaix';
+import {
+  buildArbitraryDiagram, getSystemDef, presetToArbitrary, S_NERNST,
+  type ArbSpecies, type ArbCouple,
+} from '../pourbaix';
 
 const S = S_NERNST;
 const PKW = 14;
@@ -138,5 +141,84 @@ describe('buildArbitraryDiagram — species without couple produce no boundaries
     // Only one deposition boundary (A³⁺/A); no boundary mentions B²⁺
     const mentionsB = d.lines.filter((l) => l.name.includes('B²⁺'));
     expect(mentionsB).toHaveLength(0);
+  });
+});
+
+describe('getSystemDef', () => {
+  it('devuelve el SystemDef de un preset conocido', () => {
+    expect(getSystemDef('fe')?.name).toBe('Fe-H₂O');
+  });
+
+  it('devuelve undefined para ids desconocidos o el _comment (no es un SystemDef)', () => {
+    expect(getSystemDef('no-existe')).toBeUndefined();
+    expect(getSystemDef('_comment')).toBeUndefined();
+  });
+});
+
+describe('presetToArbitrary — conversión preset → modo custom', () => {
+  it('Fe: sistema solo-hidróxido, sin pérdida', () => {
+    const { arb, warnings } = presetToArbitrary(getSystemDef('fe')!);
+    expect(warnings).toHaveLength(0);
+    expect(arb.couples).toHaveLength(2);
+    const fe3 = arb.species.find((s) => s.formula === 'Fe³⁺');
+    const fe2 = arb.species.find((s) => s.formula === 'Fe²⁺');
+    const feoh3 = arb.species.find((s) => s.formula === 'Fe(OH)₃');
+    const feoh2 = arb.species.find((s) => s.formula === 'Fe(OH)₂');
+    const fe = arb.species.find((s) => s.formula === 'Fe' && s.kind === 'metal');
+    expect(fe3).toMatchObject({ kind: 'ion', z: 3 });
+    expect(fe2).toMatchObject({ kind: 'ion', z: 2 });
+    expect(feoh3).toMatchObject({ kind: 'hydroxide', z: 3, pKsp: 39.0, ionRef: 'Fe³⁺' });
+    expect(feoh2).toMatchObject({ kind: 'hydroxide', z: 2, pKsp: 15.0, ionRef: 'Fe²⁺' });
+    expect(fe).toBeDefined();
+  });
+
+  it('Fe: el diagrama derivado del custom convertido reproduce E° de la couple aqueous en pH=0', () => {
+    const { arb } = presetToArbitrary(getSystemDef('fe')!);
+    const d = buildArbitraryDiagram(arb.species, arb.couples, -2);
+    const line = d.lines.find((l) => l.name === 'Fe³⁺ / Fe²⁺');
+    expect(line).toBeDefined();
+    expect(line!.E[0]).toBeCloseTo(0.771, 6);
+  });
+
+  it('Cr: 4 couples, todas convertibles (HCrO₄⁻ y Cr²⁺ sin Solid.z usan el fallback de carga)', () => {
+    const { arb, warnings } = presetToArbitrary(getSystemDef('cr')!);
+    expect(warnings).toHaveLength(0);
+    expect(arb.couples).toHaveLength(4);
+    expect(arb.species.find((s) => s.formula === 'HCrO₄⁻')).toMatchObject({ kind: 'ion', z: 1 });
+    expect(arb.species.find((s) => s.formula === 'Cr²⁺')).toMatchObject({ kind: 'ion', z: 2 });
+  });
+
+  it('Cu: Cu₂O (tipo "oxide1") se omite con warning; las 3 couples (ninguna referencia Cu₂O directo) se conservan', () => {
+    const { arb, warnings } = presetToArbitrary(getSystemDef('cu')!);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('Cu₂O');
+    expect(arb.couples).toHaveLength(3);
+    expect(arb.species.some((s) => s.formula === 'Cu₂O')).toBe(false);
+    expect(arb.species.find((s) => s.formula === 'Cu⁺')).toMatchObject({ kind: 'ion', z: 1 });
+  });
+
+  it('Mn: la couple MnO₂/Mn²⁺ (óxido referenciado sin modelo de disolución) se omite con warning', () => {
+    const { arb, warnings } = presetToArbitrary(getSystemDef('mn')!);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('MnO₂');
+    expect(arb.couples).toHaveLength(1);
+    expect(arb.couples[0]).toMatchObject({ ox: 'Mn²⁺', red: 'Mn' });
+    expect(arb.species.find((s) => s.formula === 'Mn(OH)₂')).toMatchObject({ kind: 'hydroxide' });
+  });
+
+  it('Pb: mismo patrón que Mn — la couple PbO₂/Pb²⁺ se omite con warning', () => {
+    const { arb, warnings } = presetToArbitrary(getSystemDef('pb')!);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('PbO₂');
+    expect(arb.couples).toHaveLength(1);
+  });
+
+  it('todos los presets convierten sin lanzar excepción y producen especies/couples no vacíos', () => {
+    for (const id of ['fe', 'cu', 'mn', 'zn', 'ni', 'pb', 'cr']) {
+      const { arb } = presetToArbitrary(getSystemDef(id)!);
+      expect(arb.species.length).toBeGreaterThan(0);
+      expect(arb.couples.length).toBeGreaterThan(0);
+      expect(() => buildArbitraryDiagram(arb.species, arb.couples, -2)).not.toThrow();
+    }
   });
 });

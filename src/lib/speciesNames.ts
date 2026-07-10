@@ -20,6 +20,22 @@ export function chargeSuperscript(z: number): string {
   return (mag === 1 ? '' : String(mag).split('').map((d) => SUP[d] ?? d).join('')) + sign;
 }
 
+const SUP_TO_DIGIT: Record<string, string> = Object.fromEntries(
+  Object.entries(SUP).map(([digit, sup]) => [sup, digit]),
+);
+
+/** Inverse of chargeSuperscript's magnitude: charge magnitude parsed from a
+ * formula's trailing unicode superscript (e.g. "Fe³⁺" → 3, "Cu⁺" → 1). Returns
+ * 1 when no digit precedes the trailing ⁺/⁻, or when the formula has no
+ * charge marker at all — callers that need to distinguish "no charge" should
+ * check for the marker themselves before calling this. */
+export function chargeMagnitude(formula: string): number {
+  const m = formula.match(/([⁰¹²³⁴⁵⁶⁷⁸⁹]*)[⁺⁻]$/);
+  if (!m) return 1;
+  const digits = m[1].split('').map((c) => SUP_TO_DIGIT[c] ?? '').join('');
+  return digits ? parseInt(digits, 10) : 1;
+}
+
 /**
  * Generic labels for an HnA system with charge z0 on the most protonated form:
  * H₃A, H₂A⁻, HA²⁻, A³⁻ (or BH⁺/B if z0 > 0 with base "B").

@@ -8,7 +8,7 @@ import {
   SelectControl, Slider, Toggle,
 } from '../components/Controls';
 import {
-  availableSystems, buildSystem, buildArbitraryDiagram, waterLines,
+  availableSystems, buildSystem, buildArbitraryDiagram, getSystemDef, presetToArbitrary, waterLines,
   type ArbSpecies, type ArbCouple,
 } from '../lib/pourbaix';
 import { formatMolar } from '../lib/format';
@@ -262,6 +262,16 @@ export default function Pourbaix() {
   const [cursorPH, setCursorPH] = useState(7);
   const [cursorE, setCursorE] = useState(0);
   const [arb, setArb] = useState<ArbitraryCustom>(DEFAULT_ARB);
+  const [editWarnings, setEditWarnings] = useState<string[]>([]);
+
+  function editCurrentSystem() {
+    const def = getSystemDef(systemId);
+    if (!def) return;
+    const { arb: converted, warnings } = presetToArbitrary(def);
+    setArb(converted);
+    setEditWarnings(warnings);
+    setUseCustom(true);
+  }
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Pourbaix',
@@ -287,6 +297,7 @@ export default function Pourbaix() {
     setCursorPH(7);
     setCursorE(0);
     setArb(DEFAULT_ARB);
+    setEditWarnings([]);
   }
 
   const diagram = useMemo(
@@ -355,7 +366,11 @@ export default function Pourbaix() {
             additions={[!useCustom && 'especies de base de datos', showWater && 'estabilidad del agua']}
           />
 
-          <Toggle label="Modo personalizado (sistema propio)" checked={useCustom} onChange={setUseCustom} />
+          <Toggle
+            label="Modo personalizado (sistema propio)"
+            checked={useCustom}
+            onChange={(v) => { setUseCustom(v); setEditWarnings([]); }}
+          />
 
           {!useCustom ? (
             <>
@@ -363,16 +378,28 @@ export default function Pourbaix() {
                 label="Sistema metal–H₂O"
                 value={systemId}
                 options={systems.map((s) => ({ value: s.id, label: s.name }))}
-                onChange={setSystemId}
+                onChange={(v) => { setSystemId(v); setEditWarnings([]); }}
               />
               {diagram && diagram.excluded.length > 0 && (
                 <p className="badge warn">
                   Diagrama simplificado — especies excluidas: {diagram.excluded.join(', ')}
                 </p>
               )}
+              <button type="button" className="add-btn" onClick={editCurrentSystem}>
+                Editar este sistema
+              </button>
+              <p className="hint">
+                Parte de este preset en modo personalizado para cambiar constantes, agregar
+                especies o usarlo como base de tu propio sistema.
+              </p>
             </>
           ) : (
             <>
+              {editWarnings.length > 0 && (
+                <p className="badge warn">
+                  No convertidas a modo personalizado (edítalas a mano si las necesitas): {editWarnings.join(', ')}
+                </p>
+              )}
               <p className="editor-title" style={{ color: '#0072B2', marginBottom: 6 }}>Especies</p>
               <SpeciesEditor species={arb.species} onChange={(species) => setArb((a) => ({ ...a, species }))} />
               <p className="editor-title" style={{ color: '#0072B2', marginTop: 12, marginBottom: 6 }}>Pares redox fundamentales</p>
