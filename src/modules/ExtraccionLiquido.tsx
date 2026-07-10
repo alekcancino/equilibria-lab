@@ -21,7 +21,9 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow } from '../components/Controls';
-import { alphaFractions } from '../lib/equilibrium';
+import {
+  distributionD, percentE1, percentEn, nFor, type AnalyteState,
+} from '../lib/extraction';
 import { SPECIES_COLORS } from '../lib/database';
 import { formatSci } from '../lib/format';
 
@@ -62,52 +64,6 @@ const PRESETS: ExtractionPreset[] = [
   { id: 'pb_dithiz', label: 'Pb²⁺ + Ditizona',         formula: 'Pb(HDz)₂', type: 'chelate', logKd:  6.30, pKas: [], neutralIdx: 0, n: 2, logCHL: -2, system: 'CHCl₃/H₂O' },
 ];
 
-// ── Engine ────────────────────────────────────────────────────────────────────
-
-function distributionD(
-  a: AnalyteState,
-  pH: number,
-  dimer?: { enabled: boolean; logK2: number },
-): number {
-  if (a.type === 'chelate') {
-    // D = K_ex · [HL]_org^n · 10^(n·pH)
-    return Math.pow(10, a.logKd + a.n * a.logCHL + a.n * pH);
-  }
-  const Kd = Math.pow(10, a.logKd);
-  if (a.pKas.length === 0) return Kd;
-  const h = Math.pow(10, -pH);
-  const alphas = alphaFractions(h, a.pKas);
-  const aN = alphas[Math.min(a.neutralIdx, alphas.length - 1)] ?? 0;
-  const Dmono = Kd * aN;
-  if (dimer?.enabled && a.type === 'acid') {
-    const K2 = Math.pow(10, dimer.logK2);
-    // Organic-phase dimer: D_eff = D_mono · (1 + K₂·α²) shifts the log D maximum
-    return Dmono * (1 + K2 * aN * aN);
-  }
-  return Dmono;
-}
-
-/** %E en una sola extracción. r = Vorg/Vaq. */
-function percentE1(D: number, r: number): number {
-  return 100 * D * r / (D * r + 1);
-}
-
-/** %E acumulado tras n extracciones iguales. */
-function percentEn(D: number, r: number, n: number): number {
-  if (D <= 0) return 0;
-  const remaining = Math.pow(1 / (1 + D * r), n);
-  return 100 * (1 - remaining);
-}
-
-/** Número mínimo de extracciones para %E ≥ target. */
-function nFor(D: number, r: number, target: number): number | null {
-  if (D <= 0) return null;
-  const base = 1 / (1 + D * r);
-  if (base <= 0) return 1;
-  const n = Math.ceil(Math.log(1 - target / 100) / Math.log(base));
-  return n > 0 && n <= 100 ? n : null;
-}
-
 // ── Colors ────────────────────────────────────────────────────────────────────
 
 const C1 = SPECIES_COLORS[0]; // orange — analyte 1
@@ -117,16 +73,6 @@ const C_N = ['#D55E00', '#0072B2', '#009E73'];
 const PH_N = 400;
 
 // ── State interfaces ──────────────────────────────────────────────────────────
-
-interface AnalyteState {
-  label: string;
-  type: 'acid' | 'chelate';
-  logKd: number;
-  pKas: number[];
-  neutralIdx: number;
-  n: number;        // chelate: metal charge
-  logCHL: number;   // chelate: log[HL]_org, chelating agent concentration in organic phase
-}
 
 function presetState(id: string): AnalyteState {
   const p = PRESETS.find((x) => x.id === id) ?? PRESETS[0];
