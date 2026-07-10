@@ -163,6 +163,7 @@ export default function Solubilidad() {
       <PanelShell
         title={mode === 'ionic' ? <>Solubilidad (K<sub>ps</sub>)</> : 'Solubilidad (sólido molecular)'}
         onReset={reset}
+        moduleId="solubilidad"
       >
         <PanelSection title="Sistema" icon="⚛">
           <div className="control">

@@ -387,7 +387,7 @@ export default function ConstantesCondicionales() {
 
   return (
     <div className="module">
-      <PanelShell title="Constantes condicionales" onReset={reset}>
+      <PanelShell title="Constantes condicionales" onReset={reset} moduleId="condicionalesedta">
         <PanelSection title="Metal y ligante" icon="⚛">
         <ModelBadge
           model="equilibrio principal M–Y"

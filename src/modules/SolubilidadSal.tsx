@@ -244,7 +244,7 @@ export default function SolubilidadSal() {
 
   return (
     <div className="module">
-      <PanelShell title="Solubilidad y pH" onReset={reset}>
+      <PanelShell title="Solubilidad y pH" onReset={reset} moduleId="solsal">
         <PanelSection title="Sistema 1" icon="①">
         <ModelBadge
           model={sal1.pKas.length === 0 ? 'solubilidad intrínseca' : 'solubilidad condicionada por pH'}

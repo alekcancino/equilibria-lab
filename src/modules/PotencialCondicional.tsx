@@ -443,7 +443,7 @@ export default function PotencialCondicional() {
 
   return (
     <div className="module">
-      <PanelShell title="Potencial condicional" onReset={reset}>
+      <PanelShell title="Potencial condicional" onReset={reset} moduleId="potencialcond">
         <PanelSection title="Sistema" icon="⚛">
           <ModelBadge
             model="comparación E°′ = f(pH) entre dos pares"

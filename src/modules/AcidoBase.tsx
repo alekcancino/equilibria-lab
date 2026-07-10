@@ -163,7 +163,7 @@ export default function AcidoBase() {
 
   return (
     <div className="module">
-      <PanelShell title="Equilibrio ácido-base" onReset={reset}>
+      <PanelShell title="Equilibrio ácido-base" onReset={reset} moduleId="acidobase">
         <PanelSection title="Sistema" icon="⚛">
           <AcidSystemEditor system={system} onChange={setSystem} allowAquaCations />
         </PanelSection>

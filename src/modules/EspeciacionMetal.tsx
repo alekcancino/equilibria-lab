@@ -262,7 +262,7 @@ export default function EspeciacionMetal() {
 
   return (
     <div className="module">
-      <PanelShell title="Especiación del metal (M–OH–L vs pH)" onReset={reset}>
+      <PanelShell title="Especiación del metal (M–OH–L vs pH)" onReset={reset} moduleId="especiacion">
         <PanelSection title="Metal e hidrólisis" icon="⚛">
           <ModelBadge
             model={nOH === 0 ? 'sin hidrólisis modelada' : `hidrólisis hasta M(OH)${toSub(nOH)}`}

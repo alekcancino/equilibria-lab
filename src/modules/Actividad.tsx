@@ -106,7 +106,7 @@ export default function Actividad() {
 
   return (
     <div className="module">
-      <PanelShell title="Actividad y Debye-Hückel" onReset={reset}>
+      <PanelShell title="Actividad y Debye-Hückel" onReset={reset} moduleId="actividad">
         <PanelSection title="Sistema" icon="⚛">
           <ModelBadge model="electrolito binario z:z en solución acuosa" />
           <div className="control">

@@ -1307,6 +1307,103 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   background: #ecfdf5;
 }
 
+.saved-systems {
+  position: relative;
+}
+
+.saved-systems summary {
+  list-style: none;
+}
+.saved-systems summary::-webkit-details-marker { display: none; }
+
+.saved-systems-menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 220px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.saved-systems-save {
+  display: flex;
+  gap: 6px;
+}
+
+.saved-systems-save .text-field {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-xs);
+}
+
+/* .add-btn defaults to width:100% for its usual standalone full-row use
+   (e.g. "+ Agregar pKa") — override it here so it sits compactly next to
+   the input instead of swallowing most of the flex row. */
+.saved-systems-save .add-btn {
+  width: auto;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: var(--text-xs);
+}
+
+.saved-systems-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.saved-systems-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.saved-systems-load {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  font-size: var(--text-xs);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.saved-systems-load:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.saved-systems-load > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-systems-date {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
 .section-btn:focus-visible,
 .subnav-tab:focus-visible,
 .diagram-tab:focus-visible,

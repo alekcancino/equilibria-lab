@@ -324,7 +324,7 @@ export default function Complejos() {
 
   return (
     <div className="module">
-      <PanelShell title="Equilibrio de complejación" onReset={reset}>
+      <PanelShell title="Equilibrio de complejación" onReset={reset} moduleId="complejos">
         <PanelSection title="Sistema" icon="⚛">
           <ModelBadge
             model={sys.logBetas.length === 1

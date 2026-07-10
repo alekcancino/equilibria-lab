@@ -359,7 +359,7 @@ export default function Pourbaix() {
 
   return (
     <div className="module">
-      <PanelShell title="Diagrama de Pourbaix" onReset={reset}>
+      <PanelShell title="Diagrama de Pourbaix" onReset={reset} moduleId="pourbaix">
         <PanelSection title="Sistema" icon="⚛">
           <ModelBadge
             model={useCustom ? 'sistema arbitrario (N parejas + N sólidos)' : 'sistema metal–agua de múltiples especies'}

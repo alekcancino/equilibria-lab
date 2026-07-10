@@ -481,7 +481,7 @@ export default function SolubilidadCondicional() {
 
   return (
     <div className="module">
-      <PanelShell title="Precipitación selectiva" onReset={reset}>
+      <PanelShell title="Precipitación selectiva" onReset={reset} moduleId="solcond">
         <PanelSection title="Metal 1 (precipitar)" icon="①">
           <ModelBadge
             model={s.m1.logBetasOH.length === 0
