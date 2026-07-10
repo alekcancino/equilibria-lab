@@ -44,8 +44,10 @@ export interface HubMeta {
   label: string;
   /** One-line description shown on the home card. */
   desc: string;
-  /** Hub-specific model assumptions + validation sources (assumptions badge). */
+  /** Hub-specific model assumptions (methodology, not the cross-check citation). */
   assumptions: string;
+  /** What this hub's results were cross-checked against (e.g. "Spana/HALTAFALL y Harris") — shown inline, unlike `assumptions`, so it's visible without expanding the details block. */
+  crossCheck: string;
 }
 
 interface Hub extends HubMeta { views: View[] }
@@ -55,7 +57,8 @@ const HUBS: Hub[] = [
   {
     id: 'acidobase', label: 'Ácido-base',
     desc: 'pH, distribución de especies y diagramas de un sistema o de mezclas.',
-    assumptions: 'Balance de cargas exacto (bisección) · pKa por etapa · cotejado con Spana/HALTAFALL y Harris.',
+    assumptions: 'Balance de cargas exacto (bisección) · pKa por etapa.',
+    crossCheck: 'Spana/HALTAFALL y Harris',
     views: [
       { id: 'acidobase', label: 'Sistema único', component: AcidoBase },
       { id: 'mezclas', label: 'Mezclas', component: Mezclas },
@@ -64,7 +67,8 @@ const HUBS: Hub[] = [
   {
     id: 'complejos', label: 'Complejos',
     desc: 'Formación de complejos, número de Bjerrum y constantes condicionales.',
-    assumptions: 'Complejos mononucleares MLₙ · α de Ringbom para reacciones parásitas · cotejado con Harris y Ringbom.',
+    assumptions: 'Complejos mononucleares MLₙ · α de Ringbom para reacciones parásitas.',
+    crossCheck: 'Harris y Ringbom',
     views: [
       { id: 'complejos', label: 'Equilibrio (pL)', component: Complejos },
       { id: 'especiacion', label: 'Especiación vs pH', component: EspeciacionMetal },
@@ -74,7 +78,8 @@ const HUBS: Hub[] = [
   {
     id: 'redox', label: 'Redox',
     desc: 'Escala de predicción, potencial condicional E°′ y diagramas de Pourbaix.',
-    assumptions: 'pe = E/0.05916 V (convención de Sillén) · E°′ = f(pH) por mH/n · Pourbaix data-driven vía ley de Hess · cotejado con HALTAFALL.',
+    assumptions: 'pe = E/0.05916 V (convención de Sillén) · E°′ = f(pH) por mH/n · Pourbaix data-driven vía ley de Hess.',
+    crossCheck: 'HALTAFALL',
     views: [
       { id: 'redox', label: 'Escala y DUZP', component: Redox },
       { id: 'potencialcond', label: 'E°′ condicional', component: PotencialCondicional },
@@ -84,7 +89,8 @@ const HUBS: Hub[] = [
   {
     id: 'solubilidad', label: 'Solubilidad',
     desc: 'Ksp, efecto del pH e ion común, hidróxidos anfóteros y precipitación selectiva.',
-    assumptions: 'Sólidos iónicos MmXx con Ksp · anión básico y complejos hidroxo vía α · cotejado con Harris y Stumm & Morgan.',
+    assumptions: 'Sólidos iónicos MmXx con Ksp · anión básico y complejos hidroxo vía α.',
+    crossCheck: 'Harris y Stumm & Morgan',
     views: [
       { id: 'solubilidad', label: 'Ksp e ion común', component: Solubilidad },
       { id: 'solsal', label: 'Solubilidad y pH', component: SolubilidadSal },
@@ -94,7 +100,8 @@ const HUBS: Hub[] = [
   {
     id: 'separaciones', label: 'Separaciones',
     desc: 'Extracción líquido-líquido e intercambio iónico condicionados por el pH.',
-    assumptions: 'Reparto de la especie neutra (D = Kd·α) · resina con balance en 3 compartimentos · cotejado con Harris y Ringbom.',
+    assumptions: 'Reparto de la especie neutra (D = Kd·α) · resina con balance en 3 compartimentos.',
+    crossCheck: 'Harris y Ringbom',
     views: [
       { id: 'extraccion', label: 'Extracción L–L', component: ExtraccionLiquido },
       { id: 'ionexchange', label: 'Intercambio iónico', component: IntercambioIonico },
@@ -103,7 +110,8 @@ const HUBS: Hub[] = [
   {
     id: 'titulaciones', label: 'Titulaciones',
     desc: 'Curvas de valoración ácido-base, EDTA, redox, precipitación y potenciométricas.',
-    assumptions: 'pH/pM/pe exactos punto a punto con dilución · función de Gran y cuantitatividad · cotejado con Harris y Spana.',
+    assumptions: 'pH/pM/pe exactos punto a punto con dilución · función de Gran y cuantitatividad.',
+    crossCheck: 'Harris y Spana',
     views: [
       { id: 'titulacion', label: 'Curvas de titulación', component: Titulacion },
     ],
@@ -111,7 +119,8 @@ const HUBS: Hub[] = [
   {
     id: 'actividad', label: 'Actividad',
     desc: 'Coeficientes γ de Debye–Hückel, fuerza iónica y pKw aparente.',
-    assumptions: 'Debye–Hückel extendida (a ≈ 3 Å) válida a I ≲ 0.1 M · K′w = Kw/(γH·γOH) · cotejado con Harris.',
+    assumptions: 'Debye–Hückel extendida (a ≈ 3 Å) válida a I ≲ 0.1 M · K′w = Kw/(γH·γOH).',
+    crossCheck: 'Harris',
     views: [
       { id: 'actividad', label: 'Debye–Hückel', component: Actividad },
     ],
@@ -223,7 +232,7 @@ export default function App() {
             })}
           </div>
           <details className="hub-assumptions">
-            <summary>ⓘ Supuestos</summary>
+            <summary>ⓘ Supuestos · cotejado con {hub.crossCheck}</summary>
             <p>{hub.assumptions}</p>
           </details>
         </div>
@@ -243,7 +252,7 @@ export default function App() {
 
       <footer className="assumptions">
         <details className="assumptions-details">
-          <summary>Supuestos y opciones</summary>
+          <summary>Supuestos y opciones{hub && <> · cotejado con {hub.crossCheck}</>}</summary>
           <p className="assumptions-text">
             T = 25 °C · actividades ≈ concentraciones · K<sub>w</sub> = 10⁻¹⁴ ·
             constantes de Harris, Skoog, Bard 1985 y Stumm &amp; Morgan 1996 ·

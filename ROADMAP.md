@@ -36,7 +36,8 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 - Equilibrium constants database: formation constants, E° values, Ksp, pKa — sourced from Harris (*Quantitative Chemical Analysis*) and Skoog (*Analytical Chemistry*)
 - CSV export with metadata headers on every chart (module, system, conditions, date)
 - Shareable scenario links: full module state encoded in the URL
-- Saved systems: name and persist any scenario locally (localStorage) from the "Mis sistemas" button in every module's panel — reuses the shareable-link mechanism, so it works everywhere that has one (all modules except Titulaciones, see Planned)
+- Saved systems: name and persist any scenario locally (localStorage) from the "Mis sistemas" button in every module's panel — reuses the shareable-link mechanism, so it works everywhere that has one
+- In-app validation: each hub's cross-check citation (e.g. "cotejado con Spana/HALTAFALL y Harris") is always visible in the assumptions summary, not hidden behind an expand click; full methodology detail (see `docs/VALIDATION.md`) on expand
 
 ---
 
@@ -47,7 +48,6 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | Feature | Notes |
 | --- | --- |
 | **Bilingual UI (Spanish / English)** | Toggle between Spanish and English for all labels, tooltips, and InfoBox content. Chemistry notation and formula strings remain language-neutral. |
-| **In-app validation and assumptions** | Surface each module's simplifying assumptions and its cross-check status (validated against Spana/HALTAFALL) directly in the UI, so results are auditable at a glance. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP to two chemical axes. |
 | **Competitive precipitation** | Simultaneous solubility of multiple solids sharing a common ion; separation-window analysis. |
