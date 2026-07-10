@@ -248,9 +248,9 @@ export default function Actividad() {
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
             { label: 'Fuerza iónica I', value: formatMolar(I) },
-            { label: 'γ (z = 1)', value: gamma1.toFixed(3) },
-            { label: 'γ (z = 2)', value: gamma2.toFixed(3) },
-            { label: 'γ (z = 3)', value: gamma3.toFixed(3) },
+            { label: model === 'kielland' ? 'γ (z = 1, a = 3 Å)' : 'γ (z = 1)', value: gamma1.toFixed(3) },
+            { label: model === 'kielland' ? 'γ (z = 2, a = 3 Å)' : 'γ (z = 2)', value: gamma2.toFixed(3) },
+            { label: model === 'kielland' ? 'γ (z = 3, a = 3 Å)' : 'γ (z = 3)', value: gamma3.toFixed(3) },
             {
               label: model === 'kielland' ? `log γ (${ion.label})` : `log γ (z = ${z})`,
               value: logGammaMain.toFixed(3),

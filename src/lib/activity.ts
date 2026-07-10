@@ -66,7 +66,7 @@ export const ION_SIZES: { label: string; z: number; a: number }[] = [
   { label: 'NH₄⁺ / Ag⁺', z: 1, a: 2.5 },
   { label: 'OH⁻ / F⁻', z: 1, a: 3.5 },
   { label: 'CH₃COO⁻', z: 1, a: 4.5 },
-  { label: 'HCO₃⁻', z: 1, a: 4 },
+  { label: 'HCO₃⁻', z: 1, a: 4.5 },
   { label: 'Mg²⁺', z: 2, a: 8 },
   { label: 'Ca²⁺ / Fe²⁺ / Zn²⁺ / Cu²⁺', z: 2, a: 6 },
   { label: 'Ba²⁺ / Cd²⁺', z: 2, a: 5 },
