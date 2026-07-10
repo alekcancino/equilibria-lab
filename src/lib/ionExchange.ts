@@ -1,4 +1,5 @@
-// Ion exchange: selectivity and equilibrium distribution (binary 1:1 model).
+// Ion exchange: selectivity and equilibrium distribution, general z_A:z_B
+// stoichiometry (z_A = z_B = 1 reduces exactly to the binary 1:1 model).
 
 export interface IonExchangeParams {
   /** Initial concentration of cation A in solution (M) */
@@ -11,8 +12,16 @@ export interface IonExchangeParams {
   volume: number;
   /** Resin volume (L) */
   resinVolume: number;
-  /** Selectivity coefficient K_A/B = (y_A·x_B)/(y_B·x_A) */
+  /**
+   * Selectivity coefficient (Gaines-Thomas convention):
+   * K_A/B = (y_A^zB · c_B^zA) / (y_B^zA · c_A^zB). Reduces to the plain
+   * (y_A·c_B)/(y_B·c_A) form when zA = zB = 1.
+   */
   selectivityAB: number;
+  /** Charge of cation A (default 1 — binary 1:1 exchange, backward compatible). */
+  zA?: number;
+  /** Charge of cation B (default 1). */
+  zB?: number;
 }
 
 export interface IonExchangeResult {
@@ -24,27 +33,33 @@ export interface IonExchangeResult {
 }
 
 /**
- * Batch equilibrium: resin initially in form B exchanges with A in solution.
- * For each eq of A adsorbed, 1 eq of B is released (1:1 exchange).
+ * Batch equilibrium: resin initially in form B exchanges with A in solution,
+ * zB·A^zA + zA·B̄^zB ⇌ zB·Ā^zA + zA·B^zB. The exchange variable ζ tracks
+ * EQUIVALENTS of A adsorbed (not moles): each mole of A removed from
+ * solution carries zA equivalents, so nA drops by ζ/zA; each mole of B
+ * released carries zB equivalents, so nB rises by ζ/zB. zA = zB = 1 makes
+ * ζ moles-of-A-adsorbed and reduces every formula to the original 1:1 code.
  */
 export function batchIonExchange(params: IonExchangeParams): IonExchangeResult {
   const { cA0, cB0, resinCapacity, volume, resinVolume, selectivityAB: K } = params;
+  const zA = params.zA ?? 1;
+  const zB = params.zB ?? 1;
   const Q = resinCapacity * resinVolume;
   const nA0 = cA0 * volume;
   const nB0 = cB0 * volume;
-  const zMax = Math.min(nA0, Q);
+  const zetaMax = Math.min(zA * nA0, Q);
 
-  const f = (z: number): number => {
-    if (z <= 0 || z >= zMax || z >= Q) return -1;
-    const cA = (nA0 - z) / volume;
-    const cB = (nB0 + z) / volume;
-    const yA = z / Q;
-    const yB = (Q - z) / Q;
-    return yA * cB - K * yB * cA;
+  const f = (zeta: number): number => {
+    if (zeta <= 0 || zeta >= zetaMax || zeta >= Q) return -1;
+    const cA = (nA0 - zeta / zA) / volume;
+    const cB = (nB0 + zeta / zB) / volume;
+    const yA = zeta / Q;
+    const yB = (Q - zeta) / Q;
+    return Math.pow(yA, zB) * Math.pow(cB, zA) - K * Math.pow(yB, zA) * Math.pow(cA, zB);
   };
 
   let lo = 1e-12;
-  let hi = zMax * (1 - 1e-9);
+  let hi = zetaMax * (1 - 1e-9);
   if (f(lo) * f(hi) > 0) {
     return {
       cAeq: cA0,
@@ -59,11 +74,11 @@ export function batchIonExchange(params: IonExchangeParams): IonExchangeResult {
     if (f(mid) > 0) hi = mid;
     else lo = mid;
   }
-  const z = (lo + hi) / 2;
-  const cAeq = (nA0 - z) / volume;
-  const cBeq = (nB0 + z) / volume;
-  const fracAInResin = z / Q;
-  const fracBInResin = (Q - z) / Q;
+  const zeta = (lo + hi) / 2;
+  const cAeq = (nA0 - zeta / zA) / volume;
+  const cBeq = (nB0 + zeta / zB) / volume;
+  const fracAInResin = zeta / Q;
+  const fracBInResin = (Q - zeta) / Q;
   return {
     cAeq,
     cBeq,

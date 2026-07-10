@@ -886,6 +886,33 @@ describe('smoke presets', () => {
       expect(RESIN_PRESETS.some((r) => r.id === app.resinId)).toBe(true);
     }
   });
+
+  it('presets de igual carga (Pb²⁺/Ca²⁺, Ca²⁺/Mg²⁺) mantienen zA=zB=1 — no recalibrados', () => {
+    // Ksel de estos dos se calibró contra el motor original (ciego a la
+    // carga); poner zA=zB=2 real cambiaría sus números en silencio sin un K
+    // de literatura para volver a calibrar (ver comentario en la interfaz).
+    const chelating = RESIN_PRESETS.find((r) => r.id === 'chelating')!;
+    expect(chelating.zA).toBe(1);
+    expect(chelating.zB).toBe(1);
+    const pbRemoval = APPLICATION_PRESETS.find((a) => a.id === 'pb-removal')!;
+    expect(pbRemoval.zA).toBe(1);
+    expect(pbRemoval.zB).toBe(1);
+    const caMg = APPLICATION_PRESETS.find((a) => a.id === 'ca-mg')!;
+    expect(caMg.zA).toBe(1);
+    expect(caMg.zB).toBe(1);
+  });
+
+  it('presets de carga distinta (Ca²⁺/Na⁺, Ca²⁺/H⁺, SO₄²⁻/Cl⁻) sí llevan sus cargas reales', () => {
+    const dowex = RESIN_PRESETS.find((r) => r.id === 'dowex50')!;
+    expect(dowex.zA).toBe(2);
+    expect(dowex.zB).toBe(1);
+    const amberlite120 = RESIN_PRESETS.find((r) => r.id === 'amberlite120')!;
+    expect(amberlite120.zA).toBe(2);
+    expect(amberlite120.zB).toBe(1);
+    const amberlite400 = RESIN_PRESETS.find((r) => r.id === 'amberlite400')!;
+    expect(amberlite400.zA).toBe(2);
+    expect(amberlite400.zB).toBe(1);
+  });
 });
 
 describe('availableSystems', () => {
@@ -979,6 +1006,38 @@ describe('batchIonExchange', () => {
       cA0: 0.01, cB0: 0.01, selectivityAB: 10, resinCapacity: 2, resinVolume: 0.05, volume: 0.1,
     });
     expect(high.fracAInResin).toBeGreaterThan(low.fracAInResin);
+  });
+
+  it('zA=zB=1 sin pasarlos da exactamente el mismo resultado que pasándolos explícitos (default = 1:1)', () => {
+    const base = { cA0: 0.01, cB0: 0.01, selectivityAB: 2.4, resinCapacity: 2, resinVolume: 0.05, volume: 0.1 };
+    expect(batchIonExchange(base)).toEqual(batchIonExchange({ ...base, zA: 1, zB: 1 }));
+  });
+
+  it('efecto concentración-valencia (Ca²⁺/Na⁺, Helfferich): diluir favorece al ion divalente', () => {
+    // Mismo K, misma RAZÓN cA0/cB0 (1:2); la métrica correcta es la fracción
+    // del propio A removida de solución (1 − cAeq/cA0), NO fracAInResin
+    // (normalizada a la capacidad fija Q: diluir reduce nA0 en términos
+    // absolutos y esa normalización lo confundiría con "menos adsorción").
+    const params = { selectivityAB: 1.5, resinCapacity: 2, resinVolume: 0.05, zA: 2, zB: 1, volume: 0.1 };
+    const removed = (cA0: number, cB0: number) => {
+      const r = batchIonExchange({ ...params, cA0, cB0 });
+      return 1 - r.cAeq / cA0;
+    };
+    expect(removed(0.5, 1.0)).toBeLessThan(0.3); // concentrado: A compite mal por el resina
+    expect(removed(0.05, 0.1)).toBeGreaterThan(removed(0.5, 1.0)); // 10× más diluido, mejor
+    expect(removed(0.005, 0.01)).toBeGreaterThan(0.99); // 100× más diluido: casi todo el A se adsorbe
+  });
+
+  it('caso z≠1 reproduce el balance de equivalentes a mano en el punto de equilibrio', () => {
+    const r = batchIonExchange({
+      cA0: 0.005, cB0: 0.01, selectivityAB: 2.4, resinCapacity: 2, resinVolume: 0.05, volume: 0.1, zA: 2, zB: 1,
+    });
+    const Q = 2 * 0.05; // eq
+    const zeta = r.fracAInResin * Q; // eq de A adsorbidos
+    tol(r.cAeq, (0.005 * 0.1 - zeta / 2) / 0.1, 1e-9);
+    tol(r.cBeq, (0.01 * 0.1 + zeta / 1) / 0.1, 1e-9);
+    const K = (Math.pow(r.fracAInResin, 1) * Math.pow(r.cBeq, 2)) / (Math.pow(r.fracBInResin, 2) * Math.pow(r.cAeq, 1));
+    tol(K, 2.4, 0.01);
   });
 
   it('isotherm q crece con C_A (monotonicidad)', () => {

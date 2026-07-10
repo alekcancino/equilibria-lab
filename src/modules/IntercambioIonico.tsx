@@ -4,7 +4,7 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, LabelField, ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Slider, Toggle } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import {
   batchIonExchange, breakthroughCurve, craigBreakthrough, isothermCurve, selectivityFromKd,
@@ -20,6 +20,8 @@ export default function IntercambioIonico() {
   const [resinId, setResinId] = useState('dowex50');
   const [labelA, setLabelA] = useState('Ca²⁺');
   const [labelB, setLabelB] = useState('Na⁺');
+  const [zA, setZA] = useState(2);
+  const [zB, setZB] = useState(1);
   const [cA0, setCA0] = useState(0.005);
   const [cB0, setCB0] = useState(0.01);
   const [selectivity, setSelectivity] = useState(2.4);
@@ -47,11 +49,13 @@ export default function IntercambioIonico() {
   const [kCB, setKCB] = useState(1.7);
 
   useShareEffect('ionex', {
-    labelA, labelB, cA0, cB0, selectivity, resinCapacity, resinVolume, flowRate,
+    labelA, labelB, zA, zB, cA0, cB0, selectivity, resinCapacity, resinVolume, flowRate,
     showCraig, nPlates, labelC, cC0, kCB,
   }, (s) => {
     if (s.labelA !== undefined) setLabelA(s.labelA as string);
     if (s.labelB !== undefined) setLabelB(s.labelB as string);
+    if (typeof s.zA === 'number' && Number.isInteger(s.zA) && s.zA >= 1 && s.zA <= 4) setZA(s.zA);
+    if (typeof s.zB === 'number' && Number.isInteger(s.zB) && s.zB >= 1 && s.zB <= 4) setZB(s.zB);
     if (s.cA0 !== undefined) setCA0(s.cA0 as number);
     if (s.cB0 !== undefined) setCB0(s.cB0 as number);
     if (s.selectivity !== undefined) setSelectivity(s.selectivity as number);
@@ -79,6 +83,8 @@ export default function IntercambioIonico() {
     setSelectivity(r.ksel);
     setLabelA(r.ionA);
     setLabelB(r.ionB);
+    setZA(r.zA);
+    setZB(r.zB);
   }
 
   function reset() {
@@ -98,15 +104,15 @@ export default function IntercambioIonico() {
   const exportMetadata = useMemo(() => ({
     Módulo: 'Intercambio iónico',
     Resina: resinId,
-    'Ión A': labelA,
-    'Ión B': labelB,
+    'Ión A': `${labelA} (z=${zA})`,
+    'Ión B': `${labelB} (z=${zB})`,
     'K_BA': selectivity.toFixed(2),
     'Capacidad / meq g⁻¹': resinCapacity.toFixed(2),
-  }), [resinId, labelA, labelB, selectivity, resinCapacity]);
+  }), [resinId, labelA, labelB, zA, zB, selectivity, resinCapacity]);
 
   const baseParams = useMemo(() => ({
-    cB0, selectivityAB: selectivity, resinCapacity, resinVolume, volume,
-  }), [cB0, selectivity, resinCapacity, resinVolume, volume]);
+    cB0, selectivityAB: selectivity, resinCapacity, resinVolume, volume, zA, zB,
+  }), [cB0, selectivity, resinCapacity, resinVolume, volume, zA, zB]);
 
   const eq = useMemo(
     () => batchIonExchange({ ...baseParams, cA0 }),
@@ -353,7 +359,10 @@ export default function IntercambioIonico() {
     <div className="module">
       <PanelShell title="Intercambio iónico" onReset={reset} moduleId="ionex">
         <PanelSection title="Sistema" icon="⚛">
-        <ModelBadge model="equilibrio binario A↔B · isoterma · columna ideal 1D" />
+        <ModelBadge
+          model="equilibrio binario A↔B · isoterma · columna ideal 1D"
+          additions={[zA !== zB ? `cargas zA:zB = ${zA}:${zB}` : null]}
+        />
         <p className="hint">Resinas:</p>
         <div className="preset-chip-row" style={{ marginBottom: 8 }}>
           {RESIN_PRESETS.map((p) => (
@@ -376,6 +385,8 @@ export default function IntercambioIonico() {
                 applyResin(p.resinId);
                 setLabelA(p.ionA);
                 setLabelB(p.ionB);
+                setZA(p.zA);
+                setZB(p.zB);
                 setCA0(p.cA0);
                 setCB0(p.cB0);
                 setSelectivity(p.ksel);
@@ -386,10 +397,18 @@ export default function IntercambioIonico() {
           ))}
         </div>
         <LabelField label="Catión A" value={labelA} onChange={setLabelA} />
+        <NumberSegmented label={`Carga de ${labelA} (zA)`} value={zA} options={[1, 2, 3, 4]} onChange={setZA} />
         <LabelField label="Catión B" value={labelB} onChange={setLabelB} />
+        <NumberSegmented label={`Carga de ${labelB} (zB)`} value={zB} options={[1, 2, 3, 4]} onChange={setZB} />
         <ConcSlider label={`[${labelA}] inicial`} value={cA0} onChange={setCA0} min={-4} max={-1} />
         <ConcSlider label={`[${labelB}] inicial`} value={cB0} onChange={setCB0} min={-4} max={-1} />
         <Slider label="Ksel (A sobre B)" helpId="Ksel" value={selectivity} min={0.1} max={50} step={0.1} onChange={setSelectivity} decimals={1} />
+        {zA !== zB && (
+          <p className="hint">
+            Estequiometría {zB}A + {zA}B̄ ⇌ {zB}Ā + {zA}B (convención Gaines-Thomas). Diluir la
+            solución favorece al ion de mayor carga — efecto concentración-valencia.
+          </p>
+        )}
         <Slider label="Capacidad de resina (eq/L)" helpId="capacity" value={resinCapacity} min={0.5} max={5} step={0.1} onChange={setResinCapacity} decimals={1} />
         <Slider label="Volumen de resina (L)" value={resinVolume} min={0.01} max={0.2} step={0.01} onChange={setResinVolume} decimals={2} />
         <Slider label="Volumen de solución (L)" value={volume} min={0.05} max={0.5} step={0.01} onChange={setVolume} decimals={2} />
