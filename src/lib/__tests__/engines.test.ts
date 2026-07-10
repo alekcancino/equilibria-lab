@@ -668,6 +668,27 @@ describe('precipTitrationCurve — estequiometría MmXx libre (UI ahora expone m
     tol(curve.pXs[0], -Math.log10(0.05), 0.01);
   });
 
+  it('solve exacto: caso diluido AgCl 1e-4 M a 50 % — coincide con la cuadrática a mano, no con la aproximación de reactivo limitante', () => {
+    // nCl = 2.5e-6, nAg = 1.25e-6, V = 37.5 mL → exceso de Cl⁻ = 3.3333e-5 M.
+    // Exacto: [Ag]² + 3.3333e-5·[Ag] − Ksp = 0 → [Ag] = 4.775e-6, pAg = 5.321.
+    // La aproximación vieja ([Ag] = Ksp/exceso) daría 5.463e-6 → pAg 5.263 — 0.06 de error.
+    const curve = precipTitrationCurve({
+      pKsp: 9.74, cAnalyte: 1e-4, vAnalyte: 25, cTitrant: 1e-4, vMax: 25, points: 500,
+    });
+    const i = curve.volumes.findIndex((v) => Math.abs(v - 12.5) < 1e-9);
+    expect(i).toBeGreaterThan(-1);
+    tol(curve.pAgs[i], 5.321, 0.002);
+    expect(Math.abs(curve.pAgs[i] - 5.263)).toBeGreaterThan(0.05);
+  });
+
+  it('solve exacto: en el punto de equivalencia reproduce la forma cerrada pAgEq', () => {
+    const curve = precipTitrationCurve({
+      pKsp: 9.74, cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 50, points: 500,
+    });
+    const i = curve.volumes.findIndex((v) => Math.abs(v - 25) < 1e-9);
+    tol(curve.pAgs[i], curve.pAgEq, 0.01);
+  });
+
   it('m=x=1 sin pasar m,x da exactamente el mismo resultado que pasándolos explícitos (default = 1:1)', () => {
     const withDefaults = precipTitrationCurve({ pKsp: 9.74, cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 40 });
     const explicit = precipTitrationCurve({ pKsp: 9.74, cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 40, m: 1, x: 1 });

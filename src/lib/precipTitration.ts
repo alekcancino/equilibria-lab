@@ -42,32 +42,26 @@ export function precipTitrationCurve(params: PrecipParams): PrecipCurve {
   const pAgs: number[] = [];
   const pXs: number[] = [];
 
+  const nAnalyte = (cAnalyte * vAnalyte) / 1000;
+
   for (let i = 0; i <= points; i++) {
     const v = (vMax * i) / points;
     const vTotal_L = (vAnalyte + v) / 1000;
     const nTitrant = (cTitrant * v) / 1000;
-    const nAnalyte = (cAnalyte * vAnalyte) / 1000;
-    // Formula units of MmXx precipitate if M (resp. X) were fully consumed —
-    // whichever is smaller is the limiting reagent at this point.
-    const xiFromM = nTitrant / m;
-    const xiFromX = nAnalyte / x;
-    const excess = xiFromM - xiFromX;
 
     let cAg: number;
     let cX: number;
 
-    if (Math.abs(excess) < 1e-15 * xiFromX) {
-      // Exact equivalence point
-      cAg = mAtEq;
-      cX = mAtEq / mOverX;
-    } else if (excess < 0) {
-      // Before equivalence: X in excess (M essentially fully precipitated)
-      cX = (nAnalyte - x * xiFromM) / vTotal_L;
+    if (i === 0) {
+      // v = 0 has no M at all (no solid, [M] = 0 exactly); plot the v→0⁺
+      // limit instead — the saturated value the curve continuously approaches
+      // as soon as the first trace of solid forms.
+      cX = nAnalyte / vTotal_L;
       cAg = Math.pow(Ksp / Math.pow(cX, x), 1 / m);
     } else {
-      // After equivalence: M in excess (X essentially fully precipitated)
-      cAg = (nTitrant - m * xiFromX) / vTotal_L;
-      cX = Math.pow(Ksp / Math.pow(cAg, m), 1 / x);
+      const solved = solvePrecipPoint(nTitrant, nAnalyte, vTotal_L, Ksp, m, x);
+      cAg = solved.cM;
+      cX = solved.cX;
     }
 
     volumes.push(v);
@@ -76,6 +70,39 @@ export function precipTitrationCurve(params: PrecipParams): PrecipCurve {
   }
 
   return { volumes, pAgs, pXs, vEq, pAgEq };
+}
+
+/**
+ * Exact equilibrium at one titration point: with P mol of MmXx solid,
+ * [M] = (nM − m·P)/V and [X] = (nX − x·P)/V must satisfy [M]^m[X]^x = Ksp.
+ * The ion product is strictly decreasing in P, so bisection on
+ * P ∈ [0, min(nM/m, nX/x)] finds the root; when the fully dissolved product
+ * is already ≤ Ksp there is no solid. Replaces the limiting-reagent
+ * approximation, whose "fully precipitated" assumption errs near the
+ * equivalence point at low concentration or high Ksp.
+ */
+function solvePrecipPoint(
+  nM: number,
+  nX: number,
+  vL: number,
+  Ksp: number,
+  m: number,
+  x: number,
+): { cM: number; cX: number } {
+  const cM0 = nM / vL;
+  const cX0 = nX / vL;
+  if (Math.pow(cM0, m) * Math.pow(cX0, x) <= Ksp) return { cM: cM0, cX: cX0 };
+  let lo = 0;
+  let hi = Math.min(nM / m, nX / x);
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) / 2;
+    const cM = (nM - m * mid) / vL;
+    const cX = (nX - x * mid) / vL;
+    if (Math.pow(cM, m) * Math.pow(cX, x) > Ksp) lo = mid;
+    else hi = mid;
+  }
+  const p = (lo + hi) / 2;
+  return { cM: (nM - m * p) / vL, cX: (nX - x * p) / vL };
 }
 
 export interface MohrIndicator {
