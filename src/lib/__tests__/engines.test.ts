@@ -1,13 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex } from '../equilibrium';
-import { complexFractions, bjerrumNumber, solvePL } from '../complexation';
+import {
+  complexFractions, bjerrumNumber, solvePL,
+  twoLigandFractions, solveTwoLigandEquilibrium, twoLigandCurve,
+} from '../complexation';
+import type { XBranch } from '../complexation';
 import { alphaY4, edtaTitrationCurve, EDTA_PKAS } from '../edta';
 import {
-  alphaH, alphaOH, condLogK, condLogKCurve, feasibilityWindow,
+  alphaH, alphaOH, alphaL, condLogK, condLogKCurve, feasibilityWindow,
   hydroxideSolCurve, precipitationPH,
 } from '../conditional';
 import { peConditional, peStandard, alphaRedox, redoxTitrationCurve, conditionalEprime } from '../redox';
-import { electrodePotential, stackFromLegacy } from '../sideReactions';
+import { electrodePotential, stackFromLegacy, freeLigandConcentration } from '../sideReactions';
 import { granPlot, titrationCurve, titratableProtons, firstDerivative } from '../titration';
 import { ladderFractions, ladderLogC, predominanceZones } from '../ladder';
 import {
@@ -145,6 +149,72 @@ describe('solvePL', () => {
   it('sin ligando pL debe ser grande', () => {
     const pL = solvePL(0.01, 0, [8]);
     expect(pL).toBeGreaterThan(8);
+  });
+});
+
+describe('two-ligand coupled model (X–M–L)', () => {
+  const ZN_NH3 = [2.37, 4.81, 7.31, 9.46];  // Zn²⁺–NH₃ (Harris)
+  const CU_NH3 = [4.04, 7.47, 10.27, 12.03]; // Cu²⁺–NH₃ (Harris)
+
+  it('rama X vacía reproduce exactamente el modelo de un ligando', () => {
+    const pLRef = solvePL(0.001, 0.05, CU_NH3);
+    const { pL, pX } = solveTwoLigandEquilibrium(
+      0.001, 0.05, CU_NH3, { logBetasX: [], spec: { mode: 'free', cL: 0 } }, 7,
+    );
+    expect(pL).toBe(pLRef);
+    expect(pX).toBe(Infinity);
+    expect(twoLigandFractions(pLRef, Infinity, CU_NH3, [])).toEqual(complexFractions(pLRef, CU_NH3));
+  });
+
+  it('solo rama X a [X] fijo: fracción de M libre = 1/α_M(X) de Ringbom (conditional.ts)', () => {
+    // Dos implementaciones independientes del mismo denominador.
+    const fr = twoLigandFractions(Infinity, 1, [], ZN_NH3); // pX = 1 → [X] = 0.1
+    tol(fr[0], 1 / alphaL(ZN_NH3, 0.1), 1e-9);
+  });
+
+  it('simetría: β idénticos en ambas ramas y cX = cL en modo total ⇒ pX = pL', () => {
+    const x: XBranch = { logBetasX: [3, 5.5], spec: { mode: 'total', cTotal: 0.01, pKas: [] } };
+    const { pL, pX } = solveTwoLigandEquilibrium(0.001, 0.01, [3, 5.5], x, 7);
+    tol(pX, pL, 1e-6);
+  });
+
+  it('X en modo total con cX→0 colapsa al pL de un solo ligando', () => {
+    const x: XBranch = { logBetasX: ZN_NH3, spec: { mode: 'total', cTotal: 1e-12, pKas: [9.25] } };
+    const { pL } = solveTwoLigandEquilibrium(0.001, 0.05, CU_NH3, x, 9);
+    tol(pL, solvePL(0.001, 0.05, CU_NH3), 1e-3);
+  });
+
+  it('[X] fijo: solve acoplado ≡ solvePL con β′ = β/α_M(X) — identidad de Ringbom exacta', () => {
+    // A [X] fijo el modelo acoplado y el corrimiento de Ringbom son la MISMA
+    // álgebra (n̄_L con D = α_X + Σβ[L]ⁱ equivale a β′ᵢ = βᵢ/α_X), así que
+    // deben coincidir a precisión de bisección, no aproximadamente.
+    const cXFree = 0.05;
+    const x: XBranch = { logBetasX: ZN_NH3, spec: { mode: 'free', cL: cXFree } };
+    const shifted = CU_NH3.map((b) => b - Math.log10(alphaL(ZN_NH3, cXFree)));
+    const { pL } = solveTwoLigandEquilibrium(0.001, 0.05, CU_NH3, x, 7);
+    tol(pL, solvePL(0.001, 0.05, shifted), 1e-6);
+  });
+
+  it('X total en gran exceso ≈ límite Ringbom con [X] libre sin consumo por M', () => {
+    const spec = { mode: 'total' as const, cTotal: 1.0, pKas: [9.25] };
+    const x: XBranch = { logBetasX: ZN_NH3, spec };
+    const pH = 10;
+    const { pL, pX } = solveTwoLigandEquilibrium(1e-3, 0.05, CU_NH3, x, pH);
+    const cXFree = freeLigandConcentration(spec, pH);
+    const shifted = CU_NH3.map((b) => b - Math.log10(alphaL(ZN_NH3, cXFree)));
+    tol(pL, solvePL(1e-3, 0.05, shifted), 0.05);
+    tol(pX, -Math.log10(cXFree), 0.05);
+  });
+
+  it('barrido: pX se re-resuelve por punto y las fracciones suman 1', () => {
+    const x: XBranch = { logBetasX: ZN_NH3, spec: { mode: 'total', cTotal: 0.1, pKas: [9.25] } };
+    const curve = twoLigandCurve(0.001, CU_NH3, x, 9, [0, 12], 50);
+    expect(curve).toHaveLength(51);
+    for (const pt of curve) {
+      const sum = pt.fractions.reduce((a, b) => a + b, 0);
+      expect(Math.abs(sum - 1)).toBeLessThan(1e-12);
+      expect(Number.isNaN(pt.pX)).toBe(false);
+    }
   });
 });
 
