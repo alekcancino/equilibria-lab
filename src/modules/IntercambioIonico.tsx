@@ -47,10 +47,14 @@ export default function IntercambioIonico() {
   const [labelC, setLabelC] = useState('Mg²⁺');
   const [cC0, setCC0] = useState(0.003);
   const [kCB, setKCB] = useState(1.7);
+  const [showIonD, setShowIonD] = useState(false);
+  const [labelD, setLabelD] = useState('Sr²⁺');
+  const [cD0, setCD0] = useState(0.002);
+  const [kDB, setKDB] = useState(3.5);
 
   useShareEffect('ionex', {
     labelA, labelB, zA, zB, cA0, cB0, selectivity, resinCapacity, resinVolume, flowRate,
-    showCraig, nPlates, labelC, cC0, kCB,
+    showCraig, nPlates, labelC, cC0, kCB, showIonD, labelD, cD0, kDB,
   }, (s) => {
     if (s.labelA !== undefined) setLabelA(s.labelA as string);
     if (s.labelB !== undefined) setLabelB(s.labelB as string);
@@ -67,6 +71,10 @@ export default function IntercambioIonico() {
     if (s.labelC !== undefined) setLabelC(s.labelC as string);
     if (s.cC0 !== undefined) setCC0(s.cC0 as number);
     if (s.kCB !== undefined) setKCB(s.kCB as number);
+    if (s.showIonD !== undefined) setShowIonD(s.showIonD as boolean);
+    if (s.labelD !== undefined) setLabelD(s.labelD as string);
+    if (s.cD0 !== undefined) setCD0(s.cD0 as number);
+    if (s.kDB !== undefined) setKDB(s.kDB as number);
   });
 
   const [showElution, setShowElution] = useState(false);
@@ -99,6 +107,10 @@ export default function IntercambioIonico() {
     setLabelC('Mg²⁺');
     setCC0(0.003);
     setKCB(1.7);
+    setShowIonD(false);
+    setLabelD('Sr²⁺');
+    setCD0(0.002);
+    setKDB(3.5);
   }
 
   const exportMetadata = useMemo(() => ({
@@ -161,12 +173,13 @@ export default function IntercambioIonico() {
       ions: [
         { label: labelA, c0: cA0, kSel: selectivity },
         { label: labelC, c0: cC0, kSel: kCB },
+        ...(showIonD ? [{ label: labelD, c0: cD0, kSel: kDB }] : []),
       ],
       resinCapacity,
       resinVolume,
       nPlates,
     }),
-    [labelA, cA0, selectivity, labelC, cC0, kCB, resinCapacity, resinVolume, nPlates],
+    [labelA, cA0, selectivity, labelC, cC0, kCB, showIonD, labelD, cD0, kDB, resinCapacity, resinVolume, nPlates],
   );
 
   const kselCurve = useMemo(() => {
@@ -279,26 +292,15 @@ export default function IntercambioIonico() {
       label: 'Multi-zona',
       node: (
         <Chart
-          data={[
-            {
-              x: craigResult.bv,
-              y: craigResult.cRatios[0],
-              type: 'scatter',
-              mode: 'lines',
-              name: labelA,
-              line: { width: 3, color: '#0072B2' },
-              hovertemplate: 'BV = %{x:.1f}<br>C/C₀ = %{y:.3f}<extra></extra>',
-            },
-            {
-              x: craigResult.bv,
-              y: craigResult.cRatios[1],
-              type: 'scatter',
-              mode: 'lines',
-              name: labelC,
-              line: { width: 3, color: '#D55E00' },
-              hovertemplate: 'BV = %{x:.1f}<br>C/C₀ = %{y:.3f}<extra></extra>',
-            },
-          ]}
+          data={[labelA, labelC, ...(showIonD ? [labelD] : [])].map((label, i) => ({
+            x: craigResult.bv,
+            y: craigResult.cRatios[i],
+            type: 'scatter' as const,
+            mode: 'lines' as const,
+            name: label,
+            line: { width: 3, color: ['#0072B2', '#D55E00', '#009E73'][i] },
+            hovertemplate: 'BV = %{x:.1f}<br>C/C₀ = %{y:.3f}<extra></extra>',
+          }))}
           xTitle="Volúmenes de lecho (BV)"
           yTitle="C / C₀"
           yRange={[0, 1.05]}
@@ -472,6 +474,26 @@ export default function IntercambioIonico() {
                 onChange={setKCB}
                 decimals={1}
               />
+              <Toggle
+                label="Añadir tercer ion competidor (D)"
+                checked={showIonD}
+                onChange={setShowIonD}
+              />
+              {showIonD && (
+                <>
+                  <LabelField label={`Tercer ion (D, compite con ${labelB})`} value={labelD} onChange={setLabelD} />
+                  <ConcSlider label={`[${labelD}] inicial`} value={cD0} onChange={setCD0} min={-4} max={-1} />
+                  <Slider
+                    label={`Ksel (${labelD}/${labelB})`}
+                    value={kDB}
+                    min={0.1}
+                    max={20}
+                    step={0.1}
+                    onChange={setKDB}
+                    decimals={1}
+                  />
+                </>
+              )}
             </div>
           )}
         </PanelSection>
@@ -514,6 +536,9 @@ export default function IntercambioIonico() {
           ...(showCraig && craigResult.bvBreaks.length >= 2 ? [
             { label: `BV₅₀ ${labelA}`, value: craigResult.bvBreaks[0].toFixed(0) },
             { label: `BV₅₀ ${labelC}`, value: craigResult.bvBreaks[1].toFixed(0) },
+            ...(showIonD && craigResult.bvBreaks.length >= 3
+              ? [{ label: `BV₅₀ ${labelD}`, value: craigResult.bvBreaks[2].toFixed(0) }]
+              : []),
           ] : []),
         ]} />
       </section>
