@@ -219,7 +219,7 @@ export default function Mezclas() {
 
   return (
     <div className="module">
-      <PanelShell title="Mezclas multicomponente" onReset={reset}>
+      <PanelShell title="Mezclas multicomponente" onReset={reset} moduleId="mezclas">
         <PanelSection title="Sistemas" icon="⚛">
         <ModelBadge
           model={rows.length === 1

@@ -351,7 +351,7 @@ export default function IntercambioIonico() {
 
   return (
     <div className="module">
-      <PanelShell title="Intercambio iónico" onReset={reset}>
+      <PanelShell title="Intercambio iónico" onReset={reset} moduleId="ionex">
         <PanelSection title="Sistema" icon="⚛">
         <ModelBadge model="equilibrio binario A↔B · isoterma · columna ideal 1D" />
         <p className="hint">Resinas:</p>

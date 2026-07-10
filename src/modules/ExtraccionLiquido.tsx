@@ -484,7 +484,7 @@ export default function ExtraccionLiquido() {
 
   return (
     <div className="module">
-      <PanelShell title="Extracción líquido-líquido" onReset={reset}>
+      <PanelShell title="Extracción líquido-líquido" onReset={reset} moduleId="extraccion">
         <PanelSection title="Analito 1" icon="①">
           <AnalyteEditor
             a={st.a1}

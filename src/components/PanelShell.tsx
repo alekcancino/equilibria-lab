@@ -1,17 +1,22 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
 import ShareButton from './ShareButton';
+import SavedSystemsButton from './SavedSystemsButton';
 
 interface PanelShellProps {
   title: ReactNode;
   onReset?: () => void;
+  /** Same id passed to this module's useShareEffect/useShareableState —
+   * enables the "Mis sistemas" save/load button. Omit for modules without
+   * share-link support (their state wouldn't be captured by a save). */
+  moduleId?: string;
   children: ReactNode;
 }
 
 const STORAGE_KEY = 'equilibria-panel-open';
 
 /** Sidebar (desktop) / bottom sheet (mobile) for module variables and controls. */
-export default function PanelShell({ title, onReset, children }: PanelShellProps) {
+export default function PanelShell({ title, onReset, moduleId, children }: PanelShellProps) {
   const mobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(() =>
@@ -31,6 +36,7 @@ export default function PanelShell({ title, onReset, children }: PanelShellProps
     <div className="panel-header">
       <h2>{title}</h2>
       <div className="panel-header-actions">
+        {moduleId && <SavedSystemsButton moduleId={moduleId} />}
         <ShareButton />
         {onReset && (
           <button type="button" className="reset-btn" onClick={onReset}>

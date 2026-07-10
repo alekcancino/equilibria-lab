@@ -144,7 +144,7 @@ export default function Redox() {
 
   return (
     <div className="module">
-      <PanelShell title="Equilibrio redox" onReset={reset}>
+      <PanelShell title="Equilibrio redox" onReset={reset} moduleId="redox">
         <PanelSection title="Pares redox" icon="⚛">
           <ModelBadge
             model="predicción de reacción entre dos pares redox"
