@@ -102,7 +102,7 @@ npm test
 | Conditional potential | **High** | Conditional Nernst |
 | Selective precipitation | **High** | Competitive module selects solid phases by combination testing (HALTAFALL style); the pH-based module still treats each solid independently |
 | Titrations (5 modes) | **High** | Acid-base, redox, and precipitation solve exact point-by-point equilibria; EDTA holds the buffered pH but re-evaluates the side-reaction stack per point (aux-ligand dilution) with a cancellation-safe solver |
-| L-L extraction / ion exchange | **Low in Spana** | Own modules (Spana barely covers these); ion exchange now supports general z_A:z_B charge stoichiometry, not just binary 1:1 |
+| L-L extraction / ion exchange | **Low in Spana** | Own modules (Spana barely covers these); ion exchange supports general z_A:z_B charge stoichiometry; extraction's chelate D = f(pH) already supported general n:1 stoichiometry but was untested module-local code — moved to lib/extraction.ts with golden tests |
 
 ---
 

@@ -23,6 +23,9 @@ import {
 } from '../solubilityCompetitive';
 import { buildSystem, availableSystems, waterLines } from '../pourbaix';
 import { batchIonExchange, isothermCurve, breakthroughCurve } from '../ionExchange';
+import {
+  distributionD, percentE1, percentEn, nFor, type AnalyteState,
+} from '../extraction';
 import { RESIN_PRESETS, APPLICATION_PRESETS } from '../ionExchangeDatabase';
 import { activityCoefficient } from '../activity';
 import { SALTS } from '../database';
@@ -994,6 +997,69 @@ describe('solubilityVsPX', () => {
     const highPX = Math.log10(solubilityVsPX(salt, 7, [5], 10));
     const lowPX = Math.log10(solubilityVsPX(salt, 7, [5], 2));
     expect(lowPX).toBeGreaterThan(highPX);
+  });
+});
+
+describe('distributionD — extracción líquido-líquido, quelatos n:1 general', () => {
+  const chelate = (n: number): AnalyteState => ({
+    label: 'M', type: 'chelate', logKd: 9.10, pKas: [], neutralIdx: 0, n, logCHL: -1,
+  });
+
+  it('pendiente de log D vs pH = n (Cu²⁺+8-HQ n=2, Fe³⁺+8-HQ n=3)', () => {
+    for (const n of [1, 2, 3, 4]) {
+      const a = chelate(n);
+      const d1 = distributionD(a, 3);
+      const d2 = distributionD(a, 4);
+      tol(Math.log10(d2) - Math.log10(d1), n, 1e-9);
+    }
+  });
+
+  it('Cu²⁺+8-HQ (logKex 9.10, log[HL] −1, n=2) a pH 4: D = 10^(9.10−2+8) = 10^15.10', () => {
+    const cu8hq: AnalyteState = { label: 'Cu', type: 'chelate', logKd: 9.10, pKas: [], neutralIdx: 0, n: 2, logCHL: -1 };
+    tol(Math.log10(distributionD(cu8hq, 4)), 15.10, 1e-9);
+  });
+
+  it('ácido: D = Kd·α_neutral, pendiente −1 en log D para pH ≫ pKa', () => {
+    const acid: AnalyteState = { label: 'HA', type: 'acid', logKd: 2.22, pKas: [4.20], neutralIdx: 0, n: 1, logCHL: 0 };
+    const d1 = distributionD(acid, 7);
+    const d2 = distributionD(acid, 8);
+    tol(Math.log10(d1) - Math.log10(d2), 1, 0.01);
+  });
+
+  it('sin pKas, D = Kd constante (I₂ no ionizable)', () => {
+    const i2: AnalyteState = { label: 'I2', type: 'acid', logKd: 2.83, pKas: [], neutralIdx: 0, n: 1, logCHL: 0 };
+    expect(distributionD(i2, 1)).toBe(distributionD(i2, 10));
+    tol(distributionD(i2, 5), Math.pow(10, 2.83), 1e-9);
+  });
+
+  it('dímero orgánico aumenta D respecto al monómero cuando K₂>0 y hay especie neutra', () => {
+    const acid: AnalyteState = { label: 'HA', type: 'acid', logKd: 2.22, pKas: [4.20], neutralIdx: 0, n: 1, logCHL: 0 };
+    const mono = distributionD(acid, 4.2); // pH = pKa: α_neutral = 0.5, efecto del dímero visible
+    const dimerized = distributionD(acid, 4.2, { enabled: true, logK2: 1.5 });
+    expect(dimerized).toBeGreaterThan(mono);
+  });
+});
+
+describe('percentE1 / percentEn / nFor', () => {
+  it('percentEn con count=1 coincide con percentE1', () => {
+    const D = 50;
+    const r = 1;
+    tol(percentEn(D, r, 1), percentE1(D, r), 1e-9);
+  });
+
+  it('percentEn crece monótonamente con el número de extracciones', () => {
+    const D = 5;
+    const r = 1;
+    expect(percentEn(D, r, 3)).toBeGreaterThan(percentEn(D, r, 2));
+    expect(percentEn(D, r, 2)).toBeGreaterThan(percentEn(D, r, 1));
+  });
+
+  it('nFor(D,r,target) es el mínimo n tal que percentEn ≥ target', () => {
+    const D = 2;
+    const r = 1;
+    const n = nFor(D, r, 99)!;
+    expect(percentEn(D, r, n)).toBeGreaterThanOrEqual(99);
+    expect(percentEn(D, r, n - 1)).toBeLessThan(99);
   });
 });
 
