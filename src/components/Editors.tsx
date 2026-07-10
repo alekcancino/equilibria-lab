@@ -158,6 +158,7 @@ export function SideReactionEditor({
   onChange,
   showLigandPKas = true,
   ligandTitle = 'pKas del ligante Y (EDTA por defecto)',
+  auxLigandTitle = 'Ligando auxiliar α_M(L)',
   showComplexSection = true,
   showHydrolysisSection = true,
 }: {
@@ -165,6 +166,12 @@ export function SideReactionEditor({
   onChange: (s: SideReactionEditorState) => void;
   showLigandPKas?: boolean;
   ligandTitle?: string;
+  /** The default "α_M(L)" name is only accurate for the Ringbom axis-shift
+   * use of this section; callers that consume it as a real second
+   * complexation branch (Complejos' coupled X-M-L mode) should override it —
+   * "α_M(L)" would misleadingly claim this is still just a side-reaction
+   * coefficient. */
+  auxLigandTitle?: string;
   /** Hide "Protonación / hidrólisis del complejo MY" — that section only
    * affects α_Y (via alphaComplex), which is meaningless where there's no
    * primary M–Y complex (e.g. a bare redox Ox/Red side-reaction stack). */
@@ -224,7 +231,7 @@ export function SideReactionEditor({
         open={state.showAux}
         onToggle={(e) => set('showAux', (e.target as HTMLDetailsElement).open)}
       >
-        <summary className="section-collapse-title">Ligando auxiliar α_M(L)</summary>
+        <summary className="section-collapse-title">{auxLigandTitle}</summary>
         <p className="hint" style={{ marginBottom: 6 }}>Presets (metal + ligando):</p>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
           {COMPLEX_PRESETS.map((cp) => (
