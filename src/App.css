@@ -334,6 +334,16 @@ html, body, #root {
   min-height: 0;
   overflow-y: auto;
 }
+/* Direct children must never shrink below their content size — panel-body's
+   own overflow-y:auto is what should absorb tall content, not the children.
+   Without this, any child with its own `overflow: hidden` (disclosure,
+   section-collapse, preset-picker...) loses its CSS-spec automatic min-size
+   (min-content → 0 when overflow isn't visible) and gets crushed to ~0px by
+   flex-shrink whenever the sidebar's content exceeds the viewport height —
+   invisible and unclickable, not just visually collapsed. */
+.panel-body > * {
+  flex-shrink: 0;
+}
 
 .panel h2 {
   margin: 0 0 var(--space-4);

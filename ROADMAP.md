@@ -70,6 +70,24 @@ view (not a new tab) should also touch that hub's `desc` string in `src/App.tsx`
 what broke for X–M–L (PR #48) and the γ models (PR #49) but was done correctly for
 competitive precipitation (PR #51).
 
+### Panel-body flex-shrink bug (2026-07-10) — resolved
+
+The X–M–L relabel from the audit above was actually invisible and unclickable in
+production — not a discoverability issue, a real rendering bug. `.panel-body` (the
+scrollable sidebar container) is a flex column with `overflow-y: auto` so tall panels
+scroll instead of overflowing. Any direct child with its own `overflow: hidden` — the
+`Disclosure` component, `.section-collapse` (γ-model pickers), `.preset-picker` (saved
+systems) — hits a CSS-spec edge case: a flex item's automatic minimum size is its
+min-content size *unless* it has `overflow` other than `visible`, in which case the
+automatic minimum becomes 0. Without an explicit `flex-shrink: 0`, the browser's flex
+algorithm shrinks exactly those children toward 0 first whenever the panel's total
+content exceeds the viewport — crushing them to ~2px (just their own border), instead of
+letting `.panel-body`'s own scrollbar absorb the overflow like every other child does.
+Confirmed with a real (non-JS-triggered) click: Playwright timed out because the button
+was genuinely un-hit-testable at that point, not merely visually awkward. Fixed with one
+rule, `.panel-body > * { flex-shrink: 0; }`, which covers every current and future
+collapsible section rather than patching `.disclosure` alone.
+
 ### Near-term
 
 | Feature | Notes |
