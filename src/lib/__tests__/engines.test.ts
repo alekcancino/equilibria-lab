@@ -528,6 +528,27 @@ describe('precipTitrationCurve', () => {
   });
 });
 
+describe('precipTitrationCurve — estequiometría MmXx libre (UI ahora expone m,x)', () => {
+  it('Ag₂CrO₄ (m=2,x=1): vEq escala con m/x, pAgEq y pX(v=0) coinciden con la derivación cerrada', () => {
+    const curve = precipTitrationCurve({
+      pKsp: 11.89, cAnalyte: 0.05, vAnalyte: 25, cTitrant: 0.1, vMax: 40, m: 2, x: 1,
+    });
+    // vEq = (m/x)·(cAnalyte·vAnalyte)/cTitrant — el doble de lo que daría 1:1 con los mismos datos.
+    tol(curve.vEq, 25, 0.01);
+    // [M]^m[X]^x=Ksp junto con x[M]=m[X] en el punto estequiométrico exacto.
+    tol(curve.pAgEq, -Math.log10(Math.pow(Math.pow(10, -11.89) / 2, 1 / 3)), 0.01);
+    // v=0: solo queda el analito puro en el matraz, pX = -log(cAnalyte).
+    expect(curve.volumes[0]).toBe(0);
+    tol(curve.pXs[0], -Math.log10(0.05), 0.01);
+  });
+
+  it('m=x=1 sin pasar m,x da exactamente el mismo resultado que pasándolos explícitos (default = 1:1)', () => {
+    const withDefaults = precipTitrationCurve({ pKsp: 9.74, cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 40 });
+    const explicit = precipTitrationCurve({ pKsp: 9.74, cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 40, m: 1, x: 1 });
+    expect(withDefaults).toEqual(explicit);
+  });
+});
+
 describe('mohrEndpointPAg', () => {
   it('cCrO₄ = 0.005 M → pAg donde precipita Ag₂CrO₄', () => {
     // Ksp(Ag₂CrO₄)=10^−11.89 → pAg = ½(pKsp − log[CrO₄²⁻]) ≈ 4.79

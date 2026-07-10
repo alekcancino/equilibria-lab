@@ -4,7 +4,7 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import { useShareEffect } from '../hooks/useShareableState';
 import {
-  ConcSlider, DbPanel, Disclosure, InfoBox, LabelField, PanelSection, ResultCard, ResultCardRow,
+  ConcSlider, DbPanel, Disclosure, InfoBox, LabelField, NumberSegmented, PanelSection, ResultCard, ResultCardRow,
   Segmented, ModelBadge, RefBadge, SelectControl, Slider, SystemPresetPicker, Toggle,
 } from '../components/Controls';
 import {
@@ -926,11 +926,13 @@ function PrecipTitration({ mode }: { mode: Mode }) {
   const [cAnalyte, setCAnalyte] = useState(0.1);
   const [vAnalyte, setVAnalyte] = useState(25);
   const [cTitrant, setCTitrant] = useState(0.1);
+  const [m, setM] = useState(1);
+  const [x, setX] = useState(1);
   const [showPCation, setShowPCation] = useState(false);
   const [showMohr, setShowMohr] = useState(false);
   const [showDerivative, setShowDerivative] = useState(false);
 
-  useShareEffect('titulacion', { mode, presetId, pKsp, cationName, anionName, saltFormula, isAgSystem, cAnalyte, vAnalyte, cTitrant, showPCation, showMohr, showDerivative }, (s) => {
+  useShareEffect('titulacion', { mode, presetId, pKsp, cationName, anionName, saltFormula, isAgSystem, cAnalyte, vAnalyte, cTitrant, m, x, showPCation, showMohr, showDerivative }, (s) => {
     if (s.presetId) setPresetId(s.presetId);
     if (s.pKsp !== undefined) setPKsp(s.pKsp);
     if (s.cationName) setCationName(s.cationName);
@@ -940,16 +942,19 @@ function PrecipTitration({ mode }: { mode: Mode }) {
     if (s.cAnalyte !== undefined) setCAnalyte(s.cAnalyte);
     if (s.vAnalyte !== undefined) setVAnalyte(s.vAnalyte);
     if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
+    if (s.m !== undefined) setM(s.m);
+    if (s.x !== undefined) setX(s.x);
     if (s.showPCation !== undefined) setShowPCation(s.showPCation);
     if (s.showMohr !== undefined) setShowMohr(s.showMohr);
     if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
   });
 
   function loadPreset(id: string) {
-    const p = PRECIP_PRESETS.find((x) => x.id === id)!;
+    const p = PRECIP_PRESETS.find((x2) => x2.id === id)!;
     setPresetId(id); setPKsp(p.pKsp);
     setCationName(p.cation); setAnionName(p.anion); setSaltFormula(p.formula);
     setIsAgSystem(p.isAg);
+    setM(1); setX(1); // every current preset is MX (1:1 molar, regardless of ion charge)
     if (!p.isAg) { setShowMohr(false); setShowPCation(false); }
   }
 
@@ -958,12 +963,12 @@ function PrecipTitration({ mode }: { mode: Mode }) {
     setShowMohr(false); setShowPCation(false); setShowDerivative(false);
   }
 
-  const vEq0 = (cAnalyte * vAnalyte) / cTitrant;
+  const vEq0 = (m / x) * ((cAnalyte * vAnalyte) / cTitrant);
   const vMax = vEq0 * 1.6;
 
   const curve = useMemo(
-    () => precipTitrationCurve({ pKsp, cAnalyte, vAnalyte, cTitrant, vMax }),
-    [pKsp, cAnalyte, vAnalyte, cTitrant, vMax],
+    () => precipTitrationCurve({ pKsp, cAnalyte, vAnalyte, cTitrant, vMax, m, x }),
+    [pKsp, cAnalyte, vAnalyte, cTitrant, vMax, m, x],
   );
 
   const mohrPAg = mohrEndpointPAg(0.005);
@@ -1041,10 +1046,10 @@ function PrecipTitration({ mode }: { mode: Mode }) {
       <PanelShell title="Titulación por precipitación" onReset={reset} moduleId="titulacion">
         <PanelSection title="Sistema" icon="⚛">
           <ModelBadge
-            model="titulación por precipitación 1:1"
+            model={`titulación por precipitación ${m}:${x}`}
             additions={[showPCation && `eje p(${cationName})`, showMohr && showPCation && 'indicador Mohr', showDerivative && 'derivada']}
           />
-          <p className="hint">{cationName} + {anionName} → {saltFormula}↓</p>
+          <p className="hint">{m > 1 ? `${m}` : ''}{cationName} + {x > 1 ? `${x}` : ''}{anionName} → {saltFormula}↓</p>
           <div className="preset-chip-row" style={{ marginBottom: 8 }}>
             {PRECIP_PRESETS.map((p) => (
               <button
@@ -1059,6 +1064,8 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           <LabelField label="Catión titulante" value={cationName} onChange={setCationName} />
           <LabelField label="Anión analito" value={anionName} onChange={setAnionName} />
           <LabelField label="Fórmula del precipitado" value={saltFormula} onChange={setSaltFormula} />
+          <NumberSegmented label="Estequiometría MmXx — coef. catión m" value={m} options={[1, 2, 3, 4]} onChange={setM} />
+          <NumberSegmented label="Estequiometría MmXx — coef. anión x" value={x} options={[1, 2, 3, 4]} onChange={setX} />
           <Slider label="pKsp del precipitado" helpId="pKsp" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
           <RefBadge reference={presetIsUnedited ? 'Harris, QCA, cap. 16; Skoog, Fundamentos de Química Analítica.' : undefined} />
         </PanelSection>
@@ -1080,7 +1087,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
             { label: 'Volumen de equivalencia', value: `${curve.vEq.toFixed(2)} mL` },
-            { label: `p en equivalencia (½ pKsp)`, value: curve.pAgEq.toFixed(2) },
+            { label: m === 1 && x === 1 ? 'p en equivalencia (½ pKsp)' : 'p en equivalencia', value: curve.pAgEq.toFixed(2) },
             ...(isAgSystem && showPCation ? [{
               label: 'Indicador Mohr',
               value: `pAg = ${mohrPAg.toFixed(2)} (Δ = ${(mohrPAg - curve.pAgEq).toFixed(2)})`,
@@ -1111,8 +1118,9 @@ function PrecipTitration({ mode }: { mode: Mode }) {
             potenciometría directa o por retrogravimetría.
           </p>
           <p>
-            <strong>Alcance del motor</strong>: este módulo modela solo titulaciones
-            1:1 (un catión + un anión). Estequiometrías m:x ≠ 1:1 no están implementadas.
+            <strong>Estequiometría</strong>: el modelo soporta cualquier proporción MmXx
+            (ej. m=2,x=1 para Ag₂CrO₄) — ajusta los coeficientes arriba si tu precipitado
+            no es 1:1.
           </p>
         </InfoBox>
       </PanelShell>
@@ -1129,6 +1137,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           exportMetadata={{
             Módulo: 'Titulación por precipitación',
             Sal: saltFormula,
+            'Estequiometría MmXx': `${m}:${x}`,
             pKsp: pKsp.toFixed(2),
             'CA / M': cAnalyte.toFixed(4),
             'CT / M': cTitrant.toFixed(4),

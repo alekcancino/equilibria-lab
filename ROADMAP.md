@@ -29,7 +29,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 
 ### Titrations (unified module)
 
-- Acid–base, complexometric (EDTA), redox, precipitation (argentometry), potentiometric (Gran plot); shareable links and saved systems for all 5 sub-modes
+- Acid–base, complexometric (EDTA), redox, precipitation (argentometry, free MmXx stoichiometry), potentiometric (Gran plot); shareable links and saved systems for all 5 sub-modes
 
 ### Data and export
 
@@ -52,7 +52,6 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 | **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP to two chemical axes. |
 | **Competitive precipitation** | Simultaneous solubility of multiple solids sharing a common ion; separation-window analysis. |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |
-| **Precipitation titration stoichiometry** | The precipitation-titration engine is fixed to 1:1 analyte:titrant; support MmXx ratios. |
 
 ### Medium-term
 
