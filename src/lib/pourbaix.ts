@@ -65,6 +65,11 @@ export function availableSystems(): { id: string; name: string }[] {
     .map(([id, def]) => ({ id, name: (def as SystemDef).name }));
 }
 
+export function getSystemDef(id: string): SystemDef | undefined {
+  const def = SYSTEMS[id];
+  return typeof def === 'string' ? undefined : def;
+}
+
 /** Affine parameters (A, B) for a non-vertical boundary: E(pH) = A − B·pH */
 function affineParams(
   b: BoundaryDef, sysdef: SystemDef, logC: number,
@@ -589,4 +594,71 @@ export function buildArbitraryDiagram(
   }
 
   return { lines, regions, name: 'Sistema personalizado', note: '', excluded: [] };
+}
+
+/** Charge magnitude from a formula's trailing unicode superscript (e.g. "Fe³⁺" → 3,
+ * "Cu⁺" → 1). ArbIon.z only tracks magnitude (see its own doc comment) — sign is not
+ * needed since buildArbitraryDiagram never reads z for redox math, only display. */
+function chargeMagnitude(formula: string): number {
+  const SUP: Record<string, string> = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9' };
+  const m = formula.match(/([⁰¹²³⁴⁵⁶⁷⁸⁹]*)[⁺⁻]$/);
+  if (!m) return 1;
+  const digits = m[1].split('').map((c) => SUP[c]).join('');
+  return digits ? parseInt(digits, 10) : 1;
+}
+
+/**
+ * Converts a preset SystemDef into an ArbitraryCustom seed for custom mode's
+ * "edit this system" entry point. Lossless for hydroxide-only systems (Fe, Zn,
+ * Ni, Cr): ArbSpecies has no equivalent for a solid formed by disproportionation
+ * (pKd, e.g. Cu₂O) or referenced bare as a couple's oxidized form with no
+ * dissolution model (e.g. MnO₂, PbO₂ — recognized by lacking the charge suffix
+ * every genuine ion/metal formula in this dataset carries) — those solids/couples
+ * are dropped and reported via `warnings` rather than silently producing a wrong
+ * diagram.
+ */
+export function presetToArbitrary(sys: SystemDef): { arb: { species: ArbSpecies[]; couples: ArbCouple[] }; warnings: string[] } {
+  const warnings: string[] = [];
+  const hasCharge = (f: string) => /[⁺⁻]$/.test(f);
+  const isMetalFormula = (f: string) => f.endsWith('(s)');
+  const bare = (f: string) => f.replace('(s)', '');
+
+  const ionZ = new Map<string, number>();
+  for (const sol of Object.values(sys.solids)) {
+    if (sol.ion && sol.z !== undefined) ionZ.set(sol.ion, sol.z);
+  }
+
+  const ions = new Map<string, ArbIon>();
+  const metals = new Map<string, ArbMetal>();
+  const couples: ArbCouple[] = [];
+
+  for (const c of Object.values(sys.couples)) {
+    if (!hasCharge(c.ox) || !(hasCharge(c.red) || isMetalFormula(c.red))) {
+      warnings.push(`${c.ox} → ${bare(c.red)}: no se pudo convertir (especie sin modelo de disolución en modo custom).`);
+      continue;
+    }
+    if (!ions.has(c.ox)) ions.set(c.ox, { kind: 'ion', formula: c.ox, z: ionZ.get(c.ox) ?? chargeMagnitude(c.ox) });
+    if (isMetalFormula(c.red)) {
+      const f = bare(c.red);
+      if (!metals.has(f)) metals.set(f, { kind: 'metal', formula: f });
+    } else if (!ions.has(c.red)) {
+      ions.set(c.red, { kind: 'ion', formula: c.red, z: ionZ.get(c.red) ?? chargeMagnitude(c.red) });
+    }
+    couples.push({ ox: c.ox, red: bare(c.red), E0: c.E0, n: c.n, mH: c.m_H });
+  }
+
+  const hydroxides: ArbHydrox[] = [];
+  for (const sol of Object.values(sys.solids)) {
+    const type = sol.type ?? 'hydroxide';
+    if (type !== 'hydroxide') {
+      warnings.push(`${sol.species} (tipo "${type}") no se pudo convertir — no hay un tipo de especie custom para disolución por óxido/disproporción; edítalo a mano si lo necesitas.`);
+      continue;
+    }
+    hydroxides.push({ kind: 'hydroxide', formula: sol.species, z: sol.z!, pKsp: sol.pKsp!, ionRef: sol.ion! });
+  }
+
+  return {
+    arb: { species: [...ions.values(), ...hydroxides, ...metals.values()], couples },
+    warnings,
+  };
 }
