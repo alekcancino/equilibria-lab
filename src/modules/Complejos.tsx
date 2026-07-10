@@ -296,7 +296,10 @@ export default function Complejos() {
   const alphasEq = xBranch
     ? twoLigandFractions(pLEqClipped, pXAtEq, sys.logBetas, xBranch.logBetasX)
     : complexFractions(pLEqClipped, sys.logBetas);
+  // indexOf(Math.max) is -1 when the solve failed (NaN fractions) — every
+  // consumer below must degrade to '—' instead of indexing with -1.
   const domIdx = alphasEq.indexOf(Math.max(...alphasEq));
+  const eqValid = domIdx >= 0;
   const nBarEq = xBranch
     ? alphasEq.slice(1, 1 + n).reduce((s, a, i) => s + (i + 1) * a, 0)
     : bjerrumNumber(pLEqClipped, sys.logBetas);
@@ -506,8 +509,11 @@ export default function Complejos() {
               label: 'pX de equilibrio',
               value: Number.isFinite(coupledEq.pX) ? coupledEq.pX.toFixed(3) : '—',
             }] : []),
-            { label: 'n̄ en equilibrio', value: nBarEq.toFixed(2) },
-            { label: 'Especie dominante', value: `${labels[domIdx]} (α = ${alphasEq[domIdx].toFixed(3)})` },
+            { label: 'n̄ en equilibrio', value: eqValid ? nBarEq.toFixed(2) : '—' },
+            {
+              label: 'Especie dominante',
+              value: eqValid ? `${labels[domIdx]} (α = ${alphasEq[domIdx].toFixed(3)})` : '—',
+            },
           ]} />
         </PanelSection>
 
@@ -546,12 +552,12 @@ export default function Complejos() {
         <ResultCardRow items={[
           {
             label: n === 1 ? '% formado' : '% formado (ñ·100)',
-            value: `${pctFormado.toFixed(1)} %`,
+            value: eqValid ? `${pctFormado.toFixed(1)} %` : '—',
             accent: true,
           },
-          ...(n === 1 ? [{ label: '% disociado', value: `${pctDisociado.toFixed(1)} %` }] : []),
+          ...(n === 1 ? [{ label: '% disociado', value: eqValid ? `${pctDisociado.toFixed(1)} %` : '—' }] : []),
           ...(xBranch !== null
-            ? [{ label: `% en ${side.auxLabel || 'X'}`, value: `${pctEnX.toFixed(1)} %` }]
+            ? [{ label: `% en ${side.auxLabel || 'X'}`, value: eqValid ? `${pctEnX.toFixed(1)} %` : '—' }]
             : [{ label: 'pL para 50 %', value: Number.isFinite(pL50) ? pL50.toFixed(2) : '—' }]),
           {
             label: sideMode === 'ringbom' ? 'pX′ equilibrio' : 'pL equilibrio',
@@ -563,8 +569,8 @@ export default function Complejos() {
             label: 'pX equilibrio',
             value: Number.isFinite(coupledEq.pX) ? coupledEq.pX.toFixed(2) : '—',
           }] : []),
-          { label: 'n̄ equilibrio', value: nBarEq.toFixed(2) },
-          { label: 'Dominante', value: `${labels[domIdx]}` },
+          { label: 'n̄ equilibrio', value: eqValid ? nBarEq.toFixed(2) : '—' },
+          { label: 'Dominante', value: eqValid ? `${labels[domIdx]}` : '—' },
         ]} />
       </section>
     </div>
