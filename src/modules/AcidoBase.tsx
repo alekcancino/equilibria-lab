@@ -5,15 +5,24 @@ import PanelShell from '../components/PanelShell';
 import Chart from '../components/Chart';
 import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, PanelSection, ResultCardRow, Slider, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, PanelSection, ResultCardRow, Segmented, Slider, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
 import { ladderFractions, ladderLogC, predominanceZones } from '../lib/ladder';
 import { solvePH, saltCounterIons, defaultStartIndex } from '../lib/equilibrium';
+import type { GammaModel } from '../lib/activity';
 import { useActivityNote } from '../context/ActivityContext';
 
 const PH_POINTS = 400;
+const GAMMA_MODELS: { value: GammaModel; label: string }[] = [
+  { value: 'dh', label: 'D-H extendida' },
+  { value: 'davies', label: 'Davies' },
+  { value: 'guntelberg', label: 'Güntelberg' },
+];
+function isValidGammaModel(v: unknown): v is GammaModel {
+  return v === 'dh' || v === 'davies' || v === 'guntelberg';
+}
 
 /** Acid-base equilibrium (mono and polyprotic): DUZP + α distribution + logC diagram. */
 export default function AcidoBase() {
@@ -22,8 +31,9 @@ export default function AcidoBase() {
   const [conc, setConc] = useState(0.1);
   const [showSystemPH, setShowSystemPH] = useState(false);
   const [ionicStrength, setIonicStrength] = useState(0);
+  const [gammaModel, setGammaModel] = useState<GammaModel>('dh');
 
-  useShareEffect('acidobase', { system, conc, showSystemPH, ionicStrength }, (s) => {
+  useShareEffect('acidobase', { system, conc, showSystemPH, ionicStrength, gammaModel }, (s) => {
     // A malformed/stale system (untrusted URL) NaN-poisons solvePH into a
     // silent bogus pH instead of an error — same class of bug fixed in
     // Mezclas.tsx, guarded here too since this module restores AcidSystem
@@ -32,10 +42,12 @@ export default function AcidoBase() {
     if (s.conc !== undefined) setConc(s.conc);
     if (s.showSystemPH !== undefined) setShowSystemPH(s.showSystemPH);
     if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
+    if (isValidGammaModel(s.gammaModel)) setGammaModel(s.gammaModel);
   });
 
   function reset() {
-    setSystem(defaultAcidSystem()); setConc(0.1); setShowSystemPH(false); setIonicStrength(0);
+    setSystem(defaultAcidSystem()); setConc(0.1); setShowSystemPH(false);
+    setIonicStrength(0); setGammaModel('dh');
   }
 
   const labels = systemLabels(system);
@@ -46,7 +58,8 @@ export default function AcidoBase() {
     Sistema: system.label,
     'C / M': conc.toFixed(4),
     'I / M': ionicStrength.toFixed(3),
-  }), [system.label, conc, ionicStrength]);
+    'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel,
+  }), [system.label, conc, ionicStrength, gammaModel]);
 
   const pHSystem = useMemo(() => {
     // "pH disolución pura" dissolves the system at its default ladder index
@@ -55,8 +68,8 @@ export default function AcidoBase() {
     // saltCounterIons/defaultStartIndex in equilibrium.ts for the general
     // derivation, shared with titration.ts's analyte handling.
     const { cations, anions } = saltCounterIons(system.z0, defaultStartIndex(system.z0, system.pKas.length));
-    return solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }], cations * conc, anions * conc, ionicStrength);
-  }, [system, conc, ionicStrength]);
+    return solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }], cations * conc, anions * conc, ionicStrength, gammaModel);
+  }, [system, conc, ionicStrength, gammaModel]);
   const pHInvalid = !Number.isFinite(pHSystem);
 
   // α distribution vs pH
@@ -66,7 +79,7 @@ export default function AcidoBase() {
     for (let i = 0; i <= PH_POINTS; i++) {
       const pH = (14 * i) / PH_POINTS;
       phs.push(pH);
-      ladderFractions(pH, system.pKas, true, system.z0, ionicStrength).forEach((a, j) => series[j].push(a));
+      ladderFractions(pH, system.pKas, true, system.z0, ionicStrength, gammaModel).forEach((a, j) => series[j].push(a));
     }
     return series.map((ys, j) => ({
       x: phs, y: ys, type: 'scatter', mode: 'lines',
@@ -74,7 +87,7 @@ export default function AcidoBase() {
       line: { width: 3, color: SPECIES_COLORS[j % SPECIES_COLORS.length] },
       hovertemplate: `α = %{y:.3f}<extra>${labels[j] ?? ''}</extra>`,
     }));
-  }, [system, labels, ionicStrength]);
+  }, [system, labels, ionicStrength, gammaModel]);
 
   // logC vs pH diagram (Sillén) with H₃O⁺/OH⁻ lines
   const logCTraces = useMemo<Data[]>(() => {
@@ -85,7 +98,7 @@ export default function AcidoBase() {
     for (let i = 0; i <= PH_POINTS; i++) {
       const pH = (14 * i) / PH_POINTS;
       phs.push(pH);
-      ladderLogC(pH, system.pKas, true, logCtotal, system.z0, ionicStrength).forEach((lc, j) => series[j].push(lc));
+      ladderLogC(pH, system.pKas, true, logCtotal, system.z0, ionicStrength, gammaModel).forEach((lc, j) => series[j].push(lc));
       hLine.push(-pH);
       ohLine.push(pH - 14);
     }
@@ -100,11 +113,11 @@ export default function AcidoBase() {
       { x: phs, y: ohLine, type: 'scatter', mode: 'lines', name: 'OH⁻', line: { width: 2, color: '#95a5a6', dash: 'dot' } },
     );
     return data;
-  }, [system, labels, logCtotal, ionicStrength]);
+  }, [system, labels, logCtotal, ionicStrength, gammaModel]);
 
   const zones = useMemo(
-    () => predominanceZones(system.pKas, labels, 0, 14, true, system.z0, ionicStrength),
-    [system, labels, ionicStrength],
+    () => predominanceZones(system.pKas, labels, 0, 14, true, system.z0, ionicStrength, gammaModel),
+    [system, labels, ionicStrength, gammaModel],
   );
 
   const systemShape = useMemo<Partial<Shape>[]>(() => {
@@ -113,7 +126,7 @@ export default function AcidoBase() {
   }, [showSystemPH, pHSystem]);
 
   const alphasAtPH = Number.isFinite(pHSystem)
-    ? ladderFractions(pHSystem, system.pKas, true, system.z0, ionicStrength)
+    ? ladderFractions(pHSystem, system.pKas, true, system.z0, ionicStrength, gammaModel)
     : system.pKas.map(() => 0);
   const domIdx = alphasAtPH.indexOf(Math.max(...alphasAtPH));
 
@@ -171,9 +184,16 @@ export default function AcidoBase() {
           <ConcSlider label="Concentración analítica" value={conc} onChange={setConc} />
           <Toggle label="Marcar pH de la disolución pura" checked={showSystemPH} onChange={setShowSystemPH} />
           <details className="section-collapse">
-            <summary>Corrección por actividad (Debye–Hückel)</summary>
+            <summary>Corrección por actividad</summary>
             <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
-            <p className="hint">I = 0 → γ = 1 (resultado termodinámico). A I &gt; 0.1 M los pKa aparentes aumentan y el pH calculado cambia.</p>
+            <div style={{ marginTop: 6 }}>
+              <Segmented
+                options={GAMMA_MODELS}
+                value={gammaModel}
+                onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}
+              />
+            </div>
+            <p className="hint">I = 0 → γ = 1 (resultado termodinámico). A I &gt; 0.1 M los pKa aparentes aumentan y el pH calculado cambia. Davies es válida hasta I ≈ 0.5 M; D-H extendida pierde precisión pasando I ≈ 0.1 M.</p>
           </details>
         </PanelSection>
         {showActivityNote && (

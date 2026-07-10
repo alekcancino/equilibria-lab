@@ -10,9 +10,18 @@ import {
 import { SALTS, type SaltPreset } from '../lib/database';
 import { formatMolar } from '../lib/format';
 import { solubility, acidSolidSolubility, baseSolidSolubility } from '../lib/solubility';
+import type { GammaModel } from '../lib/activity';
 import { toSub } from '../lib/complexDatabase';
 
 const PH_POINTS = 300;
+const GAMMA_MODELS: { value: GammaModel; label: string }[] = [
+  { value: 'dh', label: 'D-H extendida' },
+  { value: 'davies', label: 'Davies' },
+  { value: 'guntelberg', label: 'Güntelberg' },
+];
+function isValidGammaModel(v: unknown): v is GammaModel {
+  return v === 'dh' || v === 'davies' || v === 'guntelberg';
+}
 
 interface SaltState {
   label: string;
@@ -69,8 +78,9 @@ export default function Solubilidad() {
   const [cCommon, setCCommon] = useState(0.01);
   const [pHPoint, setPHPoint] = useState(7);
   const [ionicStrength, setIonicStrength] = useState(0);
+  const [gammaModel, setGammaModel] = useState<GammaModel>('dh');
 
-  useShareEffect('solubilidad', { mode, salt, molecular, useCommon, cCommon, pHPoint, ionicStrength }, (s) => {
+  useShareEffect('solubilidad', { mode, salt, molecular, useCommon, cCommon, pHPoint, ionicStrength, gammaModel }, (s) => {
     // A ?s= link is untrusted/unvalidated JSON — guard the union and merge
     // nested objects onto their defaults so a partial/corrupted payload
     // can't leave a required field (e.g. molecular.S0) undefined and crash
@@ -82,6 +92,7 @@ export default function Solubilidad() {
     if (s.cCommon !== undefined) setCCommon(s.cCommon);
     if (s.pHPoint !== undefined) setPHPoint(s.pHPoint);
     if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
+    if (isValidGammaModel(s.gammaModel)) setGammaModel(s.gammaModel);
   });
 
   function reset() {
@@ -92,6 +103,7 @@ export default function Solubilidad() {
     setCCommon(0.01);
     setPHPoint(7);
     setIonicStrength(0);
+    setGammaModel('dh');
   }
 
   const common = useCommon ? cCommon : 0;
@@ -106,12 +118,12 @@ export default function Solubilidad() {
 
   const exportMetadata = useMemo((): Record<string, string> => (
     mode === 'ionic'
-      ? { Módulo: 'Solubilidad', Sal: salt.label, pKps: salt.pKsp.toFixed(2), 'I / M': ionicStrength.toFixed(3) }
+      ? { Módulo: 'Solubilidad', Sal: salt.label, pKps: salt.pKsp.toFixed(2), 'I / M': ionicStrength.toFixed(3), 'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel }
       : {
           Módulo: 'Solubilidad', Sólido: molecular.name, 'S₀ / M': molecular.S0.toExponential(3),
           pKa: molecular.pKa.toFixed(2), Tipo: molecular.kind === 'acid' ? 'ácido' : 'base',
         }
-  ), [mode, salt.label, salt.pKsp, ionicStrength, molecular.name, molecular.S0, molecular.pKa, molecular.kind]);
+  ), [mode, salt.label, salt.pKsp, ionicStrength, gammaModel, molecular.name, molecular.S0, molecular.pKa, molecular.kind]);
 
   const traces = useMemo<Data[]>(() => {
     const phs: number[] = [];
@@ -124,8 +136,8 @@ export default function Solubilidad() {
         logS.push(Math.log10(molecularSolubility(molecular, pH)));
         continue;
       }
-      logS.push(Math.log10(solubility(saltDef, pH, common, ionicStrength)));
-      if (common > 0) logS0.push(Math.log10(solubility(saltDef, pH, 0, ionicStrength)));
+      logS.push(Math.log10(solubility(saltDef, pH, common, ionicStrength, gammaModel)));
+      if (common > 0) logS0.push(Math.log10(solubility(saltDef, pH, 0, ionicStrength, gammaModel)));
     }
     const data: Data[] = [{
       x: phs, y: logS, type: 'scatter', mode: 'lines',
@@ -141,10 +153,10 @@ export default function Solubilidad() {
       });
     }
     return data;
-  }, [mode, saltDef, common, ionicStrength, molecular]);
+  }, [mode, saltDef, common, ionicStrength, gammaModel, molecular]);
 
   const sAtPoint = mode === 'ionic'
-    ? solubility(saltDef, pHPoint, common, ionicStrength)
+    ? solubility(saltDef, pHPoint, common, ionicStrength, gammaModel)
     : molecularSolubility(molecular, pHPoint);
   const sInvalid = !Number.isFinite(sAtPoint) || sAtPoint <= 0;
 
@@ -281,8 +293,15 @@ export default function Solubilidad() {
           <Slider label="Evaluar en pH" value={pHPoint} min={0} max={14} step={0.1} onChange={setPHPoint} decimals={1} />
           {mode === 'ionic' && (
           <details className="section-collapse">
-            <summary>Corrección por actividad (Debye–Hückel)</summary>
+            <summary>Corrección por actividad</summary>
             <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
+            <div style={{ marginTop: 6 }}>
+              <Segmented
+                options={GAMMA_MODELS}
+                value={gammaModel}
+                onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}
+              />
+            </div>
             <p className="hint">I = 0 → γ = 1 (resultado termodinámico). A I &gt; 0 el pKps aparente disminuye y la sal se vuelve más soluble.</p>
           </details>
           )}

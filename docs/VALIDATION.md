@@ -95,7 +95,7 @@ npm test
 | Complexation (Bjerrum, log C vs pL) | **High** | Equivalent global β; X–M–L two-ligand competition solved as a coupled system (both mass balances), not only as a Ringbom α shift |
 | Redox (α vs pe) | **High** | Shared pe convention |
 | Solubility / solubility vs pH | **High** (ideal) | Spana adds γ and multiple solids |
-| Activity | **High** | Extended D-H (fixed a or Kielland per-ion sizes), Davies (Spana's form, to I ≈ 0.5 M), and Güntelberg all available; engine-side corrections elsewhere apply extended D-H (a = 3 Å), incl. optional β′/K′f correction in Complexation and Conditional constants |
+| Activity | **High** | Extended D-H (fixed a or Kielland per-ion sizes), Davies (Spana's form, to I ≈ 0.5 M), and Güntelberg all available; Acid-base, Mixtures and Solubility let the user pick which of the three generic models (D-H/Davies/Güntelberg) their own pH/Ksp corrections use; Complexation/Conditional constants' β′/K′f correction still fixes extended D-H |
 | Pourbaix | **High** (presets) | Spana more general for custom systems |
 | Acid-base mixtures | **High** | Multi-component charge balance |
 | Conditional constants | **High** | Ringbom explicit in the engine |

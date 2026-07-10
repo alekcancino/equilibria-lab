@@ -77,6 +77,35 @@ describe('solvePH', () => {
     const pH = solvePH([], 0, 0.1);
     tol(pH, 1.0, 0.05);
   });
+
+  it('modelo por defecto (omitido) === "dh" explícito, a I > 0', () => {
+    const comp: AcidBaseComponent = { c: 0.1, z0: 0, pKas: [4.76] };
+    expect(solvePH([comp], 0, 0, 0.2)).toBe(solvePH([comp], 0, 0, 0.2, 'dh'));
+  });
+
+  it('tampón 1:1 a I>0: pH (actividad) = pKa + shift, 3 modelos derivados a mano, ninguno coincide con los otros', () => {
+    // solvePH devuelve pH DE ACTIVIDAD (−log a_H = −log(γ_H·[H+])), no pH de
+    // concentración: en el punto de tampón 1:1 (0.1M HAc + 0.1M NaAc, vía
+    // catión espectador) [HAc]=[Ac⁻] da pH_conc = pKa − 2·logγ(1,I) (el shift
+    // de Henderson-Hasselbalch habitual), y sumarle la conversión de
+    // concentración a actividad (−logγ_H) da un tercer término:
+    // pH_actividad = pKa − 3·logγ(1,I).
+    const comp: AcidBaseComponent = { c: 0.2, z0: 0, pKas: [4.76] };
+    const I = 0.2;
+    // D-H extendida (a=3 Å): logγ(1,0.2) = -0.51·√0.2/(1+0.33·3·√0.2) = -0.158082.
+    tol(solvePH([comp], 0.1, 0, I, 'dh'), 4.76 - 3 * -0.158082, 0.001);
+    // Davies: logγ = -0.51·(√I/(1+√I) - 0.3I) = -0.126998.
+    tol(solvePH([comp], 0.1, 0, I, 'davies'), 4.76 - 3 * -0.126998, 0.001);
+    // Güntelberg: logγ = -0.5·√I/(1+√I) = -0.154508.
+    tol(solvePH([comp], 0.1, 0, I, 'guntelberg'), 4.76 - 3 * -0.154508, 0.001);
+    // Los tres deben ser distintos entre sí (confirma que el parámetro cablea de verdad).
+    const [dh, davies, guntelberg] = [
+      solvePH([comp], 0.1, 0, I, 'dh'),
+      solvePH([comp], 0.1, 0, I, 'davies'),
+      solvePH([comp], 0.1, 0, I, 'guntelberg'),
+    ];
+    expect(new Set([dh, davies, guntelberg]).size).toBe(3);
+  });
 });
 
 describe('saltCounterIons / defaultStartIndex', () => {
@@ -485,6 +514,24 @@ describe('ladderFractions', () => {
     const sum = alphas.reduce((a, b) => a + b, 0);
     expect(Math.abs(sum - 1)).toBeLessThan(1e-12);
   });
+
+  it('modelo por defecto (omitido) === "dh" explícito, a I > 0', () => {
+    expect(ladderFractions(5, [4.76], true, 0, 0.2)).toEqual(ladderFractions(5, [4.76], true, 0, 0.2, 'dh'));
+  });
+
+  it('a I>0, 50/50 ocurre en pKa′ (no pKa) — mismo shift de solvePH, 3 modelos', () => {
+    const pKa = 4.76;
+    const I = 0.2;
+    // Mismos shifts derivados a mano que en el describe('solvePH') de arriba.
+    const shifts: Record<'dh' | 'davies' | 'guntelberg', number> = {
+      dh: 0.316164, davies: 0.253997, guntelberg: 0.309017,
+    };
+    for (const model of ['dh', 'davies', 'guntelberg'] as const) {
+      const [a0, a1] = ladderFractions(pKa + shifts[model], [pKa], true, 0, I, model);
+      tol(a0, 0.5, 0.001);
+      tol(a1, 0.5, 0.001);
+    }
+  });
 });
 
 describe('ladderLogC', () => {
@@ -614,6 +661,29 @@ describe('solubility', () => {
     const s = solubility(m2x3, 7, 0);
     const expectedLogS = (-40 - Math.log10(2 ** 2 * 3 ** 3)) / (2 + 3);
     tol(Math.log10(s), expectedLogS, 1e-6);
+  });
+
+  it('modelo por defecto (omitido) === "dh" explícito, a I > 0', () => {
+    const agcl = SALTS.find((s) => s.id === 'agcl')!;
+    expect(solubility(agcl, 7, 0, 0.3)).toBe(solubility(agcl, 7, 0, 0.3, 'dh'));
+  });
+
+  it('AgCl (m=x=1, Cl⁻ no básico → sin dependencia de pH) a I=0.3: s = √Ksp_app difiere por modelo — 3 valores derivados a mano', () => {
+    const agcl = SALTS.find((s) => s.id === 'agcl')!;
+    const I = 0.3;
+    // logKsp_app = -pKsp - 2·logγ(1,I) (m=x=zM=zX=1); s = 10^(logKsp_app/2).
+    // D-H extendida: logγ(1,0.3) = -0.51·√0.3/(1+0.99·√0.3) = -0.181139.
+    tol(Math.log10(solubility(agcl, 7, 0, I, 'dh')), (-9.74 - 2 * -0.181139) / 2, 0.001);
+    // Davies: logγ = -0.51·(√0.3/(1+√0.3) - 0.09) = -0.134577.
+    tol(Math.log10(solubility(agcl, 7, 0, I, 'davies')), (-9.74 - 2 * -0.134577) / 2, 0.001);
+    // Güntelberg: logγ = -0.5·√0.3/(1+√0.3) = -0.176938.
+    tol(Math.log10(solubility(agcl, 7, 0, I, 'guntelberg')), (-9.74 - 2 * -0.176938) / 2, 0.001);
+    const vals = [
+      solubility(agcl, 7, 0, I, 'dh'),
+      solubility(agcl, 7, 0, I, 'davies'),
+      solubility(agcl, 7, 0, I, 'guntelberg'),
+    ];
+    expect(new Set(vals).size).toBe(3);
   });
 });
 

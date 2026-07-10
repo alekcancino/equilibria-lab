@@ -1,22 +1,23 @@
 // Chemical equilibrium engine: alpha fractions and pH solver via charge balance.
 
 import { KW } from './constants';
-import { activityCoefficient, logActivityCoefficient, apparentPKw } from './activity';
+import { apparentPKw, gammaOf, logGammaOf, type GammaModel } from './activity';
 
 export { KW };
+export type { GammaModel };
 
 /**
  * Apparent pKas in concentration units at ionic strength I.
  * For each dissociation step i: HA^(z0-i) ⇌ H⁺ + A^(z0-i-1)
  * pKa_i,app = pKa_i + log(γ_donor) - log(γ_acceptor) - log(γ_H)
  */
-function correctedPKas(pKas: number[], z0: number, I: number): number[] {
+function correctedPKas(pKas: number[], z0: number, I: number, model: GammaModel = 'dh'): number[] {
   return pKas.map((pKa, i) => {
     const zDonor = z0 - i;
     const zAcceptor = z0 - i - 1;
-    const shift = logActivityCoefficient(Math.abs(zDonor), I)
-      - logActivityCoefficient(Math.abs(zAcceptor), I)
-      - logActivityCoefficient(1, I);
+    const shift = logGammaOf(model, Math.abs(zDonor), I)
+      - logGammaOf(model, Math.abs(zAcceptor), I)
+      - logGammaOf(model, 1, I);
     return pKa + shift;
   });
 }
@@ -68,9 +69,10 @@ export function chargeBalance(
   extraCations = 0,
   extraAnions = 0,
   I = 0,
+  model: GammaModel = 'dh',
 ): number {
-  const gammaH  = activityCoefficient(1, I);
-  const gammaOH = activityCoefficient(1, I);
+  const gammaH  = gammaOf(model, 1, I);
+  const gammaOH = gammaOf(model, 1, I);
   // [H+] concentration from activity pH: a_H = γH · [H+]
   const h = Math.pow(10, -pH) / gammaH;
   // [OH-] from apparent Kw: [H+][OH-] = Kw / (γH · γOH)
@@ -79,7 +81,7 @@ export function chargeBalance(
   let net = h - oh + extraCations - extraAnions;
   for (const comp of components) {
     if (comp.c <= 0) continue;
-    const pKas = I > 0 ? correctedPKas(comp.pKas, comp.z0, I) : comp.pKas;
+    const pKas = I > 0 ? correctedPKas(comp.pKas, comp.z0, I, model) : comp.pKas;
     const alphas = alphaFractions(h, pKas);
     let weighted = 0;
     for (let i = 0; i < alphas.length; i++) {
@@ -94,23 +96,26 @@ export function chargeBalance(
  * Solves the pH of a mixture by bisection on the charge balance.
  * f(pH) is strictly decreasing in pH, so bisection is robust.
  * I: ionic strength for Debye–Hückel correction (0 = ideal).
+ * model: which γ convention to apply at I > 0 (default extended D-H,
+ * a = 3 Å, unchanged from before this parameter existed).
  */
 export function solvePH(
   components: AcidBaseComponent[],
   extraCations = 0,
   extraAnions = 0,
   I = 0,
+  model: GammaModel = 'dh',
 ): number {
   let lo = -2;
   let hi = 16;
-  const fLo = chargeBalance(lo, components, extraCations, extraAnions, I);
-  const fHi = chargeBalance(hi, components, extraCations, extraAnions, I);
+  const fLo = chargeBalance(lo, components, extraCations, extraAnions, I, model);
+  const fHi = chargeBalance(hi, components, extraCations, extraAnions, I, model);
   if (fLo <= 0) return lo;
   if (fHi >= 0) return hi;
   if (fLo * fHi > 0) return NaN;
   for (let i = 0; i < 80; i++) {
     const mid = (lo + hi) / 2;
-    const f = chargeBalance(mid, components, extraCations, extraAnions, I);
+    const f = chargeBalance(mid, components, extraCations, extraAnions, I, model);
     if (f > 0) lo = mid;
     else hi = mid;
   }

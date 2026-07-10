@@ -99,6 +99,28 @@ export function correctedLogBetas(logBetas: number[], zM: number, zL: number, I:
   });
 }
 
+/**
+ * Shared model selector for callers that let the user pick which γ
+ * convention to apply (Actividad's own picker, and any engine-side
+ * correction that wants the same choice — e.g. charge-balance pH solving,
+ * Ksp corrections). 'kielland' is intentionally excluded here: it needs a
+ * per-ion size `a`, which only makes sense against a fixed named-ion table
+ * (ION_SIZES) — not a generic z for an arbitrary user-typed species.
+ */
+export type GammaModel = 'dh' | 'davies' | 'guntelberg';
+
+export function gammaOf(model: GammaModel, z: number, I: number): number {
+  if (model === 'davies') return gammaDavies(z, I);
+  if (model === 'guntelberg') return gammaGuntelberg(z, I);
+  return activityCoefficient(z, I);
+}
+
+export function logGammaOf(model: GammaModel, z: number, I: number): number {
+  if (model === 'davies') return logGammaDavies(z, I);
+  if (model === 'guntelberg') return logGammaGuntelberg(z, I);
+  return logActivityCoefficient(z, I);
+}
+
 /** Effective pH from a_H (activity). */
 export function pHFromActivity(aH: number): number {
   return -Math.log10(Math.max(aH, 1e-30));

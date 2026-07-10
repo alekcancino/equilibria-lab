@@ -4,11 +4,21 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Slider, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Segmented, Slider, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from '../lib/equilibrium';
 import { firstDerivative } from '../lib/titration';
+import type { GammaModel } from '../lib/activity';
+
+const GAMMA_MODELS: { value: GammaModel; label: string }[] = [
+  { value: 'dh', label: 'D-H extendida' },
+  { value: 'davies', label: 'Davies' },
+  { value: 'guntelberg', label: 'Güntelberg' },
+];
+function isValidGammaModel(v: unknown): v is GammaModel {
+  return v === 'dh' || v === 'davies' || v === 'guntelberg';
+}
 
 interface MixRow {
   /** Stable React key, independent of array position — each row now hosts a
@@ -52,8 +62,9 @@ export default function Mezclas() {
   const [vSample, setVSample] = useState(25);
   const [showDerivative, setShowDerivative] = useState(false);
   const [ionicStrength, setIonicStrength] = useState(0);
+  const [gammaModel, setGammaModel] = useState<GammaModel>('dh');
 
-  useShareEffect('mezclas', { rows, titrate, titrantIsAcid, cTitrant, vSample, showDerivative, ionicStrength }, (s) => {
+  useShareEffect('mezclas', { rows, titrate, titrantIsAcid, cTitrant, vSample, showDerivative, ionicStrength, gammaModel }, (s) => {
     // Rows come from an untrusted URL and the shape changed over time
     // (pre-custom links carried {acidId} without a system) — sanitize each
     // row or fall back to a default one; never let a malformed system reach
@@ -78,6 +89,7 @@ export default function Mezclas() {
     if (s.vSample !== undefined) setVSample(s.vSample);
     if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
     if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
+    if (isValidGammaModel(s.gammaModel)) setGammaModel(s.gammaModel);
   });
 
   function reset() {
@@ -88,6 +100,7 @@ export default function Mezclas() {
     setVSample(25);
     setShowDerivative(false);
     setIonicStrength(0);
+    setGammaModel('dh');
   }
 
   const updateRow = (i: number, patch: Partial<MixRow>) => {
@@ -115,13 +128,14 @@ export default function Mezclas() {
     Módulo: 'Mezclas ácido-base',
     Componentes: rows.map((r) => rowLabel(r.system)).join(' + '),
     'I / M': ionicStrength.toFixed(3),
-  }), [rows, ionicStrength]);
+    'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel,
+  }), [rows, ionicStrength, gammaModel]);
 
   const pHMix = useMemo(() => {
     const { comps, cations, anions } = buildComponents(1);
-    return solvePH(comps, cations, anions, ionicStrength);
+    return solvePH(comps, cations, anions, ionicStrength, gammaModel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, ionicStrength]);
+  }, [rows, ionicStrength, gammaModel]);
   const pHInvalid = !Number.isFinite(pHMix);
 
   const speciation = useMemo(() => {
@@ -154,14 +168,14 @@ export default function Mezclas() {
       const { comps, cations, anions } = buildComponents(vSample / vTotal);
       const titrantConc = (cTitrant * vt) / vTotal;
       const pH = titrantIsAcid
-        ? solvePH(comps, cations, anions + titrantConc, ionicStrength)
-        : solvePH(comps, cations + titrantConc, anions, ionicStrength);
+        ? solvePH(comps, cations, anions + titrantConc, ionicStrength, gammaModel)
+        : solvePH(comps, cations + titrantConc, anions, ionicStrength, gammaModel);
       volumes.push(vt);
       pHs.push(pH);
     }
     return { volumes, pHs, vMax };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, titrate, titrantIsAcid, cTitrant, vSample, ionicStrength]);
+  }, [rows, titrate, titrantIsAcid, cTitrant, vSample, ionicStrength, gammaModel]);
 
   const traces = useMemo<Data[]>(() => {
     if (!curve) return [];
@@ -301,8 +315,15 @@ export default function Mezclas() {
           </>
         )}
         <details className="section-collapse">
-          <summary>Corrección por actividad (Debye–Hückel)</summary>
+          <summary>Corrección por actividad</summary>
           <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
+          <div style={{ marginTop: 6 }}>
+            <Segmented
+              options={GAMMA_MODELS}
+              value={gammaModel}
+              onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}
+            />
+          </div>
           <p className="hint">I = 0 → γ = 1 (resultado termodinámico). Aplica a pH de mezcla y curva de titulación.</p>
         </details>
         </PanelSection>
