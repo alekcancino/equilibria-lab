@@ -14,7 +14,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 - Complexation: multi-ligand systems, Bjerrum number, α distributions, log *C* vs pL, editable per-species labels; metal side reactions as a Ringbom pX′ shift or as a rigorously coupled X–M–L two-ligand equilibrium (both mass balances solved simultaneously)
 - Redox: α vs pe, spontaneous-reaction prediction, conditional pe°′
 - Solubility: log *s* vs pH with conditional Ksp, common-ion effect, molecular acid/base solid solubility (pH-dependent ionization), free MmXx stoichiometry; Debye–Hückel activity corrections applied to the solver
-- Activity: ionic strength, γ vs *I* (extended Debye–Hückel); corrections wired to solubility, complexation, and conditional-constant engines
+- Activity: ionic strength, γ vs *I* with four selectable models — extended Debye–Hückel (a = 3 Å), Kielland per-ion sizes, Davies (valid to I ≈ 0.5 M), Güntelberg; corrections wired to solubility, complexation, and conditional-constant engines
 
 ### Coupled equilibria
 

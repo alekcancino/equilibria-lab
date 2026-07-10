@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { activityCoefficient, apparentPKw } from '../activity';
+import {
+  activityCoefficient, apparentPKw, gammaDavies, gammaGuntelberg, ION_SIZES,
+} from '../activity';
 
 const tol = (val: number, expected: number, delta = 0.02) =>
   expect(Math.abs(val - expected)).toBeLessThan(delta);
@@ -24,6 +26,40 @@ describe('activityCoefficient — γ(z) at fixed I (EQ2 Q1)', () => {
     // Changing z does not alter I: each γ uses the same imposed ionic strength.
     expect(activityCoefficient(1, I)).toBeGreaterThan(activityCoefficient(2, I));
     expect(activityCoefficient(2, I)).toBeGreaterThan(activityCoefficient(3, I));
+  });
+});
+
+// Davies equation goldens, hand-derived from log γ = −0.51 z² (√I/(1+√I) − 0.3 I).
+describe('gammaDavies', () => {
+  it('z=1: γ(I=0.1)=0.781, γ(I=0.5)=0.733 — usable where fixed-a D-H fails', () => {
+    tol(gammaDavies(1, 0.1), 0.781, 0.001);
+    tol(gammaDavies(1, 0.5), 0.733, 0.001);
+  });
+
+  it('z=2 a I=0.1 → γ=0.372', () => {
+    tol(gammaDavies(2, 0.1), 0.372, 0.001);
+  });
+
+  it('I=0 → γ=1 exacto', () => {
+    expect(gammaDavies(2, 0)).toBe(1);
+  });
+});
+
+// Güntelberg convention (A=0.5, B·a=1) — resolves QA H-1: courses using this
+// form report γ=0.241 for z=2 at I=0.2, not the extended-D-H(a=3) 0.233.
+describe('gammaGuntelberg (QA H-1)', () => {
+  it('z=2, I=0.2 → γ=0.241 (la convención del curso, no un error del motor)', () => {
+    tol(gammaGuntelberg(2, 0.2), 0.241, 0.001);
+  });
+});
+
+// Kielland per-ion sizes (Harris table 8-1): γ(H⁺, a=9) and γ(Ca²⁺, a=6) at I=0.1.
+describe('ION_SIZES (Kielland)', () => {
+  it('γ(H⁺, a=9 Å, I=0.1) ≈ 0.83; γ(Ca²⁺, a=6 Å, I=0.1) ≈ 0.405 (Harris)', () => {
+    const h = ION_SIZES.find((x) => x.label === 'H⁺')!;
+    tol(activityCoefficient(h.z, 0.1, h.a), 0.83, 0.01);
+    const ca = ION_SIZES.find((x) => x.label.startsWith('Ca²⁺'))!;
+    tol(activityCoefficient(ca.z, 0.1, ca.a), 0.405, 0.01);
   });
 });
 
