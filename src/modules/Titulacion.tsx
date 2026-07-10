@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
+import { useShareEffect } from '../hooks/useShareableState';
 import {
   ConcSlider, DbPanel, Disclosure, InfoBox, LabelField, PanelSection, ResultCard, ResultCardRow,
   Segmented, ModelBadge, RefBadge, SelectControl, Slider, SystemPresetPicker, Toggle,
@@ -9,7 +10,7 @@ import {
 import {
   AcidSystemEditor, CoupleEditor, SideReactionEditor,
 } from '../components/Editors';
-import { coupleFromPreset, strongAcidSystem, type AcidSystem, type CoupleState } from '../lib/editorModels';
+import { coupleFromPreset, isValidAcidSystem, strongAcidSystem, type AcidSystem, type CoupleState } from '../lib/editorModels';
 import DiagramTabs from '../components/DiagramTabs';
 import { INDICATORS } from '../lib/database';
 import { formatSci } from '../lib/format';
@@ -23,6 +24,34 @@ import { METAL_INDICATORS, EDTA_METAL_PRESETS, type MetalIndicator } from '../li
 import { SYSTEM_PRESETS, sideFromPreset, systemPresetById } from '../lib/systemPresets';
 
 type Mode = 'acidobase' | 'edta' | 'redox' | 'precip' | 'potenciometrica';
+
+const MODE_IDS: Mode[] = ['acidobase', 'edta', 'redox', 'precip', 'potenciometrica'];
+function isValidMode(x: unknown): x is Mode {
+  return typeof x === 'string' && (MODE_IDS as string[]).includes(x);
+}
+
+/**
+ * Synchronous, read-only URL check for which of the 5 sub-modes a shared
+ * link is for. All 5 share one moduleId ('titulacion' — the app router only
+ * registers one view id for this hub) and only one sub-mode is ever mounted
+ * at a time, so `mode` must be correct on the very first render — reading it
+ * in a child's useEffect (after mount) would flash the wrong sub-mode first.
+ * Read-only: the sole writer of ?s= stays each sub-mode's own useShareEffect,
+ * so this never races with it.
+ */
+function initialTitulacionMode(): Mode {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('m') !== 'titulacion') return 'acidobase';
+    const s = params.get('s');
+    if (!s) return 'acidobase';
+    const parsed: unknown = JSON.parse(decodeURIComponent(atob(s)));
+    const m = (parsed as { mode?: unknown } | null)?.mode;
+    return isValidMode(m) ? m : 'acidobase';
+  } catch {
+    return 'acidobase';
+  }
+}
 
 /* ─────────────── Metallochromic indicator panel (embedded) ───────────────── */
 
@@ -155,7 +184,7 @@ function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
 
 /* ───────────────────────── Acid–base ───────────────────────── */
 
-function AcidBaseTitration() {
+function AcidBaseTitration({ mode }: { mode: Mode }) {
   const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem());
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cAnalyte, setCAnalyte] = useState(0.1);
@@ -164,6 +193,17 @@ function AcidBaseTitration() {
   const [indicatorId, setIndicatorId] = useState('phenolphthalein');
   const [showIndicator, setShowIndicator] = useState(false);
   const [showDerivative, setShowDerivative] = useState(false);
+
+  useShareEffect('titulacion', { mode, system, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, indicatorId, showIndicator, showDerivative }, (s) => {
+    if (isValidAcidSystem(s.system)) setSystem(s.system);
+    if (s.titrantIsAcid !== undefined) setTitrantIsAcid(s.titrantIsAcid);
+    if (s.cAnalyte !== undefined) setCAnalyte(s.cAnalyte);
+    if (s.vAnalyte !== undefined) setVAnalyte(s.vAnalyte);
+    if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
+    if (s.indicatorId) setIndicatorId(s.indicatorId);
+    if (s.showIndicator !== undefined) setShowIndicator(s.showIndicator);
+    if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
+  });
 
   function reset() {
     setSystem(strongAcidSystem()); setTitrantIsAcid(false);
@@ -296,7 +336,7 @@ function AcidBaseTitration() {
 
   return (
     <>
-      <PanelShell title="Titulación ácido-base" onReset={reset}>
+      <PanelShell title="Titulación ácido-base" onReset={reset} moduleId="titulacion">
         <PanelSection title="Sistema" icon="⚛">
           <Segmented
             options={[
@@ -415,7 +455,7 @@ function AcidBaseTitration() {
 
 /* ───────────────────────── Complexometric (EDTA) ────────────────────────── */
 
-function EdtaTitration() {
+function EdtaTitration({ mode }: { mode: Mode }) {
   const defaultPreset = EDTA_METAL_PRESETS[0]; // Ca²⁺
   const [metalId, setMetalId] = useState(defaultPreset.id);
   const [label, setLabel] = useState(`${defaultPreset.metal}`);
@@ -434,6 +474,21 @@ function EdtaTitration() {
   const [cBuret, setCBuret] = useState(0.01);
   const [axis, setAxis] = useState<'volume' | 'x'>('volume');
   const [traceY, setTraceY] = useState<'pM' | 'pY' | 'both'>('pM');
+
+  useShareEffect('titulacion', { mode, metalId, label, logKf, logBetasOH, side, edtaInFlask, pH, cFlask, vFlask, cBuret, axis, traceY }, (s) => {
+    if (s.metalId) setMetalId(s.metalId);
+    if (s.label) setLabel(s.label);
+    if (s.logKf !== undefined) setLogKf(s.logKf);
+    if (s.logBetasOH) setLogBetasOH(s.logBetasOH);
+    if (s.side) setSide(s.side);
+    if (s.edtaInFlask !== undefined) setEdtaInFlask(s.edtaInFlask);
+    if (s.pH !== undefined) setPH(s.pH);
+    if (s.cFlask !== undefined) setCFlask(s.cFlask);
+    if (s.vFlask !== undefined) setVFlask(s.vFlask);
+    if (s.cBuret !== undefined) setCBuret(s.cBuret);
+    if (s.axis === 'volume' || s.axis === 'x') setAxis(s.axis);
+    if (s.traceY === 'pM' || s.traceY === 'pY' || s.traceY === 'both') setTraceY(s.traceY);
+  });
 
   function reset() {
     setMetalId(defaultPreset.id); setLabel(defaultPreset.metal);
@@ -589,7 +644,7 @@ function EdtaTitration() {
 
   return (
     <>
-      <PanelShell title="Titulación complejométrica" onReset={reset}>
+      <PanelShell title="Titulación complejométrica" onReset={reset} moduleId="titulacion">
         <SystemPresetPicker
           items={SYSTEM_PRESETS.map((p) => ({ id: p.id, name: p.name, group: p.group, detail: p.detail }))}
           onSelect={applyFullSystem}
@@ -705,7 +760,7 @@ function EdtaTitration() {
 
 /* ───────────────────────── Redox ───────────────────────── */
 
-function RedoxTitration() {
+function RedoxTitration({ mode }: { mode: Mode }) {
   const [analyte, setAnalyte] = useState<CoupleState>(coupleFromPreset('fe'));
   const [titrant, setTitrant] = useState<CoupleState>(coupleFromPreset('ce'));
   const [direction, setDirection] = useState<'oxidante' | 'reductor'>('oxidante');
@@ -715,6 +770,18 @@ function RedoxTitration() {
   const [cTitrant, setCTitrant] = useState(0.05);
   const [usePe, setUsePe] = useState(false);
   const [showDerivative, setShowDerivative] = useState(false);
+
+  useShareEffect('titulacion', { mode, analyte, titrant, direction, pH, cAnalyte, vAnalyte, cTitrant, usePe, showDerivative }, (s) => {
+    if (s.analyte) setAnalyte(s.analyte);
+    if (s.titrant) setTitrant(s.titrant);
+    if (s.direction === 'oxidante' || s.direction === 'reductor') setDirection(s.direction);
+    if (s.pH !== undefined) setPH(s.pH);
+    if (s.cAnalyte !== undefined) setCAnalyte(s.cAnalyte);
+    if (s.vAnalyte !== undefined) setVAnalyte(s.vAnalyte);
+    if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
+    if (s.usePe !== undefined) setUsePe(s.usePe);
+    if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
+  });
 
   function reset() {
     setAnalyte(coupleFromPreset('fe')); setTitrant(coupleFromPreset('ce'));
@@ -773,7 +840,7 @@ function RedoxTitration() {
 
   return (
     <>
-      <PanelShell title="Titulación redox" onReset={reset}>
+      <PanelShell title="Titulación redox" onReset={reset} moduleId="titulacion">
         <PanelSection title="Sistema" icon="⚛">
           <Segmented
             options={[
@@ -849,7 +916,7 @@ function RedoxTitration() {
 
 /* ───────────────────────── Precipitation ─────────────────────────────────── */
 
-function PrecipTitration() {
+function PrecipTitration({ mode }: { mode: Mode }) {
   const [presetId, setPresetId] = useState('cl');
   const [pKsp, setPKsp] = useState(9.74);
   const [cationName, setCationName] = useState('Ag⁺');
@@ -862,6 +929,21 @@ function PrecipTitration() {
   const [showPCation, setShowPCation] = useState(false);
   const [showMohr, setShowMohr] = useState(false);
   const [showDerivative, setShowDerivative] = useState(false);
+
+  useShareEffect('titulacion', { mode, presetId, pKsp, cationName, anionName, saltFormula, isAgSystem, cAnalyte, vAnalyte, cTitrant, showPCation, showMohr, showDerivative }, (s) => {
+    if (s.presetId) setPresetId(s.presetId);
+    if (s.pKsp !== undefined) setPKsp(s.pKsp);
+    if (s.cationName) setCationName(s.cationName);
+    if (s.anionName) setAnionName(s.anionName);
+    if (s.saltFormula) setSaltFormula(s.saltFormula);
+    if (s.isAgSystem !== undefined) setIsAgSystem(s.isAgSystem);
+    if (s.cAnalyte !== undefined) setCAnalyte(s.cAnalyte);
+    if (s.vAnalyte !== undefined) setVAnalyte(s.vAnalyte);
+    if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
+    if (s.showPCation !== undefined) setShowPCation(s.showPCation);
+    if (s.showMohr !== undefined) setShowMohr(s.showMohr);
+    if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
+  });
 
   function loadPreset(id: string) {
     const p = PRECIP_PRESETS.find((x) => x.id === id)!;
@@ -956,7 +1038,7 @@ function PrecipTitration() {
 
   return (
     <>
-      <PanelShell title="Titulación por precipitación" onReset={reset}>
+      <PanelShell title="Titulación por precipitación" onReset={reset} moduleId="titulacion">
         <PanelSection title="Sistema" icon="⚛">
           <ModelBadge
             model="titulación por precipitación 1:1"
@@ -1070,7 +1152,7 @@ function PrecipTitration() {
 // E_cell = K_ref − S · pH   (K_ref absorbs reference electrode + junction potential)
 const S_POT = 59.16; // mV / pH
 
-function PotenciometricaTitration() {
+function PotenciometricaTitration({ mode }: { mode: Mode }) {
   const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem());
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cAnalyte, setCAnalyte] = useState(0.1);
@@ -1079,6 +1161,17 @@ function PotenciometricaTitration() {
   const [Kref, setKref] = useState(400);      // mV
   const [showDeriv1, setShowDeriv1] = useState(false);
   const [showDeriv2, setShowDeriv2] = useState(false);
+
+  useShareEffect('titulacion', { mode, system, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, Kref, showDeriv1, showDeriv2 }, (s) => {
+    if (isValidAcidSystem(s.system)) setSystem(s.system);
+    if (s.titrantIsAcid !== undefined) setTitrantIsAcid(s.titrantIsAcid);
+    if (s.cAnalyte !== undefined) setCAnalyte(s.cAnalyte);
+    if (s.vAnalyte !== undefined) setVAnalyte(s.vAnalyte);
+    if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
+    if (s.Kref !== undefined) setKref(s.Kref);
+    if (s.showDeriv1 !== undefined) setShowDeriv1(s.showDeriv1);
+    if (s.showDeriv2 !== undefined) setShowDeriv2(s.showDeriv2);
+  });
 
   function reset() {
     setSystem(strongAcidSystem()); setTitrantIsAcid(false);
@@ -1276,7 +1369,7 @@ function PotenciometricaTitration() {
 
   return (
     <>
-      <PanelShell title="Titulación potenciométrica" onReset={reset}>
+      <PanelShell title="Titulación potenciométrica" onReset={reset} moduleId="titulacion">
         <PanelSection title="Sistema" icon="⚛">
           <Segmented
             options={[
@@ -1373,7 +1466,7 @@ const MODES: { value: Mode; label: string }[] = [
 ];
 
 export default function Titulacion() {
-  const [mode, setMode] = useState<Mode>('acidobase');
+  const [mode, setMode] = useState<Mode>(initialTitulacionMode);
   const modeLabel = MODES.find((m) => m.value === mode)?.label ?? '';
   return (
     <div className="module-with-tabs">
@@ -1392,11 +1485,11 @@ export default function Titulacion() {
         </div>
       </details>
       <div className="module">
-        {mode === 'acidobase' && <AcidBaseTitration />}
-        {mode === 'edta' && <EdtaTitration />}
-        {mode === 'redox' && <RedoxTitration />}
-        {mode === 'precip' && <PrecipTitration />}
-        {mode === 'potenciometrica' && <PotenciometricaTitration />}
+        {mode === 'acidobase' && <AcidBaseTitration mode={mode} />}
+        {mode === 'edta' && <EdtaTitration mode={mode} />}
+        {mode === 'redox' && <RedoxTitration mode={mode} />}
+        {mode === 'precip' && <PrecipTitration mode={mode} />}
+        {mode === 'potenciometrica' && <PotenciometricaTitration mode={mode} />}
       </div>
     </div>
   );
