@@ -1,31 +1,42 @@
-// Argentometric titration: Ag⁺ + X⁻ → AgX↓ (1:1 stoichiometry)
-// Computes pAg (and pX) curve vs. volume of AgNO₃ added.
-// Scope: 1:1 reactions only (m:x = 1:1); other stoichiometries are not modelled.
+// Argentometric titration: m·M + x·X → MmXx↓ (default 1:1, e.g. Ag⁺ + Cl⁻ → AgCl)
+// Computes pM (and pX) curve vs. volume of titrant added.
 // Source: Harris QCA ch. 16; Skoog PAQUI.
 
 export interface PrecipParams {
   pKsp: number;       // pKsp of the precipitate (e.g. 9.74 for AgCl)
-  cAnalyte: number;   // concentration of X⁻ in the flask (M)
+  cAnalyte: number;   // concentration of X in the flask (M)
   vAnalyte: number;   // flask volume (mL)
-  cTitrant: number;   // Ag⁺ concentration in the burette (M)
+  cTitrant: number;   // M concentration in the burette (M)
   vMax: number;       // maximum volume to plot (mL)
+  /** MmXx stoichiometric coefficients (default 1:1, e.g. AgCl, BaSO4). */
+  m?: number;
+  x?: number;
   points?: number;
 }
 
 export interface PrecipCurve {
   volumes: number[];
-  pAgs: number[];     // −log[Ag⁺]
-  pXs: number[];      // −log[X⁻]
+  pAgs: number[];     // −log[M]
+  pXs: number[];      // −log[X]
   vEq: number;        // equivalence volume (mL)
-  pAgEq: number;      // pAg at equivalence = ½ pKsp
+  pAgEq: number;      // pM at equivalence
 }
 
 export function precipTitrationCurve(params: PrecipParams): PrecipCurve {
   const { pKsp, cAnalyte, vAnalyte, cTitrant, vMax } = params;
+  const m = params.m ?? 1;
+  const x = params.x ?? 1;
   const Ksp = Math.pow(10, -pKsp);
   const points = params.points ?? 500;
-  const vEq = (cAnalyte * vAnalyte) / cTitrant;
-  const pAgEq = pKsp / 2;
+  const vEq = (m / x) * ((cAnalyte * vAnalyte) / cTitrant);
+  // At the exact stoichiometric point of MmXx: [M]^m·[X]^x = Ksp together
+  // with the mole balance x·[M] = m·[X] (m mol M and x mol X dissolve in
+  // lockstep, releasing m mol M and x mol X per formula unit) — substituting
+  // [X]=(x/m)[M] into Ksp gives [M]^(m+x) = Ksp·(m/x)^x. Reduces to
+  // [M]=[X]=√Ksp for the m=x=1 case (AgCl-style).
+  const mOverX = m / x;
+  const mAtEq = Math.pow(Ksp * Math.pow(mOverX, x), 1 / (m + x));
+  const pAgEq = -Math.log10(mAtEq);
 
   const volumes: number[] = [];
   const pAgs: number[] = [];
@@ -34,25 +45,29 @@ export function precipTitrationCurve(params: PrecipParams): PrecipCurve {
   for (let i = 0; i <= points; i++) {
     const v = (vMax * i) / points;
     const vTotal_L = (vAnalyte + v) / 1000;
-    const nAg = (cTitrant * v) / 1000;
-    const nX = (cAnalyte * vAnalyte) / 1000;
-    const excess = nAg - nX;
+    const nTitrant = (cTitrant * v) / 1000;
+    const nAnalyte = (cAnalyte * vAnalyte) / 1000;
+    // Formula units of MmXx precipitate if M (resp. X) were fully consumed —
+    // whichever is smaller is the limiting reagent at this point.
+    const xiFromM = nTitrant / m;
+    const xiFromX = nAnalyte / x;
+    const excess = xiFromM - xiFromX;
 
     let cAg: number;
     let cX: number;
 
-    if (Math.abs(excess) < 1e-15 * nX) {
+    if (Math.abs(excess) < 1e-15 * xiFromX) {
       // Exact equivalence point
-      cAg = Math.sqrt(Ksp);
-      cX = Math.sqrt(Ksp);
+      cAg = mAtEq;
+      cX = mAtEq / mOverX;
     } else if (excess < 0) {
-      // Before equivalence: excess X⁻
-      cX = -excess / vTotal_L;
-      cAg = Ksp / cX;
+      // Before equivalence: X in excess (M essentially fully precipitated)
+      cX = (nAnalyte - x * xiFromM) / vTotal_L;
+      cAg = Math.pow(Ksp / Math.pow(cX, x), 1 / m);
     } else {
-      // After equivalence: excess Ag⁺
-      cAg = excess / vTotal_L;
-      cX = Ksp / cAg;
+      // After equivalence: M in excess (X essentially fully precipitated)
+      cAg = (nTitrant - m * xiFromX) / vTotal_L;
+      cX = Math.pow(Ksp / Math.pow(cAg, m), 1 / x);
     }
 
     volumes.push(v);
