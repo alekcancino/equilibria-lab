@@ -2,7 +2,6 @@
 
 import { alphaH } from './conditional';
 import {
-  composeAlphas,
   condLogKPrimary,
   defaultSideStack,
   sideStackFromEditor,
@@ -59,13 +58,18 @@ function resolveStack(params: Pick<EdtaTitrationParams, 'sideStack' | 'sideEdito
 function equilibriumPoint(kCond: number, cM: number, cY: number): { pM: number; pY: number } {
   const a = kCond;
   const b = kCond * (cY - cM) + 1;
-  const c = -cM;
   let m: number;
   if (kCond < 1e-8) {
     m = cM;
   } else {
-    const disc = b * b - 4 * a * c;
-    m = (-b + Math.sqrt(Math.max(disc, 0))) / (2 * a);
+    // Positive root of a·m² + b·m − cM = 0. When b > 0 (past equivalence with
+    // large K′) the textbook form (−b + √(b²+4a·cM))/(2a) cancels
+    // catastrophically — for log K′ ≳ 16 the 4a·cM term falls below the ulp
+    // of b² and m collapses to 0 (pM pinned at 30). The conjugate form is
+    // exact there; the textbook form stays for b ≤ 0, where the conjugate
+    // would cancel instead.
+    const disc = Math.sqrt(Math.max(b * b + 4 * a * cM, 0));
+    m = b > 0 ? (2 * cM) / (b + disc) : (disc - b) / (2 * a);
   }
   m = Math.max(m, 1e-30);
   const my = Math.max(cM - m, 0);
@@ -85,9 +89,23 @@ export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
   } = params;
   const points = params.points ?? 500;
   const stack = resolveStack(params);
+  // Reported K'f is the undiluted (flask) value; when the aux ligand is an
+  // analytical total it dilutes with added titrant, so kCond is re-evaluated
+  // per point below for the volume axis.
   const logKfCond = condLogKPrimary(logKf, pH, stack);
-  const kCond = Math.pow(10, logKfCond);
-  const br = composeAlphas(pH, stack);
+  const kCondFlask = Math.pow(10, logKfCond);
+  const auxTotal = stack.auxLigand?.spec.mode === 'total' ? stack.auxLigand.spec : null;
+  const kCondAt = (vTotal: number): number => {
+    if (!auxTotal || !stack.auxLigand) return kCondFlask;
+    const diluted: SideReactionStack = {
+      ...stack,
+      auxLigand: {
+        ...stack.auxLigand,
+        spec: { ...auxTotal, cTotal: (auxTotal.cTotal * vMetal) / vTotal },
+      },
+    };
+    return Math.pow(10, condLogKPrimary(logKf, pH, diluted));
+  };
 
   const volumes: number[] = [];
   const xs: number[] = [];
@@ -102,7 +120,7 @@ export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
       const x = (xMax * i) / points;
       const cM = cMetal;
       const cY = x * cMetal;
-      const eq = equilibriumPoint(kCond, cM, cY);
+      const eq = equilibriumPoint(kCondFlask, cM, cY);
       xs.push(x);
       volumes.push(x * vEq);
       pMs.push(eq.pM);
@@ -114,7 +132,7 @@ export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
       const buret = (cEdta * v) / vTotal;
       const cM = edtaInFlask ? buret : flask;
       const cY = edtaInFlask ? flask : buret;
-      const eq = equilibriumPoint(kCond, cM, cY);
+      const eq = equilibriumPoint(kCondAt(vTotal), cM, cY);
       volumes.push(v);
       xs.push(v / vEq);
       pMs.push(eq.pM);
@@ -122,7 +140,6 @@ export function edtaTitrationCurve(params: EdtaTitrationParams): EdtaCurve {
     }
   }
 
-  void br;
   return { volumes, xs, pMs, pYs, vEq, xEq, logKfCond };
 }
 

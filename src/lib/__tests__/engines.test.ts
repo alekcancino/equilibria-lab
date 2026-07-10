@@ -5,7 +5,7 @@ import {
   twoLigandFractions, solveTwoLigandEquilibrium, twoLigandCurve,
 } from '../complexation';
 import type { XBranch } from '../complexation';
-import { alphaY4, edtaTitrationCurve, EDTA_PKAS } from '../edta';
+import { alphaY4, edtaAtFraction, edtaTitrationCurve, EDTA_PKAS } from '../edta';
 import {
   alphaH, alphaOH, alphaL, condLogK, condLogKCurve, feasibilityWindow,
   hydroxideSolCurve, precipitationPH,
@@ -232,6 +232,72 @@ describe('alphaY4 (αY(H))', () => {
   it('a pH 4 αY(H) >> 1 (protonación significativa)', () => {
     const aY = alphaY4(4);
     expect(aY).toBeGreaterThan(10);
+  });
+});
+
+describe('edtaTitrationCurve — K′ por punto y cuadrática estable', () => {
+  it('K′ grande (Fe³⁺-EDTA, logKf 25.1): pM tras la equivalencia es finito y correcto, no el colapso a 30', () => {
+    // Tras la equivalencia con exceso de EDTA: m ≈ cM/(K′·(cY−cM)).
+    // A x=1.5, cM=0.01, cY=0.015 (modelo x, sin dilución): m ≈ 0.01/(10^25.1·0.005)
+    // → pM ≈ 25.1 + log(0.005) − log(0.01) = 25.1 − 0.301 ≈ 24.80.
+    const curve = edtaTitrationCurve({
+      logKf: 25.1, pH: 12, sideStack: { ligandPKas: [] },
+      cMetal: 0.01, vMetal: 25, cEdta: 0.01, vMax: 50, axis: 'x', xMax: 2, points: 200,
+    });
+    const i = curve.xs.findIndex((x) => Math.abs(x - 1.5) < 1e-9);
+    expect(i).toBeGreaterThan(-1);
+    tol(curve.pMs[i], 24.80, 0.05);
+    expect(curve.pMs[i]).toBeLessThan(29); // la forma inestable daba m=0 → pM clavado en 30
+  });
+
+  it('ligando auxiliar en modo total se diluye por punto: coincide con un stack pre-diluido en modo free', () => {
+    const ZN_NH3 = [2.37, 4.81, 7.31, 9.46];
+    const pH = 10;
+    const base = { logKf: 16.5, pH, cMetal: 0.01, vMetal: 25, cEdta: 0.01, vMax: 50, points: 500 };
+    const withTotal = edtaTitrationCurve({
+      ...base,
+      sideStack: {
+        ligandPKas: EDTA_PKAS,
+        auxLigand: { logBetasL: ZN_NH3, spec: { mode: 'total', cTotal: 0.2, pKas: [9.25] } },
+      },
+    });
+    // A v = 25 mL el volumen se duplicó → cTotal efectivo 0.1; el mismo punto
+    // con el ligando FIJO a la concentración libre correspondiente debe coincidir.
+    const freeAt = freeLigandConcentration({ mode: 'total', cTotal: 0.1, pKas: [9.25] }, pH);
+    const withFree = edtaTitrationCurve({
+      ...base,
+      sideStack: {
+        ligandPKas: EDTA_PKAS,
+        auxLigand: { logBetasL: ZN_NH3, spec: { mode: 'free', cL: freeAt } },
+      },
+    });
+    const i = withTotal.volumes.findIndex((v) => Math.abs(v - 25) < 1e-9);
+    expect(i).toBeGreaterThan(-1);
+    tol(withTotal.pMs[i], withFree.pMs[i], 1e-9);
+    // Y difiere del modelo congelado (cTotal 0.2 sin diluir): α_M cambia ~4·log 2.
+    const frozenEquivalent = edtaTitrationCurve({
+      ...base,
+      sideStack: {
+        ligandPKas: EDTA_PKAS,
+        auxLigand: { logBetasL: ZN_NH3, spec: { mode: 'free', cL: freeLigandConcentration({ mode: 'total', cTotal: 0.2, pKas: [9.25] }, pH) } },
+      },
+    });
+    expect(Math.abs(withTotal.pMs[i] - frozenEquivalent.pMs[i])).toBeGreaterThan(0.5);
+  });
+
+  it('modo free (tamponado) es invariante: la curva en eje x reproduce edtaAtFraction', () => {
+    const sideStack = {
+      ligandPKas: EDTA_PKAS,
+      auxLigand: { logBetasL: [2.37, 4.81, 7.31, 9.46], spec: { mode: 'free' as const, cL: 0.05 } },
+    };
+    const curve = edtaTitrationCurve({
+      logKf: 16.5, pH: 10, cMetal: 0.01, vMetal: 25, cEdta: 0.01, vMax: 50,
+      axis: 'x', xMax: 2, points: 200, sideStack,
+    });
+    const at = edtaAtFraction({ logKf: 16.5, pH: 10, cMetal: 0.01, sideStack }, 0.5);
+    const i = curve.xs.findIndex((x) => Math.abs(x - 0.5) < 1e-9);
+    tol(curve.pMs[i], at.pM, 1e-12);
+    tol(curve.logKfCond, at.logKfCond, 1e-12);
   });
 });
 
