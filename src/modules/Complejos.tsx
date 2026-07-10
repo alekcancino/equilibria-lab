@@ -482,7 +482,7 @@ export default function Complejos() {
           )}
           <div>
             <div className="control-header">
-              <span className="control-label">Reacciones parásitas del metal (X)</span>
+              <span className="control-label">Segundo agente complejante (X)</span>
             </div>
             <div style={{ marginTop: 6 }}>
               <Segmented
@@ -492,7 +492,13 @@ export default function Complejos() {
                   { value: 'acoplada', label: 'X–M–L acoplada' },
                 ]}
                 value={sideMode}
-                onChange={(v) => setSideMode(isValidSideMode(v) ? v : 'ninguna')}
+                onChange={(v) => {
+                  const next = isValidSideMode(v) ? v : 'ninguna';
+                  setSideMode(next);
+                  // Jump straight to the X editor instead of leaving it collapsed
+                  // behind a second click — this is the whole point of the mode.
+                  if (next === 'acoplada') setSide((s) => ({ ...s, showAux: true }));
+                }}
               />
             </div>
           </div>
@@ -512,6 +518,7 @@ export default function Complejos() {
                 showLigandPKas={false}
                 showComplexSection={false}
                 showHydrolysisSection={false}
+                auxLigandTitle={`Ligando X (${side.auxLabel || 'X'}) — presets y log β`}
               />
               {xBranch === null && (
                 <p className="hint">

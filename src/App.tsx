@@ -67,7 +67,7 @@ const HUBS: Hub[] = [
   },
   {
     id: 'complejos', label: 'Complejos',
-    desc: 'Formación de complejos, número de Bjerrum y constantes condicionales.',
+    desc: 'Formación de complejos, número de Bjerrum, sistemas X–M–L acoplados y constantes condicionales.',
     assumptions: 'Complejos mononucleares MLₙ · α de Ringbom para reacciones parásitas.',
     crossCheck: 'Harris y Ringbom',
     views: [
@@ -120,7 +120,7 @@ const HUBS: Hub[] = [
   },
   {
     id: 'actividad', label: 'Actividad',
-    desc: 'Coeficientes γ de Debye–Hückel, fuerza iónica y pKw aparente.',
+    desc: 'Coeficientes γ — Debye–Hückel, Kielland, Davies o Güntelberg — fuerza iónica y pKw aparente.',
     assumptions: 'Debye–Hückel extendida (a ≈ 3 Å) válida a I ≲ 0.1 M · K′w = Kw/(γH·γOH).',
     crossCheck: 'Harris',
     views: [

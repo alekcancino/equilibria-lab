@@ -176,7 +176,7 @@ export default function Actividad() {
             <div style={{ marginTop: 6 }}>
               <Segmented
                 options={[
-                  { value: 'dh', label: 'D-H (a=3 Å)' },
+                  { value: 'dh', label: 'Extendida' },
                   { value: 'kielland', label: 'Kielland' },
                   { value: 'davies', label: 'Davies' },
                   { value: 'guntelberg', label: 'Güntelberg' },

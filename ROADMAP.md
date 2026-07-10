@@ -44,6 +44,32 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 
 ## Planned
 
+### UI discoverability audit (2026-07-10) — resolved
+
+A user-perspective pass (triggered by "no veo dónde hacer un sistema X-M-L custom" —
+correct: the feature existed but was badly surfaced) found a systemic gap: capabilities
+added as a mode/toggle inside an existing view didn't get surfaced anywhere outside that
+view, unlike capabilities added as a brand-new tab. All 5 findings were fixed the same
+day: Complejos' X–M–L toggle now opens its ligand-X editor in one click instead of two
+(no more collapsed `<details>` behind a jargon toggle), the section is relabeled "Ligando
+X — presets y log β" instead of the stale Ringbom-era "α_M(L)" name, the toggle itself is
+now "Segundo agente complejante (X)" instead of "Reacciones parásitas del metal (X)", and
+both the Complejos and Actividad home cards mention their session's new capabilities
+(X–M–L, the 4 γ models). Actividad's "D-H (a=3 Å)" segmented button — which wrapped to
+two lines while its siblings didn't — is now "Extendida" (one word, fits). The
+Constantes-Condicionales activity toggle was reviewed and left as-is: it already has the
+inline-hint + `ModelBadge`-chip treatment that makes the good examples below good; its
+only gap was list position, not missing affordance.
+
+**Good patterns to replicate for future features** (no fix needed — this is the standard
+to build toward): IntercambioIonico's zA/zB and Titulación precipitación's m/x are both
+(a) visible without scrolling, (b) confirmed by a `ModelBadge` chip the instant they leave
+their default value, (c) explained by one inline hint sentence right below the control,
+not a separate collapsed section. Any PR that unlocks a new capability inside an existing
+view (not a new tab) should also touch that hub's `desc` string in `src/App.tsx` — this is
+what broke for X–M–L (PR #48) and the γ models (PR #49) but was done correctly for
+competitive precipitation (PR #51).
+
 ### Near-term
 
 | Feature | Notes |
