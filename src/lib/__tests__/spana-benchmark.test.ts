@@ -46,7 +46,8 @@ describe('Spana benchmark: titr-13 (Examples/13-Titration acetic acid.dat)', () 
     // v = 0: mismo caso que hac-ph.
     tol(curve.pHs[0], 3.389, 0.01);
 
-    // v = Veq/2 (12.5 mL): Henderson-Hasselbalch, pH = pKa exacto.
+    // v = Veq/2 (12.5 mL): Henderson-Hasselbalch, pH ≈ pKa (exacto solo si
+    // se ignora la contribución de agua/balance de cargas, despreciable aquí).
     const iHalf = curve.volumes.findIndex((v) => Math.abs(v - 12.5) < 1e-9);
     expect(iHalf).toBeGreaterThan(-1);
     tol(curve.pHs[iHalf], PKA_HAC, 0.01);
