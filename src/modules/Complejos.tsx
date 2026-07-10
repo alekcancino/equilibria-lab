@@ -8,7 +8,7 @@ import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, DbPanel, InfoBox, LabelField,
-  ModelBadge, PanelSection, RefBadge, ResultCard, ResultCardRow, Segmented, Slider, Toggle,
+  ModelBadge, NumberSegmented, PanelSection, RefBadge, ResultCard, ResultCardRow, Segmented, Slider, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import { SPECIES_COLORS } from '../lib/database';
@@ -19,6 +19,7 @@ import {
   twoLigandFractions, twoLigandPredominanceZones, xBranchFromEditor,
 } from '../lib/complexation';
 import { percentFormed, percentDissociated, pLForPercentFormed } from '../lib/metrics';
+import { correctedLogBetas } from '../lib/activity';
 import {
   composeAlphas, defaultSideEditorState, sideStackFromEditor,
   type SideReactionEditorState,
@@ -94,6 +95,10 @@ export default function Complejos() {
   const [sideMode, setSideMode] = useState<SideMode>('ninguna');
   const [pHScale, setPHScale] = useState(10);
   const [side, setSide] = useState<SideReactionEditorState>(defaultSideEditorState);
+  const [useActivity, setUseActivity] = useState(false);
+  const [ionicI, setIonicI] = useState(0.1);
+  const [zM, setZM] = useState(2);
+  const [zL, setZL] = useState(0);
 
   useEffect(() => {
     // Don't push the untouched placeholder ('M'/'L') — otherwise the very
@@ -106,7 +111,7 @@ export default function Complejos() {
     }));
   }, [sys.metalLabel, sys.ligandLabel, sys.logBetas, setCarryOver]);
 
-  useShareEffect('complejos', { sys, cM, cL, showEquil, sideMode, pHScale, side }, (s) => {
+  useShareEffect('complejos', { sys, cM, cL, showEquil, sideMode, pHScale, side, useActivity, ionicI, zM, zL }, (s) => {
     if (s.sys) setSys(s.sys);
     if (s.cM !== undefined) setCM(s.cM);
     if (s.cL !== undefined) setCL(s.cL);
@@ -114,11 +119,16 @@ export default function Complejos() {
     if (isValidSideMode(s.sideMode)) setSideMode(s.sideMode);
     if (s.pHScale !== undefined) setPHScale(s.pHScale);
     if (s.side) setSide(s.side);
+    if (s.useActivity !== undefined) setUseActivity(s.useActivity);
+    if (s.ionicI !== undefined) setIonicI(s.ionicI);
+    if (typeof s.zM === 'number' && Number.isInteger(s.zM) && s.zM >= 1 && s.zM <= 4) setZM(s.zM);
+    if (typeof s.zL === 'number' && Number.isInteger(s.zL) && s.zL >= -4 && s.zL <= 0) setZL(s.zL);
   });
 
   function reset() {
     setSys(defaultState()); setCM(0.01); setCL(0.04); setShowEquil(false);
     setSideMode('ninguna'); setPHScale(10); setSide(defaultSideEditorState());
+    setUseActivity(false); setIonicI(0.1); setZM(2); setZL(0);
   }
 
   const logAlphaM = useMemo(() => {
@@ -147,7 +157,12 @@ export default function Complejos() {
     return [...base, ...xLabels];
   }, [sys, xBranch, side.auxLabel]);
   const n = sys.logBetas.length;
-  const stepwise = useMemo(() => logBetasToStepwise(sys.logBetas), [sys.logBetas]);
+  // Diagrams consume the activity-corrected beta' (the editor keeps the ideal beta).
+  const logBetasEff = useMemo(
+    () => (useActivity ? correctedLogBetas(sys.logBetas, zM, zL, ionicI) : sys.logBetas),
+    [useActivity, sys.logBetas, zM, zL, ionicI],
+  );
+  const stepwise = useMemo(() => logBetasToStepwise(logBetasEff), [logBetasEff]);
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Complejos',
@@ -156,26 +171,27 @@ export default function Complejos() {
     'CM / M': cM.toFixed(4),
     'CL / M': cL.toFixed(4),
     ...(xBranch ? { 'Ligando X (acoplado)': side.auxLabel || 'X' } : {}),
-  }), [sys.metalLabel, sys.ligandLabel, cM, cL, xBranch, side.auxLabel]);
+    ...(useActivity ? { 'I / M': ionicI.toFixed(4), 'zM / zL': `${zM} / ${zL}` } : {}),
+  }), [sys.metalLabel, sys.ligandLabel, cM, cL, xBranch, side.auxLabel, useActivity, ionicI, zM, zL]);
 
   // pL range: 0 to logβₙ + 3
-  const pLmax = useMemo(() => Math.max(sys.logBetas[n - 1] + 3, 6), [sys.logBetas, n]);
+  const pLmax = useMemo(() => Math.max(logBetasEff[n - 1] + 3, 6), [logBetasEff, n]);
   const xMax = scaleX(pLmax);
 
   // Coupled sweep + operating point (both mass balances), only in 'acoplada' mode.
   const coupledCurve = useMemo(
-    () => (xBranch ? twoLigandCurve(cM, sys.logBetas, xBranch, pHScale, [0, pLmax], PL_POINTS) : null),
-    [xBranch, cM, sys.logBetas, pHScale, pLmax],
+    () => (xBranch ? twoLigandCurve(cM, logBetasEff, xBranch, pHScale, [0, pLmax], PL_POINTS) : null),
+    [xBranch, cM, logBetasEff, pHScale, pLmax],
   );
   const coupledEq = useMemo(
-    () => (xBranch ? solveTwoLigandEquilibrium(cM, cL, sys.logBetas, xBranch, pHScale) : null),
-    [xBranch, cM, cL, sys.logBetas, pHScale],
+    () => (xBranch ? solveTwoLigandEquilibrium(cM, cL, logBetasEff, xBranch, pHScale) : null),
+    [xBranch, cM, cL, logBetasEff, pHScale],
   );
 
   // equilibrium pL
   const pLEq = useMemo(
-    () => (coupledEq ? coupledEq.pL : solvePL(cM, cL, sys.logBetas)),
-    [coupledEq, cM, cL, sys.logBetas],
+    () => (coupledEq ? coupledEq.pL : solvePL(cM, cL, logBetasEff)),
+    [coupledEq, cM, cL, logBetasEff],
   );
   const pLEqClipped = Math.min(pLEq, pLmax - 0.05);
 
@@ -188,10 +204,10 @@ export default function Complejos() {
     const out: { x: number; fractions: number[] }[] = [];
     for (let i = 0; i <= PL_POINTS; i++) {
       const pL = (pLmax * i) / PL_POINTS;
-      out.push({ x: scaleX(pL), fractions: complexFractions(pL, sys.logBetas) });
+      out.push({ x: scaleX(pL), fractions: complexFractions(pL, logBetasEff) });
     }
     return out;
-  }, [coupledCurve, sys.logBetas, pLmax, scaleX]);
+  }, [coupledCurve, logBetasEff, pLmax, scaleX]);
 
   // α distribution vs pL
   const alphaTraces = useMemo<Data[]>(() => {
@@ -228,7 +244,7 @@ export default function Complejos() {
     for (let i = 0; i <= PL_POINTS; i++) {
       const pL = (pLmax * i) / PL_POINTS;
       pls.push(scaleX(pL));
-      nBar.push(bjerrumNumber(pL, sys.logBetas));
+      nBar.push(bjerrumNumber(pL, logBetasEff));
     }
     const trace: Data[] = [{
       x: pls, y: nBar, type: 'scatter', mode: 'lines',
@@ -237,7 +253,7 @@ export default function Complejos() {
     }];
     // marcas en pL = log Kᵢ (escalonada) — donde n̄ tiene sus inflexiones
     stepwise.forEach((lk, i) => {
-      const nAtK = bjerrumNumber(lk, sys.logBetas);
+      const nAtK = bjerrumNumber(lk, logBetasEff);
       trace.push({
         x: [lk], y: [nAtK], type: 'scatter', mode: 'text+markers',
         text: [`log K${i + 1}`], textposition: 'top center',
@@ -248,7 +264,7 @@ export default function Complejos() {
       });
     });
     return trace;
-  }, [coupledCurve, sys.logBetas, sys.ligandLabel, side.auxLabel, stepwise, pLmax, scaleX]);
+  }, [coupledCurve, logBetasEff, sys.ligandLabel, side.auxLabel, stepwise, pLmax, scaleX]);
 
   // Diagrama logC vs pL
   const logCTraces = useMemo<Data[]>(() => {
@@ -268,7 +284,7 @@ export default function Complejos() {
   // DUZP
   const zones = useMemo(() => {
     if (xBranch) {
-      return twoLigandPredominanceZones(cM, sys.logBetas, xBranch, pHScale, labels, [0, pLmax]);
+      return twoLigandPredominanceZones(cM, logBetasEff, xBranch, pHScale, labels, [0, pLmax]);
     }
     const z = predominanceZones(stepwise, labels, 0, pLmax, false);
     if (sideMode !== 'ringbom') return z;
@@ -277,7 +293,7 @@ export default function Complejos() {
       pStart: scaleX(zone.pStart),
       pEnd: scaleX(zone.pEnd),
     }));
-  }, [xBranch, cM, sys.logBetas, pHScale, stepwise, labels, pLmax, sideMode, scaleX]);
+  }, [xBranch, cM, logBetasEff, pHScale, stepwise, labels, pLmax, sideMode, scaleX]);
 
   const equilMarker = showEquil && pLEq < pLmax + 1
     ? { p: scaleX(pLEqClipped), label: `equil. · ${sideMode === 'ringbom' ? 'pX′' : 'pL'} ${scaleX(pLEq).toFixed(2)}` }
@@ -292,17 +308,17 @@ export default function Complejos() {
     : [];
 
   // especie dominante en pL de equilibrio
-  const pXAtEq = xBranch ? solvePXAtPL(pLEqClipped, cM, xBranch, pHScale, sys.logBetas) : Infinity;
+  const pXAtEq = xBranch ? solvePXAtPL(pLEqClipped, cM, xBranch, pHScale, logBetasEff) : Infinity;
   const alphasEq = xBranch
-    ? twoLigandFractions(pLEqClipped, pXAtEq, sys.logBetas, xBranch.logBetasX)
-    : complexFractions(pLEqClipped, sys.logBetas);
+    ? twoLigandFractions(pLEqClipped, pXAtEq, logBetasEff, xBranch.logBetasX)
+    : complexFractions(pLEqClipped, logBetasEff);
   // indexOf(Math.max) is -1 when the solve failed (NaN fractions) — every
   // consumer below must degrade to '—' instead of indexing with -1.
   const domIdx = alphasEq.indexOf(Math.max(...alphasEq));
   const eqValid = domIdx >= 0;
   const nBarEq = xBranch
     ? alphasEq.slice(1, 1 + n).reduce((s, a, i) => s + (i + 1) * a, 0)
-    : bjerrumNumber(pLEqClipped, sys.logBetas);
+    : bjerrumNumber(pLEqClipped, logBetasEff);
   const pctEnX = xBranch
     ? alphasEq.slice(1 + n).reduce((s, a) => s + a, 0) * 100
     : 0;
@@ -312,9 +328,9 @@ export default function Complejos() {
   // % formed = ñ·100, % dissociated = (1−ñ)·100; pL at 50 % = log β₁.
   // In coupled mode the same ñ_L·100 semantics apply, computed from the
   // two-branch fractions instead of the one-ligand Bjerrum number.
-  const pctFormado = xBranch ? nBarEq * 100 : percentFormed(pLEqClipped, sys.logBetas);
-  const pctDisociado = xBranch ? (1 - nBarEq) * 100 : percentDissociated(pLEqClipped, sys.logBetas);
-  const pL50 = pLForPercentFormed(sys.logBetas, 50);
+  const pctFormado = xBranch ? nBarEq * 100 : percentFormed(pLEqClipped, logBetasEff);
+  const pctDisociado = xBranch ? (1 - nBarEq) * 100 : percentDissociated(pLEqClipped, logBetasEff);
+  const pL50 = pLForPercentFormed(logBetasEff, 50);
 
   const diagrams = [
     {
@@ -409,6 +425,7 @@ export default function Complejos() {
               showEquil && 'balance de masa y pL de equilibrio',
               sideMode === 'ringbom' && 'escala pX′ condicional',
               xBranch !== null && 'X–M–L acoplado (dos ligandos)',
+              useActivity && `β′ corregidas a I = ${ionicI.toPrecision(2)} M`,
             ]}
           />
           <LabelField
@@ -450,6 +467,19 @@ export default function Complejos() {
           <ConcSlider label="Concentración total del metal (cM)" value={cM} onChange={setCM} />
           <ConcSlider label="Concentración total del ligando (cL)" value={cL} onChange={setCL} />
           <Toggle label="Marcar pL de equilibrio en diagramas" checked={showEquil} onChange={setShowEquil} />
+          <Toggle label="Corrección de actividad (β′ a I > 0)" checked={useActivity} onChange={setUseActivity} />
+          {useActivity && (
+            <div className="mask-section">
+              <ConcSlider label="Fuerza iónica I" helpId="ionicStrength" value={ionicI} onChange={setIonicI} min={-3} max={0} />
+              <NumberSegmented label="Carga del metal (zM)" value={zM} options={[1, 2, 3, 4]} onChange={setZM} />
+              <NumberSegmented label="Carga del ligando (zL)" value={zL} options={[-4, -3, -2, -1, 0]} onChange={setZL} />
+              <p className="hint">
+                log β′ᵢ = log βᵢ + log γ_M + i·log γ_L − log γ(MLᵢ), con z(MLᵢ) = zM + i·zL
+                (Debye–Hückel extendida, a = 3 Å). Un ligando neutro (zL = 0) no corrige.
+                {xBranch !== null && ' Las β de la rama X permanecen ideales.'}
+              </p>
+            </div>
+          )}
           <div>
             <div className="control-header">
               <span className="control-label">Reacciones parásitas del metal (X)</span>
