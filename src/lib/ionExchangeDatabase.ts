@@ -8,9 +8,19 @@ export interface ResinPreset {
   ksel: number;
   ionA: string;
   ionB: string;
-  /** Charge magnitude of ion A (default 1 if omitted). */
+  /**
+   * Charge magnitude of ion A/B used in the mass-action exponents. Only set
+   * to the real ion charge when zA ≠ zB — the pedagogical point (see
+   * batchIonExchange's docstring) is the concentration-valency effect that
+   * emerges from that mismatch. For a same-charge pair (chelating, ca-mg)
+   * both stay 1: the historical ksel values were calibrated against the
+   * app's original charge-blind (implicitly z=1) engine, and a properly
+   * balanced z:z reaction's mass-action exponents cancel back to the 1:1
+   * form regardless of z's magnitude — so setting both to the true z (e.g.
+   * 2 for Pb²⁺/Ca²⁺) would silently change these presets' numbers without
+   * a literature-sourced K to recalibrate against.
+   */
   zA: number;
-  /** Charge magnitude of ion B (default 1 if omitted). */
   zB: number;
   reference: string;
 }
@@ -56,8 +66,8 @@ export const RESIN_PRESETS: ResinPreset[] = [
     ksel: 45,
     ionA: 'Pb²⁺',
     ionB: 'Ca²⁺',
-    zA: 2,
-    zB: 2,
+    zA: 1,
+    zB: 1,
     reference: 'Chelex / IDA; alta selectividad por metales pesados',
   },
 ];
@@ -77,6 +87,6 @@ export interface ResinApplicationPreset {
 
 export const APPLICATION_PRESETS: ResinApplicationPreset[] = [
   { id: 'softening', label: 'Ablandamiento (Ca/Mg vs Na)', cA0: 0.005, cB0: 0.01, ksel: 2.5, ionA: 'Ca²⁺', ionB: 'Na⁺', zA: 2, zB: 1, resinId: 'dowex50' },
-  { id: 'pb-removal', label: 'Retención de Pb²⁺', cA0: 0.001, cB0: 0.01, ksel: 45, ionA: 'Pb²⁺', ionB: 'Ca²⁺', zA: 2, zB: 2, resinId: 'chelating' },
-  { id: 'ca-mg', label: 'Ca²⁺ / Mg²⁺ selectivo', cA0: 0.005, cB0: 0.01, ksel: 1.8, ionA: 'Ca²⁺', ionB: 'Mg²⁺', zA: 2, zB: 2, resinId: 'dowex50' },
+  { id: 'pb-removal', label: 'Retención de Pb²⁺', cA0: 0.001, cB0: 0.01, ksel: 45, ionA: 'Pb²⁺', ionB: 'Ca²⁺', zA: 1, zB: 1, resinId: 'chelating' },
+  { id: 'ca-mg', label: 'Ca²⁺ / Mg²⁺ selectivo', cA0: 0.005, cB0: 0.01, ksel: 1.8, ionA: 'Ca²⁺', ionB: 'Mg²⁺', zA: 1, zB: 1, resinId: 'dowex50' },
 ];

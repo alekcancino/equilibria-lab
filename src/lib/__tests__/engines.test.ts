@@ -886,6 +886,33 @@ describe('smoke presets', () => {
       expect(RESIN_PRESETS.some((r) => r.id === app.resinId)).toBe(true);
     }
   });
+
+  it('presets de igual carga (Pb²⁺/Ca²⁺, Ca²⁺/Mg²⁺) mantienen zA=zB=1 — no recalibrados', () => {
+    // Ksel de estos dos se calibró contra el motor original (ciego a la
+    // carga); poner zA=zB=2 real cambiaría sus números en silencio sin un K
+    // de literatura para volver a calibrar (ver comentario en la interfaz).
+    const chelating = RESIN_PRESETS.find((r) => r.id === 'chelating')!;
+    expect(chelating.zA).toBe(1);
+    expect(chelating.zB).toBe(1);
+    const pbRemoval = APPLICATION_PRESETS.find((a) => a.id === 'pb-removal')!;
+    expect(pbRemoval.zA).toBe(1);
+    expect(pbRemoval.zB).toBe(1);
+    const caMg = APPLICATION_PRESETS.find((a) => a.id === 'ca-mg')!;
+    expect(caMg.zA).toBe(1);
+    expect(caMg.zB).toBe(1);
+  });
+
+  it('presets de carga distinta (Ca²⁺/Na⁺, Ca²⁺/H⁺, SO₄²⁻/Cl⁻) sí llevan sus cargas reales', () => {
+    const dowex = RESIN_PRESETS.find((r) => r.id === 'dowex50')!;
+    expect(dowex.zA).toBe(2);
+    expect(dowex.zB).toBe(1);
+    const amberlite120 = RESIN_PRESETS.find((r) => r.id === 'amberlite120')!;
+    expect(amberlite120.zA).toBe(2);
+    expect(amberlite120.zB).toBe(1);
+    const amberlite400 = RESIN_PRESETS.find((r) => r.id === 'amberlite400')!;
+    expect(amberlite400.zA).toBe(2);
+    expect(amberlite400.zB).toBe(1);
+  });
 });
 
 describe('availableSystems', () => {
