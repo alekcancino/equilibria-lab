@@ -366,7 +366,11 @@ export default function Pourbaix() {
             additions={[!useCustom && 'especies de base de datos', showWater && 'estabilidad del agua']}
           />
 
-          <Toggle label="Modo personalizado (sistema propio)" checked={useCustom} onChange={setUseCustom} />
+          <Toggle
+            label="Modo personalizado (sistema propio)"
+            checked={useCustom}
+            onChange={(v) => { setUseCustom(v); setEditWarnings([]); }}
+          />
 
           {!useCustom ? (
             <>
@@ -374,7 +378,7 @@ export default function Pourbaix() {
                 label="Sistema metal–H₂O"
                 value={systemId}
                 options={systems.map((s) => ({ value: s.id, label: s.name }))}
-                onChange={setSystemId}
+                onChange={(v) => { setSystemId(v); setEditWarnings([]); }}
               />
               {diagram && diagram.excluded.length > 0 && (
                 <p className="badge warn">
@@ -393,8 +397,7 @@ export default function Pourbaix() {
             <>
               {editWarnings.length > 0 && (
                 <p className="badge warn">
-                  Algunas especies del preset no se pudieron convertir a modo personalizado:{' '}
-                  {editWarnings.join(' ')}
+                  No convertidas a modo personalizado (edítalas a mano si las necesitas): {editWarnings.join(', ')}
                 </p>
               )}
               <p className="editor-title" style={{ color: '#0072B2', marginBottom: 6 }}>Especies</p>

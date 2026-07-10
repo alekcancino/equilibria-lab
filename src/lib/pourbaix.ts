@@ -10,6 +10,7 @@
 
 import SYSTEMS_RAW from './pourbaixSystems.json';
 import { NERNST_S, PKW } from './constants';
+import { chargeMagnitude } from './speciesNames';
 
 export const S_NERNST = NERNST_S;
 
@@ -66,6 +67,9 @@ export function availableSystems(): { id: string; name: string }[] {
 }
 
 export function getSystemDef(id: string): SystemDef | undefined {
+  // Same exclusion as availableSystems (by key, not by value shape) so the
+  // two never disagree about what counts as a real system.
+  if (id === '_comment') return undefined;
   const def = SYSTEMS[id];
   return typeof def === 'string' ? undefined : def;
 }
@@ -596,17 +600,6 @@ export function buildArbitraryDiagram(
   return { lines, regions, name: 'Sistema personalizado', note: '', excluded: [] };
 }
 
-/** Charge magnitude from a formula's trailing unicode superscript (e.g. "Fe³⁺" → 3,
- * "Cu⁺" → 1). ArbIon.z only tracks magnitude (see its own doc comment) — sign is not
- * needed since buildArbitraryDiagram never reads z for redox math, only display. */
-function chargeMagnitude(formula: string): number {
-  const SUP: Record<string, string> = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9' };
-  const m = formula.match(/([⁰¹²³⁴⁵⁶⁷⁸⁹]*)[⁺⁻]$/);
-  if (!m) return 1;
-  const digits = m[1].split('').map((c) => SUP[c]).join('');
-  return digits ? parseInt(digits, 10) : 1;
-}
-
 /**
  * Converts a preset SystemDef into an ArbitraryCustom seed for custom mode's
  * "edit this system" entry point. Lossless for hydroxide-only systems (Fe, Zn,
@@ -615,7 +608,8 @@ function chargeMagnitude(formula: string): number {
  * dissolution model (e.g. MnO₂, PbO₂ — recognized by lacking the charge suffix
  * every genuine ion/metal formula in this dataset carries) — those solids/couples
  * are dropped and reported via `warnings` rather than silently producing a wrong
- * diagram.
+ * diagram. A hydroxide-typed solid missing z/pKsp/ion (malformed preset data)
+ * is dropped the same way rather than pushing NaN into the diagram.
  */
 export function presetToArbitrary(sys: SystemDef): { arb: { species: ArbSpecies[]; couples: ArbCouple[] }; warnings: string[] } {
   const warnings: string[] = [];
@@ -634,7 +628,7 @@ export function presetToArbitrary(sys: SystemDef): { arb: { species: ArbSpecies[
 
   for (const c of Object.values(sys.couples)) {
     if (!hasCharge(c.ox) || !(hasCharge(c.red) || isMetalFormula(c.red))) {
-      warnings.push(`${c.ox} → ${bare(c.red)}: no se pudo convertir (especie sin modelo de disolución en modo custom).`);
+      warnings.push(`${c.ox} → ${bare(c.red)} (sin modelo de disolución)`);
       continue;
     }
     if (!ions.has(c.ox)) ions.set(c.ox, { kind: 'ion', formula: c.ox, z: ionZ.get(c.ox) ?? chargeMagnitude(c.ox) });
@@ -651,10 +645,14 @@ export function presetToArbitrary(sys: SystemDef): { arb: { species: ArbSpecies[
   for (const sol of Object.values(sys.solids)) {
     const type = sol.type ?? 'hydroxide';
     if (type !== 'hydroxide') {
-      warnings.push(`${sol.species} (tipo "${type}") no se pudo convertir — no hay un tipo de especie custom para disolución por óxido/disproporción; edítalo a mano si lo necesitas.`);
+      warnings.push(`${sol.species} (tipo "${type}", sin disolución custom)`);
       continue;
     }
-    hydroxides.push({ kind: 'hydroxide', formula: sol.species, z: sol.z!, pKsp: sol.pKsp!, ionRef: sol.ion! });
+    if (sol.z === undefined || sol.pKsp === undefined || !sol.ion) {
+      warnings.push(`${sol.species} (datos incompletos)`);
+      continue;
+    }
+    hydroxides.push({ kind: 'hydroxide', formula: sol.species, z: sol.z, pKsp: sol.pKsp, ionRef: sol.ion });
   }
 
   return {
