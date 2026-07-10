@@ -80,8 +80,9 @@ export const ION_SIZES: { label: string; z: number; a: number }[] = [
  * Activity-corrected overall formation constants (concentration basis).
  * β°ᵢ = a_MLᵢ/(a_M·a_Lⁱ) is thermodynamic, so the concentration quotient is
  * β′ᵢ = β°ᵢ·γ_M·γ_Lⁱ/γ_MLᵢ → log β′ᵢ = log β°ᵢ + log γ_M + i·log γ_L − log γ_MLᵢ,
- * with z(MLᵢ) = zM + i·zL (charge cancellation makes γ_ML milder than γ_M·γ_Lⁱ,
- * so β′ > β° at I > 0 — complexes look stronger in concentration terms).
+ * with z(MLᵢ) = zM + i·zL. For oppositely charged ions the free-ion γ product
+ * outweighs γ_ML (charge cancellation), so β′ < β° at I > 0 — the ionic
+ * atmosphere stabilizes the free ions more than the complex.
  * Extended Debye-Hückel (a = 3 Å), consistent with the engine-side pKsp
  * corrections in conditional.ts/sideReactions.ts. A neutral ligand (zL = 0)
  * with i·zL = 0 gives zero correction, as it should in a z-only γ model.

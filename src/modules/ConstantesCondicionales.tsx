@@ -416,6 +416,7 @@ export default function ConstantesCondicionales() {
             s.side.showComplex && 'protonación del complejo',
             s.showMask && 'competencia entre metales',
             s.showMulti && 'varias reacciones principales',
+            s.useActivity && `K′f corregida a I = ${s.ionicI.toPrecision(2)} M`,
           ]}
         />
         <LabelField label="Metal (M)" value={s.metalLabel} onChange={(v) => set('metalLabel', v)} />
