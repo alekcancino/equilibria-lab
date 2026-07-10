@@ -64,8 +64,9 @@ export default function PrecipitacionCompetitiva() {
   const [pKsp2, setPKsp2] = useState(12.30);
   const [cX2, setCX2] = useState(0.01);
   const [cM, setCM] = useState(0.015);
+  const [quantPct, setQuantPct] = useState(99.9);
 
-  useShareEffect('solcomp', { cation, label1, pKsp1, cX1, label2, pKsp2, cX2, cM }, (s) => {
+  useShareEffect('solcomp', { cation, label1, pKsp1, cX1, label2, pKsp2, cX2, cM, quantPct }, (s) => {
     if (s.cation) setCation(s.cation);
     if (s.label1) setLabel1(s.label1);
     // Positivity/finite guards mirror ConcSlider's own commit validation — a
@@ -76,6 +77,7 @@ export default function PrecipitacionCompetitiva() {
     if (typeof s.pKsp2 === 'number' && Number.isFinite(s.pKsp2)) setPKsp2(s.pKsp2);
     if (typeof s.cX2 === 'number' && s.cX2 > 0) setCX2(s.cX2);
     if (typeof s.cM === 'number' && s.cM > 0) setCM(s.cM);
+    if (typeof s.quantPct === 'number' && s.quantPct > 0 && s.quantPct < 100) setQuantPct(s.quantPct);
   });
 
   function loadPreset(id: string) {
@@ -88,12 +90,13 @@ export default function PrecipitacionCompetitiva() {
   function reset() {
     loadPreset('clbr');
     setCM(0.015);
+    setQuantPct(99.9);
   }
 
   const s1: CompetitiveSalt = useMemo(() => ({ label: label1, pKsp: pKsp1, cX: cX1 }), [label1, pKsp1, cX1]);
   const s2: CompetitiveSalt = useMemo(() => ({ label: label2, pKsp: pKsp2, cX: cX2 }), [label2, pKsp2, cX2]);
 
-  const win = useMemo(() => separationWindow(s1, s2), [s1, s2]);
+  const win = useMemo(() => separationWindow(s1, s2, quantPct / 100), [s1, s2, quantPct]);
   const first = win.firstIdx === 0 ? s1 : s2;
   const second = win.firstIdx === 0 ? s2 : s1;
 
@@ -114,7 +117,8 @@ export default function PrecipitacionCompetitiva() {
     'cX1 / M': cX1.toFixed(4),
     'cX2 / M': cX2.toFixed(4),
     'cM añadido / M': cM.toFixed(4),
-  }), [cation, label1, pKsp1, label2, pKsp2, cX1, cX2, cM]);
+    'Objetivo de cuantitatividad': `${quantPct.toFixed(2)} %`,
+  }), [cation, label1, pKsp1, label2, pKsp2, cX1, cX2, cM, quantPct]);
 
   const windowShapes = useMemo<Partial<Shape>[]>(() => {
     const shapes: Partial<Shape>[] = [];
@@ -236,6 +240,31 @@ export default function PrecipitacionCompetitiva() {
             se decide probando las combinaciones (ninguna / sal 1 / sal 2 / ambas) y
             aceptando la única termodinámicamente consistente.
           </p>
+          <Slider
+            label="Objetivo de cuantitatividad"
+            value={quantPct}
+            min={90}
+            max={99.999}
+            step={0.001}
+            onChange={setQuantPct}
+            decimals={3}
+            unit="%"
+          />
+          <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+            <button className="preset-chip" onClick={() => setQuantPct(99)}>
+              99 %
+            </button>
+            <button className="preset-chip" onClick={() => setQuantPct(99.9)}>
+              99.9 % (Harris)
+            </button>
+            <button className="preset-chip" onClick={() => setQuantPct(99.99)}>
+              99.99 %
+            </button>
+          </div>
+          <p className="hint">
+            % de la primera sal que debe haber precipitado para considerar la separación
+            cuantitativa — define el borde derecho de la ventana verde.
+          </p>
         </PanelSection>
 
         <PanelSection title="Resultado" icon="∑">
@@ -253,10 +282,10 @@ export default function PrecipitacionCompetitiva() {
               value: `${(win.residualFrac * 100).toPrecision(3)} %`,
             },
             {
-              label: 'Separación cuantitativa (99.9 %)',
+              label: `Separación cuantitativa (${quantPct.toFixed(2)} %)`,
               value: win.ok
                 ? `sí · ventana ${pIon(cation)} ${win.pAgSecondOnset.toFixed(2)}–${win.pAgQuant.toFixed(2)}`
-                : 'no — la 2.ª sal arranca antes del 99.9 %',
+                : `no — la 2.ª sal arranca antes del ${quantPct.toFixed(2)} %`,
             },
           ]} />
         </PanelSection>
@@ -268,9 +297,10 @@ export default function PrecipitacionCompetitiva() {
             ({pIon(cation)} de inicio = pKps + log cX).
           </p>
           <p>
-            <strong>Ventana de separación</strong> (franja verde): entre el 99.9 % de la
-            primera sal y el inicio de la segunda. El residuo de la primera cuando arranca
-            la segunda es Kps₁·cX₂/(Kps₂·cX₁) — independiente de cuánto catión se añada.
+            <strong>Ventana de separación</strong> (franja verde): entre el {quantPct.toFixed(2)} % de
+            la primera sal y el inicio de la segunda. El residuo de la primera cuando arranca
+            la segunda es Kps₁·cX₂/(Kps₂·cX₁) — independiente de cuánto catión se añada, y de
+            dónde se fije el objetivo de cuantitatividad.
           </p>
           <p>
             <strong>Alcance</strong>: sales 1:1 con actividades ≈ concentraciones; sin
