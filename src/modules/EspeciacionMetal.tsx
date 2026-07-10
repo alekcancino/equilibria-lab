@@ -10,7 +10,10 @@ import {
   ConcSlider, ConstantList, Disclosure, InfoBox, LabelField, LabelList,
   ModelBadge, PanelSection, RefBadge, ResultCard, ResultCardRow, Slider, SystemPresetPicker,
 } from '../components/Controls';
+import { SideReactionEditor } from '../components/Editors';
 import { SPECIES_COLORS } from '../lib/database';
+import { xBranchFromEditor } from '../lib/complexation';
+import { defaultSideEditorState, type SideReactionEditorState } from '../lib/sideReactions';
 import { speciationAtPH, speciationCurve, predominanceZonesVsPH, type MetalSpeciationSystem } from '../lib/speciation';
 import { SPECIATION_PRESETS, speciationPresetById } from '../lib/speciationDatabase';
 import { toSub } from '../lib/complexDatabase';
@@ -28,6 +31,8 @@ interface SpeciationState {
   logBetasL: number[];
   pKasL: number[];
   cL: number;
+  showX: boolean;
+  side: SideReactionEditorState;
   speciesLabels: string[] | null;
   reference: string | null;
 }
@@ -38,6 +43,7 @@ function defaultState(): SpeciationState {
     // cL stays > 0 even while unused (toSystem zeroes it when showAux is
     // false) — 0 would feed Math.log10(0) = -Infinity into ConcSlider's range input.
     ligandLabel: 'L', logBetasL: [], pKasL: [], cL: 1e-3,
+    showX: false, side: defaultSideEditorState(),
     speciesLabels: null, reference: null,
   };
 }
@@ -53,24 +59,35 @@ function fromPreset(id: string): SpeciationState {
     logBetasL: [...p.system.logBetasL],
     pKasL: [...p.system.pKasL],
     cL: p.system.cL,
+    showX: false,
+    side: defaultSideEditorState(),
     speciesLabels: [...p.speciesLabels],
     reference: p.reference,
   };
 }
 
-function genericLabels(metalLabel: string, ligandLabel: string, nOH: number, nL: number): string[] {
+function genericLabels(metalLabel: string, ligandLabel: string, nOH: number, nL: number, xLabel = 'X', nX = 0): string[] {
   const m = metalLabel || 'M';
   const l = ligandLabel || 'L';
+  const xl = xLabel || 'X';
   const labels = [m];
   for (let j = 1; j <= nOH; j++) labels.push(`${m}(OH)${j > 1 ? toSub(j) : ''}`);
-  for (let i = 1; i <= nL; i++) labels.push(`${m}${l}${i > 1 ? toSub(i) : ''}`);
+  // Parenthesized ligand, matching complexDatabase's genericComplexLabels —
+  // bare concatenation reads wrong for multi-character ligands (MNH3, Men2).
+  for (let i = 1; i <= nL; i++) labels.push(`${m}(${l})${i > 1 ? toSub(i) : ''}`);
+  for (let k = 1; k <= nX; k++) labels.push(`${m}(${xl})${k > 1 ? toSub(k) : ''}`);
   return labels;
+}
+
+function activeNX(s: SpeciationState): number {
+  return s.showX && s.side.showAux ? s.side.logBetasAux.length : 0;
 }
 
 function effectiveLabels(s: SpeciationState): string[] {
   const nL = s.showAux ? s.logBetasL.length : 0;
-  const total = 1 + s.logBetasOH.length + nL;
-  const generic = genericLabels(s.metalLabel, s.ligandLabel, s.logBetasOH.length, nL);
+  const nX = activeNX(s);
+  const total = 1 + s.logBetasOH.length + nL + nX;
+  const generic = genericLabels(s.metalLabel, s.ligandLabel, s.logBetasOH.length, nL, s.side.auxLabel, nX);
   if (!s.speciesLabels || s.speciesLabels.length !== total) return generic;
   // LabelList's LabelField has no minimum length — fall back per-entry
   // rather than show a blank chart legend / result-card species name.
@@ -98,6 +115,7 @@ function toSystem(s: SpeciationState): MetalSpeciationSystem {
     metalLabel: s.metalLabel || 'M', cM: s.cM, logBetasOH: s.logBetasOH,
     ligandLabel: s.ligandLabel, logBetasL: s.showAux ? s.logBetasL : [],
     pKasL: s.showAux ? s.pKasL : [], cL: s.showAux ? s.cL : 0,
+    x: s.showX ? xBranchFromEditor(s.side) ?? undefined : undefined,
   };
 }
 
@@ -127,7 +145,9 @@ export default function EspeciacionMetal() {
   }, [sys.metalLabel, sys.logBetasOH, sys.showAux, sys.ligandLabel, sys.logBetasL, setCarryOver]);
 
   useShareEffect('especiacion', { sys, pHRead }, (s) => {
-    if (s.sys) setSys(s.sys);
+    // Merge over defaults: saved links from before the X branch existed lack
+    // showX/side and would otherwise crash on s.side.* reads.
+    if (s.sys) setSys({ ...defaultState(), ...s.sys });
     if (s.pHRead !== undefined) setPHRead(s.pHRead);
   });
 
@@ -142,34 +162,39 @@ export default function EspeciacionMetal() {
   const system = useMemo(
     () => toSystem(sys),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sys.cM, sys.logBetasOH, sys.showAux, sys.logBetasL, sys.pKasL, sys.cL],
+    [sys.cM, sys.logBetasOH, sys.showAux, sys.logBetasL, sys.pKasL, sys.cL, sys.showX, sys.side],
   );
   const labels = useMemo(
     () => effectiveLabels(sys),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sys.speciesLabels, sys.metalLabel, sys.ligandLabel, sys.logBetasOH.length, sys.logBetasL.length, sys.showAux],
+    [sys.speciesLabels, sys.metalLabel, sys.ligandLabel, sys.logBetasOH.length, sys.logBetasL.length, sys.showAux, sys.showX, sys.side.showAux, sys.side.auxLabel, sys.side.logBetasAux.length],
   );
   const nOH = sys.logBetasOH.length;
   const nL = sys.showAux ? sys.logBetasL.length : 0;
-  const nSpecies = 1 + nOH + nL;
+  const nX = system.x?.logBetasX.length ?? 0;
+  const nSpecies = 1 + nOH + nL + nX;
 
   const curve = useMemo(() => speciationCurve(system, PH_RANGE, PH_POINTS), [system]);
-  const hasNaN = useMemo(() => curve.some((pt) => Number.isNaN(pt.pL)), [curve]);
+  // Keyed on fractions, not pL: in the X-only 'total' path pL stays Infinity
+  // while an unsolvable X balance poisons the fractions via pX = NaN.
+  const hasNaN = useMemo(() => curve.some((pt) => Number.isNaN(pt.fractions[0])), [curve]);
 
   const readPoint = useMemo(() => speciationAtPH(system, pHRead), [system, pHRead]);
   const readValid = !Number.isNaN(readPoint.fractions[0]);
   const domIdx = readValid ? readPoint.fractions.indexOf(Math.max(...readPoint.fractions)) : -1;
   const famFree = readValid ? readPoint.fractions[0] : NaN;
   const famOH = readValid ? readPoint.fractions.slice(1, 1 + nOH).reduce((a, b) => a + b, 0) : NaN;
-  const famL = readValid ? readPoint.fractions.slice(1 + nOH).reduce((a, b) => a + b, 0) : NaN;
+  const famL = readValid ? readPoint.fractions.slice(1 + nOH, 1 + nOH + nL).reduce((a, b) => a + b, 0) : NaN;
+  const famX = readValid ? readPoint.fractions.slice(1 + nOH + nL).reduce((a, b) => a + b, 0) : NaN;
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Especiación del metal',
     Metal: sys.metalLabel || 'M',
     Ligando: sys.showAux ? (sys.ligandLabel || 'L') : '(ninguno)',
+    'Agente X': nX > 0 ? (sys.side.auxLabel || 'X') : '(ninguno)',
     'CM / M': system.cM.toExponential(3),
     'CL / M': system.cL.toExponential(3),
-  }), [sys.metalLabel, sys.ligandLabel, sys.showAux, system.cM, system.cL]);
+  }), [sys.metalLabel, sys.ligandLabel, sys.showAux, sys.side.auxLabel, nX, system.cM, system.cL]);
 
   const readLine = (y0: number, y1: number) => [{
     type: 'line' as const, x0: pHRead, x1: pHRead, y0, y1,
@@ -206,9 +231,16 @@ export default function EspeciacionMetal() {
     }));
   }, [curve, nSpecies, labels, system.cM]);
 
+  // Geometry only depends on the system — labels are attached in a cheap
+  // second pass so renaming species doesn't re-run the 1500-sample sweep
+  // (each sample is a nested bisection when X is an analytical total).
+  const zoneGeometry = useMemo(
+    () => predominanceZonesVsPH(system, [], PH_RANGE),
+    [system],
+  );
   const zones = useMemo(
-    () => predominanceZonesVsPH(system, labels, PH_RANGE),
-    [system, labels],
+    () => zoneGeometry.map((z) => ({ ...z, label: labels[z.index] ?? z.label })),
+    [zoneGeometry, labels],
   );
 
   const diagrams = [
@@ -262,11 +294,14 @@ export default function EspeciacionMetal() {
 
   return (
     <div className="module">
-      <PanelShell title="Especiación del metal (M–OH–L vs pH)" onReset={reset} moduleId="especiacion">
+      <PanelShell title={`Especiación del metal (M–OH–L${nX > 0 ? '–X' : ''} vs pH)`} onReset={reset} moduleId="especiacion">
         <PanelSection title="Metal e hidrólisis" icon="⚛">
           <ModelBadge
             model={nOH === 0 ? 'sin hidrólisis modelada' : `hidrólisis hasta M(OH)${toSub(nOH)}`}
-            additions={[nL > 0 && `complejación con ${sys.ligandLabel || 'L'} hasta ML${toSub(nL)}`]}
+            additions={[
+              nL > 0 && `complejación con ${sys.ligandLabel || 'L'} hasta ML${toSub(nL)}`,
+              nX > 0 && `segundo agente ${sys.side.auxLabel || 'X'} hasta MX${toSub(nX)}`,
+            ]}
           />
           <LabelField
             label="Metal (nombre libre)"
@@ -325,7 +360,35 @@ export default function EspeciacionMetal() {
             initialValue={9.25}
             onChange={(pKasL) => setSys({ ...sys, pKasL })}
           />
-          <p className="hint">NH₃/NH₄⁺: pKa ≈ 9,25. Sin pKa: se asume el ligando ya libre (sin protonación).</p>
+          <p className="hint">NH₃/NH₄⁺: pKa ≈ 9.25. Sin pKa: se asume el ligando ya libre (sin protonación).</p>
+        </Disclosure>
+
+        <Disclosure
+          title="Segundo agente complejante (X)"
+          open={sys.showX}
+          onToggle={(showX) => setSys({
+            ...sys,
+            showX,
+            // Jump straight to the X editor instead of leaving it collapsed
+            // behind a second click — same UX as Complejos' coupled mode.
+            side: showX ? { ...sys.side, showAux: true } : sys.side,
+            speciesLabels: null,
+            reference: null,
+          })}
+        >
+          <SideReactionEditor
+            state={sys.side}
+            onChange={(side) => setSys({ ...sys, side, speciesLabels: null, reference: null })}
+            showLigandPKas={false}
+            showComplexSection={false}
+            showHydrolysisSection={false}
+            auxLigandTitle={`Ligando X (${sys.side.auxLabel || 'X'}) — presets y log β`}
+          />
+          <p className="hint">
+            M se reparte entre OH⁻, {sys.ligandLabel || 'L'} y X resolviendo los balances de
+            masa acoplados en cada pH — sin especies mixtas (M(OH)L, MLX…). Si X se da como
+            total analítico con pKa, su protonación entra vía α_X(H) a cada pH.
+          </p>
         </Disclosure>
 
         <Disclosure title="Nombres de especies">
@@ -346,8 +409,14 @@ export default function EspeciacionMetal() {
             <ResultCard items={[
               { label: 'Especie dominante', value: `${labels[domIdx]} (α = ${readPoint.fractions[domIdx].toFixed(3)})` },
               { label: 'pL libre', value: Number.isFinite(readPoint.pL) ? readPoint.pL.toFixed(3) : '∞ (sin ligando)' },
+              ...(nX > 0 ? [{ label: 'pX libre', value: Number.isFinite(readPoint.pX) ? readPoint.pX.toFixed(3) : '∞' }] : []),
               { label: 'n̄ (L coordinados)', value: readPoint.nBar.toFixed(2) },
-              { label: '% M libre / hidroxo / L-complejado', value: `${(famFree * 100).toFixed(1)} / ${(famOH * 100).toFixed(1)} / ${(famL * 100).toFixed(1)}` },
+              {
+                label: nX > 0 ? '% M libre / hidroxo / L / X' : '% M libre / hidroxo / L-complejado',
+                value: nX > 0
+                  ? `${(famFree * 100).toFixed(1)} / ${(famOH * 100).toFixed(1)} / ${(famL * 100).toFixed(1)} / ${(famX * 100).toFixed(1)}`
+                  : `${(famFree * 100).toFixed(1)} / ${(famOH * 100).toFixed(1)} / ${(famL * 100).toFixed(1)}`,
+              },
             ]} />
           ) : (
             <p className="hint">
@@ -362,10 +431,10 @@ export default function EspeciacionMetal() {
 
         <InfoBox title="Cómo leer estos diagramas">
           <p>
-            <strong>Distribución α</strong>: a cada pH se resuelve primero el ligando libre
-            (balance de masa) y luego se reparte el metal entre M libre, M(OH)ⱼ y MLᵢ —
-            las curvas de hidrólisis y de complejación auxiliar están acopladas por el
-            mismo denominador.
+            <strong>Distribución α</strong>: a cada pH se resuelven los ligandos libres
+            (balances de masa) y el metal se reparte entre M libre, M(OH)ⱼ, MLᵢ y — si lo
+            activas — MXₖ del segundo agente complejante; todas las ramas están acopladas
+            por el mismo denominador.
           </p>
           <p>
             <strong>DUZP</strong>: qué especie domina en cada tramo de pH.
@@ -386,6 +455,7 @@ export default function EspeciacionMetal() {
           { label: '% M libre', value: readValid ? `${(famFree * 100).toFixed(1)} %` : '—' },
           { label: '% hidroxo', value: readValid ? `${(famOH * 100).toFixed(1)} %` : '—' },
           { label: '% L-complejado', value: readValid ? `${(famL * 100).toFixed(1)} %` : '—' },
+          ...(nX > 0 ? [{ label: '% X-complejado', value: readValid ? `${(famX * 100).toFixed(1)} %` : '—' }] : []),
         ]} />
       </section>
     </div>

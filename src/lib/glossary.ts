@@ -23,7 +23,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     units: 'adimensional',
   },
   pKsp: {
-    meaning: 'Producto de solubilidad como −log Ksp. A mayor pKsp, menos soluble es la sal.',
+    meaning: 'Producto de solubilidad como −log Kps. A mayor pKps, menos soluble es la sal.',
     units: 'adimensional',
   },
   logKf: {
@@ -111,7 +111,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     units: 'adimensional',
   },
   KspPrime: {
-    meaning: 'Producto de solubilidad condicional: Ksp′ = Ksp/(αM·αX), ya corregido por reacciones laterales del catión y/o del anión.',
+    meaning: 'Producto de solubilidad condicional: Kps′ = Kps/(αM·αX), ya corregido por reacciones laterales del catión y/o del anión.',
     units: 'adimensional',
   },
   duzp: {

@@ -350,7 +350,7 @@ export default function SolubilidadCondicional() {
   // ── Database items ────────────────────────────────────────────────────────
 
   const dbItems = OH_PRESETS.map((p) => ({
-    id: p.id, label: p.formula, detail: `${p.metal} · pKsp ${p.pKsp}`, group: p.group,
+    id: p.id, label: p.formula, detail: `${p.metal} · pKps ${p.pKsp}`, group: p.group,
   }));
 
   // ── pKsp' = f(pH) curve ───────────────────────────────────────────────────
@@ -394,14 +394,14 @@ export default function SolubilidadCondicional() {
       {
         x: pKspCurve1.pHs, y: pKspCurve1.pKsps,
         type: 'scatter', mode: 'lines',
-        name: `pKsp' (${s.m1.formula})`,
+        name: `pKps′ (${s.m1.formula})`,
         line: { width: 3, color: C1 },
-        hovertemplate: `pKsp' = %{y:.2f}<extra>${s.m1.formula}</extra>`,
+        hovertemplate: `pKps′ = %{y:.2f}<extra>${s.m1.formula}</extra>`,
       },
       {
         x: pKspCurve1.pHs, y: pKspCurve1.pHs.map(() => pKspCurve1.pKspBase),
         type: 'scatter', mode: 'lines',
-        name: `pKsp${s.ionicStrength > 0 ? ' (corr. γ)' : ' termodinámico'} (${s.m1.formula})`,
+        name: `pKps${s.ionicStrength > 0 ? ' (corr. γ)' : ' termodinámico'} (${s.m1.formula})`,
         line: { width: 1.5, color: C1, dash: 'dot' },
         hovertemplate: `pKsp = ${pKspCurve1.pKspBase.toFixed(2)}<extra>referencia</extra>`,
       },
@@ -410,9 +410,9 @@ export default function SolubilidadCondicional() {
       out.push({
         x: pKspCurve2.pHs, y: pKspCurve2.pKsps,
         type: 'scatter', mode: 'lines',
-        name: `pKsp' (${s.m2.formula})`,
+        name: `pKps′ (${s.m2.formula})`,
         line: { width: 2.5, color: C2, dash: 'dot' },
-        hovertemplate: `pKsp' = %{y:.2f}<extra>${s.m2.formula}</extra>`,
+        hovertemplate: `pKps′ = %{y:.2f}<extra>${s.m2.formula}</extra>`,
       });
     }
     return out;
@@ -445,12 +445,12 @@ export default function SolubilidadCondicional() {
     },
     {
       id: 'pksp',
-      label: "pKsp' = f(pH)",
+      label: "pKps′ = f(pH)",
       node: (
         <Chart
           data={pKspTraces}
           xTitle="pH"
-          yTitle="pKsp' (producto de solubilidad condicional)"
+          yTitle="pKps′ (producto de solubilidad condicional)"
           xRange={[0, 14]}
           yRange={[pKspYMin, pKspYMax]}
           exportName="equilibria-pksp-cond"
@@ -500,7 +500,7 @@ export default function SolubilidadCondicional() {
           </div>
           <LabelField label="Metal" value={s.m1.label} onChange={(v) => setM1({ label: v })} />
           <LabelField label="Fórmula" value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
-          <Slider label="pKsp" helpId="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
+          <Slider label="pKps" helpId="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
           <div className="control">
             <div className="control-header">
               <span className="control-label">Estequiometría n (M(OH)_n)</span>
@@ -530,7 +530,7 @@ export default function SolubilidadCondicional() {
               onChange={(v) => setM1({ logBetasOH: v })}
               min={-50} max={40} maxItems={5} minItems={0} initialValue={5}
             />
-            <p className="hint">Incluir formas anfotéricas (β₄ para M(OH)₄⁻) da forma de U a la curva.</p>
+            <p className="hint">Incluir formas anfóteras (β₄ para M(OH)₄⁻) da forma de U a la curva.</p>
           </Disclosure>
           <Toggle
             label="Enmascaramiento por ligando auxiliar (NH₃, glicinato…)"
@@ -555,7 +555,7 @@ export default function SolubilidadCondicional() {
               <DbPanel items={dbItems} onSelect={(id) => setM2({ ...fromPreset(id) })} title="Presets M2" />
               <LabelField label="2.º metal" value={s.m2.label} onChange={(v) => setM2({ label: v })} />
               <LabelField label="Fórmula" value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
-              <Slider label="pKsp" helpId="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
+              <Slider label="pKps" helpId="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
               <div className="control">
                 <div className="control-header">
                   <span className="control-label">Estequiometría n</span>
@@ -693,7 +693,7 @@ export default function SolubilidadCondicional() {
             afectar al otro.
           </p>
           <p>
-            Para metales <strong>anfotéricos</strong> (Al, Zn, Cr, Pb) la curva es en U: suben
+            Para metales <strong>anfóteros</strong> (Al, Zn, Cr, Pb) la curva es en U: suben
             de nuevo a pH muy alto por formación de hidroxocomplejos aniónicos (Al(OH)₄⁻,
             Zn(OH)₄²⁻). Los log β del panel modelan este efecto.
           </p>

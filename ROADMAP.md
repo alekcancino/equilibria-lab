@@ -74,6 +74,7 @@ competitive precipitation (PR #51).
 
 | Feature | Notes |
 | --- | --- |
+| **Minor engine↔UI parity gaps** (2026-07-10 audit) | Engine capabilities with no UI path yet, in rough value order: (a) γ-model choice (Davies/Kielland) for the corrections applied inside AcidoBase/Mezclas/Solubilidad — engines hardcode extended D-H a=3 Å (also noted in VALIDATION.md); (b) `separationWindow`'s quantitativity target (fixed at 99.9 % in Competitiva; Constantes Condicionales already has an editable "% formado objetivo" — same treatment); (c) Mohr indicator chromate concentration (engine takes it, UI fixes 0.005 M); (d) Craig multi-ion breakthrough accepts N ions, UI caps at 2; (e) acid–base titration curves at I > 0 (solvePH supports it; Mezclas exposes it, Titulaciones doesn't). |
 | **Bilingual UI (Spanish / English)** | Toggle between Spanish and English for all labels, tooltips, and InfoBox content. Chemistry notation and formula strings remain language-neutral. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP to two chemical axes. |

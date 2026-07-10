@@ -89,11 +89,11 @@ const HUBS: Hub[] = [
   },
   {
     id: 'solubilidad', label: 'Solubilidad',
-    desc: 'Ksp, efecto del pH e ion común, hidróxidos anfóteros, precipitación selectiva y competitiva.',
-    assumptions: 'Sólidos iónicos MmXx con Ksp · anión básico y complejos hidroxo vía α · selección de fases por prueba de combinaciones (2 sales).',
+    desc: 'Kps, efecto del pH e ion común, hidróxidos anfóteros, precipitación selectiva y competitiva.',
+    assumptions: 'Sólidos iónicos MmXx con Kps · anión básico y complejos hidroxo vía α · selección de fases por prueba de combinaciones (2 sales).',
     crossCheck: 'Harris y Stumm & Morgan',
     views: [
-      { id: 'solubilidad', label: 'Ksp e ion común', component: Solubilidad },
+      { id: 'solubilidad', label: 'Kps e ion común', component: Solubilidad },
       { id: 'solsal', label: 'Solubilidad y pH', component: SolubilidadSal },
       { id: 'solcond', label: 'Precipitación selectiva', component: SolubilidadCondicional },
       { id: 'solcomp', label: 'Competitiva (2 sales)', component: PrecipitacionCompetitiva },

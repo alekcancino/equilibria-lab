@@ -180,7 +180,7 @@ export default function AcidoBase() {
           <InfoBox title="Actividad vs concentración">
             <p>
               Este módulo (y la mayoría de motores) asume <strong>actividades ≈ concentraciones</strong>.
-              A I &gt; 0,1 M la corrección Debye-Hückel puede desviar el pH real; use el módulo
+              A I &gt; 0.1 M la corrección Debye-Hückel puede desviar el pH real; use el módulo
               <strong> Actividad / Debye-Hückel</strong> para estimar γ.
             </p>
           </InfoBox>

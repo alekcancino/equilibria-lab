@@ -116,3 +116,82 @@ describe('speciationFractions — invariante cruzado con alphaOH (conditional.ts
     }
   });
 });
+
+// ── Tercera rama: segundo agente complejante X ───────────────────────────────
+
+describe('speciation — rama X (segundo agente complejante)', () => {
+  const ZN_NH3 = [2.37, 4.81, 7.31, 9.46];
+  const CU_EN = [10.72, 20.03];
+
+  it('sin rama X (params por defecto) reproduce exactamente el modelo de dos ramas', () => {
+    const oldCall = speciationFractions(7, 4, [4.97, 8.55], ZN_NH3);
+    const newCall = speciationFractions(7, 4, [4.97, 8.55], ZN_NH3, Infinity, []);
+    expect(newCall).toEqual(oldCall);
+    const s = sys({ cM: 1e-3, logBetasOH: [4.97, 8.55], logBetasL: ZN_NH3, cL: 0.05, pKasL: [9.25] });
+    const withUndefX = speciationAtPH(s, 8);
+    const withEmptyX = speciationAtPH({ ...s, x: { logBetasX: [], spec: { mode: 'free', cL: 0 } } }, 8);
+    expect(withEmptyX.pL).toBe(withUndefX.pL);
+    expect(withEmptyX.fractions).toEqual(withUndefX.fractions);
+  });
+
+  it('identidad de fracción libre: f_M = 1/(α_OH + α_L + α_X − 2) — tres implementaciones independientes', () => {
+    // D = 1 + ΣOH + ΣL + ΣX = α_OH + α_L + α_X − 2 (cada α = 1 + Σ propia).
+    const logBetasOH = [4.97, 8.55];
+    const pH = 9;
+    const pL = 3;
+    const pX = 2.5;
+    const fr = speciationFractions(pH, pL, logBetasOH, ZN_NH3, pX, CU_EN);
+    const aOH = alphaOH(logBetasOH, pH);
+    const sumL = ZN_NH3.reduce((s2, b, i) => s2 + Math.pow(10, b + (i + 1) * -pL), 0);
+    const sumX = CU_EN.reduce((s2, b, k) => s2 + Math.pow(10, b + (k + 1) * -pX), 0);
+    const D = aOH + sumL + sumX;
+    expect(Math.abs(fr[0] - 1 / D) / (1 / D)).toBeLessThan(1e-9);
+    expect(Math.abs(fr.reduce((a, b) => a + b, 0) - 1)).toBeLessThan(1e-12);
+  });
+
+  it('X en modo total: ambos balances de masa se satisfacen en el punto resuelto', () => {
+    const s = sys({
+      cM: 1e-3,
+      logBetasOH: [4.97, 8.55],
+      logBetasL: ZN_NH3,
+      cL: 0.02,
+      pKasL: [9.25],
+      x: { logBetasX: CU_EN, spec: { mode: 'total', cTotal: 0.01, pKas: [7.1, 10.0] } },
+    });
+    const pt = speciationAtPH(s, 9);
+    expect(Number.isFinite(pt.pL)).toBe(true);
+    expect(Number.isFinite(pt.pX)).toBe(true);
+    // Balance de L: cL = [L]·α_L(H) + cM·n̄_L
+    const aLH = 1 + Math.pow(10, 9.25 - 9);
+    const balL = Math.pow(10, -pt.pL) * aLH + s.cM * pt.nBar;
+    expect(Math.abs(balL - s.cL) / s.cL).toBeLessThan(1e-6);
+    // Balance de X: cX = [X]·α_X(H) + cM·n̄_X
+    const aXH = 1 + Math.pow(10, 10.0 - 9) + Math.pow(10, 10.0 + 7.1 - 18);
+    const balX = Math.pow(10, -pt.pX) * aXH + s.cM * pt.nBarX;
+    expect(Math.abs(balX - 0.01) / 0.01).toBeLessThan(1e-6);
+  });
+
+  it('X total con cX→0 colapsa a la curva sin X', () => {
+    const base = sys({ cM: 1e-3, logBetasOH: [4.97, 8.55], logBetasL: ZN_NH3, cL: 0.02, pKasL: [9.25] });
+    const noX = speciationAtPH(base, 8);
+    const tinyX = speciationAtPH({
+      ...base,
+      x: { logBetasX: CU_EN, spec: { mode: 'total', cTotal: 1e-15, pKas: [] } },
+    }, 8);
+    expect(Math.abs(tinyX.pL - noX.pL)).toBeLessThan(1e-3);
+  });
+
+  it('X fuerte a [X] fijo captura al metal: dominante pasa de hidroxo a MX', () => {
+    const base = sys({ cM: 1e-4, logBetasOH: [4.97, 8.55, 13.9, 15.1], logBetasL: [], cL: 0 });
+    const noX = speciationAtPH(base, 10);
+    const nOH = 4;
+    const domNoX = noX.fractions.indexOf(Math.max(...noX.fractions));
+    expect(domNoX).toBeGreaterThan(0); // hidroxo domina a pH 10 sin X
+    const withX = speciationAtPH({
+      ...base,
+      x: { logBetasX: CU_EN, spec: { mode: 'free', cL: 0.01 } },
+    }, 10);
+    const domX = withX.fractions.indexOf(Math.max(...withX.fractions));
+    expect(domX).toBeGreaterThan(nOH); // ahora domina una especie MX
+  });
+});

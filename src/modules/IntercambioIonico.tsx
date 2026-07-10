@@ -183,7 +183,7 @@ export default function IntercambioIonico() {
 
   const barTraces = useMemo<Data[]>(() => [
     {
-      x: [`Solución (${labelA})`, `Solución (${labelB})`, `Resina (${labelA})`, `Resina (${labelB})`],
+      x: [`Disolución (${labelA})`, `Disolución (${labelB})`, `Resina (${labelA})`, `Resina (${labelB})`],
       y: [eq.cAeq, eq.cBeq, eq.fracAInResin, eq.fracBInResin],
       type: 'bar',
       marker: { color: ['#0072B2', '#D55E00', '#0072B2', '#D55E00'] },
@@ -406,12 +406,12 @@ export default function IntercambioIonico() {
         {zA !== zB && (
           <p className="hint">
             Estequiometría {zB}A + {zA}B̄ ⇌ {zB}Ā + {zA}B (convención Gaines-Thomas). Diluir la
-            solución favorece al ion de mayor carga — efecto concentración-valencia.
+            disolución favorece al ion de mayor carga — efecto concentración-valencia.
           </p>
         )}
         <Slider label="Capacidad de resina (eq/L)" helpId="capacity" value={resinCapacity} min={0.5} max={5} step={0.1} onChange={setResinCapacity} decimals={1} />
         <Slider label="Volumen de resina (L)" value={resinVolume} min={0.01} max={0.2} step={0.01} onChange={setResinVolume} decimals={2} />
-        <Slider label="Volumen de solución (L)" value={volume} min={0.05} max={0.5} step={0.01} onChange={setVolume} decimals={2} />
+        <Slider label="Volumen de disolución (L)" value={volume} min={0.05} max={0.5} step={0.01} onChange={setVolume} decimals={2} />
         <Slider label="Caudal (L/min, columna)" value={flowRate} min={0.01} max={0.2} step={0.01} onChange={setFlowRate} decimals={2} />
         </PanelSection>
 
@@ -495,7 +495,7 @@ export default function IntercambioIonico() {
         <InfoBox title="Selectividad, isoterma y columna">
           <p>
             La ley <code>K_A/B = (y_A·x_B)/(y_B·x_A)</code> gobierna el equilibrio en lote.
-            La <strong>isoterma</strong> muestra q (eq/L resina) vs la concentración en solución.
+            La <strong>isoterma</strong> muestra q (eq/L resina) vs la concentración en disolución.
             El <strong>breakthrough</strong> es un modelo ideal: el efluente alcanza C/C₀ ≈ 1
             tras agotar la capacidad del lecho.
           </p>

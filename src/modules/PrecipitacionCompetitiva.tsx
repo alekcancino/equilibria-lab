@@ -14,6 +14,12 @@ import {
 } from '../lib/solubilityCompetitive';
 import { formatMolar } from '../lib/format';
 
+/** p-function name from an ion label: pAg from Ag⁺ (charges dropped — the
+ * p-notation applies to the ion's concentration, pAg = −log[Ag⁺]). */
+function pIon(label: string): string {
+  return `p${(label || 'M').replace(/[⁺⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+$/u, '')}`;
+}
+
 const C1 = '#0072B2';
 const C2 = '#D55E00';
 const C_OP = '#CC79A7';
@@ -103,8 +109,8 @@ export default function PrecipitacionCompetitiva() {
   const exportMetadata = useMemo(() => ({
     Módulo: 'Precipitación competitiva',
     'Ion común': cation,
-    [`pKsp (${label1})`]: pKsp1.toFixed(2),
-    [`pKsp (${label2})`]: pKsp2.toFixed(2),
+    [`pKps (${cation}/${label1})`]: pKsp1.toFixed(2),
+    [`pKps (${cation}/${label2})`]: pKsp2.toFixed(2),
     'cX1 / M': cX1.toFixed(4),
     'cX2 / M': cX2.toFixed(4),
     'cM añadido / M': cM.toFixed(4),
@@ -132,13 +138,13 @@ export default function PrecipitacionCompetitiva() {
       x: sweep.map((p) => p.pAg), y: sweep.map((p) => (p.p1 / s1.cX) * 100),
       type: 'scatter', mode: 'lines', name: `% ${label1} precipitado`,
       line: { width: 3, color: C1 },
-      hovertemplate: `p${cation} = %{x:.2f}<br>%{y:.2f} %<extra>${label1}</extra>`,
+      hovertemplate: `${pIon(cation)} = %{x:.2f}<br>%{y:.2f} %<extra>${label1}</extra>`,
     },
     {
       x: sweep.map((p) => p.pAg), y: sweep.map((p) => (p.p2 / s2.cX) * 100),
       type: 'scatter', mode: 'lines', name: `% ${label2} precipitado`,
       line: { width: 3, color: C2 },
-      hovertemplate: `p${cation} = %{x:.2f}<br>%{y:.2f} %<extra>${label2}</extra>`,
+      hovertemplate: `${pIon(cation)} = %{x:.2f}<br>%{y:.2f} %<extra>${label2}</extra>`,
     },
   ], [sweep, s1.cX, s2.cX, label1, label2, cation]);
 
@@ -157,8 +163,8 @@ export default function PrecipitacionCompetitiva() {
 
   const phaseLabel = {
     ninguna: 'sin precipitados',
-    sal1: `solo ${cation}${label1}`,
-    sal2: `solo ${cation}${label2}`,
+    sal1: `solo la sal de ${label1}`,
+    sal2: `solo la sal de ${label2}`,
     ambas: 'ambas sales presentes',
   }[eq.phases];
 
@@ -169,7 +175,7 @@ export default function PrecipitacionCompetitiva() {
       node: (
         <Chart
           data={pctTraces}
-          xTitle={`p${cation} (−log[${cation}]) — añadir ${cation} avanza hacia la derecha`}
+          xTitle={`${pIon(cation)} (−log[${cation}]) — añadir ${cation} avanza hacia la derecha`}
           yTitle="% precipitado"
           xRange={[pMax, pMin]}
           yRange={[0, 102]}
@@ -185,7 +191,7 @@ export default function PrecipitacionCompetitiva() {
       node: (
         <Chart
           data={logXTraces}
-          xTitle={`p${cation} (−log[${cation}])`}
+          xTitle={`${pIon(cation)} (−log[${cation}])`}
           yTitle="log [X] libre"
           xRange={[pMax, pMin]}
           yRange={[-12, 0.5]}
@@ -207,10 +213,10 @@ export default function PrecipitacionCompetitiva() {
           />
           <LabelField label="Ion común (catión)" value={cation} onChange={setCation} />
           <LabelField label="Anión 1" value={label1} onChange={setLabel1} />
-          <Slider label={`pKsp (${cation}${label1})`} value={pKsp1} min={2} max={20} step={0.01} onChange={setPKsp1} decimals={2} />
+          <Slider label={`pKps (${cation}/${label1})`} value={pKsp1} min={2} max={20} step={0.01} onChange={setPKsp1} decimals={2} />
           <ConcSlider label={`Concentración de ${label1}`} value={cX1} onChange={setCX1} />
           <LabelField label="Anión 2" value={label2} onChange={setLabel2} />
-          <Slider label={`pKsp (${cation}${label2})`} value={pKsp2} min={2} max={20} step={0.01} onChange={setPKsp2} decimals={2} />
+          <Slider label={`pKps (${cation}/${label2})`} value={pKsp2} min={2} max={20} step={0.01} onChange={setPKsp2} decimals={2} />
           <ConcSlider label={`Concentración de ${label2}`} value={cX2} onChange={setCX2} />
           <DbPanel
             title="Ejemplos de la base de datos"
@@ -236,11 +242,11 @@ export default function PrecipitacionCompetitiva() {
           <ResultCard items={[
             {
               label: 'Precipita primero',
-              value: `${cation}${first.label} (p${cation} ${pAgAtFraction(first.pKsp, first.cX, 0).toFixed(2)})`,
+              value: `sal de ${first.label} (${pIon(cation)} ${pAgAtFraction(first.pKsp, first.cX, 0).toFixed(2)})`,
             },
             {
-              label: `Inicio de ${cation}${second.label}`,
-              value: `p${cation} ${win.pAgSecondOnset.toFixed(2)}`,
+              label: `Inicio de la sal de ${second.label}`,
+              value: `${pIon(cation)} ${win.pAgSecondOnset.toFixed(2)}`,
             },
             {
               label: `${first.label} residual al iniciar la 2.ª sal`,
@@ -249,7 +255,7 @@ export default function PrecipitacionCompetitiva() {
             {
               label: 'Separación cuantitativa (99.9 %)',
               value: win.ok
-                ? `sí · ventana p${cation} ${win.pAgSecondOnset.toFixed(2)}–${win.pAgQuant.toFixed(2)}`
+                ? `sí · ventana ${pIon(cation)} ${win.pAgSecondOnset.toFixed(2)}–${win.pAgQuant.toFixed(2)}`
                 : 'no — la 2.ª sal arranca antes del 99.9 %',
             },
           ]} />
@@ -257,14 +263,14 @@ export default function PrecipitacionCompetitiva() {
 
         <InfoBox title="Cómo leer este módulo">
           <p>
-            <strong>Precipitación fraccionada</strong>: al añadir {cation}, p{cation} baja
+            <strong>Precipitación fraccionada</strong>: al añadir {cation}, {pIon(cation)} baja
             (el eje avanza hacia la derecha) y precipita primero la sal que necesita menos catión
-            (p{cation} de inicio = pKsp + log cX).
+            ({pIon(cation)} de inicio = pKps + log cX).
           </p>
           <p>
             <strong>Ventana de separación</strong> (franja verde): entre el 99.9 % de la
             primera sal y el inicio de la segunda. El residuo de la primera cuando arranca
-            la segunda es Ksp₁·cX₂/(Ksp₂·cX₁) — independiente de cuánto catión se añada.
+            la segunda es Kps₁·cX₂/(Kps₂·cX₁) — independiente de cuánto catión se añada.
           </p>
           <p>
             <strong>Alcance</strong>: sales 1:1 con actividades ≈ concentraciones; sin
@@ -277,7 +283,7 @@ export default function PrecipitacionCompetitiva() {
         <DiagramTabs tabs={diagrams} initialId="pct" />
         <ResultCardRow items={[
           { label: 'Fases en el punto de operación', value: phaseLabel, accent: true },
-          { label: `p${cation} operación`, value: Number.isFinite(eq.pAg) ? eq.pAg.toFixed(2) : '—' },
+          { label: `${pIon(cation)} operación`, value: Number.isFinite(eq.pAg) ? eq.pAg.toFixed(2) : '—' },
           { label: `% ${label1} precipitado`, value: `${((eq.p1 / cX1) * 100).toFixed(1)} %` },
           { label: `% ${label2} precipitado`, value: `${((eq.p2 / cX2) * 100).toFixed(1)} %` },
           { label: `[${label1}] libre`, value: formatMolar(eq.freeX1) },

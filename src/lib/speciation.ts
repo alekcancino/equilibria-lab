@@ -1,15 +1,17 @@
 // Metal speciation vs pH: hydrolysis (M–OH) coupled with an optional auxiliary
-// ligand (M–L), species-by-species. Single mononuclear metal center — M(OH)ⱼ
-// and MLᵢ share the same free-metal denominator but mixed M(OH)L species are
-// not modeled (standard simplifying assumption for this class of problem).
+// ligand (M–L) and an optional second complexing agent (M–X), species-by-species.
+// Single mononuclear metal center — M(OH)ⱼ, MLᵢ and MXₖ share the same
+// free-metal denominator but mixed species (M(OH)L, MLX…) are not modeled
+// (standard simplifying assumption for this class of problem).
 //
-// Species order is fixed: [M, MOH₁…MOHⱼ, ML₁…MLᵢ] (j = logBetasOH.length,
-// i = logBetasL.length).
+// Species order is fixed: [M, MOH₁…MOHⱼ, ML₁…MLᵢ, MX₁…MXₖ] (j = logBetasOH.length,
+// i = logBetasL.length, k = x.logBetasX.length when the X branch is active).
 
 import { PKW } from './constants';
 import { alphaH } from './conditional';
 import { SPECIES_COLORS } from './database';
 import type { Zone } from './ladder';
+import type { XBranch } from './complexation';
 
 export interface MetalSpeciationSystem {
   metalLabel: string;
@@ -23,36 +25,47 @@ export interface MetalSpeciationSystem {
   pKasL: number[];
   /** Total analytical ligand concentration (M). 0 = no ligand present. */
   cL: number;
+  /** Optional second complexing agent competing with OH and L for M. */
+  x?: XBranch;
 }
 
 export interface SpeciationPoint {
   pH: number;
   /** Free ligand pL = −log[L]. Infinity when cL = 0 or there's no ligand branch. */
   pL: number;
-  /** Species fractions in the fixed [M, MOH…, ML…] order; sums to 1. */
+  /** Free pX of the second agent. Infinity when the X branch is absent/empty. */
+  pX: number;
+  /** Species fractions in the fixed [M, MOH…, ML…, MX…] order; sums to 1. */
   fractions: number[];
   /** Mean number of auxiliary ligands bound per M (Bjerrum-style, L branch only). */
   nBar: number;
+  /** Mean number of X bound per M (X branch only). */
+  nBarX: number;
 }
 
 /**
- * Combined M–OH / M–L distribution at a given pH and free pL.
- * D = 1 + Σ βOHⱼ·[OH]ʲ + Σ βLᵢ·[L]ⁱ, all in log-space (immune to large β,
- * e.g. Fe³⁺ hydrolysis ~30). pL = Infinity zeroes the L terms with no special
- * case: log[L] = −Infinity → those terms vanish through Math.pow(10, -Infinity) = 0.
+ * Combined M–OH / M–L / M–X distribution at a given pH and free pL/pX.
+ * D = 1 + Σ βOHⱼ·[OH]ʲ + Σ βLᵢ·[L]ⁱ + Σ βXₖ·[X]ᵏ, all in log-space (immune to
+ * large β, e.g. Fe³⁺ hydrolysis ~30). pL or pX = Infinity zeroes that branch's
+ * terms with no special case: log[·] = −Infinity → the terms vanish through
+ * Math.pow(10, -Infinity) = 0, so the two-branch model is the X-empty limit.
  */
 export function speciationFractions(
   pH: number,
   pL: number,
   logBetasOH: number[],
   logBetasL: number[] = [],
+  pX = Infinity,
+  logBetasX: number[] = [],
 ): number[] {
   const logOH = pH - PKW;
   const logL = -pL;
+  const logX = -pX;
   const logTerms = [
     0,
     ...logBetasOH.map((b, j) => b + (j + 1) * logOH),
     ...logBetasL.map((b, i) => b + (i + 1) * logL),
+    ...logBetasX.map((b, k) => b + (k + 1) * logX),
   ];
   const maxLog = Math.max(...logTerms);
   const terms = logTerms.map((lt) => Math.pow(10, lt - maxLog));
@@ -60,13 +73,68 @@ export function speciationFractions(
   return terms.map((t) => t / D);
 }
 
-function meanBoundL(pH: number, pL: number, logBetasOH: number[], logBetasL: number[]): number {
-  if (logBetasL.length === 0) return 0;
-  const fr = speciationFractions(pH, pL, logBetasOH, logBetasL);
+/** Mean bound L and X per M at the given free concentrations. */
+function meanBound(
+  pH: number,
+  pL: number,
+  pX: number,
+  logBetasOH: number[],
+  logBetasL: number[],
+  logBetasX: number[],
+): { nBarL: number; nBarX: number } {
+  if (logBetasL.length === 0 && logBetasX.length === 0) return { nBarL: 0, nBarX: 0 };
+  const fr = speciationFractions(pH, pL, logBetasOH, logBetasL, pX, logBetasX);
   const nOH = logBetasOH.length;
-  let n = 0;
-  for (let i = 0; i < logBetasL.length; i++) n += (i + 1) * fr[1 + nOH + i];
-  return n;
+  let nBarL = 0;
+  let nBarX = 0;
+  for (let i = 0; i < logBetasL.length; i++) nBarL += (i + 1) * fr[1 + nOH + i];
+  for (let k = 0; k < logBetasX.length; k++) nBarX += (k + 1) * fr[1 + nOH + logBetasL.length + k];
+  return { nBarL, nBarX };
+}
+
+/** Free pX when the X spec fixes it directly; NaN signals the 'total' mode
+ * (needs a mass-balance solve), Infinity an absent/empty branch. */
+function knownPX(x?: XBranch): number {
+  if (!x || x.logBetasX.length === 0) return Infinity;
+  if (x.spec.mode === 'free') return x.spec.cL > 0 ? -Math.log10(x.spec.cL) : Infinity;
+  if (x.spec.mode === 'fixedPX') return x.spec.pX;
+  return NaN;
+}
+
+/**
+ * Free pX of a 'total'-mode X branch at a given pH and (hypothetical) pL,
+ * by bisection on  cX = [X]·α_X(H) + cM·n̄_X(pH, pL, pX).  g(pX) is
+ * monotonically increasing in pX (both the free term and the bound term
+ * shrink as [X] drops — the constant OH terms only enlarge the free-M pool),
+ * so bisection is safe. Same structure as complexation.ts's solvePXAtPL with
+ * the hydrolysis terms added to the shared denominator.
+ */
+function solvePXAt(
+  pH: number,
+  pL: number,
+  cM: number,
+  x: XBranch,
+  logBetasOH: number[],
+  logBetasL: number[],
+): number {
+  const fixed = knownPX(x);
+  if (!Number.isNaN(fixed)) return fixed;
+  const spec = x.spec as Extract<XBranch['spec'], { mode: 'total' }>;
+  const cX = spec.cTotal;
+  if (cX <= 0) return Infinity;
+  const aXH = alphaH(spec.pKas, pH);
+  let lo = Math.min(-Math.log10(cX), 0) - 1;
+  let hi = Math.max(...x.logBetasX) + Math.log10(aXH) + 8;
+  const g = (pX: number) =>
+    cX - Math.pow(10, -pX) * aXH - cM * meanBound(pH, pL, pX, logBetasOH, logBetasL, x.logBetasX).nBarX;
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2;
+    if (g(mid) > 0) hi = mid;
+    else lo = mid;
+  }
+  const result = (lo + hi) / 2;
+  if (!(Math.abs(g(result)) <= 1e-6 * (cX + 1e-15))) return NaN;
+  return result;
 }
 
 /**
@@ -76,6 +144,7 @@ function meanBoundL(pH: number, pL: number, logBetasOH: number[], logBetasL: num
  * pL (same shape as complexation.ts's solvePL, with an extra α_L(H) factor
  * for ligand protonation). Returns Infinity when there's no ligand, NaN when
  * cL is too small to satisfy the balance (no physical solution).
+ * With an X branch at fixed pX, the X terms just enter the shared denominator.
  */
 export function solveFreePL(
   pH: number,
@@ -84,13 +153,16 @@ export function solveFreePL(
   logBetasOH: number[],
   logBetasL: number[],
   pKasL: number[] = [],
+  pX = Infinity,
+  logBetasX: number[] = [],
 ): number {
   if (cL <= 0 || logBetasL.length === 0) return Infinity;
   const aH = alphaH(pKasL, pH); // alphaH([], pH) already returns 1
   const maxBeta = Math.max(...logBetasL);
   let lo = Math.min(-Math.log10(cL), 0) - 1;
   let hi = maxBeta + Math.log10(aH) + 8;
-  const g = (pL: number) => cL - Math.pow(10, -pL) * aH - cM * meanBoundL(pH, pL, logBetasOH, logBetasL);
+  const g = (pL: number) =>
+    cL - Math.pow(10, -pL) * aH - cM * meanBound(pH, pL, pX, logBetasOH, logBetasL, logBetasX).nBarL;
   for (let i = 0; i < 80; i++) {
     const mid = (lo + hi) / 2;
     if (g(mid) > 0) hi = mid;
@@ -102,12 +174,63 @@ export function solveFreePL(
   return result;
 }
 
-/** Full speciation (pL solve + fractions + n̄) at a single pH. */
+/**
+ * Full speciation (pL/pX solve + fractions + n̄) at a single pH.
+ * When the X branch is an analytical total AND the ligand is present, the two
+ * balances couple: nested bisection with pX as the outer variable, exactly as
+ * in complexation.ts's solveTwoLigandEquilibrium (the outer deficit stays
+ * monotone — gross-substitutes property; the OH terms are constant at fixed
+ * pH and only strengthen the free-M pool that argument relies on).
+ */
 export function speciationAtPH(sys: MetalSpeciationSystem, pH: number): SpeciationPoint {
-  const pL = solveFreePL(pH, sys.cM, sys.cL, sys.logBetasOH, sys.logBetasL, sys.pKasL);
-  const fractions = speciationFractions(pH, pL, sys.logBetasOH, sys.logBetasL);
-  const nBar = meanBoundL(pH, pL, sys.logBetasOH, sys.logBetasL);
-  return { pH, pL, fractions, nBar };
+  const logBetasX = sys.x?.logBetasX ?? [];
+  const hasX = sys.x !== undefined && logBetasX.length > 0;
+  const hasL = sys.cL > 0 && sys.logBetasL.length > 0;
+
+  let pL: number;
+  let pX: number;
+
+  if (!hasX) {
+    pX = Infinity;
+    pL = solveFreePL(pH, sys.cM, sys.cL, sys.logBetasOH, sys.logBetasL, sys.pKasL);
+  } else if (!Number.isNaN(knownPX(sys.x))) {
+    pX = knownPX(sys.x);
+    pL = solveFreePL(pH, sys.cM, sys.cL, sys.logBetasOH, sys.logBetasL, sys.pKasL, pX, logBetasX);
+  } else if (!hasL) {
+    pL = Infinity;
+    pX = solvePXAt(pH, Infinity, sys.cM, sys.x!, sys.logBetasOH, sys.logBetasL);
+  } else {
+    // Both totals: nested bisection, outer on pX.
+    const x = sys.x!;
+    const spec = x.spec as Extract<XBranch['spec'], { mode: 'total' }>;
+    const cX = spec.cTotal;
+    if (cX <= 0) {
+      pX = Infinity;
+      pL = solveFreePL(pH, sys.cM, sys.cL, sys.logBetasOH, sys.logBetasL, sys.pKasL);
+    } else {
+      const aXH = alphaH(spec.pKas, pH);
+      let lo = Math.min(-Math.log10(cX), 0) - 1;
+      let hi = Math.max(...logBetasX) + Math.log10(aXH) + 8;
+      const innerPL = (pXTry: number) =>
+        solveFreePL(pH, sys.cM, sys.cL, sys.logBetasOH, sys.logBetasL, sys.pKasL, pXTry, logBetasX);
+      const G = (pXTry: number) =>
+        cX - Math.pow(10, -pXTry) * aXH
+        - sys.cM * meanBound(pH, innerPL(pXTry), pXTry, sys.logBetasOH, sys.logBetasL, logBetasX).nBarX;
+      for (let i = 0; i < 80; i++) {
+        const mid = (lo + hi) / 2;
+        if (G(mid) > 0) hi = mid;
+        else lo = mid;
+      }
+      pX = (lo + hi) / 2;
+      // Inverted comparison so a NaN residual (poisoned inner solve) also bails out.
+      if (!(Math.abs(G(pX)) <= 1e-6 * (cX + 1e-15))) pX = NaN;
+      pL = Number.isNaN(pX) ? NaN : innerPL(pX);
+    }
+  }
+
+  const fractions = speciationFractions(pH, pL, sys.logBetasOH, sys.logBetasL, pX, logBetasX);
+  const { nBarL, nBarX } = meanBound(pH, pL, pX, sys.logBetasOH, sys.logBetasL, logBetasX);
+  return { pH, pL, pX, fractions, nBar: nBarL, nBarX };
 }
 
 /** Sweeps pH and returns one SpeciationPoint per sample (for α / log C / n̄ curves). */
