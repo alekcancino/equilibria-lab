@@ -942,8 +942,11 @@ function PrecipTitration({ mode }: { mode: Mode }) {
     if (s.cAnalyte !== undefined) setCAnalyte(s.cAnalyte);
     if (s.vAnalyte !== undefined) setVAnalyte(s.vAnalyte);
     if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
-    if (s.m !== undefined) setM(s.m);
-    if (s.x !== undefined) setX(s.x);
+    // 1-4: the only values NumberSegmented's options can ever produce; a
+    // value outside that range would desync the control from real state
+    // and (for m=0 or x=0) divide by zero in precipTitrationCurve.
+    if (typeof s.m === 'number' && Number.isInteger(s.m) && s.m >= 1 && s.m <= 4) setM(s.m);
+    if (typeof s.x === 'number' && Number.isInteger(s.x) && s.x >= 1 && s.x <= 4) setX(s.x);
     if (s.showPCation !== undefined) setShowPCation(s.showPCation);
     if (s.showMohr !== undefined) setShowMohr(s.showMohr);
     if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);

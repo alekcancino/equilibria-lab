@@ -535,8 +535,10 @@ describe('precipTitrationCurve — estequiometría MmXx libre (UI ahora expone m
     });
     // vEq = (m/x)·(cAnalyte·vAnalyte)/cTitrant — el doble de lo que daría 1:1 con los mismos datos.
     tol(curve.vEq, 25, 0.01);
-    // [M]^m[X]^x=Ksp junto con x[M]=m[X] en el punto estequiométrico exacto.
-    tol(curve.pAgEq, -Math.log10(Math.pow(Math.pow(10, -11.89) / 2, 1 / 3)), 0.01);
+    // Derivación independiente (no reusa la fórmula cerrada del motor): en el punto
+    // estequiométrico [Ag⁺]=2s, [CrO₄²⁻]=s → Ksp=(2s)²·s=4s³ → s=(Ksp/4)^(1/3).
+    const s = Math.pow(Math.pow(10, -11.89) / 4, 1 / 3);
+    tol(curve.pAgEq, -Math.log10(2 * s), 0.01);
     // v=0: solo queda el analito puro en el matraz, pX = -log(cAnalyte).
     expect(curve.volumes[0]).toBe(0);
     tol(curve.pXs[0], -Math.log10(0.05), 0.01);

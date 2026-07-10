@@ -31,10 +31,11 @@ export function precipTitrationCurve(params: PrecipParams): PrecipCurve {
   const vEq = (m / x) * ((cAnalyte * vAnalyte) / cTitrant);
   // At the exact stoichiometric point of MmXx: [M]^m·[X]^x = Ksp together
   // with the mole balance x·[M] = m·[X] (m mol M and x mol X dissolve in
-  // lockstep) — solving both gives [M] in closed form. Reduces to
+  // lockstep, releasing m mol M and x mol X per formula unit) — substituting
+  // [X]=(x/m)[M] into Ksp gives [M]^(m+x) = Ksp·(m/x)^x. Reduces to
   // [M]=[X]=√Ksp for the m=x=1 case (AgCl-style).
   const mOverX = m / x;
-  const mAtEq = Math.pow(Ksp / Math.pow(mOverX, x), 1 / (m + x));
+  const mAtEq = Math.pow(Ksp * Math.pow(mOverX, x), 1 / (m + x));
   const pAgEq = -Math.log10(mAtEq);
 
   const volumes: number[] = [];
@@ -58,7 +59,7 @@ export function precipTitrationCurve(params: PrecipParams): PrecipCurve {
     if (Math.abs(excess) < 1e-15 * xiFromX) {
       // Exact equivalence point
       cAg = mAtEq;
-      cX = mOverX * mAtEq;
+      cX = mAtEq / mOverX;
     } else if (excess < 0) {
       // Before equivalence: X in excess (M essentially fully precipitated)
       cX = (nAnalyte - x * xiFromM) / vTotal_L;
