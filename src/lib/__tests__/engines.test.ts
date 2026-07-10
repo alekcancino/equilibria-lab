@@ -887,6 +887,34 @@ describe('titrationCurve', () => {
     });
     tol(curve.pHs[0], 1.65, 0.05);
   });
+
+  it('modelo por defecto (omitido) === "dh" explícito, a I > 0', () => {
+    const params = {
+      analyte: { z0: 0, pKas: [4.76] }, titrantIsAcid: false,
+      cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 50, points: 20, I: 0.2,
+    };
+    const withDefault = titrationCurve(params);
+    const withExplicit = titrationCurve({ ...params, model: 'dh' as const });
+    expect(withDefault.pHs).toEqual(withExplicit.pHs);
+  });
+
+  it('HAc 0.1 M + NaOH a I=0.2, medio-equivalencia (V=12.5 mL): pH = pKa + shift, 3 modelos derivados a mano', () => {
+    // At V = Veq/2 the buffer ratio [HAc]=[Ac⁻] is 1:1 regardless of dilution
+    // (Henderson-Hasselbalch depends only on the ratio) — same activity-pH
+    // identity as solvePH's own buffer-point golden (engines.test.ts:86):
+    // pH_activity = pKa − 3·logγ(1,I), independently re-derived per model.
+    const params = {
+      analyte: { z0: 0, pKas: [4.76] }, titrantIsAcid: false,
+      cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 50, points: 2000, I: 0.2,
+    };
+    const halfEqIdx = (model: 'dh' | 'davies' | 'guntelberg') => {
+      const curve = titrationCurve({ ...params, model });
+      return curve.pHs[curve.volumes.findIndex((v) => Math.abs(v - 12.5) < 0.02)];
+    };
+    tol(halfEqIdx('dh'), 4.76 - 3 * -0.158082, 0.005);
+    tol(halfEqIdx('davies'), 4.76 - 3 * -0.126998, 0.005);
+    tol(halfEqIdx('guntelberg'), 4.76 - 3 * -0.154508, 0.005);
+  });
 });
 
 describe('firstDerivative', () => {
