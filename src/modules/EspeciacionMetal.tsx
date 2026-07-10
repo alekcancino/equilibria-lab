@@ -175,7 +175,9 @@ export default function EspeciacionMetal() {
   const nSpecies = 1 + nOH + nL + nX;
 
   const curve = useMemo(() => speciationCurve(system, PH_RANGE, PH_POINTS), [system]);
-  const hasNaN = useMemo(() => curve.some((pt) => Number.isNaN(pt.pL)), [curve]);
+  // Keyed on fractions, not pL: in the X-only 'total' path pL stays Infinity
+  // while an unsolvable X balance poisons the fractions via pX = NaN.
+  const hasNaN = useMemo(() => curve.some((pt) => Number.isNaN(pt.fractions[0])), [curve]);
 
   const readPoint = useMemo(() => speciationAtPH(system, pHRead), [system, pHRead]);
   const readValid = !Number.isNaN(readPoint.fractions[0]);
@@ -229,9 +231,16 @@ export default function EspeciacionMetal() {
     }));
   }, [curve, nSpecies, labels, system.cM]);
 
+  // Geometry only depends on the system — labels are attached in a cheap
+  // second pass so renaming species doesn't re-run the 1500-sample sweep
+  // (each sample is a nested bisection when X is an analytical total).
+  const zoneGeometry = useMemo(
+    () => predominanceZonesVsPH(system, [], PH_RANGE),
+    [system],
+  );
   const zones = useMemo(
-    () => predominanceZonesVsPH(system, labels, PH_RANGE),
-    [system, labels],
+    () => zoneGeometry.map((z) => ({ ...z, label: labels[z.index] ?? z.label })),
+    [zoneGeometry, labels],
   );
 
   const diagrams = [
