@@ -18,6 +18,9 @@ import {
   anionFreeFraction, solubility, solubilityVsPX, acidSolidSolubility, baseSolidSolubility,
 } from '../solubility';
 import { precipTitrationCurve, mohrEndpointPAg } from '../precipTitration';
+import {
+  competitiveAtPAg, competitiveEquilibrium, pAgAtFraction, separationWindow,
+} from '../solubilityCompetitive';
 import { buildSystem, availableSystems, waterLines } from '../pourbaix';
 import { batchIonExchange, isothermCurve, breakthroughCurve } from '../ionExchange';
 import { RESIN_PRESETS, APPLICATION_PRESETS } from '../ionExchangeDatabase';
@@ -595,6 +598,57 @@ describe('precipTitrationCurve', () => {
     });
     expect(curve.volumes[0]).toBe(0);
     tol(curve.pXs[0], 1.0, 0.01);
+  });
+});
+
+describe('solubilityCompetitive — precipitación fraccionada Cl⁻/Br⁻ con Ag⁺ (Harris)', () => {
+  const AgCl = { label: 'Cl⁻', pKsp: 9.74, cX: 0.01 };
+  const AgBr = { label: 'Br⁻', pKsp: 12.30, cX: 0.01 };
+
+  it('AgBr precipita primero: onset pAg 10.30 vs 7.74 para AgCl (pAg = pKsp + log cX)', () => {
+    tol(pAgAtFraction(AgBr.pKsp, AgBr.cX, 0), 10.30, 0.01);
+    tol(pAgAtFraction(AgCl.pKsp, AgCl.cX, 0), 7.74, 0.01);
+  });
+
+  it('cuando AgCl arranca, el Br⁻ residual es 10^−4.56 M (0.275 % — separación NO cuantitativa al 99.9 %)', () => {
+    const pt = competitiveAtPAg(7.74, AgCl, AgBr);
+    tol(Math.log10(pt.freeX2), -4.56, 0.01);
+    const win = separationWindow(AgCl, AgBr);
+    expect(win.firstIdx).toBe(1);
+    tol(win.residualFrac, 2.75e-3, 0.05e-3);
+    expect(win.ok).toBe(false); // 0.275 % > 0.1 %: Harris marca esta separación como casi-completa
+  });
+
+  it('Br⁻/I⁻ sí separa: residual de I⁻ = 10^−3.77 (< 0.1 %) y la ventana existe', () => {
+    const AgI = { label: 'I⁻', pKsp: 16.07, cX: 0.01 };
+    const win = separationWindow(AgBr, AgI);
+    expect(win.firstIdx).toBe(1); // AgI primero
+    tol(Math.log10(win.residualFrac), -3.77, 0.01);
+    expect(win.ok).toBe(true);
+    tol(win.pAgQuant, 11.07, 0.01);
+    tol(win.pAgSecondOnset, 10.30, 0.01);
+  });
+
+  it('competitiveEquilibrium: prueba de combinaciones acepta la hipótesis correcta', () => {
+    // cAg = 0.015 con 0.01+0.01 de aniones: ambas sales presentes.
+    const both = competitiveEquilibrium(0.015, AgCl, AgBr);
+    expect(both.phases).toBe('ambas');
+    tol(both.pAg, 7.44, 0.01);
+    tol(both.p1, 5.01e-3, 0.05e-3);
+    // Balance de masa del catión: [M] + P1 + P2 = cM total.
+    tol(Math.pow(10, -both.pAg) + both.p1 + both.p2, 0.015, 1e-9);
+
+    // cAg = 0.005: solo AgBr (IAP de AgCl queda por debajo de su Ksp).
+    const one = competitiveEquilibrium(0.005, AgCl, AgBr);
+    expect(one.phases).toBe('sal2');
+    tol(one.p2, 5.0e-3, 0.05e-3);
+    expect(Math.pow(10, -one.pAg) * AgCl.cX).toBeLessThan(Math.pow(10, -AgCl.pKsp));
+
+    // cAg trazas: ninguna sal.
+    const none = competitiveEquilibrium(1e-12, AgCl, AgBr);
+    expect(none.phases).toBe('ninguna');
+    expect(none.p1).toBe(0);
+    expect(none.p2).toBe(0);
   });
 });
 
