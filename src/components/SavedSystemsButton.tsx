@@ -3,25 +3,32 @@ import { useSavedSystems } from '../hooks/useSavedSystems';
 
 /**
  * "Mis sistemas" — save/load named snapshots of the current scenario.
- * Piggybacks on the same shareable URL ShareButton copies (already kept in
- * sync by useShareEffect/useShareableState): saving stores it under a name,
- * loading navigates to it so restoration goes through each module's normal
+ * Piggybacks on the same shareable URL ShareButton copies (kept in sync by
+ * useShareEffect/useShareableState): saving stores it under a name, loading
+ * navigates to it so restoration goes through each module's normal
  * share-link parsing, with no separate persistence logic to keep in sync.
  */
 export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
   const { systems, save, remove, load } = useSavedSystems(moduleId);
   const [name, setName] = useState('');
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleSave = () => {
     if (!name.trim()) return;
+    setSaving(true);
     save(name);
     setName('');
+    // save() itself is debounce-delayed (see useSavedSystems) — clear the
+    // "Guardando…" state a bit after it settles rather than track its
+    // completion, which would need threading a callback through the hook.
+    window.setTimeout(() => setSaving(false), 500);
   };
 
   return (
-    <details className="saved-systems">
-      <summary className="share-btn" title="Mis sistemas guardados">
-        ★ Mis sistemas{systems.length > 0 ? ` (${systems.length})` : ''}
+    <details className="saved-systems" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary className="share-btn" title="Mis sistemas guardados" aria-label="Mis sistemas guardados">
+        ✦ Mis sistemas{systems.length > 0 ? ` (${systems.length})` : ''}
       </summary>
       <div className="saved-systems-menu">
         <div className="saved-systems-save">
@@ -33,8 +40,8 @@ export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); }}
           />
-          <button type="button" className="add-btn" onClick={handleSave} disabled={!name.trim()}>
-            Guardar
+          <button type="button" className="add-btn" onClick={handleSave} disabled={!name.trim() || saving}>
+            {saving ? 'Guardando…' : 'Guardar'}
           </button>
         </div>
         {systems.length === 0 ? (
@@ -44,7 +51,8 @@ export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
             {systems.map((s) => (
               <li key={s.id}>
                 <button type="button" className="saved-systems-load" onClick={() => load(s)}>
-                  {s.name}
+                  <span>{s.name}</span>
+                  <span className="saved-systems-date">{new Date(s.savedAt).toLocaleDateString()}</span>
                 </button>
                 <button
                   type="button"
