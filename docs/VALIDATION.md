@@ -92,7 +92,7 @@ npm test
 | Module | Spana congruence | Notes |
 |--------|------------------|-------|
 | Acid-base (DUZP, α, log C) | **High** | Same fraction formalism |
-| Complexation (Bjerrum, log C vs pL) | **High** | Equivalent global β |
+| Complexation (Bjerrum, log C vs pL) | **High** | Equivalent global β; X–M–L two-ligand competition solved as a coupled system (both mass balances), not only as a Ringbom α shift |
 | Redox (α vs pe) | **High** | Shared pe convention |
 | Solubility / solubility vs pH | **High** (ideal) | Spana adds γ and multiple solids |
 | Activity | **Medium** | Extended D-H vs Davies/SIT in Spana |
