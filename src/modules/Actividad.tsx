@@ -9,14 +9,12 @@ import {
 } from '../components/Controls';
 import {
   ionicStrength,
-  logActivityCoefficient,
   activityCoefficient,
-  logGammaDavies,
-  gammaDavies,
-  logGammaGuntelberg,
-  gammaGuntelberg,
+  logActivityCoefficient,
   apparentPKw,
   ION_SIZES,
+  gammaOf as libGammaOf,
+  logGammaOf as libLogGammaOf,
 } from '../lib/activity';
 import { formatMolar, formatSci } from '../lib/format';
 
@@ -36,16 +34,18 @@ const MODEL_LABELS: Record<GammaModel, string> = {
 };
 
 /** Generic-charge γ for the selected model (Kielland's per-ion size only
- * applies to a specific ion, so its generic curves fall back to a = 3 Å). */
+ * applies to a specific ion, so its generic curves fall back to a = 3 Å —
+ * same as the shared lib dispatcher's default branch). Delegates to
+ * activity.ts's shared GammaModel dispatcher for the three models it also
+ * offers to engine-side callers (AcidoBase, Mezclas, Solubilidad); 'kielland'
+ * is Actividad-only (needs the ION_SIZES table), so it stays local. */
 function gammaOf(model: GammaModel, z: number, I: number): number {
-  if (model === 'davies') return gammaDavies(z, I);
-  if (model === 'guntelberg') return gammaGuntelberg(z, I);
+  if (model === 'davies' || model === 'guntelberg' || model === 'dh') return libGammaOf(model, z, I);
   return activityCoefficient(z, I);
 }
 
 function logGammaOf(model: GammaModel, z: number, I: number): number {
-  if (model === 'davies') return logGammaDavies(z, I);
-  if (model === 'guntelberg') return logGammaGuntelberg(z, I);
+  if (model === 'davies' || model === 'guntelberg' || model === 'dh') return libLogGammaOf(model, z, I);
   return logActivityCoefficient(z, I);
 }
 

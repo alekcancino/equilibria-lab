@@ -2,20 +2,22 @@
 
 import { alphaFractions } from './equilibrium';
 import { alphaL } from './conditional';
-import { logActivityCoefficient } from './activity';
+import { logGammaOf, type GammaModel } from './activity';
 import type { SaltPreset } from './database';
+
+export type { GammaModel };
 
 /**
  * Ksp corrected for ionic strength: Ksp_app = Ksp / (γ_M^m · γ_X^x)
  * ion charges default to 1 if not present in SaltPreset.
  */
-function correctedKsp(salt: SaltPreset, I: number): number {
+function correctedKsp(salt: SaltPreset, I: number, model: GammaModel = 'dh'): number {
   if (I <= 0) return Math.pow(10, -salt.pKsp);
   const zM = salt.zCation ?? 1;
   const zX = salt.zAnion ?? 1;
   const logKspApp = -salt.pKsp
-    - salt.m * logActivityCoefficient(zM, I)
-    - salt.x * logActivityCoefficient(zX, I);
+    - salt.m * logGammaOf(model, zM, I)
+    - salt.x * logGammaOf(model, zX, I);
   return Math.pow(10, logKspApp);
 }
 
@@ -37,8 +39,8 @@ export function anionFreeFraction(salt: SaltPreset, pH: number): number {
  * Ksp = [M]^m · [X_free]^x, with [M] = m·s and [X_free] = α · (x·s + cCommon).
  * Solved by bisection on log10(s).
  */
-export function solubility(salt: SaltPreset, pH: number, cCommon = 0, I = 0): number {
-  const ksp = correctedKsp(salt, I);
+export function solubility(salt: SaltPreset, pH: number, cCommon = 0, I = 0, model: GammaModel = 'dh'): number {
+  const ksp = correctedKsp(salt, I, model);
   const alpha = anionFreeFraction(salt, pH);
 
   const f = (logS: number): number => {
@@ -76,8 +78,9 @@ export function solubilityVsPX(
   pX: number,
   cCommon = 0,
   I = 0,
+  model: GammaModel = 'dh',
 ): number {
-  const ksp = correctedKsp(salt, I);
+  const ksp = correctedKsp(salt, I, model);
   const alphaAnion = anionFreeFraction(salt, pH);
   const cX = Math.pow(10, -pX);
   const alphaM = alphaL(logBetasM, cX);
@@ -135,13 +138,14 @@ export function solubilityPXCurve(
   points = 300,
   cCommon = 0,
   I = 0,
+  model: GammaModel = 'dh',
 ): { pXs: number[]; logS: number[] } {
   const pXs: number[] = [];
   const logS: number[] = [];
   for (let i = 0; i <= points; i++) {
     const pX = pXMin + ((pXMax - pXMin) * i) / points;
     pXs.push(pX);
-    logS.push(Math.log10(solubilityVsPX(salt, pH, logBetasM, pX, cCommon, I)));
+    logS.push(Math.log10(solubilityVsPX(salt, pH, logBetasM, pX, cCommon, I, model)));
   }
   return { pXs, logS };
 }

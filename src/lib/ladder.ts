@@ -5,7 +5,9 @@
 // equilibrium types — that uniformity is what makes the app intuitive.
 
 import { SPECIES_COLORS } from './database';
-import { logActivityCoefficient } from './activity';
+import { logGammaOf, type GammaModel } from './activity';
+
+export type { GammaModel };
 
 /**
  * α fractions for a one-particle-per-step ladder.
@@ -22,12 +24,12 @@ import { logActivityCoefficient } from './activity';
  * Debye–Hückel shift for acid-base boundary i (pKa_i,app − pKa_i).
  * boundary i: species (z0−i) ⇌ H⁺ + species (z0−i−1)
  */
-function pKaShift(z0: number, i: number, I: number): number {
+function pKaShift(z0: number, i: number, I: number, model: GammaModel): number {
   const zDonor    = z0 - i;
   const zAcceptor = z0 - i - 1;
-  return logActivityCoefficient(Math.abs(zDonor), I)
-    - logActivityCoefficient(Math.abs(zAcceptor), I)
-    - logActivityCoefficient(1, I);
+  return logGammaOf(model, Math.abs(zDonor), I)
+    - logGammaOf(model, Math.abs(zAcceptor), I)
+    - logGammaOf(model, 1, I);
 }
 
 /**
@@ -36,12 +38,12 @@ function pKaShift(z0: number, i: number, I: number): number {
  * I: ionic strength for Debye–Hückel correction (0 = ideal, ascending only).
  */
 export function ladderFractions(
-  p: number, boundaries: number[], ascending: boolean, z0 = 0, I = 0,
+  p: number, boundaries: number[], ascending: boolean, z0 = 0, I = 0, model: GammaModel = 'dh',
 ): number[] {
   const logTerms: number[] = [0];
   let acc = 0;
   for (let i = 0; i < boundaries.length; i++) {
-    const b = (ascending && I > 0) ? boundaries[i] + pKaShift(z0, i, I) : boundaries[i];
+    const b = (ascending && I > 0) ? boundaries[i] + pKaShift(z0, i, I, model) : boundaries[i];
     acc += ascending ? p - b : b - p;
     logTerms.push(acc);
   }
@@ -54,8 +56,9 @@ export function ladderFractions(
 /** log concentration of each species: log[Sᵢ] = log αᵢ + log C_total. */
 export function ladderLogC(
   p: number, boundaries: number[], ascending: boolean, logCtotal: number, z0 = 0, I = 0,
+  model: GammaModel = 'dh',
 ): number[] {
-  return ladderFractions(p, boundaries, ascending, z0, I).map(
+  return ladderFractions(p, boundaries, ascending, z0, I, model).map(
     (a) => Math.log10(Math.max(a, 1e-30)) + logCtotal,
   );
 }
@@ -72,11 +75,11 @@ export interface Zone {
 /** Refines the boundary between two dominant species by bisection (exact p-value). */
 function refineBoundary(
   lo: number, hi: number, a: number, b: number,
-  boundaries: number[], ascending: boolean, z0: number, I: number,
+  boundaries: number[], ascending: boolean, z0: number, I: number, model: GammaModel,
 ): number {
   for (let i = 0; i < 40; i++) {
     const mid = (lo + hi) / 2;
-    const fr = ladderFractions(mid, boundaries, ascending, z0, I);
+    const fr = ladderFractions(mid, boundaries, ascending, z0, I, model);
     if (fr[b] - fr[a] < 0) lo = mid;
     else hi = mid;
   }
@@ -91,7 +94,7 @@ function refineBoundary(
  */
 export function predominanceZones(
   boundaries: number[], labels: string[], pMin: number, pMax: number, ascending: boolean,
-  z0 = 0, I = 0,
+  z0 = 0, I = 0, model: GammaModel = 'dh',
 ): Zone[] {
   const N = 2000;
   const zones: Zone[] = [];
@@ -113,11 +116,11 @@ export function predominanceZones(
 
   for (let i = 0; i <= N; i++) {
     const p = pMin + ((pMax - pMin) * i) / N;
-    const a = ladderFractions(p, boundaries, ascending, z0, I);
+    const a = ladderFractions(p, boundaries, ascending, z0, I, model);
     const dom = a.indexOf(Math.max(...a));
     if (dom !== curIdx) {
       const edge = curIdx >= 0
-        ? refineBoundary(prevP, p, curIdx, dom, boundaries, ascending, z0, I)
+        ? refineBoundary(prevP, p, curIdx, dom, boundaries, ascending, z0, I, model)
         : pMin;
       pushZone(edge);
       curIdx = dom;
