@@ -62,12 +62,14 @@ export default function PrecipitacionCompetitiva() {
   useShareEffect('solcomp', { cation, label1, pKsp1, cX1, label2, pKsp2, cX2, cM }, (s) => {
     if (s.cation) setCation(s.cation);
     if (s.label1) setLabel1(s.label1);
-    if (s.pKsp1 !== undefined) setPKsp1(s.pKsp1);
-    if (s.cX1 !== undefined) setCX1(s.cX1);
+    // Positivity/finite guards mirror ConcSlider's own commit validation — a
+    // crafted URL with cX = 0 would otherwise produce log10(0) axis ranges.
+    if (typeof s.pKsp1 === 'number' && Number.isFinite(s.pKsp1)) setPKsp1(s.pKsp1);
+    if (typeof s.cX1 === 'number' && s.cX1 > 0) setCX1(s.cX1);
     if (s.label2) setLabel2(s.label2);
-    if (s.pKsp2 !== undefined) setPKsp2(s.pKsp2);
-    if (s.cX2 !== undefined) setCX2(s.cX2);
-    if (s.cM !== undefined) setCM(s.cM);
+    if (typeof s.pKsp2 === 'number' && Number.isFinite(s.pKsp2)) setPKsp2(s.pKsp2);
+    if (typeof s.cX2 === 'number' && s.cX2 > 0) setCX2(s.cX2);
+    if (typeof s.cM === 'number' && s.cM > 0) setCM(s.cM);
   });
 
   function loadPreset(id: string) {
@@ -167,7 +169,7 @@ export default function PrecipitacionCompetitiva() {
       node: (
         <Chart
           data={pctTraces}
-          xTitle={`p${cation} (−log[${cation}]) — añadir ${cation} mueve el sistema hacia la izquierda`}
+          xTitle={`p${cation} (−log[${cation}]) — añadir ${cation} avanza hacia la derecha`}
           yTitle="% precipitado"
           xRange={[pMax, pMin]}
           yRange={[0, 102]}
@@ -256,7 +258,7 @@ export default function PrecipitacionCompetitiva() {
         <InfoBox title="Cómo leer este módulo">
           <p>
             <strong>Precipitación fraccionada</strong>: al añadir {cation}, p{cation} baja
-            (izquierda) y precipita primero la sal que necesita menos catión
+            (el eje avanza hacia la derecha) y precipita primero la sal que necesita menos catión
             (p{cation} de inicio = pKsp + log cX).
           </p>
           <p>
