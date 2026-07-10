@@ -116,21 +116,25 @@ npm test
 
 ---
 
-## Planned Spana benchmark suite (Phase 1)
+## Spana benchmark suite
 
-Regression suite to implement by reading cases from
-`~/Documents/Eq-Diagr/Examples/` (or copies in `docs/benchmarks/spana/`):
+Regression tests cross-checked against Spana's bundled example systems —
+see [`docs/benchmarks/spana/README.md`](benchmarks/spana/README.md) for the
+full case table, provenance, and licensing note (no eq-diagr/GPL-3.0 files
+are copied into this repo; only published constants are cited, same as
+citing Harris/Skoog). Tests live in `src/lib/__tests__/spana-benchmark.test.ts`.
 
-| Spana file | Equilibria Lab module | Quantity to compare |
-|------------|----------------------|---------------------|
-| `02-Fraction diagram.plt` | Acid-base | α vs pH |
-| `04-Log conc diagr.plt` | Acid-base | log C vs pH |
-| `09-Predom Cd-NTA.plt` | Complexation | DUZP zones |
-| `10-Poubaix diag Cu.plt` | Pourbaix | E–pH slopes |
-| `13-Titration acetic acid.plt` | Titration | pH vs V curve |
-| `01-Make your 1st diagram.plt` | Solubility + Fe | log C (constant conversion from .dat) |
+**Implemented (Phase 1a):** acetic acid pH and full titration curve
+(`solvePH`/`titrationCurve`), cross-checked against the `13-Titration acetic
+acid.dat` system's converted pKa.
 
-Requirement: Java + `EC.jar` or Spana-exported outputs as golden CSV files.
+**Deferred, with documented reasons** (not silently dropped): Fe³⁺/OH⁻/Cl⁻
+fraction diagram and Ca/Ce/CO₃ log-C diagram (polynuclear species, multiple
+solid phases, gas-fixed pressure — no clean single-engine match); Cd-NTA
+predominance (needs 2D predominance diagrams, a separate larger roadmap
+item); Cu Pourbaix (the app's built-in Cu preset needs a data-provenance
+cross-check against this file's constants before comparing — a discrete
+follow-up).
 
 ---
 
