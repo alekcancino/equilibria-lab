@@ -25,7 +25,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 - Competitive precipitation: two salts sharing a common cation — fractional-precipitation curves, HALTAFALL-style solid-phase selection (combination testing), separation window and residual-fraction analysis
 - Conditional potential: *E*°′ = *f*(pH), disproportionation (Latimer), *E*°′ = *f*(pX)
 - Liquid–liquid extraction: partition, chelates, successive extractions, preconcentration
-- Ion exchange: batch equilibrium, isotherm, Craig *N*-plate multi-zone column model, breakthrough and elution curves
+- Ion exchange: batch equilibrium with general zA:zB charge stoichiometry (concentration-valency effect), isotherm, Craig *N*-plate multi-zone column model, breakthrough and elution curves
 - Solubility vs pH: conditional solubility of salts, side-by-side system comparison, editable cation charge
 
 ### Titrations (unified module)
