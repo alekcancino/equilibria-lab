@@ -289,25 +289,25 @@ export default function ConstantesCondicionales() {
       multiCurves.curves.forEach((c, i) => {
         traces.push({
           x: multiCurves.pHs, y: c.logKs, type: 'scatter', mode: 'lines',
-          name: `log K'(${c.label})`,
+          name: `log K′(${c.label})`,
           line: { width: i === 0 ? 3 : 2, color: i === 0 ? C_PRIMARY : C_MASK, dash: i === 0 ? undefined : 'dot' },
-          hovertemplate: `log K' = %{y:.2f}<extra>${c.label}</extra>`,
+          hovertemplate: `log K′ = %{y:.2f}<extra>${c.label}</extra>`,
         });
       });
     } else {
       traces.push({
         x: curve1.pHs, y: curve1.logKs, type: 'scatter', mode: 'lines',
-        name: `log K'(${s.metalLabel}–EDTA)`,
+        name: `log K′(${s.metalLabel}–EDTA)`,
         line: { width: 3, color: C_PRIMARY },
-        hovertemplate: `log K' = %{y:.2f}<extra>${s.metalLabel}</extra>`,
+        hovertemplate: `log K′ = %{y:.2f}<extra>${s.metalLabel}</extra>`,
       });
     }
     if (curve2) {
       traces.push({
         x: curve2.pHs, y: curve2.logKs, type: 'scatter', mode: 'lines',
-        name: `log K'(${s.metal2Label}–EDTA)`,
+        name: `log K′(${s.metal2Label}–EDTA)`,
         line: { width: 2.5, color: C_MASK, dash: 'dot' },
-        hovertemplate: `log K' = %{y:.2f}<extra>${s.metal2Label}</extra>`,
+        hovertemplate: `log K′ = %{y:.2f}<extra>${s.metal2Label}</extra>`,
       });
     }
     return traces;
@@ -373,7 +373,7 @@ export default function ConstantesCondicionales() {
   const diagrams = [
     {
       id: 'logk',
-      label: "log K' = f(pH)",
+      label: "log K′ = f(pH)",
       node: (
         <Chart
           data={logKTraces}
@@ -406,11 +406,11 @@ export default function ConstantesCondicionales() {
   return (
     <div className="module">
       <PanelShell title="Constantes condicionales" onReset={reset} moduleId="condicionalesedta">
-        <PanelSection title="Metal y ligante" icon="⚛">
+        <PanelSection title="Metal y ligando" icon="⚛">
         <ModelBadge
           model="equilibrio principal M–Y"
           additions={[
-            s.side.ligandPKas.length > 0 && 'protonación del ligante',
+            s.side.ligandPKas.length > 0 && 'protonación del ligando',
             s.side.showOH && 'hidrólisis del metal',
             s.side.showAux && 'ligando auxiliar',
             s.side.showComplex && 'protonación del complejo',
@@ -502,7 +502,7 @@ export default function ConstantesCondicionales() {
           max={0}
         />
         <p className="hint">
-          % formado a Co: fracción del metal complejada con el ligante en exceso;
+          % formado a Co: fracción del metal complejada con el ligando en exceso;
           pH 10/50/90 % marcan la ventana de la reacción.
         </p>
         <Slider
@@ -524,7 +524,7 @@ export default function ConstantesCondicionales() {
           </button>
         </div>
         <p className="hint">
-          ¿A qué pH el metal queda {s.targetPct.toFixed(2)} % formado con el ligante en exceso?
+          ¿A qué pH el metal queda {s.targetPct.toFixed(2)} % formado con el ligando en exceso?
           — pregunta estándar de enmascaramiento selectivo.
         </p>
         </PanelSection>
@@ -631,7 +631,7 @@ export default function ConstantesCondicionales() {
 
         <InfoBox title="Constante condicional de Ringbom">
           <p>
-            Las <strong>reacciones parásitas</strong> (secundarias) consumen metal o ligante,
+            Las <strong>reacciones parásitas</strong> (secundarias) consumen metal o ligando,
             reduciendo la constante efectiva: <code>log K' = log K − log α_M − log α_Y</code>.
           </p>
           <p>

@@ -47,7 +47,7 @@ export const METAL_INDICATORS: MetalIndicator[] = [
       { metalId: 'cu',   logKMIn: 15.5 },
       { metalId: 'fe3',  logKMIn: 14.3 },
     ],
-    notes: 'Clásico para Mg y Ca a pH 10 (tampón NH₃/NH₄⁺). El Cu, Ni y Fe³⁺ bloquean el indicador (logK muy alto). Añadir enmascarante (KCN) si hay interferentes.',
+    notes: 'Clásico para Mg y Ca a pH 10 (buffer NH₃/NH₄⁺). El Cu, Ni y Fe³⁺ bloquean el indicador (logK muy alto). Añadir enmascarante (KCN) si hay interferentes.',
   },
   {
     id: 'calmagite',

@@ -102,7 +102,7 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
     id: 'ni-edta-ix',
     name: 'Ni²⁺ – EDTA (intercambio iónico)',
     group: 'Complejometría EDTA',
-    detail: 'Recuperación de Ni²⁺ con EDTA, 0,1 mM, pH 6',
+    detail: 'Recuperación de Ni²⁺ con EDTA, 0.1 mM, pH 6',
     reference: 'Harris, QCA',
     metalLabel: 'Ni²⁺',
     metalId: 'ni',

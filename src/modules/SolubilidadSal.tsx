@@ -133,7 +133,7 @@ function SalEditor({ sal, onChange }: {
 
       <LabelField label="Nombre del sólido" value={sal.name} onChange={(name) => onChange({ name })} />
       <LabelField label="Nombre del anión" value={sal.anionName} onChange={(anionName) => onChange({ anionName })} />
-      <Slider label="pKsp" helpId="pKsp" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
+      <Slider label="pKps" helpId="pKsp" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
 
       <NumberSegmented label="Estequiometría p (catión)" value={sal.p} options={[1, 2, 3]} onChange={(p) => onChange({ p })} />
       <NumberSegmented label="Estequiometría q (anión)" value={sal.q} options={[1, 2, 3]} onChange={(q) => onChange({ q })} />

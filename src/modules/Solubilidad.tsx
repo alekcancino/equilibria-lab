@@ -106,7 +106,7 @@ export default function Solubilidad() {
 
   const exportMetadata = useMemo((): Record<string, string> => (
     mode === 'ionic'
-      ? { Módulo: 'Solubilidad', Sal: salt.label, pKsp: salt.pKsp.toFixed(2), 'I / M': ionicStrength.toFixed(3) }
+      ? { Módulo: 'Solubilidad', Sal: salt.label, pKps: salt.pKsp.toFixed(2), 'I / M': ionicStrength.toFixed(3) }
       : {
           Módulo: 'Solubilidad', Sólido: molecular.name, 'S₀ / M': molecular.S0.toExponential(3),
           pKa: molecular.pKa.toFixed(2), Tipo: molecular.kind === 'acid' ? 'ácido' : 'base',
@@ -188,7 +188,7 @@ export default function Solubilidad() {
                 additions={[useCommon && 'ion común']}
               />
               <LabelField label="Sal (nombre libre)" value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
-              <Slider label="pKsp" helpId="pKsp" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
+              <Slider label="pKps" helpId="pKsp" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
               <NumberSegmented label="Estequiometría MmXx — coef. catión m" value={salt.m} options={[1, 2, 3, 4]} onChange={(m) => edited({ m })} />
               <NumberSegmented label="Estequiometría MmXx — coef. anión x" value={salt.x} options={[1, 2, 3, 4]} onChange={(x) => edited({ x })} />
               <p className="hint">M{salt.m > 1 ? toSub(salt.m) : ''}X{salt.x > 1 ? toSub(salt.x) : ''} — ej. AgCl (1:1), CaF₂ (1:2), Fe(OH)₃ (1:3), Ag₂CrO₄ (2:1).</p>
@@ -222,7 +222,7 @@ export default function Solubilidad() {
                 items={SALTS.map((s) => ({
                   id: s.id,
                   label: s.formula,
-                  detail: `${s.name} · pKsp ${s.pKsp}`,
+                  detail: `${s.name} · pKps ${s.pKsp}`,
                 }))}
                 onSelect={(id) => setSalt(saltFromPreset(SALTS.find((s) => s.id === id)!))}
               />
@@ -283,7 +283,7 @@ export default function Solubilidad() {
           <details className="section-collapse">
             <summary>Corrección por actividad (Debye–Hückel)</summary>
             <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
-            <p className="hint">I = 0 → γ = 1 (resultado termodinámico). A I &gt; 0 el pKsp aparente disminuye y la sal se vuelve más soluble.</p>
+            <p className="hint">I = 0 → γ = 1 (resultado termodinámico). A I &gt; 0 el pKps aparente disminuye y la sal se vuelve más soluble.</p>
           </details>
           )}
         </PanelSection>
@@ -291,7 +291,7 @@ export default function Solubilidad() {
           <ResultCard items={mode === 'ionic' ? [
             {
               label: `Solubilidad a pH ${pHPoint.toFixed(1)}`,
-              value: sInvalid ? 'Sin raíz en Ksp (revisar parámetros)' : formatMolar(sAtPoint),
+              value: sInvalid ? 'Sin raíz en Kps (revisar parámetros)' : formatMolar(sAtPoint),
             },
             { label: 'Equilibrio', value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
           ] : [
@@ -335,7 +335,7 @@ export default function Solubilidad() {
             value: sInvalid ? '—' : formatMolar(sAtPoint),
             accent: true,
           },
-          { label: 'pKsp', value: salt.pKsp.toFixed(2) },
+          { label: 'pKps', value: salt.pKsp.toFixed(2) },
           { label: 'Equilibrio', value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
         ] : [
           {

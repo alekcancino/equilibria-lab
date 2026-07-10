@@ -682,7 +682,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
           <RefBadge reference={presetIsUnedited ? 'Harris, QCA, tabla 12-1; Ringbom.' : undefined} />
         </PanelSection>
         <PanelSection title="Condiciones" icon="⚗">
-          <Slider label="pH del tampón" value={pH} min={1} max={13} step={0.1} onChange={setPH} decimals={1} />
+          <Slider label="pH del buffer" value={pH} min={1} max={13} step={0.1} onChange={setPH} decimals={1} />
           <ConcSlider label={`Concentración en el matraz (${flaskName})`} value={cFlask} onChange={setCFlask} min={-4} max={-1} />
           <Slider label="Volumen del matraz" value={vFlask} min={5} max={100} step={1} onChange={setVFlask} unit="mL" decimals={0} />
           <ConcSlider label={`Concentración del titulante (${buretName})`} value={cBuret} onChange={setCBuret} min={-4} max={-1} />
@@ -736,7 +736,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
 
         <InfoBox title="Método de cálculo">
           <p>
-            K′f = Kf / (αM(OH) · αY(H)) al pH del tampón. Balance de masas cuadrático exacto en
+            K′f = Kf / (αM(OH) · αY(H)) al pH del buffer. Balance de masas cuadrático exacto en
             cada punto. Retro: EDTA en exceso en el matraz, se titula con el metal.
             La pestaña <em>Indicadores</em> muestra el criterio ΔlogK ≥ 5 (Harris).
           </p>
@@ -1069,7 +1069,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           <LabelField label="Fórmula del precipitado" value={saltFormula} onChange={setSaltFormula} />
           <NumberSegmented label="Estequiometría MmXx — coef. catión m" value={m} options={[1, 2, 3, 4]} onChange={setM} />
           <NumberSegmented label="Estequiometría MmXx — coef. anión x" value={x} options={[1, 2, 3, 4]} onChange={setX} />
-          <Slider label="pKsp del precipitado" helpId="pKsp" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
+          <Slider label="pKps del precipitado" helpId="pKsp" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
           <RefBadge reference={presetIsUnedited ? 'Harris, QCA, cap. 16; Skoog, Fundamentos de Química Analítica.' : undefined} />
         </PanelSection>
 
@@ -1090,7 +1090,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
         <PanelSection title="Resultado" icon="∑">
           <ResultCard items={[
             { label: 'Volumen de equivalencia', value: `${curve.vEq.toFixed(2)} mL` },
-            { label: m === 1 && x === 1 ? 'p en equivalencia (½ pKsp)' : 'p en equivalencia', value: curve.pAgEq.toFixed(2) },
+            { label: m === 1 && x === 1 ? 'p en equivalencia (½ pKps)' : 'p en equivalencia', value: curve.pAgEq.toFixed(2) },
             ...(isAgSystem && showPCation ? [{
               label: 'Indicador Mohr',
               value: `pAg = ${mohrPAg.toFixed(2)} (Δ = ${(mohrPAg - curve.pAgEq).toFixed(2)})`,
@@ -1098,8 +1098,8 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           ]} />
           <p className={sharpness ? 'badge ok' : 'badge warn'}>
             {sharpness
-              ? `✓ Salto nítido esperado (pKsp = ${pKsp.toFixed(2)} ≥ 6)`
-              : `⚠ pKsp < 6: el salto puede ser difuso`}
+              ? `✓ Salto nítido esperado (pKps = ${pKsp.toFixed(2)} ≥ 6)`
+              : `⚠ pKps < 6: el salto puede ser difuso`}
           </p>
         </PanelSection>
 
@@ -1151,7 +1151,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           { label: 'p en equivalencia', value: curve.pAgEq.toFixed(2) },
           ...(isAgSystem && showPCation
             ? [{ label: 'Indicador Mohr (pAg)', value: mohrPAg.toFixed(2) }]
-            : [{ label: 'pKsp', value: pKsp.toFixed(2) }]),
+            : [{ label: 'pKps', value: pKsp.toFixed(2) }]),
         ]} />
       </section>
     </>

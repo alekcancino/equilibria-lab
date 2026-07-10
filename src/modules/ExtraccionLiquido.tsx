@@ -134,7 +134,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
               className={a.type === t ? 'seg-btn active' : 'seg-btn'}
               onClick={() => onChange({ type: t })}
             >
-              {t === 'acid' ? 'Ácido / neutral' : 'Quelato metálico'}
+              {t === 'acid' ? 'Ácido / neutro' : 'Quelato metálico'}
             </button>
           ))}
         </div>
@@ -492,8 +492,8 @@ export default function ExtraccionLiquido() {
             <code> log D</code> cae con pendiente −1 por encima del pKa.
           </p>
           <p>
-            Los <strong>anfotéricos</strong> (8-HQ) tienen una curva en campana: solo la forma
-            neutral HQ extrae, y esta domina en una ventana de pH intermedia.
+            Los <strong>anfóteros</strong> (8-HQ) tienen una curva en campana: solo la forma
+            neutra HQ extrae, y esta domina en una ventana de pH intermedia.
           </p>
           <p>
             <strong>Polimerización</strong>: cuando el analito forma dímero en la fase orgánica,
@@ -506,7 +506,7 @@ export default function ExtraccionLiquido() {
           <p>
             <strong>Extracciones múltiples</strong>: con el mismo volumen total de disolvente
             orgánico es más eficiente hacer varias extracciones pequeñas que una sola grande
-            (teorema de Craig).
+            (principio de las extracciones sucesivas).
           </p>
         </InfoBox>
       </PanelShell>

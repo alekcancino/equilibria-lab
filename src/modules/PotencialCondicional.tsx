@@ -277,23 +277,23 @@ export default function PotencialCondicional() {
     const t: Data[] = [
       {
         x: pHs, y: E1s, type: 'scatter', mode: 'lines',
-        name: `E°' ${st.couple1.ox}/${st.couple1.red}`,
+        name: `E°′ ${st.couple1.ox}/${st.couple1.red}`,
         line: { width: 3, color: C1 },
-        hovertemplate: `E°' = %{y:.3f} V<extra>${st.couple1.ox}/${st.couple1.red}</extra>`,
+        hovertemplate: `E°′ = %{y:.3f} V<extra>${st.couple1.ox}/${st.couple1.red}</extra>`,
       },
       {
         x: pHs, y: E2s, type: 'scatter', mode: 'lines',
-        name: `E°' ${st.couple2.ox}/${st.couple2.red}`,
+        name: `E°′ ${st.couple2.ox}/${st.couple2.red}`,
         line: { width: 3, color: C2 },
-        hovertemplate: `E°' = %{y:.3f} V<extra>${st.couple2.ox}/${st.couple2.red}</extra>`,
+        hovertemplate: `E°′ = %{y:.3f} V<extra>${st.couple2.ox}/${st.couple2.red}</extra>`,
       },
     ];
     if (E3s) {
       t.push({
         x: pHs, y: E3s, type: 'scatter', mode: 'lines',
-        name: `E°' ${st.couple3.ox}/${st.couple3.red}`,
+        name: `E°′ ${st.couple3.ox}/${st.couple3.red}`,
         line: { width: 2.5, color: C3, dash: 'dot' },
-        hovertemplate: `E°' = %{y:.3f} V<extra>${st.couple3.ox}/${st.couple3.red}</extra>`,
+        hovertemplate: `E°′ = %{y:.3f} V<extra>${st.couple3.ox}/${st.couple3.red}</extra>`,
       });
     }
     return t;
@@ -402,7 +402,7 @@ export default function PotencialCondicional() {
             x: pXs.map(scalePX), y: EpxCurve, type: 'scatter', mode: 'lines',
             name: `E°'(${st.pxOxLabel}/${st.pxRedLabel})`,
             line: { width: 3, color: C3 },
-            hovertemplate: `E°' = %{y:.3f} V<extra>pX=%{x:.1f}</extra>`,
+            hovertemplate: `E°′ = %{y:.3f} V<extra>pX=%{x:.1f}</extra>`,
           }]}
           xTitle={pxAxisLabel}
           yTitle="E°' (V vs ENH)"
@@ -544,7 +544,7 @@ export default function PotencialCondicional() {
             },
             {
               label: 'Reacción espontánea',
-              value: `${strongest.c.ox} + ${weakest.c.red} · log K' = ${logKcur.toFixed(1)}`,
+              value: `${strongest.c.ox} + ${weakest.c.red} · log K′ = ${logKcur.toFixed(1)}`,
             },
           ]} />
         </PanelSection>

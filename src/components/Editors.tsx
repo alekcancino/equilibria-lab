@@ -157,7 +157,7 @@ export function SideReactionEditor({
   state,
   onChange,
   showLigandPKas = true,
-  ligandTitle = 'pKas del ligante Y (EDTA por defecto)',
+  ligandTitle = 'pKas del ligando Y (EDTA por defecto)',
   auxLigandTitle = 'Ligando auxiliar α_M(L)',
   showComplexSection = true,
   showHydrolysisSection = true,
@@ -344,7 +344,7 @@ export function SideReactionEditor({
             }}
             decimals={2}
           />
-          <p className="hint">Ej. ZnHY (log β = 19,44) para protonación del complejo, ZnOHY (4,54) para complejo hidroxo.</p>
+          <p className="hint">Ej. ZnHY (log β = 19.44) para protonación del complejo, ZnOHY (4.54) para complejo hidroxo.</p>
         </details>
       )}
     </>
