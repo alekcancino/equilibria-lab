@@ -930,9 +930,10 @@ function PrecipTitration({ mode }: { mode: Mode }) {
   const [x, setX] = useState(1);
   const [showPCation, setShowPCation] = useState(false);
   const [showMohr, setShowMohr] = useState(false);
+  const [cChromate, setCChromate] = useState(0.005);
   const [showDerivative, setShowDerivative] = useState(false);
 
-  useShareEffect('titulacion', { mode, presetId, pKsp, cationName, anionName, saltFormula, isAgSystem, cAnalyte, vAnalyte, cTitrant, m, x, showPCation, showMohr, showDerivative }, (s) => {
+  useShareEffect('titulacion', { mode, presetId, pKsp, cationName, anionName, saltFormula, isAgSystem, cAnalyte, vAnalyte, cTitrant, m, x, showPCation, showMohr, cChromate, showDerivative }, (s) => {
     if (s.presetId) setPresetId(s.presetId);
     if (s.pKsp !== undefined) setPKsp(s.pKsp);
     if (s.cationName) setCationName(s.cationName);
@@ -949,6 +950,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
     if (typeof s.x === 'number' && Number.isInteger(s.x) && s.x >= 1 && s.x <= 4) setX(s.x);
     if (s.showPCation !== undefined) setShowPCation(s.showPCation);
     if (s.showMohr !== undefined) setShowMohr(s.showMohr);
+    if (typeof s.cChromate === 'number' && s.cChromate > 0) setCChromate(s.cChromate);
     if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
   });
 
@@ -963,7 +965,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
 
   function reset() {
     loadPreset('cl'); setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
-    setShowMohr(false); setShowPCation(false); setShowDerivative(false);
+    setShowMohr(false); setShowPCation(false); setCChromate(0.005); setShowDerivative(false);
   }
 
   const vEq0 = (m / x) * ((cAnalyte * vAnalyte) / cTitrant);
@@ -974,7 +976,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
     [pKsp, cAnalyte, vAnalyte, cTitrant, vMax, m, x],
   );
 
-  const mohrPAg = mohrEndpointPAg(0.005);
+  const mohrPAg = mohrEndpointPAg(cChromate);
 
   // showPCation: true → y-axis is p(cation)=pAg, false → p(anion)=pX
   const yVals = showPCation ? curve.pAgs : curve.pXs;
@@ -1082,7 +1084,22 @@ function PrecipTitration({ mode }: { mode: Mode }) {
         <PanelSection title="Visualización" icon="✦">
           <Toggle label={`Eje en p(${cationName}) en lugar de p(${anionName})`} checked={showPCation} onChange={setShowPCation} />
           {isAgSystem && showPCation && (
-            <Toggle label="Marcador indicador Mohr ([CrO₄²⁻] = 5 mM)" checked={showMohr} onChange={setShowMohr} />
+            <Toggle label="Marcador indicador Mohr" checked={showMohr} onChange={setShowMohr} />
+          )}
+          {isAgSystem && showPCation && showMohr && (
+            <>
+              <ConcSlider
+                label="Concentración de CrO₄²⁻ (indicador)"
+                value={cChromate}
+                onChange={setCChromate}
+                min={-4}
+                max={-1}
+              />
+              <p className="hint">
+                Mohr clásico: 5×10⁻³ M. Demasiado cromato colorea la disolución y
+                adelanta el punto final; demasiado poco lo retrasa (Fajans/Volhard lo evitan).
+              </p>
+            </>
           )}
           <Toggle label="Mostrar derivada dp/dV" checked={showDerivative} onChange={setShowDerivative} />
         </PanelSection>
@@ -1144,6 +1161,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
             pKsp: pKsp.toFixed(2),
             'CA / M': cAnalyte.toFixed(4),
             'CT / M': cTitrant.toFixed(4),
+            ...(isAgSystem && showPCation && showMohr ? { '[CrO₄²⁻] indicador / M': cChromate.toFixed(4) } : {}),
           }}
         />
         <ResultCardRow items={[
