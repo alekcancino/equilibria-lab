@@ -114,7 +114,7 @@ export function twoLigandFractions(
 }
 
 /** Mean bound ligands per M, split by branch: n̄_L = Σi·α_MLᵢ, n̄_X = Σk·α_MXₖ. */
-export function twoLigandNBars(
+function twoLigandNBars(
   pL: number,
   pX: number,
   logBetasL: number[],
@@ -169,11 +169,12 @@ export function solvePXAtPL(
  *   cX = [X]·α_X(H) + cM·n̄_X(pL, pX)   (only binding when spec is 'total')
  * When [X] is fixed ('free'/'fixedPX') this is 1D bisection in pL. When both
  * are analytical totals it is nested bisection with pX as the outer variable:
- * the outer deficit G(pX) stays monotone even though the inner pL* re-adjusts,
- * because in a competitive-binding system the cross effect (M released from X
- * re-binding L) is always weaker than the direct effect — gross-substitutes
- * property; provable via Var(i)·Var(k) ≥ (n̄_L·n̄_X)² over the branch
- * distributions, which holds whenever free M is nonzero.
+ * G(pX) stays strictly monotone even though the inner pL* re-adjusts, because
+ * the indirect effect (raising pX frees M, which binds more L, lowering [L]
+ * and partially restoring n̄_X) is strictly weaker than the direct loss of X
+ * complexes whenever free M is nonzero — the gross-substitutes property of
+ * ligands competing for one metal pool. Cross-checked numerically by the
+ * symmetry and Ringbom-limit golden tests.
  */
 export function solveTwoLigandEquilibrium(
   cM: number,
@@ -221,7 +222,8 @@ export function solveTwoLigandEquilibrium(
     else lo = mid;
   }
   const pX = (lo + hi) / 2;
-  if (Math.abs(G(pX)) > 1e-6 * (cX + 1e-15)) return { pL: NaN, pX: NaN };
+  // Inverted comparison so a NaN residual (poisoned inner solve) also bails out.
+  if (!(Math.abs(G(pX)) <= 1e-6 * (cX + 1e-15))) return { pL: NaN, pX: NaN };
   return { pL: solvePLAtPX(pX), pX };
 }
 
