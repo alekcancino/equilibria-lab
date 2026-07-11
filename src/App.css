@@ -1206,6 +1206,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
    inside the card, not as an awkward void around it. */
 .diagram-tab-body > .duzp,
 .diagram-tab-body > .redox-scale,
+.diagram-tab-body > .predom2d,
 .diagram-tab-body > .chart-shell {
   flex: 1;
 }
@@ -1225,6 +1226,35 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 }
 
 .duzp svg { display: block; width: 100%; height: auto; max-height: 240px; }
+
+/* ---------- Mapa 2D de predominio (SVG + campo canvas) ---------- */
+.predom2d {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: auto;
+  background: var(--surface-grad);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-float);
+  padding: 20px 24px;
+}
+
+.predom2d svg { display: block; width: 100%; height: auto; max-height: 560px; }
+
+.map2d-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  padding: 32px 40px;
+  background: var(--surface-grad);
+  border: 1px dashed color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-card);
+}
+.map2d-empty p { max-width: 42ch; text-align: center; color: var(--text-muted); line-height: 1.5; }
 
 .redox-scale {
   display: flex;

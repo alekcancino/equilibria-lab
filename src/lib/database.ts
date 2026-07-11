@@ -148,11 +148,15 @@ export const MARKER_COLOR = '#CC79A7';
 
 /**
  * Species series palette: six core Okabe-Ito hues (colorblind-safe) plus
- * violet/olive extras — the old slate/gray slots 7-8 failed the palette
- * lightness/chroma validation in both themes. Dark-mode equivalents are
- * remapped centrally in lib/plotTheme.ts.
+ * violet/olive extras, then four Paul-Tol muted hues (slots 9-12). The extra
+ * four keep systems with many species — e.g. a metal with 4 hydroxo + 4 amino
+ * complexes (9 species) — from cycling back to the slot-0 blue in charts and in
+ * the 2D predominance map. Appending only: slots 0-7 are unchanged, so every
+ * ≤8-species chart is byte-identical. Dark-mode equivalents are remapped
+ * centrally in lib/plotTheme.ts.
  */
 export const SPECIES_COLORS = [
   '#0072B2', '#D55E00', '#009E73', '#CC79A7',
   '#E69F00', '#56B4E9', '#7B5CD6', '#9A6A00',
+  '#117733', '#882255', '#999933', '#AA4499',
 ];

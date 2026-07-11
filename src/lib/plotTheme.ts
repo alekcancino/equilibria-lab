@@ -18,6 +18,10 @@ const SERIES_DARK: Record<string, string> = {
   '#56B4E9': '#2596D6', // sky blue
   '#7B5CD6': '#8D74E8', // violet (slot 7)
   '#9A6A00': '#9A7A20', // olive (slot 8)
+  '#117733': '#3FA35C', // green (slot 9)
+  '#882255': '#C65A82', // wine (slot 10)
+  '#999933': '#C4C24A', // olive-gold (slot 11)
+  '#AA4499': '#C978BC', // magenta (slot 12)
 };
 
 /** Ink/guide colors hardcoded in modules: light hex → dark equivalent. */

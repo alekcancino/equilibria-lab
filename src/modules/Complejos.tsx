@@ -11,8 +11,10 @@ import {
   ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Segmented, Slider, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
+import Predominance2D from '../components/Predominance2D';
 import { SPECIES_COLORS } from '../lib/database';
 import { predominanceZones } from '../lib/ladder';
+import { predominanceGrid } from '../lib/predominance2D';
 import {
   complexFractions, bjerrumNumber, solvePL, logBetasToStepwise,
   solvePXAtPL, solveTwoLigandEquilibrium, twoLigandCurve,
@@ -332,6 +334,23 @@ export default function Complejos() {
   const pctDisociado = xBranch ? (1 - nBarEq) * 100 : percentDissociated(pLEqClipped, logBetasEff);
   const pL50 = pLForPercentFormed(logBetasEff, 50);
 
+  // 2D predominance map (pL–pX): the metal split between the primary ligand L
+  // and the second agent X, with both free concentrations as independent axes.
+  // Only defined in the coupled X–M–L mode (needs a real second species set).
+  const pXmax2D = useMemo(
+    () => (xBranch ? Math.max(Math.max(0, ...xBranch.logBetasX) + 4, 8) : 8),
+    [xBranch],
+  );
+  const grid2D = useMemo(
+    () => (xBranch
+      ? predominanceGrid(
+        (pL, pX) => twoLigandFractions(pL, pX, logBetasEff, xBranch.logBetasX),
+        [0, pLmax], [0, pXmax2D],
+      )
+      : null),
+    [xBranch, logBetasEff, pLmax, pXmax2D],
+  );
+
   const diagrams = [
     {
       id: 'equil',
@@ -409,6 +428,31 @@ export default function Complejos() {
           exportName="equilibria-complejos-logc"
           exportMetadata={exportMetadata}
         />
+      ),
+    },
+    {
+      id: 'map2d',
+      label: 'Mapa 2D (pL–pX)',
+      node: grid2D ? (
+        <Predominance2D
+          grid={grid2D}
+          colors={SPECIES_COLORS}
+          labels={labels}
+          xLabel={`pL (−log[${sys.ligandLabel || 'L'}])`}
+          yLabel={`pX (−log[${side.auxLabel || 'X'}])`}
+          marker={coupledEq && Number.isFinite(coupledEq.pL) && Number.isFinite(coupledEq.pX)
+            ? { x: coupledEq.pL, y: coupledEq.pX, label: 'equilibrio' }
+            : undefined}
+          caption="Zonas de predominio en 2D"
+        />
+      ) : (
+        <div className="map2d-empty">
+          <p>
+            Activa el modo <strong>X–M–L acoplado</strong> (un segundo agente complejante con
+            log β) para dibujar el mapa 2D pL–pX. Con un solo ligando la predominancia es 1D —
+            usa la pestaña <strong>Distribución α</strong> o <strong>DUZP</strong>.
+          </p>
+        </div>
       ),
     },
   ];

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 — 2026-07-10
+
+### 2D predominance maps
+
+- New diagram type extending the 1D DUZP to two chemical axes. A generic engine (`lib/predominance2D.ts`) sweeps an (x, y) grid and picks the dominant species per cell; a custom SVG renderer (`components/Predominance2D.tsx`) paints the field to an offscreen canvas embedded as a single pixelated `<image>` (no per-cell DOM, no color blending across boundaries), with SVG axes, a species legend and a read-point crosshair. No Plotly dependency (basic bundle has no heatmap/contour), zero added bundle weight.
+- **Especiación del metal**: new *Mapa 2D (pL–pH)* tab — metal / hydroxo / ligand predominance over pH × free ligand.
+- **Complejos** (coupled X–M–L mode): new *Mapa 2D (pL–pX)* tab — two competing ligands over free L × free X; empty-state when a single ligand can't define a second axis.
+- Extended the species palette from 8 to 12 colors (four Paul-Tol muted hues + dark twins) so metals with ≥9 species (e.g. 4 hydroxo + 4 amino complexes) stop cycling back to the first color. Slots 0–7 unchanged — every existing chart is identical.
+
 ## 0.4.1 — 2026-07-10
 
 ### Visual / typography / clarity pass (all modules)
