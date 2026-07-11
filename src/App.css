@@ -953,12 +953,26 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 }
 
 .db-panel summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 8px 10px;
   cursor: pointer;
   color: var(--text-muted);
   user-select: none;
   font-size: 12.5px;
+  list-style: none;
 }
+
+.db-panel summary::-webkit-details-marker { display: none; }
+.db-panel summary::after {
+  content: '▸';
+  color: var(--text-muted);
+  font-size: 11px;
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+.db-panel[open] > summary::after { transform: rotate(90deg); }
 
 .db-panel summary:hover { color: var(--accent); }
 
@@ -994,19 +1008,6 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 
 .db-item-label { font-size: 13px; font-weight: 600; color: var(--text); }
 .db-item-detail { font-size: var(--text-xs); color: var(--text-muted); line-height: 1.35; }
-
-.ref-badge {
-  margin: 8px 0 0;
-  padding: 7px 10px;
-  background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  line-height: 1.45;
-}
-
-.ref-badge strong { color: var(--text); }
 
 .system-classification {
   margin: -2px 0 8px;
@@ -1423,23 +1424,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   outline-offset: 2px;
 }
 
-/* ---------- Panel "Avanzado" ---------- */
-.adv-panel {
-  margin: 4px 0 8px;
-  font-size: 13px;
-}
-
-.adv-panel summary {
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 12.5px;
-  user-select: none;
-  padding: 4px 0;
-}
-
-.adv-panel summary:hover { color: var(--accent); }
-
-/* ---------- Constantes condicionales — elementos del panel --------- */
+/* ---------- Sub-secciones colapsables dentro de un panel --------- */
 .section-collapse {
   margin: 4px 0 8px;
   border: 1px solid var(--border);
@@ -1449,6 +1434,10 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 }
 
 .section-collapse-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 8px 10px;
   cursor: pointer;
   color: var(--text-muted);
@@ -1457,6 +1446,18 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   font-weight: 600;
   background: var(--surface-alt);
 }
+
+/* Custom caret on the right (matches Disclosure / preset-picker), replacing the
+   inconsistent native ▸ marker that sat on the left. */
+.section-collapse-title { list-style: none; }
+.section-collapse-title::-webkit-details-marker { display: none; }
+.section-collapse-title::after {
+  content: '▸';
+  color: var(--text-muted);
+  font-size: 11px;
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+.section-collapse[open] > .section-collapse-title::after { transform: rotate(90deg); }
 
 .section-collapse-title:hover { color: var(--accent); }
 

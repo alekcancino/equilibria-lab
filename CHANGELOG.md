@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.1 — 2026-07-10
+
+### Visual / typography / clarity pass (all modules)
+
+- **Source citations removed from the UI**: the per-preset "Fuente: …" badge and the assumptions-summary cross-check/data-source lines ("cotejado con …", "constantes de Harris, Skoog, Bard 1985…") no longer render. Attributions live in `docs/VALIDATION.md` only. Method/diagram/convention names (Sillén, Ringbom α, Kielland, Debye–Hückel, Davies, Güntelberg, Gran, Bjerrum) stay — they're vocabulary, not sources.
+- **Auxiliary-agent clarity**: concentration controls now name the actual agent ("[NH₃] libre", "Cuánto NH₃ hay disuelto") instead of a hardcoded "[L]". X is stated plainly as a second dissolved complexing agent (NH₃, citrate, en…) that competes with L — not the solvent (water is baked into the log β).
+- **Acid-base "Avanzado"** replaced by a labelled section "Tipo de sistema (carga inicial z₀)" with a plain-language explanation of z₀.
+- **Consistent collapsibles**: database and sub-section disclosures use one caret language (right-aligned, rotates on open) instead of mixing native ▸ markers with custom carets.
+- **Clearer labels**: "Concentración del complejante Co" → "Concentración analítica del complejante (exceso sobre el metal)"; per-component mixture concentration now names the component.
+
 ## 0.4.0 — 2026-07-01
 
 ### UX fixes and scientific improvements

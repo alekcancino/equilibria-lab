@@ -351,7 +351,7 @@ export default function PotencialCondicional() {
     return st.pxE0 + (S / st.pxN) * Math.log10(aRed / aOx);
   }), [pXs, st.pxE0, st.pxN, st.pxLogBetasOx, st.pxLogBetasRed]);
 
-  // pX′ condicional (Baeza §2.8.1): X itself protonates (e.g. NH₃/NH₄⁺), so
+  // Conditional pX′: X itself protonates (e.g. NH₃/NH₄⁺), so
   // the analytical (total) concentration needed for a given FREE [X] is
   // cX_total = [X]_free · α_X(H) ⇒ pX′ = pX_free − log(α_X(H)). The shift is
   // constant at a fixed pH (same pattern as Complejos.tsx's scaleX for pL′).
@@ -590,7 +590,7 @@ export default function PotencialCondicional() {
                 <div className="mask-section">
                   <Slider label="pH fijo" value={st.pxPHFixed} min={0} max={14} step={0.1} onChange={(v) => set('pxPHFixed', v)} decimals={1} />
                   <ConstantList prefix="pKa (ácido conjugado de X)" helpId="pKa" values={st.pxPKasX} onChange={(v) => set('pxPKasX', v)} min={0} max={14} maxItems={4} minItems={1} initialValue={9.25} />
-                  <p className="hint">pX′ = pX − log α_X(H). NH₃/NH₄⁺: pKa ≈ 9.25 (Baeza §2.8.1).</p>
+                  <p className="hint">pX′ = pX − log α_X(H). NH₃/NH₄⁺: pKa ≈ 9.25.</p>
                 </div>
               )}
             </div>

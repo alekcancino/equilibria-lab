@@ -268,8 +268,8 @@ export default function Actividad() {
             a = 3 Å genérico; válida hasta I ≈ 0.1 M.
           </p>
           <p>
-            <strong>Kielland</strong>: la misma ecuación con el tamaño a tabulado por ion
-            (Kielland 1937; Harris tabla 8-1) — ej. a = 9 Å para H⁺, 6 Å para Ca²⁺.
+            <strong>Kielland</strong>: la misma ecuación con el tamaño a tabulado por ion —
+            ej. a = 9 Å para H⁺, 6 Å para Ca²⁺.
           </p>
           <p>
             <strong>Davies</strong>: <code>log γ = −0.51 z² (√I/(1+√I) − 0.3·I)</code>; sin

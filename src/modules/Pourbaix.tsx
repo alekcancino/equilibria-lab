@@ -432,8 +432,8 @@ export default function Pourbaix() {
 
         <InfoBox title="¿Cómo se construye este diagrama?">
           <p>
-            Solo E° de los pares base y pKsp de los hidróxidos son datos de entrada
-            (Bard 1985, Stumm &amp; Morgan 1996). Todos los potenciales de frontera con
+            Solo E° de los pares base y pKsp de los hidróxidos son datos de entrada.
+            Todos los potenciales de frontera con
             sólidos se <strong>derivan por ley de Hess</strong>, así que los puntos triples
             cierran exactamente — pasa el cursor por cada línea para ver su ecuación.
           </p>
