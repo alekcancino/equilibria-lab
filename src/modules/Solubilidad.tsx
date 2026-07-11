@@ -4,7 +4,7 @@ import type { Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import {
-  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, RefBadge,
+  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection,
   ResultCard, ResultCardRow, Segmented, Slider, Toggle,
 } from '../components/Controls';
 import { SALTS, type SaltPreset } from '../lib/database';
@@ -229,7 +229,6 @@ export default function Solubilidad() {
                   Anión de ácido fuerte (quitar pKa)
                 </button>
               )}
-              <RefBadge reference={salt.reference ?? undefined} />
               <DbPanel
                 items={SALTS.map((s) => ({
                   id: s.id,
@@ -274,7 +273,6 @@ export default function Solubilidad() {
                 onChange={(pKa) => setMolecular({ ...molecular, pKa, reference: null })}
                 decimals={2}
               />
-              <RefBadge reference={molecular.reference ?? undefined} />
               <button className="add-btn" onClick={() => setMolecular(defaultMolecular())}>
                 Cargar ácido benzoico (S₀=0.0278 M, pKa=4.2)
               </button>

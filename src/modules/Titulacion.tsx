@@ -5,7 +5,7 @@ import PanelShell from '../components/PanelShell';
 import { useShareEffect } from '../hooks/useShareableState';
 import {
   ConcSlider, DbPanel, Disclosure, InfoBox, LabelField, NumberSegmented, PanelSection, ResultCard, ResultCardRow,
-  Segmented, ModelBadge, RefBadge, SelectControl, Slider, SystemPresetPicker, Toggle,
+  Segmented, ModelBadge, SelectControl, Slider, SystemPresetPicker, Toggle,
 } from '../components/Controls';
 import {
   AcidSystemEditor, CoupleEditor, SideReactionEditor,
@@ -629,7 +629,6 @@ function EdtaTitration({ mode }: { mode: Mode }) {
   const feasible = curve.logKfCond >= 8;
   const buretName = edtaInFlask ? label : 'EDTA';
   const flaskName = edtaInFlask ? 'EDTA' : label;
-  const loadedMetal = EDTA_METAL_PRESETS.find((p) => p.id === metalId);
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Titulación complejométrica (EDTA)',
@@ -639,10 +638,6 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     'C / M': cFlask.toFixed(4),
     'V / mL': vFlask.toFixed(0),
   }), [label, logKf, pH, cFlask, vFlask]);
-  const presetIsUnedited = loadedMetal !== undefined
-    && label === loadedMetal.metal
-    && logKf === loadedMetal.logKf
-    && JSON.stringify(logBetasOH) === JSON.stringify(loadedMetal.logBetasOH);
 
   const diagrams = useMemo(() => [
     {
@@ -711,7 +706,6 @@ function EdtaTitration({ mode }: { mode: Mode }) {
             }))}
             onSelect={applyPreset}
           />
-          <RefBadge reference={presetIsUnedited ? 'Harris, QCA, tabla 12-1; Ringbom.' : undefined} />
         </PanelSection>
         <PanelSection title="Condiciones" icon="⚗">
           <Slider label="pH del buffer" value={pH} min={1} max={13} step={0.1} onChange={setPH} decimals={1} />
@@ -770,7 +764,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
           <p>
             K′f = Kf / (αM(OH) · αY(H)) al pH del buffer. Balance de masas cuadrático exacto en
             cada punto. Retro: EDTA en exceso en el matraz, se titula con el metal.
-            La pestaña <em>Indicadores</em> muestra el criterio ΔlogK ≥ 5 (Harris).
+            La pestaña <em>Indicadores</em> muestra el criterio ΔlogK ≥ 5.
           </p>
         </InfoBox>
       </PanelShell>
@@ -1071,13 +1065,6 @@ function PrecipTitration({ mode }: { mode: Mode }) {
   }, [curve.vEq, showMohr, showPCation, isAgSystem, mohrPAg, vMax, yMax, pCatLabel]);
 
   const sharpness = pKsp >= 6;
-  const loadedPrecip = PRECIP_PRESETS.find((p) => p.id === presetId);
-  const presetIsUnedited = loadedPrecip !== undefined
-    && pKsp === loadedPrecip.pKsp
-    && cationName === loadedPrecip.cation
-    && anionName === loadedPrecip.anion
-    && saltFormula === loadedPrecip.formula;
-
   return (
     <>
       <PanelShell title="Titulación por precipitación" onReset={reset} moduleId="titulacion">
@@ -1104,7 +1091,6 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           <NumberSegmented label="Estequiometría MmXx — coef. catión m" value={m} options={[1, 2, 3, 4]} onChange={setM} />
           <NumberSegmented label="Estequiometría MmXx — coef. anión x" value={x} options={[1, 2, 3, 4]} onChange={setX} />
           <Slider label="pKps del precipitado" helpId="pKsp" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
-          <RefBadge reference={presetIsUnedited ? 'Harris, QCA, cap. 16; Skoog, Fundamentos de Química Analítica.' : undefined} />
         </PanelSection>
 
         <PanelSection title="Condiciones" icon="⚗">

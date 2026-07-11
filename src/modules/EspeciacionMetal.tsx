@@ -8,7 +8,7 @@ import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, Disclosure, InfoBox, LabelField, LabelList,
-  ModelBadge, PanelSection, RefBadge, ResultCard, ResultCardRow, Slider, SystemPresetPicker,
+  ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider, SystemPresetPicker,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import { SPECIES_COLORS } from '../lib/database';
@@ -320,7 +320,6 @@ export default function EspeciacionMetal() {
             initialValue={5}
             onChange={(logBetasOH) => setSys({ ...sys, logBetasOH, speciesLabels: null, reference: null })}
           />
-          <RefBadge reference={sys.reference ?? undefined} />
           <SystemPresetPicker
             title="Sistemas de ejemplo"
             items={SPECIATION_PRESETS.map((p) => ({ id: p.id, name: p.name, group: p.group, detail: p.detail }))}
@@ -360,7 +359,10 @@ export default function EspeciacionMetal() {
             initialValue={9.25}
             onChange={(pKasL) => setSys({ ...sys, pKasL })}
           />
-          <p className="hint">NH₃/NH₄⁺: pKa ≈ 9.25. Sin pKa: se asume el ligando ya libre (sin protonación).</p>
+          <p className="hint">
+            {sys.ligandLabel || 'L'} es un ligando disuelto que se une al metal (NH₃, citrato, en…).
+            NH₃/NH₄⁺: pKa ≈ 9.25. Sin pKa: se asume el ligando ya libre (sin protonación).
+          </p>
         </Disclosure>
 
         <Disclosure
@@ -385,9 +387,14 @@ export default function EspeciacionMetal() {
             auxLigandTitle={`Ligando X (${sys.side.auxLabel || 'X'}) — presets y log β`}
           />
           <p className="hint">
-            M se reparte entre OH⁻, {sys.ligandLabel || 'L'} y X resolviendo los balances de
-            masa acoplados en cada pH — sin especies mixtas (M(OH)L, MLX…). Si X se da como
-            total analítico con pKa, su protonación entra vía α_X(H) a cada pH.
+            <strong>X es un segundo agente complejante disuelto</strong> (NH₃, citrato, en…) que
+            compite con {sys.ligandLabel || 'L'} por el metal. El disolvente (agua) no es X: ya
+            está incluido en los log β.
+          </p>
+          <p className="hint">
+            M se reparte entre OH⁻, {sys.ligandLabel || 'L'} y X resolviendo los balances de masa
+            acoplados en cada pH — sin especies mixtas (M(OH)L, MLX…). Si X se da como total
+            analítico con pKa, su protonación entra vía α_X(H) a cada pH.
           </p>
         </Disclosure>
 

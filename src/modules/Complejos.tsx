@@ -8,7 +8,7 @@ import DUZP from '../components/DUZP';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, DbPanel, InfoBox, LabelField,
-  ModelBadge, NumberSegmented, PanelSection, RefBadge, ResultCard, ResultCardRow, Segmented, Slider, Toggle,
+  ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Segmented, Slider, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import { SPECIES_COLORS } from '../lib/database';
@@ -447,7 +447,6 @@ export default function Complejos() {
             maxItems={8}
             onChange={(logBetas) => setSys({ ...sys, logBetas, speciesLabels: null, reference: null })}
           />
-          <RefBadge reference={sys.reference ?? undefined} />
           <DbPanel
             title="Ejemplos de la base de datos"
             items={COMPLEX_PRESETS.map((p) => ({
@@ -526,6 +525,11 @@ export default function Complejos() {
                 </p>
               )}
               <p className="hint">
+                <strong>X es un segundo agente complejante disuelto</strong> (NH₃, citrato, en…) que
+                compite con {sys.ligandLabel || 'L'} por el metal — no el disolvente (el agua ya
+                está en los log β).
+              </p>
+              <p className="hint">
                 Equilibrio acoplado: M se reparte entre {sys.ligandLabel || 'L'} y X resolviendo
                 ambos balances de masa simultáneamente — no es el corrimiento α de Ringbom.
                 El pH solo interviene cuando X se da como total analítico con pKa.
@@ -571,8 +575,7 @@ export default function Complejos() {
             <>
               <p>
                 <strong>X–M–L acoplado</strong>: no se modelan especies mixtas MXL
-                (supuesto estándar — Ringbom y Harris también las omiten). La hidrólisis
-                puede entrar como X = OH⁻ con pX fijo = 14 − pH.
+                (supuesto estándar). La hidrólisis puede entrar como X = OH⁻ con pX fijo = 14 − pH.
               </p>
               <p>
                 El agua como disolvente ya está incluida: los log β son relativos al

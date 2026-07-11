@@ -494,7 +494,7 @@ export default function ConstantesCondicionales() {
           decimals={1}
         />
         <ConcSlider
-          label="Concentración del complejante Co (exceso)"
+          label="Concentración analítica del complejante (exceso sobre el metal)"
           helpId="co"
           value={s.co}
           onChange={(v) => set('co', v)}

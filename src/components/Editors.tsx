@@ -2,7 +2,7 @@
 // PRIMARY = free label + editable constants with ± buttons.
 // SECONDARY = collapsible database that auto-fills and closes.
 
-import { ConstantList, DbPanel, HelpTip, LabelField, ModelBadge, RefBadge, SelectControl, Slider, ConcSlider } from './Controls';
+import { ConstantList, DbPanel, HelpTip, LabelField, ModelBadge, SelectControl, Slider, ConcSlider } from './Controls';
 import { ACIDS } from '../lib/database';
 import { REDOX_COUPLES } from '../lib/redoxDatabase';
 import { COMPLEX_PRESETS } from '../lib/complexDatabase';
@@ -77,16 +77,16 @@ export function AcidSystemEditor({
           });
         }}
       />
-      <details className="adv-panel">
-        <summary>Avanzado</summary>
+      <details className="section-collapse">
+        <summary className="section-collapse-title">Tipo de sistema (carga inicial z₀)</summary>
         <SelectControl
           label="Carga de la forma más protonada (z₀)"
           value={String(system.z0)}
           options={[
-            { value: '0', label: '0 — ácido neutro (HnA)' },
+            { value: '0', label: '0 — ácido neutro (HₙA)' },
             { value: '1', label: '+1 — base protonada (BH⁺)' },
             { value: '2', label: '+2 — diamina protonada (BH₂²⁺)' },
-            ...(allowAquaCations ? [{ value: '3', label: '+3 — catión acuo-ácido (M³⁺, ej. Fe³⁺, Al³⁺)' }] : []),
+            ...(allowAquaCations ? [{ value: '3', label: '+3 — catión acuo-ácido (Fe³⁺, Al³⁺)' }] : []),
           ]}
           onChange={(v) => {
             const z0 = parseInt(v, 10);
@@ -101,8 +101,13 @@ export function AcidSystemEditor({
             });
           }}
         />
+        <p className="hint">
+          z₀ es la carga de la especie con todos sus protones puestos. Distingue un ácido neutro
+          (HₙA) de una base que empieza protonada (NH₄⁺, etilendiamina) o de un catión que se
+          hidroliza (Fe³⁺). Fija el balance de carga con que se calcula el pH; para un ácido
+          común déjalo en 0.
+        </p>
       </details>
-      <RefBadge reference={system.reference ?? undefined} />
       <DbPanel
         items={presets.map((a) => ({
           id: a.id,
@@ -138,7 +143,6 @@ export function CoupleEditor({
       <Slider label="E° (V vs ENH)" value={couple.E0} min={-1} max={2} step={0.01} onChange={(E0) => edited({ E0 })} decimals={2} unit="V" helpId="E0" />
       <Slider label="n (electrones)" value={couple.n} min={1} max={6} step={1} onChange={(n) => edited({ n })} decimals={0} helpId="n" />
       <Slider label="m H⁺ (protones en la semirreacción)" value={couple.mH} min={0} max={14} step={1} onChange={(mH) => edited({ mH })} decimals={0} helpId="mH" />
-      <RefBadge reference={couple.reference || undefined} />
       {couple.caveat && <p className="badge warn">⚠ {couple.caveat}</p>}
       <DbPanel
         items={REDOX_COUPLES.map((c) => ({
@@ -182,6 +186,11 @@ export function SideReactionEditor({
 }) {
   const set = <K extends keyof SideReactionEditorState>(k: K, v: SideReactionEditorState[K]) =>
     onChange({ ...state, [k]: v });
+
+  // Concentration/species labels below name the actual agent (e.g. "[NH₃] libre")
+  // instead of a hardcoded "[L]" — otherwise, when this editor drives the X branch
+  // (Complejos coupled, Especiación), the concentration reads as the primary ligand.
+  const aux = state.auxLabel.trim() || 'X';
 
   return (
     <>
@@ -252,7 +261,7 @@ export function SideReactionEditor({
             </button>
           ))}
         </div>
-        <LabelField label="Ligando auxiliar" value={state.auxLabel} onChange={(v) => set('auxLabel', v)} />
+        <LabelField label="Nombre del agente" value={state.auxLabel} onChange={(v) => set('auxLabel', v)} />
         <ConstantList
           prefix="log β"
           helpId="logBeta"
@@ -264,13 +273,13 @@ export function SideReactionEditor({
         />
         <div className="control">
           <div className="control-header">
-            <span className="control-label">Concentración del auxiliar</span>
+            <span className="control-label">Cuánto {aux} hay disuelto</span>
             <HelpTip id="ligFree" />
           </div>
           <div className="segmented" style={{ marginTop: 6 }}>
             {([
-              { value: 'free', label: '[L] libre' },
-              { value: 'total', label: 'Total analítica (F)' },
+              { value: 'free', label: `[${aux}] libre` },
+              { value: 'total', label: 'Total analítica' },
               { value: 'fixedPX', label: 'pX′ fijo' },
             ] as const).map(({ value, label }) => (
               <button
@@ -283,15 +292,17 @@ export function SideReactionEditor({
             ))}
           </div>
           <p className="hint">
-            [L] libre: introduce [L] de equilibrio. Total F: concentración analítica (requiere pKa). pX′ fijo: usa −log[L′] directo.
+            <strong>[{aux}] libre</strong>: concentración de equilibrio del agente ya libre.{' '}
+            <strong>Total analítica</strong>: lo que agregaste al vaso (requiere su pKa; el resto lo reparte la protonación).{' '}
+            <strong>pX′ fijo</strong>: fijas −log[{aux}′] directamente.
           </p>
         </div>
         {state.auxSpecMode === 'free' && (
-          <ConcSlider label="[L] libre (M)" helpId="ligFree" value={state.cAuxFree} onChange={(v) => set('cAuxFree', v)} />
+          <ConcSlider label={`[${aux}] libre (M)`} helpId="ligFree" value={state.cAuxFree} onChange={(v) => set('cAuxFree', v)} />
         )}
         {state.auxSpecMode === 'total' && (
           <>
-            <ConcSlider label="Concentración total F (M)" value={state.cAuxTotal} onChange={(v) => set('cAuxTotal', v)} min={-3} max={1} />
+            <ConcSlider label={`${aux} total agregado (M)`} value={state.cAuxTotal} onChange={(v) => set('cAuxTotal', v)} min={-3} max={1} />
             <ConstantList
               prefix="pKa (ácido conjugado)"
               helpId="pKa"
@@ -303,11 +314,11 @@ export function SideReactionEditor({
               minItems={1}
               initialValue={9.2}
             />
-            <p className="hint">NH₃/NH₄⁺: pKa ≈ 9,2. Glicina: usar pKa del conjugado ácido.</p>
+            <p className="hint">NH₃/NH₄⁺: pKa ≈ 9.2. Glicina: usar el pKa del ácido conjugado.</p>
           </>
         )}
         {state.auxSpecMode === 'fixedPX' && (
-          <Slider label="pX′ objetivo" helpId="pXprime" value={state.pXFixed} min={0} max={14} step={0.1} onChange={(v) => set('pXFixed', v)} decimals={1} />
+          <Slider label={`pX′ objetivo (−log[${aux}′])`} helpId="pXprime" value={state.pXFixed} min={0} max={14} step={0.1} onChange={(v) => set('pXFixed', v)} decimals={1} />
         )}
       </details>
 

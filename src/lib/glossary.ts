@@ -99,7 +99,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     units: 'log β, adimensional',
   },
   ligFree: {
-    meaning: 'Concentración de equilibrio de la forma libre (no complejada) del ligando auxiliar L.',
+    meaning: 'Concentración de equilibrio de la forma libre (no complejada) del agente complejante, ya descontada su protonación.',
     units: 'mol/L (M)',
   },
   Kref: {

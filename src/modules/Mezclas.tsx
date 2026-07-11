@@ -264,7 +264,7 @@ export default function Mezclas() {
                   });
                 }}
               />
-              <ConcSlider label="Concentración" value={r.conc} onChange={(v) => updateRow(i, { conc: v })} min={-4} max={0} />
+              <ConcSlider label={`Concentración de ${r.system.label || `componente ${i + 1}`}`} value={r.conc} onChange={(v) => updateRow(i, { conc: v })} min={-4} max={0} />
               <SelectControl
                 label="Forma de partida"
                 value={String(startIndex)}

@@ -45,10 +45,10 @@ interface ExtractionPreset {
   logCHL?: number;
 }
 
-// Nota de datos: el logKd de la ditizona (id 'dithizone') difiere ~100x entre esta base (4.00) y
-// el valor reportado en Baeza/Garcia, Quimica Analitica I-II-III (2021) (10^6, log=6) -- ver
-// docs/testing/BOOK-QA-LOG.md hallazgo B-7. Sin una tercera fuente que desempate, se deja sin
-// `reference` (dithizone y pb_dithiz) en vez de afirmar una cita que podria estar mal.
+// Data note: the dithizone logKd (id 'dithizone') differs ~100x between this base (4.00) and
+// another reported value (10^6, log=6) -- see docs/testing/BOOK-QA-LOG.md finding B-7. Without a
+// third source to break the tie, it's left without a `reference` (dithizone and pb_dithiz)
+// rather than asserting a citation that could be wrong.
 const PRESETS: ExtractionPreset[] = [
   { id: 'benzoico',  label: 'Ácido benzoico',         formula: 'C₆H₅COOH', type: 'acid',    logKd:  2.22, pKas: [4.20],         neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
   { id: 'salicilico',label: 'Ácido salicílico',       formula: 'HOC₆H₄COOH',type: 'acid',   logKd:  2.40, pKas: [3.00, 13.40], neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
@@ -160,7 +160,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
           <button
             key={p.id}
             className="preset-chip"
-            title={`${p.system}  logKd=${p.logKd}${p.reference ? `  ·  Fuente: ${p.reference}` : ''}`}
+            title={`${p.system}  ·  logKd = ${p.logKd}`}
             onClick={() => onChange({
               label: p.label, type: p.type, logKd: p.logKd,
               pKas: [...p.pKas], neutralIdx: p.neutralIdx,

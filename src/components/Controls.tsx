@@ -467,16 +467,6 @@ export function ModelBadge({
   );
 }
 
-/** Shows the literature citation for an unedited database preset. */
-export function RefBadge({ reference }: { reference?: string }) {
-  if (!reference) return null;
-  return (
-    <p className="ref-badge">
-      <strong>Fuente:</strong> {reference}
-    </p>
-  );
-}
-
 /** Highlighted numeric result card (e.g. pH at equivalence point). */
 export function ResultCard({ items }: { items: { label: ReactNode; value: string; helpId?: string }[] }) {
   return (

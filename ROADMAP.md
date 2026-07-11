@@ -38,7 +38,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 - CSV export with metadata headers on every chart (module, system, conditions, date)
 - Shareable scenario links: full module state encoded in the URL
 - Saved systems: name and persist any scenario locally (localStorage) from the "Mis sistemas" button in every module's panel — reuses the shareable-link mechanism, so it works everywhere that has one
-- In-app validation: each hub's cross-check citation (e.g. "cotejado con Spana/HALTAFALL y Harris") is always visible in the assumptions summary, not hidden behind an expand click; full methodology detail (see `docs/VALIDATION.md`) on expand
+- In-app assumptions summary: each hub's model assumptions (methodology) are shown in the assumptions summary. Source citations and cross-check/validation detail are kept out of the UI and live in `docs/VALIDATION.md` — the app surface shows methodology, not attributions
 
 ---
 

@@ -227,7 +227,7 @@ export default function PrecipitacionCompetitiva() {
             items={PRESETS.map((p) => ({
               id: p.id,
               label: `${p.cation}: ${p.s1.label} / ${p.s2.label}`,
-              detail: `pKsp ${p.s1.pKsp.toFixed(2)} / ${p.s2.pKsp.toFixed(2)} · ${p.reference}`,
+              detail: `pKsp ${p.s1.pKsp.toFixed(2)} / ${p.s2.pKsp.toFixed(2)}`,
             }))}
             onSelect={loadPreset}
           />
@@ -255,7 +255,7 @@ export default function PrecipitacionCompetitiva() {
               99 %
             </button>
             <button className="preset-chip" onClick={() => setQuantPct(99.9)}>
-              99.9 % (Harris)
+              99.9 %
             </button>
             <button className="preset-chip" onClick={() => setQuantPct(99.99)}>
               99.99 %
