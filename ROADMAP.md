@@ -88,11 +88,38 @@ was genuinely un-hit-testable at that point, not merely visually awkward. Fixed 
 rule, `.panel-body > * { flex-shrink: 0; }`, which covers every current and future
 collapsible section rather than patching `.disclosure` alone.
 
+### Visual / typography / clarity pass across all modules (2026-07-10) — resolved
+
+The systematic pass promised after the flex-shrink fix, driven by user feedback on
+Ácido-base, Especiación, Complejos and Mezclas (PR #66). Three threads, all shipped:
+
+1. **Source citations out of the UI.** Every attribution now lives only in
+   `docs/VALIDATION.md`. Removed the per-preset `Fuente: …` badge (the `RefBadge`
+   component, deleted) from all 8 sites, the assumptions-summary `cotejado con …`
+   cross-check line and the `constantes de Harris, Skoog, Bard 1985…` data-source list
+   (the `crossCheck` field is gone from `App.tsx`), plus the strays in Actividad,
+   Potencial condicional, Pourbaix, Titulación, Competitiva and Extracción. Method /
+   diagram / convention eponyms (Sillén, Ringbom α, Kielland, Debye–Hückel, Davies,
+   Güntelberg, Gran, Bjerrum) stay — they name the *thing*, not where a number came
+   from. Data-layer `reference` fields stay as dev provenance (never rendered). The
+   rule is now a standing convention: **methodology in the UI, attributions in docs.**
+2. **"Concentración / variable de qué" clarity.** The auxiliary-agent concentration
+   controls name the real agent (`[NH₃] libre`, `Cuánto NH₃ hay disuelto`) instead of a
+   hardcoded `[L]`, propagating through every `SideReactionEditor` consumer. X is stated
+   plainly as a second *dissolved* complexing agent (NH₃, citrate, en…) competing with
+   L — not the solvent, since water is already baked into the log β (verified against the
+   Harris/Ringbom convention). Disambiguated `Concentración del complejante Co` (read as
+   cobalt → `Concentración analítica del complejante`) and the per-component mixture
+   concentration (now names the component).
+3. **Interaction / typography coherence.** Acid-base's stray `Avanzado` disclosure became
+   a labelled section `Tipo de sistema (carga inicial z₀)` with a plain-language z₀
+   explanation; all collapsibles now share one caret language (right-aligned, rotates on
+   open) instead of mixing native ▸ markers with custom carets.
+
 ### Near-term
 
 | Feature | Notes |
 | --- | --- |
-| **Visual/typography design pass across all modules** (2026-07-10, in progress) | Follow-up to the panel-body flex-shrink fix above: a systematic pass over typography, spacing, and cross-module consistency (not just functional bugs) — checking font sizes/weights against `src/styles/tokens.css`, label/hint alignment, spacing rhythm between `PanelSection`s, and that every module reads consistently against the same visual standard, not just that its controls are clickable. |
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
 | **Bilingual UI (Spanish / English)** | Toggle between Spanish and English for all labels, tooltips, and InfoBox content. Chemistry notation and formula strings remain language-neutral. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
