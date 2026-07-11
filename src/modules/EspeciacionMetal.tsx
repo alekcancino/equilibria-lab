@@ -11,10 +11,12 @@ import {
   ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider, SystemPresetPicker,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
+import Predominance2D from '../components/Predominance2D';
 import { SPECIES_COLORS } from '../lib/database';
 import { xBranchFromEditor } from '../lib/complexation';
 import { defaultSideEditorState, type SideReactionEditorState } from '../lib/sideReactions';
-import { speciationAtPH, speciationCurve, predominanceZonesVsPH, type MetalSpeciationSystem } from '../lib/speciation';
+import { speciationAtPH, speciationCurve, speciationFractions, predominanceZonesVsPH, type MetalSpeciationSystem } from '../lib/speciation';
+import { predominanceGrid } from '../lib/predominance2D';
 import { SPECIATION_PRESETS, speciationPresetById } from '../lib/speciationDatabase';
 import { toSub } from '../lib/complexDatabase';
 
@@ -243,6 +245,26 @@ export default function EspeciacionMetal() {
     [zoneGeometry, labels],
   );
 
+  // 2D predominance map (pL–pH): metal + hydrolysis + primary ligand L, with pH
+  // and free pL as independent axes. X is intentionally excluded here — a second
+  // ligand is the pL–pX map's job (Complejos). Needs a ligand for the pL axis to
+  // mean anything; without one the field is just vertical pH stripes.
+  const has2D = nL > 0;
+  const pLmax2D = useMemo(
+    () => Math.max((sys.showAux ? Math.max(0, ...sys.logBetasL) : 0) + 4, 8),
+    [sys.showAux, sys.logBetasL],
+  );
+  const grid2D = useMemo(
+    () => (has2D
+      ? predominanceGrid(
+        (pH, pL) => speciationFractions(pH, pL, sys.logBetasOH, sys.logBetasL),
+        PH_RANGE, [0, pLmax2D],
+      )
+      : null),
+    [has2D, sys.logBetasOH, sys.logBetasL, pLmax2D],
+  );
+  const labels2D = useMemo(() => labels.slice(0, 1 + nOH + nL), [labels, nOH, nL]);
+
   const diagrams = [
     {
       id: 'alpha',
@@ -288,6 +310,29 @@ export default function EspeciacionMetal() {
           exportName="equilibria-especiacion-logc"
           exportMetadata={exportMetadata}
         />
+      ),
+    },
+    {
+      id: 'map2d',
+      label: 'Mapa 2D (pL–pH)',
+      node: grid2D ? (
+        <Predominance2D
+          grid={grid2D}
+          colors={SPECIES_COLORS}
+          labels={labels2D}
+          xLabel="pH"
+          yLabel={`pL (−log[${sys.ligandLabel || 'L'}])`}
+          marker={Number.isFinite(readPoint.pL) ? { x: pHRead, y: readPoint.pL, label: `pH ${pHRead.toFixed(1)}` } : undefined}
+          caption="Zonas de predominio en 2D"
+        />
+      ) : (
+        <div className="map2d-empty">
+          <p>
+            Activa un <strong>ligando auxiliar (M–L)</strong> con al menos un log β para dibujar
+            el mapa 2D pL–pH. Sin ligando, la especiación solo depende del pH — usa
+            <strong> Distribución α</strong> o <strong>DUZP</strong>.
+          </p>
+        </div>
       ),
     },
   ];

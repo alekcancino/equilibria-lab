@@ -116,6 +116,31 @@ The systematic pass promised after the flex-shrink fix, driven by user feedback 
    explanation; all collapsibles now share one caret language (right-aligned, rotates on
    open) instead of mixing native ▸ markers with custom carets.
 
+### 2D predominance maps (2026-07-10) — v1 shipped
+
+The 1D DUZP extended to two chemical axes. A generic, axis-agnostic engine
+(`lib/predominance2D.ts`) sweeps an (x, y) grid and records the dominant species per
+cell; a matching SVG renderer (`components/Predominance2D.tsx`) paints the field to an
+offscreen canvas embedded as a single `image-rendering: pixelated` `<image>` (no
+per-cell DOM nodes, no color blending across boundaries) with SVG axes, legend and a
+read-point crosshair on top. No Plotly dependency — `plotly.js-basic` ships no
+heatmap/contour trace, and the DUZP is already custom SVG, so this stays consistent and
+adds zero bundle weight. Two maps shipped:
+
+- **Especiación del metal → Mapa 2D (pL–pH)**: the metal split across free ion,
+  hydroxo-complexes and one ligand's complexes, over pH × free ligand. Uses
+  `speciationFractions` (both axes independent — no mass-balance solve).
+- **Complejos (modo X–M–L acoplado) → Mapa 2D (pL–pX)**: two competing ligands, over
+  free L × free X, via `twoLigandFractions`. Empty-state prompts to enable the coupled
+  mode when a single ligand can't define a second axis.
+
+Also extended `SPECIES_COLORS` from 8 to 12 (appending four Paul-Tol muted hues + dark
+twins) so a metal with ≥9 species — e.g. 4 hydroxo + 4 amino complexes — no longer
+cycles back to the slot-0 color; slots 0-7 are unchanged, so every existing chart is
+byte-identical. Remaining for v2: the **pM–pH** map (free-metal axis), a dark-mode color
+remap for the 2D field (the 1D charts already remap via `plotTheme.ts`), and CSV/PNG
+export of the map.
+
 ### Near-term
 
 | Feature | Notes |
@@ -123,7 +148,7 @@ The systematic pass promised after the flex-shrink fix, driven by user feedback 
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
 | **Bilingual UI (Spanish / English)** | Toggle between Spanish and English for all labels, tooltips, and InfoBox content. Chemistry notation and formula strings remain language-neutral. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
-| **2D predominance diagrams** | pM–pH and pL–pH maps extending the 1D DUZP to two chemical axes. |
+| **2D predominance diagrams — v2** | pL–pH and pL–pX maps shipped (see resolved section above). Remaining: the **pM–pH** map (free-metal axis), dark-mode color remap for the 2D field, and CSV/PNG export of the map. |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |
 
 ### Medium-term
