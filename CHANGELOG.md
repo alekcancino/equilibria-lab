@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.4 — 2026-07-12
+
+### Bilingual UI (ES/EN) — Mezclas module
+
+- **Translated:** the full **Mezclas** (multicomponent mixtures) module — the up-to-4-row system editor, the "Starting form" salt-selection dropdown, the mixture titration section, the activity-correction block (D-H/Davies/Güntelberg), both diagram tabs, and the InfoBox.
+- Reused existing keys wherever the text matched Ácido-base/Complejos exactly instead of duplicating them, following the established cross-module reuse convention.
+
 ## 0.9.3 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — ConstantesCondicionales module

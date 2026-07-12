@@ -10,12 +10,8 @@ import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } f
 import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from '../lib/equilibrium';
 import { firstDerivative } from '../lib/titration';
 import type { GammaModel } from '../lib/activity';
+import { useT } from '../hooks/useT';
 
-const GAMMA_MODELS: { value: GammaModel; label: string }[] = [
-  { value: 'dh', label: 'D-H extendida' },
-  { value: 'davies', label: 'Davies' },
-  { value: 'guntelberg', label: 'Güntelberg' },
-];
 function isValidGammaModel(v: unknown): v is GammaModel {
   return v === 'dh' || v === 'davies' || v === 'guntelberg';
 }
@@ -49,12 +45,18 @@ const newRow = (): MixRow => ({ id: nextRowId++, system: defaultAcidSystem(), co
 // The system label is free text (AcidSystemEditor's LabelField has no
 // minimum length) — fall back rather than show a blank CSV column or
 // result-card row when the user clears it.
-function rowLabel(system: AcidSystem): string {
-  return system.label.trim() || 'Sistema sin nombre';
+function rowLabel(system: AcidSystem, unnamedFallback: string): string {
+  return system.label.trim() || unnamedFallback;
 }
 
 /** Multicomponent mixtures: mixture pH and its titration curve. */
 export default function Mezclas() {
+  const t = useT();
+  const GAMMA_MODELS: { value: GammaModel; label: string }[] = useMemo(() => [
+    { value: 'dh', label: t('acidoBase.gammaDH') },
+    { value: 'davies', label: t('acidoBase.gammaDavies') },
+    { value: 'guntelberg', label: t('acidoBase.gammaGuntelberg') },
+  ], [t]);
   const [rows, setRows] = useState<MixRow[]>([newRow()]);
   const [titrate, setTitrate] = useState(false);
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
@@ -126,10 +128,10 @@ export default function Mezclas() {
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Mezclas ácido-base',
-    Componentes: rows.map((r) => rowLabel(r.system)).join(' + '),
+    Componentes: rows.map((r) => rowLabel(r.system, 'Sistema sin nombre')).join(' + '),
     'I / M': ionicStrength.toFixed(3),
     'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel,
-  }), [rows, ionicStrength, gammaModel]);
+  }), [rows, ionicStrength, gammaModel, GAMMA_MODELS]);
 
   const pHMix = useMemo(() => {
     const { comps, cations, anions } = buildComponents(1);
@@ -140,20 +142,20 @@ export default function Mezclas() {
 
   const speciation = useMemo(() => {
     if (pHInvalid) {
-      return [{ label: 'pH de la mezcla', value: 'Sin raíz en balance de cargas' }];
+      return [{ label: t('mezclas.mixturePH'), value: t('mezclas.noRootFound') }];
     }
     const h = Math.pow(10, -pHMix);
-    const items: { label: string; value: string }[] = [{ label: 'pH de la mezcla', value: pHMix.toFixed(2) }];
+    const items: { label: string; value: string }[] = [{ label: t('mezclas.mixturePH'), value: pHMix.toFixed(2) }];
     for (const r of rows) {
       const alphas = alphaFractions(h, r.system.pKas);
       const dominant = alphas.indexOf(Math.max(...alphas));
       items.push({
-        label: rowLabel(r.system).split(' (')[0],
+        label: rowLabel(r.system, t('mezclas.unnamedSystem')).split(' (')[0],
         value: `${systemLabels(r.system)[dominant]} (α = ${alphas[dominant].toFixed(2)})`,
       });
     }
     return items;
-  }, [rows, pHMix, pHInvalid]);
+  }, [rows, pHMix, pHInvalid, t]);
 
   const curve = useMemo(() => {
     if (!titrate) return null;
@@ -196,13 +198,13 @@ export default function Mezclas() {
         y: der.d.map((d) => (Math.abs(d) / maxD) * 14),
         type: 'scatter',
         mode: 'lines',
-        name: '|dpH/dV| (escalada)',
+        name: t('mezclas.derivativeTraceName'),
         line: { width: 2, color: '#7F8C8D' },
         hoverinfo: 'skip',
       });
     }
     return data;
-  }, [curve, showDerivative]);
+  }, [curve, showDerivative, t]);
 
   const bufferCurve = useMemo(() => {
     const PH_POINTS = 400;
@@ -233,13 +235,13 @@ export default function Mezclas() {
 
   return (
     <div className="module">
-      <PanelShell title="Mezclas multicomponente" onReset={reset} moduleId="mezclas">
-        <PanelSection title="Sistemas" icon="⚛">
+      <PanelShell title={t('mezclas.title')} onReset={reset} moduleId="mezclas">
+        <PanelSection title={t('mezclas.systemsSection')} icon="⚛">
         <ModelBadge
           model={rows.length === 1
-            ? 'un sistema ácido-base'
-            : `mezcla de ${rows.length} sistemas ácido-base`}
-          additions={[titrate && 'titulación', titrate && showDerivative && 'derivada']}
+            ? t('mezclas.oneSystem')
+            : t('mezclas.mixOfNSystems', { n: rows.length })}
+          additions={[titrate && t('mezclas.additionTitration'), titrate && showDerivative && t('mezclas.additionDerivative')]}
         />
         {rows.map((r, i) => {
           const startIndex = validStartIndex(r.system, r.startIndex);
@@ -247,7 +249,7 @@ export default function Mezclas() {
           return (
             <div key={r.id} className="mix-row">
               <div className="mix-row-header">
-                <span className="control-label">Componente {i + 1}</span>
+                <span className="control-label">{t('mezclas.componentN', { n: i + 1 })}</span>
                 {rows.length > 1 && (
                   <button className="mini-btn" onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>
                 )}
@@ -264,20 +266,20 @@ export default function Mezclas() {
                   });
                 }}
               />
-              <ConcSlider label={`Concentración de ${r.system.label || `componente ${i + 1}`}`} value={r.conc} onChange={(v) => updateRow(i, { conc: v })} min={-4} max={0} />
+              <ConcSlider label={t('mezclas.concentrationOf', { name: r.system.label || t('mezclas.componentLower', { n: i + 1 }) })} value={r.conc} onChange={(v) => updateRow(i, { conc: v })} min={-4} max={0} />
               <SelectControl
-                label="Forma de partida"
+                label={t('mezclas.startingFormLabel')}
                 value={String(startIndex)}
                 options={Array.from({ length: r.system.pKas.length + 1 }, (_, lvl) => {
                   const { cations, anions } = saltCounterIons(r.system.z0, lvl);
                   const mult = (n: number) => (n > 1 ? ` ${n}×` : '');
                   // A ladder that never reaches a neutral species is an
                   // aqua-acid cation, conventionally prepared as a nitrate.
-                  const anionName = r.system.z0 > r.system.pKas.length ? 'nitrato' : 'cloruro';
+                  const anionName = r.system.z0 > r.system.pKas.length ? t('mezclas.nitrateAnion') : t('mezclas.chlorideAnion');
                   const suffix = anions > 0
-                    ? ` (sal de ${anionName}${mult(anions)})`
+                    ? t('mezclas.saltOfAnion', { anion: anionName, mult: mult(anions) })
                     : cations > 0
-                      ? ` (sal sódica${mult(cations)})`
+                      ? t('mezclas.sodiumSalt', { mult: mult(cations) })
                       : '';
                   return { value: String(lvl), label: `${labels[lvl]}${suffix}` };
                 })}
@@ -291,32 +293,32 @@ export default function Mezclas() {
             className="add-btn"
             onClick={() => setRows([...rows, newRow()])}
           >
-            + Agregar componente
+            {t('mezclas.addComponentButton')}
           </button>
         )}
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
         <ResultCard items={speciation} />
         </PanelSection>
 
-        <PanelSection title="Titulación de la mezcla" icon="⚗">
-        <Toggle label="Mostrar curva de titulación" checked={titrate} onChange={setTitrate} />
+        <PanelSection title={t('mezclas.titrationSection')} icon="⚗">
+        <Toggle label={t('mezclas.showTitrationCurve')} checked={titrate} onChange={setTitrate} />
         {titrate && (
           <>
-            <Toggle label={`Titular con ácido fuerte (${titrantName})`} checked={titrantIsAcid} onChange={setTitrantIsAcid} />
-            <ConcSlider label={`Concentración de ${titrantName}`} value={cTitrant} onChange={setCTitrant} min={-3} max={0} />
+            <Toggle label={t('mezclas.titrateWithStrongAcid', { titrant: titrantName })} checked={titrantIsAcid} onChange={setTitrantIsAcid} />
+            <ConcSlider label={t('mezclas.concentrationOf', { name: titrantName })} value={cTitrant} onChange={setCTitrant} min={-3} max={0} />
             <Slider
-              label="Volumen de muestra"
+              label={t('mezclas.sampleVolumeLabel')}
               value={vSample} min={5} max={100} step={1}
               onChange={setVSample} unit="mL" decimals={0}
             />
-            <Toggle label="Mostrar derivada dpH/dV" checked={showDerivative} onChange={setShowDerivative} />
+            <Toggle label={t('mezclas.showDerivativeToggle')} checked={showDerivative} onChange={setShowDerivative} />
           </>
         )}
         <details className="section-collapse">
-          <summary>Corrección por actividad</summary>
-          <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
+          <summary>{t('acidoBase.activityCorrection')}</summary>
+          <Slider label={t('complejos.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
           <div style={{ marginTop: 6 }}>
             <Segmented
               options={GAMMA_MODELS}
@@ -324,22 +326,16 @@ export default function Mezclas() {
               onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}
             />
           </div>
-          <p className="hint">I = 0 → γ = 1 (resultado termodinámico). Aplica a pH de mezcla y curva de titulación.</p>
+          <p className="hint">{t('mezclas.activityHint')}</p>
         </details>
         </PanelSection>
 
-        <InfoBox title="¿Qué puedo simular aquí?">
+        <InfoBox title={t('mezclas.infoBoxTitle')}>
           <p>
-            Hasta 4 sistemas ácido-base coexistiendo: el pH se resuelve con el balance de
-            cargas global de la mezcla, sin aproximaciones. Cada componente es totalmente
-            editable — nombre libre, pKas y carga z₀ — y la base de datos solo auto-rellena
-            valores de partida. "Forma de partida" te permite disolver la sal de cualquier
-            forma intermedia (NaHCO₃, Na₂HPO₄, NH₄Cl…) agregando el contraión espectador
-            correcto automáticamente.
+            {t('mezclas.infoBoxPara1')}
           </p>
           <p>
-            Prueba carbonato + amonio (agua natural), o cítrico + fosfato (bebidas), y
-            titula la mezcla: cada protón con ΔpKa suficiente da su propio salto.
+            {t('mezclas.infoBoxPara2')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -347,11 +343,11 @@ export default function Mezclas() {
         <DiagramTabs initialId="beta" tabs={[
           {
             id: 'titulacion',
-            label: 'Titulación',
+            label: t('mezclas.tabTitration'),
             node: titrate && curve ? (
               <Chart
                 data={traces}
-                xTitle={`Volumen de ${titrantName} agregado (mL)`}
+                xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })}
                 yTitle="pH"
                 xRange={[0, curve.vMax]}
                 yRange={[0, 14]}
@@ -360,14 +356,14 @@ export default function Mezclas() {
               />
             ) : (
               <div className="empty-plot">
-                <p>pH de la mezcla: <strong>{pHInvalid ? '—' : pHMix.toFixed(2)}</strong></p>
-                <p className="hint">Activa la curva de titulación para ver la gráfica.</p>
+                <p>{t('mezclas.mixturePH')}: <strong>{pHInvalid ? '—' : pHMix.toFixed(2)}</strong></p>
+                <p className="hint">{t('mezclas.enableTitrationHint')}</p>
               </div>
             ),
           },
           {
             id: 'beta',
-            label: 'Capacidad buffer β',
+            label: t('mezclas.tabBufferCapacity'),
             node: (
               <Chart
                 data={[{
@@ -375,7 +371,7 @@ export default function Mezclas() {
                   y: bufferCurve.betas,
                   type: 'scatter',
                   mode: 'lines',
-                  name: 'β (mezcla)',
+                  name: t('mezclas.betaTraceName'),
                   line: { width: 2.5, color: '#009E73' },
                   hovertemplate: 'pH = %{x:.2f}<br>β = %{y:.4f} mol/L·pH<extra></extra>',
                 }]}
@@ -402,9 +398,9 @@ export default function Mezclas() {
           },
         ]} />
         <ResultCardRow items={[
-          { label: 'pH de la mezcla', value: pHInvalid ? '—' : pHMix.toFixed(2), accent: true },
-          { label: 'Componentes', value: String(rows.length) },
-          { label: 'Titulante', value: titrate ? titrantName : '—' },
+          { label: t('mezclas.mixturePH'), value: pHInvalid ? '—' : pHMix.toFixed(2), accent: true },
+          { label: t('mezclas.componentsResult'), value: String(rows.length) },
+          { label: t('mezclas.titrantResult'), value: titrate ? titrantName : '—' },
         ]} />
       </section>
     </div>
