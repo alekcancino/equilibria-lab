@@ -444,6 +444,8 @@ export default function Complejos() {
             ? { x: coupledEq.pL, y: coupledEq.pX, label: 'equilibrio' }
             : undefined}
           caption="Zonas de predominio en 2D"
+          exportName="equilibria-complejos-map2d"
+          exportMetadata={exportMetadata}
         />
       ) : (
         <div className="map2d-empty">

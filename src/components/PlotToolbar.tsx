@@ -1,5 +1,7 @@
 interface PlotToolbarProps {
-  onResetZoom: () => void;
+  /** Omit for diagrams with no pan/zoom (e.g. the 2D predominance maps) — the
+   * reset-zoom button and its "pinch/scroll" hint are skipped entirely. */
+  onResetZoom?: () => void;
   onExport: () => void;
   onExportCSV?: () => void;
 }
@@ -8,18 +10,20 @@ interface PlotToolbarProps {
 export default function PlotToolbar({ onResetZoom, onExport, onExportCSV }: PlotToolbarProps) {
   return (
     <div className="plot-toolbar" role="toolbar" aria-label="Controles de gráfica">
-      <button
-        type="button"
-        className="plot-toolbar-btn"
-        onClick={onResetZoom}
-        title="Restablecer zoom (doble clic en la gráfica)"
-        aria-label="Restablecer zoom"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path d="M3 12a9 9 0 1 0 9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <path d="M3 4v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
+      {onResetZoom && (
+        <button
+          type="button"
+          className="plot-toolbar-btn"
+          onClick={onResetZoom}
+          title="Restablecer zoom (doble clic en la gráfica)"
+          aria-label="Restablecer zoom"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M3 12a9 9 0 1 0 9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M3 4v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
       <button
         type="button"
         className="plot-toolbar-btn"
@@ -46,9 +50,11 @@ export default function PlotToolbar({ onResetZoom, onExport, onExportCSV }: Plot
           </svg>
         </button>
       )}
-      <span className="plot-toolbar-hint" title="Pinch o scroll para zoom">
-        ⓘ
-      </span>
+      {onResetZoom && (
+        <span className="plot-toolbar-hint" title="Pinch o scroll para zoom">
+          ⓘ
+        </span>
+      )}
     </div>
   );
 }

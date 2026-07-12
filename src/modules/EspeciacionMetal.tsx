@@ -324,6 +324,8 @@ export default function EspeciacionMetal() {
           yLabel={`pL (−log[${sys.ligandLabel || 'L'}])`}
           marker={Number.isFinite(readPoint.pL) ? { x: pHRead, y: readPoint.pL, label: `pH ${pHRead.toFixed(1)}` } : undefined}
           caption="Zonas de predominio en 2D"
+          exportName="equilibria-especiacion-map2d"
+          exportMetadata={exportMetadata}
         />
       ) : (
         <div className="map2d-empty">

@@ -1,4 +1,5 @@
 import type { Data } from 'plotly.js';
+import { axisValue, type Grid2D } from './predominance2D';
 
 interface XYTrace {
   name?: string;
@@ -47,6 +48,38 @@ export function tracesToCSV(
     rows.push(cells.join(','));
   }
 
+  return rows.join('\n');
+}
+
+/**
+ * Converts a 2D predominance grid to a CSV matrix: one column per x sample
+ * (labelled with its value), one row per y sample, cells hold the dominant
+ * species NAME (not index) so the export is self-describing without needing
+ * the on-screen legend. Rows are emitted highest-y-first, matching how the
+ * map reads top-to-bottom.
+ */
+export function gridToCSV(
+  grid: Grid2D,
+  labels: string[],
+  xLabel: string,
+  yLabel: string,
+  metadata?: Record<string, string>,
+): string {
+  const { dominant, nx, ny, xRange, yRange } = grid;
+  const metaLines = metadata
+    ? Object.entries(metadata).map(([k, v]) => `# ${k}: ${v}`)
+    : [];
+
+  const xs = Array.from({ length: nx }, (_, i) => axisValue(xRange, nx, i));
+  const corner = `${yLabel} \\ ${xLabel}`.replace(/,/g, ';');
+  const header = [corner, ...xs.map((x) => x.toFixed(3))];
+
+  const rows: string[] = [...metaLines, header.join(',')];
+  for (let j = ny - 1; j >= 0; j--) {
+    const y = axisValue(yRange, ny, j);
+    const cells = dominant[j].map((idx) => (idx < 0 ? '' : (labels[idx] ?? `S${idx}`).replace(/,/g, ';')));
+    rows.push([y.toFixed(3), ...cells].join(','));
+  }
   return rows.join('\n');
 }
 

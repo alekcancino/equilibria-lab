@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { formatAxisLabel } from '../lib/format';
 import { MARKER_COLOR } from '../lib/database';
 import { speciesInGrid, type Grid2D } from '../lib/predominance2D';
 import { useTheme } from '../hooks/useTheme';
 import { toDarkColors } from '../lib/plotTheme';
+import { gridToCSV, downloadCSV } from '../lib/export';
+import PlotToolbar from './PlotToolbar';
 
 interface Predominance2DProps {
   grid: Grid2D;
@@ -16,7 +18,21 @@ interface Predominance2DProps {
   /** Current read point (e.g. the equilibrium pL / pH the module already marks in 1D). */
   marker?: { x: number; y: number; label?: string };
   caption?: string;
+  /** File name (no extension) when exporting PNG and CSV. */
+  exportName?: string;
+  /** Module-specific parameters prepended as # comments in the CSV. */
+  exportMetadata?: Record<string, string>;
 }
+
+/**
+ * CSS custom properties this component's SVG text/strokes reference by
+ * literal `var(--x)` token in a presentation attribute. A standalone
+ * serialized SVG (for PNG export) has no cascade to resolve these against, so
+ * export replaces each token with its live computed value beforehand — a
+ * plain string substitution is enough since this is the exact finite set of
+ * var() usages in the JSX below (see the `fill`/`stroke` attributes).
+ */
+const CSS_VAR_TOKENS = ['--text-muted', '--text', '--plot-axis'] as const;
 
 // Logical canvas (viewBox); the SVG scales to 100% of its container.
 const W = 760;
@@ -70,9 +86,11 @@ const NO_SOLUTION_DARK: [number, number, number, number] = [42, 58, 85, 110];
  */
 export default function Predominance2D({
   grid, colors, labels, xLabel, yLabel, marker, caption,
+  exportName = 'equilibria-mapa2d', exportMetadata,
 }: Predominance2DProps) {
   const { nx, ny, xRange, yRange } = grid;
   const isDark = useTheme() === 'dark';
+  const svgRef = useRef<SVGSVGElement>(null);
 
   // Remap once per theme change rather than re-deriving per pixel/legend row.
   const effColors = useMemo(
@@ -126,9 +144,58 @@ export default function Predominance2D({
     && marker.x >= xRange[0] && marker.x <= xRange[1]
     && marker.y >= yRange[0] && marker.y <= yRange[1];
 
+  const exportCsv = useCallback(() => {
+    const meta: Record<string, string> = {
+      ...exportMetadata,
+      Fecha: new Date().toISOString().slice(0, 10),
+    };
+    const csv = gridToCSV(grid, labels, xLabel, yLabel, meta);
+    if (csv) downloadCSV(csv, exportName);
+  }, [grid, labels, xLabel, yLabel, exportMetadata, exportName]);
+
+  const exportPng = useCallback(async () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const root = getComputedStyle(document.documentElement);
+    let markup = new XMLSerializer().serializeToString(svg);
+    for (const token of CSS_VAR_TOKENS) {
+      markup = markup.replaceAll(`var(${token})`, root.getPropertyValue(token).trim());
+    }
+    const svgBlob = new Blob([markup], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    try {
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('svg image load failed'));
+        img.src = svgUrl;
+      });
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = W * scale;
+      canvas.height = H * scale;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      // Opaque background: the SVG itself has none, and a transparent PNG
+      // would show black in viewers that don't composite alpha over white.
+      ctx.fillStyle = isDark ? '#1E293B' : '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `${exportName}.png`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+  }, [exportName, isDark, H]);
+
   return (
     <div className="predom2d">
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+      <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
         {caption && (
           <text x={W / 2} y={26} textAnchor="middle" fontSize={17} fill="var(--text-muted)">
             {caption}
@@ -206,6 +273,7 @@ export default function Predominance2D({
           );
         })}
       </svg>
+      <PlotToolbar onExport={exportPng} onExportCSV={exportCsv} />
     </div>
   );
 }
