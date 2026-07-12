@@ -133,13 +133,24 @@ adds zero bundle weight. Two maps shipped:
 - **Complejos (modo X–M–L acoplado) → Mapa 2D (pL–pX)**: two competing ligands, over
   free L × free X, via `twoLigandFractions`. Empty-state prompts to enable the coupled
   mode when a single ligand can't define a second axis.
+- **Precipitación selectiva → Mapa 2D (pH–log[M])**: the classic Sillén solubility map.
+  Two distinct regimes, not a fractions-only sweep like the other two maps: above the
+  saturation line (`logSaturation`, extracted from the existing `hydroxideSolCurve`) the
+  solid M(OH)ₙ(s) predominates; below it, the dissolved M/M(OH)ⱼ ladder depends only on
+  pH (Ksp pins the free-ion boundary via [OH⁻] alone, so total concentration never enters
+  the hydrolysis ratios) — giving the textbook U-shaped region for amphoteric metals
+  (Al, Zn, Pb, Cr) confirmed by real-render QA, and a straight boundary with a single
+  dissolved species for simple hydroxides (Ca, Mg). New `solubilityRegimeFractions()` in
+  `lib/conditional.ts` feeds the same generic `predominanceGrid` engine unchanged.
+  Scoped to the M1 baseline (no side-reaction mask, no M2 overlay) for v1.
 
 Also extended `SPECIES_COLORS` from 8 to 12 (appending four Paul-Tol muted hues + dark
 twins) so a metal with ≥9 species — e.g. 4 hydroxo + 4 amino complexes — no longer
 cycles back to the slot-0 color; slots 0-7 are unchanged, so every existing chart is
-byte-identical. Remaining for v2: the **pM–pH** map (free-metal axis), a dark-mode color
-remap for the 2D field (the 1D charts already remap via `plotTheme.ts`), and CSV/PNG
-export of the map.
+byte-identical. Remaining for v2: a dark-mode color remap for the 2D field (the 1D
+charts already remap via `plotTheme.ts`), CSV/PNG export of the map, and extending the
+Sillén map to the M1/M2 comparison + side-reaction mask already available on the 1D
+`log s = f(pH)` tab.
 
 ### Near-term
 
@@ -148,7 +159,7 @@ export of the map.
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
 | **Bilingual UI (Spanish / English)** | Toggle between Spanish and English for all labels, tooltips, and InfoBox content. Chemistry notation and formula strings remain language-neutral. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
-| **2D predominance diagrams — v2** | pL–pH and pL–pX maps shipped (see resolved section above). Remaining: the **pM–pH** map (free-metal axis), dark-mode color remap for the 2D field, and CSV/PNG export of the map. |
+| **2D predominance diagrams — v2** | pL–pH, pL–pX and pH–log[M] (Sillén) maps shipped (see resolved section above). Remaining: dark-mode color remap for the 2D field, CSV/PNG export, and the Sillén map's M1/M2 comparison + side-reaction mask. |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |
 
 ### Medium-term

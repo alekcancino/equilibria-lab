@@ -12,7 +12,9 @@ import {
   ModelBadge, PanelSection, ResultCard, ResultCardRow, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
-import { alphaOH, hydroxideSolCurve, precipitationPH } from '../lib/conditional';
+import Predominance2D from '../components/Predominance2D';
+import { alphaOH, hydroxideSolCurve, precipitationPH, solubilityRegimeFractions } from '../lib/conditional';
+import { predominanceGrid } from '../lib/predominance2D';
 import { logActivityCoefficient } from '../lib/activity';
 import {
   defaultSideEditorState,
@@ -23,6 +25,8 @@ import {
   type SideReactionEditorState,
 } from '../lib/sideReactions';
 import { solubilityPXCurve } from '../lib/solubility';
+import { SPECIES_COLORS } from '../lib/database';
+import { toSub } from '../lib/complexDatabase';
 
 // ── Metal hydroxide database ──────────────────────────────────────────────────
 
@@ -424,6 +428,25 @@ export default function SolubilidadCondicional() {
   }, [pKspCurve1, pKspCurve2]);
   const pKspYMax = Math.max(pKspCurve1.pKspBase, pKspCurve2 ? pKspCurve2.pKspBase : 0) + 3;
 
+  // ── 2D Sillén map (pH–log[M]) for M1 ──────────────────────────────────────
+  // Baseline M1 only (no side-reaction mask, no M2 overlay) — same scoping
+  // choice as the other 2D maps: start with the well-defined single-system
+  // case. logM range mirrors the 1D log-s chart's own yMin/yMax so both tabs
+  // read on the same vertical scale.
+  const map2DLabels = useMemo(() => [
+    `${s.m1.formula} (s)`,
+    s.m1.label,
+    ...s.m1.logBetasOH.map((_, j) => `${s.m1.label.replace(/[⁺²³⁴]+$/, '')}(OH)${toSub(j + 1)}`),
+  ], [s.m1.formula, s.m1.label, s.m1.logBetasOH]);
+  const map2DColors = useMemo(() => ['#94A3B8', ...SPECIES_COLORS], []);
+  const grid2D = useMemo(
+    () => predominanceGrid(
+      (pH, logM) => solubilityRegimeFractions(pH, logM, s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.ionicStrength),
+      [0, 14], [yMin, yMax],
+    ),
+    [s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.ionicStrength, yMin, yMax],
+  );
+
   // ── Diagrams ──────────────────────────────────────────────────────────────
 
   const tabs = [
@@ -477,6 +500,21 @@ export default function SolubilidadCondicional() {
         />
       ),
     }] : []),
+    {
+      id: 'map2d',
+      label: 'Mapa 2D (pH–log[M])',
+      node: (
+        <Predominance2D
+          grid={grid2D}
+          colors={map2DColors}
+          labels={map2DLabels}
+          xLabel="pH"
+          yLabel={`log[${s.m1.label}] total`}
+          marker={{ x: minSolubility.pH, y: minSolubility.logS, label: 'mín. solubilidad' }}
+          caption={`Zonas de predominio en 2D — ${s.m1.formula}`}
+        />
+      ),
+    },
   ];
 
   return (
@@ -696,6 +734,13 @@ export default function SolubilidadCondicional() {
             Para metales <strong>anfóteros</strong> (Al, Zn, Cr, Pb) la curva es en U: suben
             de nuevo a pH muy alto por formación de hidroxocomplejos aniónicos (Al(OH)₄⁻,
             Zn(OH)₄²⁻). Los log β del panel modelan este efecto.
+          </p>
+          <p>
+            <strong>Mapa 2D (pH–log[M])</strong>: sobre la línea de saturación (curva log s de
+            arriba) precipita el sólido {s.m1.formula}; debajo, el metal disuelto se reparte
+            entre M libre y sus hidroxo-complejos según el pH — la posición vertical solo decide
+            sólido vs. disuelto, nunca qué especie disuelta domina.
+            {s.showSideMask && ' El mapa usa el hidróxido base (sin el enmascarante lateral).'}
           </p>
         </InfoBox>
       </PanelShell>

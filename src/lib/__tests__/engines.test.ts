@@ -8,7 +8,7 @@ import type { XBranch } from '../complexation';
 import { alphaY4, edtaAtFraction, edtaTitrationCurve, EDTA_PKAS } from '../edta';
 import {
   alphaH, alphaOH, alphaL, condLogK, condLogKCurve, feasibilityWindow,
-  hydroxideSolCurve, precipitationPH,
+  hydroxideSolCurve, precipitationPH, logSaturation, solubilityRegimeFractions,
 } from '../conditional';
 import { peConditional, peStandard, alphaRedox, redoxTitrationCurve, conditionalEprime } from '../redox';
 import { electrodePotential, stackFromLegacy, freeLigandConcentration } from '../sideReactions';
@@ -610,6 +610,52 @@ describe('hydroxideSolCurve', () => {
     const { logS: a } = hydroxideSolCurve(15, 2, [], [5, 9], 20, 0);
     const { logS: b } = hydroxideSolCurve(15, 2, [], [5, 9], 20);
     for (let i = 0; i < a.length; i++) expect(a[i]).toBeCloseTo(b[i], 10);
+  });
+});
+
+describe('logSaturation', () => {
+  it('matches hydroxideSolCurve point-by-point (extraction refactor, no behavior change)', () => {
+    const pKsp = 16.2; const n = 2; const logBetasOH = [5.04, 10.43, 13.7, 15.2]; // Zn(OH)2
+    const { pHs, logS } = hydroxideSolCurve(pKsp, n, logBetasOH, [0, 14], 50, 0.05);
+    pHs.forEach((pH, i) => {
+      expect(logSaturation(pH, pKsp, n, logBetasOH, 0.05)).toBeCloseTo(logS[i], 9);
+    });
+  });
+});
+
+describe('solubilityRegimeFractions', () => {
+  const pKsp = 16.2; const n = 2; const logBetasOH = [5.04, 10.43, 13.7, 15.2]; // Zn(OH)2, amphoteric
+
+  it('picks the solid (index 0) when logM is above the saturation line', () => {
+    const pH = 7;
+    const sat = logSaturation(pH, pKsp, n, logBetasOH);
+    const f = solubilityRegimeFractions(pH, sat + 2, pKsp, n, logBetasOH);
+    expect(f[0]).toBe(1);
+    expect(f.slice(1).every((v) => v === 0)).toBe(true);
+  });
+
+  it('picks a dissolved species (index ≥ 1) when logM is below the saturation line', () => {
+    const pH = 7;
+    const sat = logSaturation(pH, pKsp, n, logBetasOH);
+    const f = solubilityRegimeFractions(pH, sat - 3, pKsp, n, logBetasOH);
+    expect(f[0]).toBe(0);
+    expect(f.slice(1).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 9);
+  });
+
+  it('dissolved-species ladder is independent of logM (only pH matters below saturation)', () => {
+    const pH = 10;
+    const sat = logSaturation(pH, pKsp, n, logBetasOH);
+    const a = solubilityRegimeFractions(pH, sat - 1, pKsp, n, logBetasOH);
+    const b = solubilityRegimeFractions(pH, sat - 8, pKsp, n, logBetasOH);
+    expect(a.slice(1)).toEqual(b.slice(1));
+  });
+
+  it('the free metal ion (index 1) dominates at low pH, an anionic hydroxo-complex at high pH', () => {
+    const lowPH = 2; const highPH = 13;
+    const fLow = solubilityRegimeFractions(lowPH, logSaturation(lowPH, pKsp, n, logBetasOH) - 3, pKsp, n, logBetasOH);
+    const fHigh = solubilityRegimeFractions(highPH, logSaturation(highPH, pKsp, n, logBetasOH) - 3, pKsp, n, logBetasOH);
+    expect(fLow.indexOf(Math.max(...fLow))).toBe(1); // free Zn²⁺
+    expect(fHigh.indexOf(Math.max(...fHigh))).toBe(1 + logBetasOH.length); // Zn(OH)₄²⁻
   });
 });
 
