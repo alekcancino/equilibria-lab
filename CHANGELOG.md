@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — 2026-07-11
+
+### Sillén solubility map (pH–log[M])
+
+- **Precipitación selectiva**: new *Mapa 2D (pH–log[M])* tab — the classic Sillén solubility diagram. Above the saturation line, the solid M(OH)ₙ(s) predominates; below it, the dissolved M/M(OH)ⱼ ladder is shown by pH alone (Ksp pins the free-ion boundary via [OH⁻], so total concentration never enters the hydrolysis ratios). Amphoteric metals (Al, Zn, Pb, Cr) show the textbook U-shaped solid region with redissolution into the anionic hydroxo-complex at high pH; simple hydroxides (Ca, Mg) show a straight boundary with a single dissolved species.
+- Refactored `lib/conditional.ts`: extracted `logSaturation()` from `hydroxideSolCurve` (same formula, no behavior change — covered by a regression test) so the new map can evaluate the saturation boundary per grid cell. Added `solubilityRegimeFractions()`, feeding the same generic `predominanceGrid` engine used by the other two 2D maps.
+- Scoped to the M1 baseline for v1 (not the M1/M2 comparison or the side-reaction mask, both already on the 1D `log s = f(pH)` tab).
+
 ## 0.5.0 — 2026-07-10
 
 ### 2D predominance maps

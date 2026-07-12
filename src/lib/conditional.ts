@@ -150,7 +150,7 @@ export function condLogKCurve(
 }
 
 /**
- * log s = f(pH) curve for the salt M(OH)_n.
+ * log s at a single pH for the salt M(OH)_n.
  *
  * Full model (not just a straight line): includes soluble hydroxo-complexes.
  *   [M^n+] = Ksp / [OH⁻]^n
@@ -159,10 +159,32 @@ export function condLogKCurve(
  *
  * For amphoteric metals (Al, Zn, Pb, Cr), logBetasOH must include the
  * anionic complexes (Al(OH)₄⁻, Zn(OH)₄²⁻, etc.) → the curve has a U-shape.
+ * Extracted from hydroxideSolCurve so the 2D solubility map (below) can
+ * evaluate the same saturation boundary point-by-point on its own grid,
+ * without re-deriving the formula.
  *
  * @param pKsp       −log Ksp of M(OH)_n
  * @param n          OH⁻ stoichiometry
  * @param logBetasOH overall log β of soluble M(OH)_i complexes (can be [])
+ */
+export function logSaturation(
+  pH: number,
+  pKsp: number,
+  n: number,
+  logBetasOH: number[],
+  I = 0,
+): number {
+  // Ksp_app = Ksp_thermo / (γ_M · γ_OH^n) → pKsp_app = pKsp + logγ(n, I) + n·logγ(1, I)
+  const pKspApp = I > 0
+    ? pKsp + logActivityCoefficient(n, I) + n * logActivityCoefficient(1, I)
+    : pKsp;
+  const logFreeMetal = -pKspApp + n * (PKW - pH);
+  return logFreeMetal + Math.log10(alphaOH(logBetasOH, pH));
+}
+
+/**
+ * log s = f(pH) curve for the salt M(OH)_n. See logSaturation for the formula.
+ *
  * @param pHRange    pH sweep range
  * @param points     number of points
  */
@@ -174,23 +196,60 @@ export function hydroxideSolCurve(
   points = 500,
   I = 0,
 ): { pHs: number[]; logS: number[] } {
-  // Ksp_app = Ksp_thermo / (γ_M · γ_OH^n) → pKsp_app = pKsp + logγ(n, I) + n·logγ(1, I)
-  const pKspApp = I > 0
-    ? pKsp + logActivityCoefficient(n, I) + n * logActivityCoefficient(1, I)
-    : pKsp;
   const [pHmin, pHmax] = pHRange;
   const pHs: number[] = [];
   const logS: number[] = [];
 
   for (let i = 0; i <= points; i++) {
     const pH = pHmin + ((pHmax - pHmin) * i) / points;
-    const logFreeMetal = -pKspApp + n * (PKW - pH);
-    const aOH = alphaOH(logBetasOH, pH);
     pHs.push(pH);
-    logS.push(logFreeMetal + Math.log10(aOH));
+    logS.push(logSaturation(pH, pKsp, n, logBetasOH, I));
   }
 
   return { pHs, logS };
+}
+
+/**
+ * Individual M/M(OH)ⱼ fractions (no ligand) — same denominator as alphaOH,
+ * but returning each term instead of their sum. Used by the 2D solubility map
+ * to pick the dominant DISSOLVED species: below the saturation line, this
+ * ladder depends only on pH — the Ksp condition pins [M^n+] via [OH⁻] alone,
+ * so total concentration never enters the hydrolysis ratios.
+ */
+function hydrolysisFractions(pH: number, logBetasOH: number[]): number[] {
+  const pOH = PKW - pH;
+  const logOH = -pOH;
+  const logTerms = [0, ...logBetasOH.map((b, i) => b + (i + 1) * logOH)];
+  const maxLog = Math.max(...logTerms);
+  const terms = logTerms.map((lt) => Math.pow(10, lt - maxLog));
+  const D = terms.reduce((a, b) => a + b, 0);
+  return terms.map((t) => t / D);
+}
+
+/**
+ * 2D Sillén solubility map: dominant regime at (pH, log[M]_total).
+ * Index 0 = solid M(OH)ₙ(s) — the analytical concentration at this point would
+ * exceed saturation. Indices 1..k+1 = dissolved M^n+/M(OH)₁/.../M(OH)ₖ.
+ *
+ * Below the saturation line (undersaturated), which dissolved species
+ * dominates depends only on pH, never on the y (log[M]) position — see
+ * hydrolysisFractions. So the vertical axis only ever decides solid vs.
+ * solution; species boundaries within "solution" are pH-only vertical bands,
+ * exactly like the 1D M–OH DUZP.
+ */
+export function solubilityRegimeFractions(
+  pH: number,
+  logM: number,
+  pKsp: number,
+  n: number,
+  logBetasOH: number[],
+  I = 0,
+): number[] {
+  const isSolid = logM > logSaturation(pH, pKsp, n, logBetasOH, I);
+  const dissolved = isSolid
+    ? new Array<number>(logBetasOH.length + 1).fill(0)
+    : hydrolysisFractions(pH, logBetasOH);
+  return [isSolid ? 1 : 0, ...dissolved];
 }
 
 /**
