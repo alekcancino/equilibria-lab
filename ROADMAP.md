@@ -197,6 +197,25 @@ Two extensions, both scoped precisely rather than attempting a single merged fie
 Verified end-to-end with real-render QA (Zn(OH)₂ + NH₃ mask + Cu(OH)₂ overlay) and a
 regression check confirming the unmasked/no-M2 baseline is pixel-identical to before.
 
+### "% formado" impossible values above 100 % (2026-07-11) — resolved
+
+User-reported: "algo estaba al 300 % y eso no puede ser posible." Reproduced live: Complejos'
+accent metric showed **312.5 %** for Zn²⁺/NH₃ (a 4-step ladder). Root cause: `% formado` was
+computed as ñ·100 (bjerrumNumber, mean ligand coordination number) — a genuine percentage
+only for a 1:1 complex, where ñ ∈ [0, 1]. For an N-step ladder ñ ranges 0–N, so ñ·100 isn't a
+physical percentage at all; the same bug affected the coupled X–M–L branch and the "pL para
+50 %" operating point. Fixed by switching every one of these to `1 − α_free` (the free-metal
+fraction, always in [0, 1] regardless of ladder length) — `lib/metrics.ts`'s ñ-based
+`percentFormed`/`percentDissociated`/`pLForPercentFormed` (1:1-only, and only ever called from
+Complejos.tsx) are replaced by α_free-based `percentComplexed`/`pLForPercentComplexed`,
+mathematically identical to the old formula for 1:1 systems (verified no regression) and
+correctly bounded for any number of steps. Prompted a full audit of every other
+percentage-based metric in the app (titrations, ion exchange, competitive precipitation,
+conditional constants, acid-base/speciation) — all are either provably bounded by
+construction (normalized fractions, Langmuir-type saturation formulas, explicit clamps) or
+are legitimately unbounded error metrics (Gran-plot "% error", a deviation not a fraction),
+not the same class of bug.
+
 ### Near-term
 
 | Feature | Notes |

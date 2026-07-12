@@ -20,7 +20,7 @@ import {
   solvePXAtPL, solveTwoLigandEquilibrium, twoLigandCurve,
   twoLigandFractions, twoLigandPredominanceZones, xBranchFromEditor,
 } from '../lib/complexation';
-import { percentFormed, percentDissociated, pLForPercentFormed } from '../lib/metrics';
+import { percentComplexed, pLForPercentComplexed } from '../lib/metrics';
 import { correctedLogBetas } from '../lib/activity';
 import {
   composeAlphas, defaultSideEditorState, sideStackFromEditor,
@@ -326,13 +326,16 @@ export default function Complejos() {
     : 0;
   const nBarMax = xBranch ? Math.max(n, xBranch.logBetasX.length) : n;
 
-  // "% + operating point" metrics. For a 1:1 complex:
-  // % formed = ñ·100, % dissociated = (1−ñ)·100; pL at 50 % = log β₁.
-  // In coupled mode the same ñ_L·100 semantics apply, computed from the
-  // two-branch fractions instead of the one-ligand Bjerrum number.
-  const pctFormado = xBranch ? nBarEq * 100 : percentFormed(pLEqClipped, logBetasEff);
-  const pctDisociado = xBranch ? (1 - nBarEq) * 100 : percentDissociated(pLEqClipped, logBetasEff);
-  const pL50 = pLForPercentFormed(logBetasEff, 50);
+  // "% + operating point" metrics, from the free-metal fraction (alphasEq[0]),
+  // never from ñ (bjerrumNumber/nBarEq): ñ is a mean coordination number, not
+  // a fraction — for an N-step ladder it ranges 0..N, so ñ·100 isn't a real
+  // percentage (a 4-step Zn–NH₃ system showed "312.5 %"). (1 − α_free) is
+  // always in [0, 1] regardless of how many steps the ladder has, in both
+  // plain and coupled (X–M–L) mode, since alphasEq[0] is the free-M fraction
+  // in either case.
+  const pctFormado = percentComplexed(alphasEq[0] ?? 0);
+  const pctDisociado = (alphasEq[0] ?? 0) * 100;
+  const pL50 = pLForPercentComplexed(logBetasEff, 50);
 
   // 2D predominance map (pL–pX): the metal split between the primary ligand L
   // and the second agent X, with both free concentrations as independent axes.
@@ -637,11 +640,11 @@ export default function Complejos() {
         <DiagramTabs tabs={diagrams} initialId="equil" />
         <ResultCardRow items={[
           {
-            label: n === 1 ? '% formado' : '% formado (ñ·100)',
+            label: '% formado',
             value: eqValid ? `${pctFormado.toFixed(1)} %` : '—',
             accent: true,
           },
-          ...(n === 1 ? [{ label: '% disociado', value: eqValid ? `${pctDisociado.toFixed(1)} %` : '—' }] : []),
+          { label: '% libre (disociado)', value: eqValid ? `${pctDisociado.toFixed(1)} %` : '—' },
           ...(xBranch !== null
             ? [{ label: `% en ${side.auxLabel || 'X'}`, value: eqValid ? `${pctEnX.toFixed(1)} %` : '—' }]
             : [{ label: 'pL para 50 %', value: Number.isFinite(pL50) ? pL50.toFixed(2) : '—' }]),
