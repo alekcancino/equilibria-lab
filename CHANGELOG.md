@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.0 — 2026-07-11
+
+### Dark mode redesign: neutral charcoal (Instagram/WhatsApp-style), plus theme bugs fixed
+
+- **Redesigned the dark palette** from a blue/navy-tinted slate (`#0F172A`) to a true-neutral charcoal (`#0A0A0B` bg, `#1A1A1C` cards, `#2E2E31` borders) — no color cast in the neutrals, flat elevation via subtle borders instead of colorful ambient glow. Removed the colorful radial-gradient washes behind the app card and content area in dark mode (`--bg-grad`, `--content-wash` are now flat). The page background behind the floating app card is now true black (`#000000`).
+- **Fixed real theme bugs**, not just re-tinted: several surfaces were hardcoded to a light color regardless of theme, showing as glaring white/cream boxes in dark mode —
+  - `.db-item` (database preset chips, e.g. "Cu²⁺ / en") — was `background: #fff`, always white.
+  - `.plot-toolbar-btn` (the floating reset-zoom/export-PNG/export-CSV buttons on every chart) — was `rgba(255,255,255,0.94)`, always a near-opaque white square floating on the chart.
+  - `.badge.ok` / `.badge.warn` (inline result/warning callouts, e.g. Pourbaix's "diagrama simplificado" note) — hardcoded light green/cream backgrounds; added a `--warn-soft` token to match the existing `--ok-soft`.
+  - `.editor`, `.share-btn--copied` — same class of hardcoded light hex.
+  - The topbar's glossy 1px top highlight (a light-mode-only touch) is now flat/off in dark mode via a new `--topbar-sheen` token, instead of a stray white line on a dark bar.
+- Updated `Predominance2D`'s dark-mode fill-tint target and "no solution" cell color to match the new neutral `--plot-bg` (was tuned to the old navy).
+- Verified end-to-end with real-render QA across Home, Complejos (chart + toolbar + preset chips), the Sillén 2D map, and Pourbaix — plus a light-mode regression check confirming zero visual change there.
+
 ## 0.7.1 — 2026-07-11
 
 ### Fix: "% formado" could show impossible values above 100 % (Complejos)

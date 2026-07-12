@@ -65,11 +65,12 @@ function hexToRgb(hex: string): [number, number, number] {
 // Soften the saturated Okabe-Ito palette toward a mix target so filled regions
 // read as the app's pastel language (like DUZP zones) while staying
 // distinguishable. In light mode that target is white (the card surface); in
-// dark mode it's the same dark navy used for Plotly's plot-bg (#16203A), so
-// filled regions sit in the same "surface family" as the app's line charts
-// instead of reading as washed-out light patches on a dark card.
+// dark mode it's the same neutral charcoal used for Plotly's plot-bg
+// (#141416 — Instagram-style dark, no blue/navy tint), so filled regions sit
+// in the same "surface family" as the app's line charts instead of reading
+// as washed-out light patches, or a stray navy cast, on a neutral dark card.
 const MIX_LIGHT: [number, number, number] = [255, 255, 255];
-const MIX_DARK: [number, number, number] = [22, 32, 58];
+const MIX_DARK: [number, number, number] = [24, 24, 26];
 
 function tint([r, g, b]: [number, number, number], mix: [number, number, number], toward = 0.42): [number, number, number] {
   return [
@@ -80,9 +81,9 @@ function tint([r, g, b]: [number, number, number], mix: [number, number, number]
 }
 
 // "No physical solution" cell fill — a faint neutral, remapped to the same
-// dark-navy structural tone used elsewhere (plotTheme's #e8ecef → #2A3A55).
+// neutral-gray structural tone used elsewhere (plotTheme's --plot-grid #2A2A2D).
 const NO_SOLUTION_LIGHT: [number, number, number, number] = [226, 232, 240, 90];
-const NO_SOLUTION_DARK: [number, number, number, number] = [42, 58, 85, 110];
+const NO_SOLUTION_DARK: [number, number, number, number] = [42, 42, 45, 110];
 
 /**
  * 2D predominance map (pM/pL–pH and pL–pX). The dominant-species field is
