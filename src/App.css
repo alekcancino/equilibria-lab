@@ -1229,6 +1229,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 
 /* ---------- Mapa 2D de predominio (SVG + campo canvas) ---------- */
 .predom2d {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;

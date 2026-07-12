@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.2 — 2026-07-11
+
+### CSV/PNG export for the 2D predominance maps
+
+- All three `Predominance2D` maps (pL–pH, pL–pX, Sillén pH–log[M]) now have the same export affordances as every other chart in the app. CSV export (`gridToCSV`) writes a matrix — one column per x sample, one row per y sample (highest y first), cells hold the dominant species *name* — so the file is self-describing without the on-screen legend. PNG export serializes the live SVG, resolves the `var(--text)`/`var(--text-muted)`/`var(--plot-axis)` tokens to their computed values (a standalone SVG has no CSS cascade to resolve them against), and rasterizes at 2× via an offscreen canvas.
+- `PlotToolbar`'s `onResetZoom` is now optional, so diagrams with no pan/zoom (like these maps) get PNG/CSV buttons without a meaningless "reset zoom" affordance.
+- Verified end-to-end in a live page: a real button click decoded to a 96 KB PNG with all text rendering correctly (no invisible CSS-var fallback), plus 11 new unit tests for `gridToCSV`'s output shape and content.
+
 ## 0.6.1 — 2026-07-11
 
 ### Dark-mode fix for the 2D predominance maps

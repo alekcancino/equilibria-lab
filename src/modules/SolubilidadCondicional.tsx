@@ -512,6 +512,8 @@ export default function SolubilidadCondicional() {
           yLabel={`log[${s.m1.label}] total`}
           marker={{ x: minSolubility.pH, y: minSolubility.logS, label: 'mín. solubilidad' }}
           caption={`Zonas de predominio en 2D — ${s.m1.formula}`}
+          exportName="equilibria-sol-map2d"
+          exportMetadata={exportMetadata}
         />
       ),
     },
