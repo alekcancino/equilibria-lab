@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.6 — 2026-07-12
+
+### Bilingual UI (ES/EN) — PotencialCondicional module
+
+- **Translated:** the full **PotencialCondicional** ("Conditional E°′") module — the two-couple E°′ = f(pH) comparison, per-state complexation, the 3rd-couple Latimer/disproportionation branch, the E°′ = f(pX) ligand-effect tab, the conditional pX′ scale, the fixed-pM′ Nernst electrode section, and the InfoBox.
+- Caught and fixed a leading-article drop ("El **cruce**..." losing its "El ") before shipping this time, by specifically checking every `<strong>`/`<em>`-split paragraph — the same failure mode found (after shipping) in ConstantesCondicionales.
+
 ## 0.9.5 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — Redox module

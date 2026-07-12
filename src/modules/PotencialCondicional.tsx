@@ -23,6 +23,7 @@ import { alphaH, alphaL } from '../lib/conditional';
 import {
   defaultSideEditorState, electrodePotential, e0PrimeAtPH, sideStackFromEditor,
 } from '../lib/sideReactions';
+import { useT } from '../hooks/useT';
 
 const S = NERNST_S;     // 0.05916 V
 const PH_POINTS = 400;
@@ -123,6 +124,7 @@ function defaultState() {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PotencialCondicional() {
+  const t = useT();
   const [st, setSt] = useShareableState('potencialcond', defaultState());
 
   const set = <K extends keyof ReturnType<typeof defaultState>>(
@@ -361,7 +363,7 @@ export default function PotencialCondicional() {
   );
   const scalePX = useCallback((pX: number) => pX - Math.log10(alphaXH), [alphaXH]);
   const pxAxisLabel = st.showPXPrime
-    ? `pX′ condicional (pH ${st.pxPHFixed.toFixed(1)})`
+    ? t('complejos.conditionalPXLabel', { ph: st.pxPHFixed.toFixed(1) })
     : `p[${st.pxLigandLabel}]`;
 
   const EpxMin = Math.min(...EpxCurve) - 0.1;
@@ -383,7 +385,7 @@ export default function PotencialCondicional() {
         <Chart
           data={Eprimetraces}
           xTitle="pH"
-          yTitle="E°' (V vs ENH)"
+          yTitle={t('potencialcond.eprimeAxisLabel')}
           xRange={[0, 14]}
           yRange={[eMin, eMax]}
           shapes={logKShapes}
@@ -405,7 +407,7 @@ export default function PotencialCondicional() {
             hovertemplate: `E°′ = %{y:.3f} V<extra>pX=%{x:.1f}</extra>`,
           }]}
           xTitle={pxAxisLabel}
-          yTitle="E°' (V vs ENH)"
+          yTitle={t('potencialcond.eprimeAxisLabel')}
           xRange={[scalePX(0), scalePX(14)]}
           yRange={[EpxMin, EpxMax]}
           shapes={pxShapes}
@@ -421,7 +423,7 @@ export default function PotencialCondicional() {
     },
     {
       id: 'escala',
-      label: `Escala (pH ${st.pH.toFixed(1)})`,
+      label: t('potencialcond.scaleTabLabel', { ph: st.pH.toFixed(1) }),
       node: (
         <Chart
           data={escalaTraces}
@@ -439,131 +441,128 @@ export default function PotencialCondicional() {
     },
   ];
     return st.showPX ? all : all.filter((d) => d.id !== 'epx');
-  }, [Eprimetraces, eMin, eMax, logKShapes, logKAnnotations, st.showPX, pXs, scalePX, pxAxisLabel, EpxCurve, st.pxOxLabel, st.pxRedLabel, EpxMin, EpxMax, pxShapes, st.pxE0, escalaTraces, escalaPeMin, escalaPeMax, escalaShapes, escalaAnnotations, st.pH, escalaN, exportMetadata]);
+  }, [Eprimetraces, eMin, eMax, logKShapes, logKAnnotations, st.showPX, pXs, scalePX, pxAxisLabel, EpxCurve, st.pxOxLabel, st.pxRedLabel, EpxMin, EpxMax, pxShapes, st.pxE0, escalaTraces, escalaPeMin, escalaPeMax, escalaShapes, escalaAnnotations, st.pH, escalaN, exportMetadata, t]);
 
   return (
     <div className="module">
-      <PanelShell title="Potencial condicional" onReset={reset} moduleId="potencialcond">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('potencialcond.title')} onReset={reset} moduleId="potencialcond">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
           <ModelBadge
-            model="comparación E°′ = f(pH) entre dos pares"
+            model={t('potencialcond.comparisonModel')}
             additions={[
-              st.showCouple3 && 'Latimer y dismutación',
-              st.showComplexPH1 && 'complejación por estado (par 1)',
-              st.showPX && 'efecto de ligando X',
-              st.showPX && st.showPXPrime && 'pX′ condicional',
+              st.showCouple3 && t('potencialcond.additionLatimer'),
+              st.showComplexPH1 && t('potencialcond.additionComplexationPerState'),
+              st.showPX && t('potencialcond.additionLigandEffect'),
+              st.showPX && st.showPXPrime && t('potencialcond.additionCondPXPrime'),
             ]}
           />
 
-          <CoupleEditor title="Par 1" couple={st.couple1} onChange={(c) => set('couple1', c)} />
-          <CoupleEditor title="Par 2" couple={st.couple2} onChange={(c) => set('couple2', c)} />
+          <CoupleEditor title={t('redox.couple1Title')} couple={st.couple1} onChange={(c) => set('couple1', c)} />
+          <CoupleEditor title={t('redox.couple2Title')} couple={st.couple2} onChange={(c) => set('couple2', c)} />
         </PanelSection>
 
-        <PanelSection title="Complejación del par 1" icon="✦">
+        <PanelSection title={t('potencialcond.complexationSection')} icon="✦">
           <Toggle
-            label="E°'=f(pH) con complejación (par 1)"
+            label={t('potencialcond.complexationToggle')}
             checked={st.showComplexPH1}
             onChange={(v) => set('showComplexPH1', v)}
           />
           {st.showComplexPH1 && (
             <div className="mask-section">
-              <Disclosure title={`Reacciones parásitas de ${st.couple1.ox} (oxidante)`}>
+              <Disclosure title={t('potencialcond.sideReactionsTitle', { species: st.couple1.ox, role: t('potencialcond.oxidantRole') })}>
                 <SideReactionEditor
                   state={st.oxSide1} onChange={(s) => set('oxSide1', s)}
                   showLigandPKas={false} showComplexSection={false}
                 />
               </Disclosure>
-              <Disclosure title={`Reacciones parásitas de ${st.couple1.red} (reductor)`}>
+              <Disclosure title={t('potencialcond.sideReactionsTitle', { species: st.couple1.red, role: t('potencialcond.reductantRole') })}>
                 <SideReactionEditor
                   state={st.redSide1} onChange={(s) => set('redSide1', s)}
                   showLigandPKas={false} showComplexSection={false}
                 />
               </Disclosure>
               <p className="hint">
-                Cada forma (Ox y Red) puede hidrolizar y/o unir un ligando auxiliar; el cruce
-                y el pH del cursor pasan a usar el punto de intersección numérico de las curvas.
+                {t('potencialcond.complexationHint')}
               </p>
             </div>
           )}
         </PanelSection>
 
-        <PanelSection title="Condiciones" icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
           <Slider
-            label="pH del cursor"
+            label={t('potencialcond.cursorPHLabel')}
             value={st.pH} min={0} max={14} step={0.1}
             onChange={(v) => set('pH', v)} decimals={1}
           />
 
           {/* 3rd couple (Latimer diagram / disproportionation) */}
           <Toggle
-            label="Agregar 3.er par (Latimer / dismutación)"
+            label={t('potencialcond.addThirdCoupleToggle')}
             checked={st.showCouple3}
             onChange={(v) => set('showCouple3', v)}
           />
           {st.showCouple3 && (
             <div className="mask-section">
               <CoupleEditor
-                title="Par 3 (intermedia → reducida)"
+                title={t('potencialcond.couple3Title')}
                 couple={st.couple3}
                 onChange={(c) => set('couple3', c)}
               />
               {dismutationActive ? (
                 <div className="badge warn" style={{ marginBottom: 8 }}>
-                  ⚠ Dismutación activa a pH {st.pH.toFixed(1)}:
-                  E°'(par 3) = {E3cur!.toFixed(3)} V &gt; E°'(par 1) = {E1cur.toFixed(3)} V.
-                  La especie <strong>{st.couple1.red}</strong> es inestable y dismuta.
+                  {t('potencialcond.dismutationActivePrefix', { ph: st.pH.toFixed(1), e3: E3cur!.toFixed(3), e1: E1cur.toFixed(3) })}
+                  <strong>{st.couple1.red}</strong>{t('potencialcond.dismutationActiveSuffix')}
                 </div>
               ) : (
                 <div className="badge ok" style={{ marginBottom: 8 }}>
-                  Especie intermedia estable a pH {st.pH.toFixed(1)}:
-                  E°'(par 1) = {E1cur.toFixed(3)} V &gt; E°'(par 3) = {E3cur?.toFixed(3)} V.
+                  {t('potencialcond.intermediateStableText', { ph: st.pH.toFixed(1), e1: E1cur.toFixed(3), e3: E3cur?.toFixed(3) ?? '—' })}
                 </div>
               )}
               {cross13 !== null && (
                 <p className="hint">
-                  Cruce par 1–3: pH {cross13.toFixed(1)} (dismutación se invierte)
-                  {cross13HasMore && ' — hay más de un cruce en este intervalo, se muestra el primero'}
+                  {t('potencialcond.crossover13Text', { ph: cross13.toFixed(1) })}
+                  {cross13HasMore && t('potencialcond.moreCrossingsText')}
                 </p>
               )}
               {cross23 !== null && (
-                <p className="hint">Cruce par 2–3: pH {cross23.toFixed(1)}</p>
+                <p className="hint">{t('potencialcond.crossover23Text', { ph: cross23.toFixed(1) })}</p>
               )}
             </div>
           )}
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: `E°'(${st.couple1.name}) a pH ${st.pH.toFixed(1)}`, value: `${E1cur.toFixed(3)} V  (pe°′ ${(E1cur/S).toFixed(1)})`, helpId: 'Eprime' },
-            { label: `E°'(${st.couple2.name}) a pH ${st.pH.toFixed(1)}`, value: `${E2cur.toFixed(3)} V  (pe°′ ${(E2cur/S).toFixed(1)})`, helpId: 'Eprime' },
+            { label: t('potencialcond.eprimeAtPH', { name: st.couple1.name, ph: st.pH.toFixed(1) }), value: `${E1cur.toFixed(3)} V  (pe°′ ${(E1cur/S).toFixed(1)})`, helpId: 'Eprime' },
+            { label: t('potencialcond.eprimeAtPH', { name: st.couple2.name, ph: st.pH.toFixed(1) }), value: `${E2cur.toFixed(3)} V  (pe°′ ${(E2cur/S).toFixed(1)})`, helpId: 'Eprime' },
             {
-              label: 'Cruce de pares 1–2',
+              label: t('potencialcond.crossover12Label'),
               value: cross12 !== null
-                ? `pH ${cross12.toFixed(2)}${cross12HasMore ? ' (hay más de uno)' : ''}`
-                : 'Paralelos (sin cruce)',
+                ? `pH ${cross12.toFixed(2)}${cross12HasMore ? t('potencialcond.moreThanOneText') : ''}`
+                : t('potencialcond.parallelNoCrossover'),
             },
             {
-              label: 'Reacción espontánea',
+              label: t('redox.spontaneousReaction'),
               value: `${strongest.c.ox} + ${weakest.c.red} · log K′ = ${logKcur.toFixed(1)}`,
             },
           ]} />
         </PanelSection>
 
-        <PanelSection title="Efecto de ligando (pX)" icon="✦">
+        <PanelSection title={t('potencialcond.ligandEffectSection')} icon="✦">
           <Toggle
-            label="E°'=f(pX) — efecto de un ligando"
+            label={t('potencialcond.pxToggle')}
             checked={st.showPX}
             onChange={(v) => set('showPX', v)}
           />
           {st.showPX && (
             <div className="mask-section">
-              <LabelField label="Forma oxidada (Ox)" value={st.pxOxLabel} onChange={(v) => set('pxOxLabel', v)} />
-              <LabelField label="Forma reducida (Red)" value={st.pxRedLabel} onChange={(v) => set('pxRedLabel', v)} />
-              <LabelField label="Ligando X" value={st.pxLigandLabel} onChange={(v) => set('pxLigandLabel', v)} />
-              <Slider label="E° del par (V)" helpId="E0" value={st.pxE0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('pxE0', v)} decimals={3} />
+              <LabelField label={t('potencialcond.oxidizedFormLabel')} value={st.pxOxLabel} onChange={(v) => set('pxOxLabel', v)} />
+              <LabelField label={t('potencialcond.reducedFormLabel')} value={st.pxRedLabel} onChange={(v) => set('pxRedLabel', v)} />
+              <LabelField label={t('potencialcond.ligandXLabel')} value={st.pxLigandLabel} onChange={(v) => set('pxLigandLabel', v)} />
+              <Slider label={t('potencialcond.coupleE0Label')} helpId="E0" value={st.pxE0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('pxE0', v)} decimals={3} />
               <div className="control">
                 <div className="control-header">
-                  <span className="control-label">n (electrones)</span>
+                  <span className="control-label">{t('coupleEditor.nLabel')}</span>
                   <span className="control-value">{st.pxN}</span>
                 </div>
                 <div className="segmented" style={{ marginTop: 4 }}>
@@ -572,81 +571,73 @@ export default function PotencialCondicional() {
                   ))}
                 </div>
               </div>
-              <Disclosure title="log β de Ox con X">
+              <Disclosure title={t('potencialcond.logBetaOxTitle')}>
                 <ConstantList prefix="log β(Ox)" helpId="logBeta" values={st.pxLogBetasOx} onChange={(v) => set('pxLogBetasOx', v)} min={0} max={35} maxItems={6} />
               </Disclosure>
-              <Disclosure title="log β de Red con X">
+              <Disclosure title={t('potencialcond.logBetaRedTitle')}>
                 <ConstantList prefix="log β(Red)" helpId="logBeta" values={st.pxLogBetasRed} onChange={(v) => set('pxLogBetasRed', v)} min={0} max={35} maxItems={6} />
               </Disclosure>
               <p className="hint">
-                Preset: Fe³⁺/Fe²⁺ + F⁻ · E° = +0.771 V · log β(Fe³⁺) = [5.28, 9.30, 12.06] · log β(Fe²⁺) = [1.0]
+                {t('potencialcond.presetHint')}
               </p>
               <Toggle
-                label="Escala pX′ condicional (protonación de X)"
+                label={t('potencialcond.pxPrimeToggle')}
                 checked={st.showPXPrime}
                 onChange={(v) => set('showPXPrime', v)}
               />
               {st.showPXPrime && (
                 <div className="mask-section">
-                  <Slider label="pH fijo" value={st.pxPHFixed} min={0} max={14} step={0.1} onChange={(v) => set('pxPHFixed', v)} decimals={1} />
-                  <ConstantList prefix="pKa (ácido conjugado de X)" helpId="pKa" values={st.pxPKasX} onChange={(v) => set('pxPKasX', v)} min={0} max={14} maxItems={4} minItems={1} initialValue={9.25} />
-                  <p className="hint">pX′ = pX − log α_X(H). NH₃/NH₄⁺: pKa ≈ 9.25.</p>
+                  <Slider label={t('complejos.fixedPHLabel')} value={st.pxPHFixed} min={0} max={14} step={0.1} onChange={(v) => set('pxPHFixed', v)} decimals={1} />
+                  <ConstantList prefix={t('potencialcond.conjugateAcidXPrefix')} helpId="pKa" values={st.pxPKasX} onChange={(v) => set('pxPKasX', v)} min={0} max={14} maxItems={4} minItems={1} initialValue={9.25} />
+                  <p className="hint">{t('potencialcond.pxPrimeHint')}</p>
                 </div>
               )}
             </div>
           )}
         </PanelSection>
 
-        <PanelSection title="Electrodo a pM′ fijo (Nernst)" icon="✦">
+        <PanelSection title={t('potencialcond.electrodeSection')} icon="✦">
           <Toggle
-            label="Electrodo a pM′ fijo (Nernst)"
+            label={t('potencialcond.electrodeSection')}
             checked={st.showElectrode}
             onChange={(v) => set('showElectrode', v)}
           />
           {st.showElectrode && (
             <div className="mask-section">
-              <Slider label="E° (V)" helpId="E0" value={st.e0Metal} min={-1} max={2} step={0.01} onChange={(v) => set('e0Metal', v)} decimals={3} />
-              <Slider label="n (electrones)" helpId="n" value={st.nElectrode} min={1} max={4} step={1} onChange={(v) => set('nElectrode', v)} decimals={0} />
-              <Slider label="m H⁺ en semirreacción" helpId="mH" value={st.mHElectrode} min={0} max={4} step={1} onChange={(v) => set('mHElectrode', v)} decimals={0} />
-              <Slider label="pM′ objetivo" helpId="pMprime" value={st.pMPrimeTarget} min={0} max={14} step={0.1} onChange={(v) => set('pMPrimeTarget', v)} decimals={1} />
-              <Slider label="pH del electrodo" value={st.pHElectrode} min={0} max={14} step={0.1} onChange={(v) => set('pHElectrode', v)} decimals={1} />
+              <Slider label={t('potencialcond.e0VLabel')} helpId="E0" value={st.e0Metal} min={-1} max={2} step={0.01} onChange={(v) => set('e0Metal', v)} decimals={3} />
+              <Slider label={t('coupleEditor.nLabel')} helpId="n" value={st.nElectrode} min={1} max={4} step={1} onChange={(v) => set('nElectrode', v)} decimals={0} />
+              <Slider label={t('potencialcond.mHInHalfReaction')} helpId="mH" value={st.mHElectrode} min={0} max={4} step={1} onChange={(v) => set('mHElectrode', v)} decimals={0} />
+              <Slider label={t('potencialcond.pMPrimeTargetLabel')} helpId="pMprime" value={st.pMPrimeTarget} min={0} max={14} step={0.1} onChange={(v) => set('pMPrimeTarget', v)} decimals={1} />
+              <Slider label={t('potencialcond.electrodePHLabel')} value={st.pHElectrode} min={0} max={14} step={0.1} onChange={(v) => set('pHElectrode', v)} decimals={1} />
               {electrodeE !== null && (
                 <ResultCard items={[
-                  { label: 'E°′ a pH del electrodo', value: `${e0PrimeAtPH(st.e0Metal, st.mHElectrode, st.nElectrode, st.pHElectrode).toFixed(3)} V` },
-                  { label: `E a pM′ = ${st.pMPrimeTarget.toFixed(1)}`, value: `${electrodeE.toFixed(3)} V` },
+                  { label: t('potencialcond.eprimeAtElectrodePH'), value: `${e0PrimeAtPH(st.e0Metal, st.mHElectrode, st.nElectrode, st.pHElectrode).toFixed(3)} V` },
+                  { label: t('potencialcond.eAtPMPrime', { v: st.pMPrimeTarget.toFixed(1) }), value: `${electrodeE.toFixed(3)} V` },
                 ]} />
               )}
-              <p className="hint">Ej. Ni²⁺/Ni con glicinato como ligando auxiliar (pGly′ = 4) en la escala condicional.</p>
+              <p className="hint">{t('potencialcond.electrodeExampleHint')}</p>
             </div>
           )}
         </PanelSection>
 
-        <InfoBox title="E°' = f(pH): efecto del protón">
+        <InfoBox title={t('potencialcond.infoBoxTitle')}>
           <p>
-            Para el par <code>Ox + m H⁺ + n e⁻ ⇌ Red</code>, el potencial formal condicional es
-            <code> E°' = E° − 0.05916·(m/n)·pH</code>. La pendiente es −59.16·m/n mV/pH.
+            {t('potencialcond.para1Prefix')}<code>{t('potencialcond.para1Code1')}</code>
+            {t('potencialcond.para1Mid')}
+            <code> {t('potencialcond.para1Code2')}</code>{t('potencialcond.para1Suffix')}
           </p>
           <p>
-            El <strong>cruce</strong> (de dos rectas, o de las curvas reales si hay complejación
-            activa en el par 1) marca el pH donde la reacción cambia de dirección: por encima
-            del cruce, el orden de oxidante/reductor se invierte. Este efecto es crucial en
-            análisis volumétrico (el mismo oxidante puede ser selectivo a un pH y no a otro).
+            {t('potencialcond.para2Prefix')}<strong>{t('potencialcond.crossoverBold')}</strong>{t('potencialcond.para2Rest')}
           </p>
           <p>
-            <strong>Dismutación (diagrama de Latimer):</strong> si E°'(derecho) &gt; E°'(izquierdo),
-            la especie intermedia es inestable y reacciona consigo misma (ej. Cu⁺ → Cu²⁺ + Cu⁰).
+            <strong>{t('potencialcond.dismutationBold')}</strong>{t('potencialcond.dismutationRest')}
           </p>
           <p>
-            <strong>Complejación por estado:</strong> si el oxidante o el reductor del par 1
-            hidroliza o se une a un ligando auxiliar, <code>E°' = E° − 0.05916·(m/n)·pH +
-            (0.05916/n)·log(α_Red/α_Ox)</code> — complejar el oxidante lo estabiliza y baja
-            E°' (oxidante más débil); complejar el reductor lo hace más fuerte como reductor
-            y sube E°'. La curva deja de ser una recta.
+            <strong>{t('potencialcond.perStateBold')}</strong>{t('potencialcond.perStateRest1')}
+            <code>{t('potencialcond.perStateCode')}</code>{t('potencialcond.perStateRest2')}
           </p>
           <p>
-            <strong>pX′ condicional:</strong> cuando el ligando X se protona (NH₃/NH₄⁺, F⁻/HF…),
-            el eje pasa de p[X] libre a pX′ = −log(concentración analítica total) a un pH fijo —
-            se necesita más X total para lograr la misma [X] libre cuanto más se protona.
+            <strong>{t('potencialcond.pxPrimeBold')}</strong>{t('potencialcond.pxPrimeRest')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -654,9 +645,9 @@ export default function PotencialCondicional() {
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="eprime" />
         <ResultCardRow items={[
-          { label: `E°' ${st.couple1.ox}/${st.couple1.red}`, value: Number.isFinite(E1cur) ? `${E1cur.toFixed(3)} V` : '—', accent: true, helpId: 'Eprime' },
-          { label: `E°' ${st.couple2.ox}/${st.couple2.red}`, value: Number.isFinite(E2cur) ? `${E2cur.toFixed(3)} V` : '—', helpId: 'Eprime' },
-          { label: 'Cruce 1–2', value: cross12 !== null ? `pH ${cross12.toFixed(1)}` : '—' },
+          { label: t('potencialcond.eprimeOxRed', { ox: st.couple1.ox, red: st.couple1.red }), value: Number.isFinite(E1cur) ? `${E1cur.toFixed(3)} V` : '—', accent: true, helpId: 'Eprime' },
+          { label: t('potencialcond.eprimeOxRed', { ox: st.couple2.ox, red: st.couple2.red }), value: Number.isFinite(E2cur) ? `${E2cur.toFixed(3)} V` : '—', helpId: 'Eprime' },
+          { label: t('potencialcond.crossover12Short'), value: cross12 !== null ? `pH ${cross12.toFixed(1)}` : '—' },
         ]} />
       </section>
     </div>
