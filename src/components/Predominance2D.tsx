@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { formatAxisLabel } from '../lib/format';
 import { MARKER_COLOR } from '../lib/database';
 import { speciesInGrid, type Grid2D } from '../lib/predominance2D';
+import { useTheme } from '../hooks/useTheme';
+import { toDarkColors } from '../lib/plotTheme';
 
 interface Predominance2DProps {
   grid: Grid2D;
@@ -37,15 +39,27 @@ function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
-// Soften the saturated Okabe-Ito palette toward white so filled regions read as
-// the app's pastel language (like DUZP zones) while staying distinguishable.
-function tint([r, g, b]: [number, number, number], toward = 0.42): [number, number, number] {
+// Soften the saturated Okabe-Ito palette toward a mix target so filled regions
+// read as the app's pastel language (like DUZP zones) while staying
+// distinguishable. In light mode that target is white (the card surface); in
+// dark mode it's the same dark navy used for Plotly's plot-bg (#16203A), so
+// filled regions sit in the same "surface family" as the app's line charts
+// instead of reading as washed-out light patches on a dark card.
+const MIX_LIGHT: [number, number, number] = [255, 255, 255];
+const MIX_DARK: [number, number, number] = [22, 32, 58];
+
+function tint([r, g, b]: [number, number, number], mix: [number, number, number], toward = 0.42): [number, number, number] {
   return [
-    Math.round(r + (255 - r) * toward),
-    Math.round(g + (255 - g) * toward),
-    Math.round(b + (255 - b) * toward),
+    Math.round(r + (mix[0] - r) * toward),
+    Math.round(g + (mix[1] - g) * toward),
+    Math.round(b + (mix[2] - b) * toward),
   ];
 }
+
+// "No physical solution" cell fill — a faint neutral, remapped to the same
+// dark-navy structural tone used elsewhere (plotTheme's #e8ecef → #2A3A55).
+const NO_SOLUTION_LIGHT: [number, number, number, number] = [226, 232, 240, 90];
+const NO_SOLUTION_DARK: [number, number, number, number] = [42, 58, 85, 110];
 
 /**
  * 2D predominance map (pM/pL–pH and pL–pX). The dominant-species field is
@@ -58,6 +72,19 @@ export default function Predominance2D({
   grid, colors, labels, xLabel, yLabel, marker, caption,
 }: Predominance2DProps) {
   const { nx, ny, xRange, yRange } = grid;
+  const isDark = useTheme() === 'dark';
+
+  // Remap once per theme change rather than re-deriving per pixel/legend row.
+  const effColors = useMemo(
+    () => (isDark ? toDarkColors(colors) ?? colors : colors),
+    [colors, isDark],
+  );
+  const markerColor = useMemo(
+    () => (isDark ? (toDarkColors([MARKER_COLOR]) ?? [MARKER_COLOR])[0] : MARKER_COLOR),
+    [isDark],
+  );
+  const mixTarget = isDark ? MIX_DARK : MIX_LIGHT;
+  const noSolution = isDark ? NO_SOLUTION_DARK : NO_SOLUTION_LIGHT;
 
   const dataUrl = useMemo(() => {
     const canvas = document.createElement('canvas');
@@ -73,16 +100,16 @@ export default function Predominance2D({
         const idx = grid.dominant[j][i];
         const p = (cy * nx + i) * 4;
         if (idx < 0) {
-          img.data[p] = 226; img.data[p + 1] = 232; img.data[p + 2] = 240; img.data[p + 3] = 90;
+          [img.data[p], img.data[p + 1], img.data[p + 2], img.data[p + 3]] = noSolution;
         } else {
-          const [r, g, b] = tint(hexToRgb(colors[idx % colors.length]));
+          const [r, g, b] = tint(hexToRgb(effColors[idx % effColors.length]), mixTarget);
           img.data[p] = r; img.data[p + 1] = g; img.data[p + 2] = b; img.data[p + 3] = 255;
         }
       }
     }
     ctx.putImageData(img, 0, 0);
     return canvas.toDataURL();
-  }, [grid, nx, ny, colors]);
+  }, [grid, nx, ny, effColors, mixTarget, noSolution]);
 
   const present = useMemo(() => speciesInGrid(grid), [grid]);
 
@@ -151,11 +178,11 @@ export default function Predominance2D({
         {/* Read-point crosshair */}
         {markerInside && marker && (
           <g>
-            <line x1={toPx(marker.x)} y1={PAD_T} x2={toPx(marker.x)} y2={PLOT_BOTTOM} stroke={MARKER_COLOR} strokeWidth={1.75} strokeDasharray="6 4" />
-            <line x1={PAD_L} y1={toPy(marker.y)} x2={PAD_L + PLOT_W} y2={toPy(marker.y)} stroke={MARKER_COLOR} strokeWidth={1.75} strokeDasharray="6 4" />
-            <circle cx={toPx(marker.x)} cy={toPy(marker.y)} r={5} fill={MARKER_COLOR} stroke="#fff" strokeWidth={1.5} />
+            <line x1={toPx(marker.x)} y1={PAD_T} x2={toPx(marker.x)} y2={PLOT_BOTTOM} stroke={markerColor} strokeWidth={1.75} strokeDasharray="6 4" />
+            <line x1={PAD_L} y1={toPy(marker.y)} x2={PAD_L + PLOT_W} y2={toPy(marker.y)} stroke={markerColor} strokeWidth={1.75} strokeDasharray="6 4" />
+            <circle cx={toPx(marker.x)} cy={toPy(marker.y)} r={5} fill={markerColor} stroke="#fff" strokeWidth={1.5} />
             {marker.label && (
-              <text x={Math.min(toPx(marker.x) + 8, W - 4)} y={Math.max(toPy(marker.y) - 8, PAD_T + 12)} fontSize={14} fontWeight={600} fill={MARKER_COLOR}>
+              <text x={Math.min(toPx(marker.x) + 8, W - 4)} y={Math.max(toPy(marker.y) - 8, PAD_T + 12)} fontSize={14} fontWeight={600} fill={markerColor}>
                 {marker.label}
               </text>
             )}
@@ -168,10 +195,10 @@ export default function Predominance2D({
           const row = Math.floor(k / LEGEND_COLS);
           const lx = PAD_L + col * (PLOT_W / LEGEND_COLS);
           const ly = LEGEND_TOP + row * LEGEND_ROW_H;
-          const [r, g, b] = tint(hexToRgb(colors[idx % colors.length]));
+          const [r, g, b] = tint(hexToRgb(effColors[idx % effColors.length]), mixTarget);
           return (
             <g key={idx}>
-              <rect x={lx} y={ly - 12} width={16} height={16} rx={3} fill={`rgb(${r},${g},${b})`} stroke={colors[idx % colors.length]} strokeWidth={1.25} />
+              <rect x={lx} y={ly - 12} width={16} height={16} rx={3} fill={`rgb(${r},${g},${b})`} stroke={effColors[idx % effColors.length]} strokeWidth={1.25} />
               <text x={lx + 24} y={ly + 1} fontSize={15} fill="var(--text)">
                 {labels[idx] ?? `Especie ${idx}`}
               </text>
