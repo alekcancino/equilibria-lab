@@ -26,6 +26,7 @@ import {
 } from '../lib/extraction';
 import { SPECIES_COLORS } from '../lib/database';
 import { formatSci } from '../lib/format';
+import { useT } from '../hooks/useT';
 
 // ── Presets ───────────────────────────────────────────────────────────────────
 
@@ -108,13 +109,14 @@ function AnalyteEditor({ a, color, additions, onChange }: {
   additions: Array<string | false>;
   onChange: (patch: Partial<AnalyteState>) => void;
 }) {
+  const t = useT();
   const acidPresets = PRESETS.filter((p) => p.type === 'acid');
   const chelatePresets = PRESETS.filter((p) => p.type === 'chelate');
   return (
     <div style={{ marginBottom: 12 }}>
       <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
         <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
-        Nombre / fórmula
+        {t('extraccionLiquido.nameFormulaLabel')}
       </label>
       <input
         className="text-input"
@@ -125,35 +127,35 @@ function AnalyteEditor({ a, color, additions, onChange }: {
 
       <div className="control" style={{ marginBottom: 6 }}>
         <div className="control-header">
-          <span className="control-label">Tipo</span>
+          <span className="control-label">{t('solubilidad.typeLabel')}</span>
         </div>
         <div className="segmented" style={{ marginTop: 4 }}>
-          {(['acid', 'chelate'] as const).map((t) => (
+          {(['acid', 'chelate'] as const).map((tp) => (
             <button
-              key={t}
-              className={a.type === t ? 'seg-btn active' : 'seg-btn'}
-              onClick={() => onChange({ type: t })}
+              key={tp}
+              className={a.type === tp ? 'seg-btn active' : 'seg-btn'}
+              onClick={() => onChange({ type: tp })}
             >
-              {t === 'acid' ? 'Ácido / neutro' : 'Quelato metálico'}
+              {tp === 'acid' ? t('extraccionLiquido.acidNeutralOption') : t('extraccionLiquido.metalChelateOption')}
             </button>
           ))}
         </div>
       </div>
       <ModelBadge
         model={a.type === 'chelate'
-          ? `extracción de quelato metálico (${a.n}:1)`
+          ? t('extraccionLiquido.chelateExtractionModel', { n: a.n })
           : a.pKas.length === 0
-            ? 'reparto simple de soluto no ionizable'
+            ? t('extraccionLiquido.simplePartitionModel')
             : a.pKas.length === 1
-              ? 'reparto condicionado por una ionización'
-              : `reparto condicionado por ${a.pKas.length} ionizaciones`}
+              ? t('extraccionLiquido.singleIonizationModel')
+              : t('extraccionLiquido.multiIonizationModel', { n: a.pKas.length })}
         additions={additions}
       />
 
       <p className="hint" style={{ marginBottom: 6 }}>
         {a.type === 'acid'
-          ? 'Presets ácidos:'
-          : 'Presets quelatos (D = K_ex · [HL]^n · 10^(n·pH)):'}
+          ? t('extraccionLiquido.acidPresetsHint')
+          : t('extraccionLiquido.chelatePresetsHint')}
       </p>
       <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
         {(a.type === 'acid' ? acidPresets : chelatePresets).map((p) => (
@@ -186,7 +188,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
             initialValue={4.76}
           />
           {a.pKas.length > 1 && (
-            <p className="hint">Índice de la forma neutra (0 = más protonada): {a.neutralIdx}
+            <p className="hint">{t('extraccionLiquido.neutralFormIndexHint', { idx: a.neutralIdx })}
               {' '}
               <button
                 style={{ fontSize: 12, background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', padding: '1px 6px' }}
@@ -202,7 +204,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
           <Slider label="log K_ex" helpId="Kex" value={a.logKd} min={-2} max={20} step={0.1} onChange={(v) => onChange({ logKd: v })} decimals={2} />
           <div className="control">
             <div className="control-header">
-              <span className="control-label">n (carga del metal)</span>
+              <span className="control-label">{t('extraccionLiquido.metalChargeNLabel')}</span>
               <span className="control-value">{a.n}</span>
             </div>
             <div className="segmented" style={{ marginTop: 4 }}>
@@ -214,7 +216,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
             </div>
           </div>
           <Slider label="log[HL]_org" value={a.logCHL} min={-4} max={0} step={0.1} onChange={(v) => onChange({ logCHL: v })} decimals={1} />
-          <p className="hint">D = 10^(log K_ex + n·log[HL] + n·pH) → sube con el pH</p>
+          <p className="hint">{t('extraccionLiquido.chelateDFormulaHint')}</p>
         </>
       )}
     </div>
@@ -224,6 +226,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ExtraccionLiquido() {
+  const t = useT();
   const [st, setSt] = useShareableState('extraccion', defaultState());
   const set = <K extends keyof ReturnType<typeof defaultState>>(
     k: K, v: ReturnType<typeof defaultState>[K]
@@ -384,7 +387,7 @@ export default function ExtraccionLiquido() {
         <Chart
           data={pETraces}
           xTitle="pH"
-          yTitle="% extracción"
+          yTitle={t('extraccionLiquido.pctExtractionLabel')}
           xRange={[0, 14]}
           yRange={[0, 100]}
           shapes={[cursorShape(0, 100)]}
@@ -396,12 +399,12 @@ export default function ExtraccionLiquido() {
     },
     {
       id: 'multi',
-      label: 'Extracciones múltiples',
+      label: t('extraccionLiquido.tabMultipleExtractions'),
       node: (
         <Chart
           data={multiTraces}
           xTitle="pH"
-          yTitle="% extracción acumulada"
+          yTitle={t('extraccionLiquido.pctCumulativeExtractionLabel')}
           xRange={[0, 14]}
           yRange={[0, 100]}
           shapes={[cursorShape(0, 100)]}
@@ -413,12 +416,12 @@ export default function ExtraccionLiquido() {
     },
     {
       id: 'precon',
-      label: 'Preconcentración (%E vs n)',
+      label: t('extraccionLiquido.tabPreconcentration'),
       node: (
         <Chart
           data={preconTrace}
-          xTitle="Número de extracciones (n)"
-          yTitle="% extracción acumulada"
+          xTitle={t('extraccionLiquido.numberOfExtractionsLabel')}
+          yTitle={t('extraccionLiquido.pctCumulativeExtractionLabel')}
           xRange={[1, st.preconNMax]}
           yRange={[0, 100]}
           exportName="equilibria-preconcentracion"
@@ -430,83 +433,77 @@ export default function ExtraccionLiquido() {
 
   return (
     <div className="module">
-      <PanelShell title="Extracción líquido-líquido" onReset={reset} moduleId="extraccion">
-        <PanelSection title="Analito 1" icon="①">
+      <PanelShell title={t('extraccionLiquido.title')} onReset={reset} moduleId="extraccion">
+        <PanelSection title={t('extraccionLiquido.analyte1Section')} icon="①">
           <AnalyteEditor
             a={st.a1}
             color={C1}
-            additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
+            additions={[st.showA2 && t('extraccionLiquido.additionAnalyteComparison'), st.nMax > 1 && t('extraccionLiquido.additionSuccessiveExtractions', { n: st.nMax })]}
             onChange={(p) => set('a1', { ...st.a1, ...p })}
           />
         </PanelSection>
 
-        <PanelSection title="Comparación (Analito 2)" icon="②">
-          <Toggle label="Comparar con 2.º analito" checked={st.showA2} onChange={(v) => set('showA2', v)} />
+        <PanelSection title={t('extraccionLiquido.analyte2ComparisonSection')} icon="②">
+          <Toggle label={t('extraccionLiquido.compareSecondAnalyte')} checked={st.showA2} onChange={(v) => set('showA2', v)} />
           {st.showA2 && (
             <div className="mask-section">
               <AnalyteEditor
                 a={st.a2}
                 color={C2}
-                additions={[st.showA2 && 'comparación entre analitos', st.nMax > 1 && `${st.nMax} extracciones sucesivas`]}
+                additions={[st.showA2 && t('extraccionLiquido.additionAnalyteComparison'), st.nMax > 1 && t('extraccionLiquido.additionSuccessiveExtractions', { n: st.nMax })]}
                 onChange={(p) => set('a2', { ...st.a2, ...p })}
               />
             </div>
           )}
         </PanelSection>
 
-        <PanelSection title="Condiciones" icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
           <Toggle
-            label="Polimerización / dímero en fase orgánica"
+            label={t('extraccionLiquido.polymerizationToggle')}
             checked={st.showDimer}
             onChange={(v) => set('showDimer', v)}
           />
           {st.showDimer && st.a1.type === 'acid' && (
             <Slider label="log K₂ (dímero)" helpId="logK2" value={st.logK2} min={-1} max={4} step={0.1} onChange={(v) => set('logK2', v)} decimals={1} />
           )}
-          <Slider label="pH del cursor" value={st.pH} min={0} max={14} step={0.1} onChange={(v) => set('pH', v)} decimals={1} />
+          <Slider label={t('potencialcond.cursorPHLabel')} value={st.pH} min={0} max={14} step={0.1} onChange={(v) => set('pH', v)} decimals={1} />
           <Slider label="Vaq (mL)" value={st.Vaq} min={1} max={50} step={1} onChange={(v) => set('Vaq', v)} decimals={0} />
           <Slider label="Vorg (mL)" value={st.Vorg} min={1} max={50} step={1} onChange={(v) => set('Vorg', v)} decimals={0} />
-          <Slider label="Extracciones a graficar (n)" value={st.nMax} min={1} max={5} step={1} onChange={(v) => set('nMax', v)} decimals={0} />
-          <Slider label="Etapas en preconcentración" value={st.preconNMax} min={3} max={20} step={1} onChange={(v) => set('preconNMax', v)} decimals={0} />
+          <Slider label={t('extraccionLiquido.extractionsToPlotLabel')} value={st.nMax} min={1} max={5} step={1} onChange={(v) => set('nMax', v)} decimals={0} />
+          <Slider label={t('extraccionLiquido.preconcentrationStagesLabel')} value={st.preconNMax} min={3} max={20} step={1} onChange={(v) => set('preconNMax', v)} decimals={0} />
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: `D a pH ${st.pH.toFixed(1)}`, value: D1cur >= 0.001 ? D1cur.toFixed(3) : formatSci(D1cur) },
-            { label: `log D`, value: D1cur > 0 ? Math.log10(D1cur).toFixed(2) : '< −10' },
-            { label: `%E · n=1  (Vorg/Vaq=${r.toFixed(1)})`, value: `${pE1cur.toFixed(1)} %` },
+            { label: t('extraccionLiquido.dAtPHLabel', { ph: st.pH.toFixed(1) }), value: D1cur >= 0.001 ? D1cur.toFixed(3) : formatSci(D1cur) },
+            { label: 'log D', value: D1cur > 0 ? Math.log10(D1cur).toFixed(2) : '< −10' },
+            { label: t('extraccionLiquido.pctE1Label', { r: r.toFixed(1) }), value: `${pE1cur.toFixed(1)} %` },
             { label: `%E · n=2`, value: `${percentEn(D1cur, r, 2).toFixed(1)} %` },
             { label: `%E · n=3`, value: `${percentEn(D1cur, r, 3).toFixed(1)} %` },
-            { label: 'Extracciones para %E ≥ 99 %', value: n99_1 !== null ? `${n99_1}` : '> 100' },
+            { label: t('extraccionLiquido.extractionsFor99Label'), value: n99_1 !== null ? `${n99_1}` : '> 100' },
             ...(st.showA2 ? [
-              { label: `%E n=1 — ${st.a2.label}`, value: `${pE2cur.toFixed(1)} %` },
-              { label: 'Factor separación D₁/D₂', value: D2cur > 0 ? (D1cur / D2cur).toFixed(2) : '∞' },
+              { label: t('extraccionLiquido.pctE1DashLabel', { label: st.a2.label }), value: `${pE2cur.toFixed(1)} %` },
+              { label: t('extraccionLiquido.separationFactorLabel'), value: D2cur > 0 ? (D1cur / D2cur).toFixed(2) : '∞' },
             ] : []),
           ]} />
         </PanelSection>
 
-        <InfoBox title="Extracción líquido-líquido">
+        <InfoBox title={t('extraccionLiquido.title')}>
           <p>
-            El coeficiente de distribución condicional <code>D = Kd · α_neutral</code> refleja
-            cómo la ionización en la fase acuosa reduce la extracción. Para ácidos,
-            <code> log D</code> cae con pendiente −1 por encima del pKa.
+            {t('extraccionLiquido.para1Prefix')}<code>{t('extraccionLiquido.para1Code1')}</code>
+            {t('extraccionLiquido.para1Mid')}<code>{t('extraccionLiquido.para1Code2')}</code>{t('extraccionLiquido.para1Suffix')}
           </p>
           <p>
-            Los <strong>anfóteros</strong> (8-HQ) tienen una curva en campana: solo la forma
-            neutra HQ extrae, y esta domina en una ventana de pH intermedia.
+            {t('extraccionLiquido.para2Prefix')}<strong>{t('extraccionLiquido.amphotericBold')}</strong>{t('extraccionLiquido.para2Rest')}
           </p>
           <p>
-            <strong>Polimerización</strong>: cuando el analito forma dímero en la fase orgánica,
-            D_eff = D_mono · (1 + K₂·α²) y el máximo de log D se desplaza respecto al modelo monomérico.
+            <strong>{t('extraccionLiquido.polymerizationBold')}</strong>{t('extraccionLiquido.polymerizationRest')}
           </p>
           <p>
-            <strong>Preconcentración</strong>: la pestaña %E vs n muestra cuántas extracciones
-            sucesivas (mismo Vorg total repartido) se necesitan para alcanzar un %E dado.
+            <strong>{t('extraccionLiquido.preconcentrationBold')}</strong>{t('extraccionLiquido.preconcentrationRest')}
           </p>
           <p>
-            <strong>Extracciones múltiples</strong>: con el mismo volumen total de disolvente
-            orgánico es más eficiente hacer varias extracciones pequeñas que una sola grande
-            (principio de las extracciones sucesivas).
+            <strong>{t('extraccionLiquido.multipleExtractionsBold')}</strong>{t('extraccionLiquido.multipleExtractionsRest')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -514,9 +511,9 @@ export default function ExtraccionLiquido() {
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="logd" />
         <ResultCardRow items={[
-          { label: `%E (n=1) a pH ${st.pH.toFixed(1)}`, value: Number.isFinite(pE1cur) ? `${pE1cur.toFixed(1)} %` : '—', accent: true },
+          { label: t('extraccionLiquido.pctE1AtPHLabel', { ph: st.pH.toFixed(1) }), value: Number.isFinite(pE1cur) ? `${pE1cur.toFixed(1)} %` : '—', accent: true },
           { label: 'log D', value: D1cur > 0 ? Math.log10(D1cur).toFixed(2) : '—' },
-          { label: 'n para %E ≥ 99 %', value: n99_1 !== null ? `${n99_1}` : '—' },
+          { label: t('extraccionLiquido.nFor99Label'), value: n99_1 !== null ? `${n99_1}` : '—' },
         ]} />
       </section>
     </div>

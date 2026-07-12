@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.2 — 2026-07-12
+
+### Bilingual UI (ES/EN) — ExtraccionLiquido module
+
+- **Translated:** the full **ExtraccionLiquido** ("Liquid–liquid extraction") module — the shared analyte editor (acid/neutral vs. metal-chelate modes), the 2nd-analyte comparison, the dimer/polymerization branch, all 4 diagram tabs, and the InfoBox. Preset compound names stay Spanish per the established database-content precedent.
+
 ## 0.10.1 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — PrecipitacionCompetitiva module
