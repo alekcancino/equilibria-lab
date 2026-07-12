@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.4 — 2026-07-12
+
+### Bilingual UI (ES/EN) — Titulacion module
+
+- **Translated:** the full **Titulacion** (unified titration module, 5 sub-modes) — acid-base (Gran plot, indicator transition range, activity correction), EDTA/complexometric (direct and back-titration, metallochromic indicators), redox (oxidation/reduction, pe axis), precipitation (Mohr/Volhard/Fajans endpoint methods, variable stoichiometry), and potentiometric (Nernstian electrode, 1st/2nd derivative endpoint location, Gran plot). Completes the Titulaciones hub. 15 of 16 modules now bilingual — only Actividad remains.
+
 ## 0.10.3 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — IntercambioIonico module
