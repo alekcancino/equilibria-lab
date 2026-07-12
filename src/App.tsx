@@ -4,7 +4,10 @@ import BrandLogo from './components/BrandLogo';
 import MobileNav from './components/MobileNav';
 import Home from './components/Home';
 import ThemeToggle from './components/ThemeToggle';
+import LanguageToggle from './components/LanguageToggle';
 import { useActivityNote } from './context/ActivityContext';
+import { useT } from './hooks/useT';
+import type { TKey } from './i18n/translations';
 import './App.css';
 
 // Keep ?m=<viewId> in the URL whenever the active view changes.
@@ -38,14 +41,16 @@ const Titulacion             = lazy(() => import('./modules/Titulacion'));
 const IntercambioIonico      = lazy(() => import('./modules/IntercambioIonico'));
 const Actividad              = lazy(() => import('./modules/Actividad'));
 
-interface View { id: string; label: string; component: ComponentType }
+interface View { id: string; labelKey: TKey; component: ComponentType }
 
 export interface HubMeta {
   id: string;
-  label: string;
+  labelKey: TKey;
   /** One-line description shown on the home card. */
-  desc: string;
-  /** Hub-specific model assumptions (methodology only; source citations live in docs). */
+  descKey: TKey;
+  /** Hub-specific model assumptions (methodology only; source citations live in docs).
+   * Not yet translated (textbook-notation-heavy prose) — stays Spanish regardless of
+   * the language toggle until a follow-up pass covers it. */
   assumptions: string;
 }
 
@@ -54,68 +59,68 @@ interface Hub extends HubMeta { views: View[] }
 // View ids are the historical ?m= module ids so every shared link keeps working.
 const HUBS: Hub[] = [
   {
-    id: 'acidobase', label: 'Ácido-base',
-    desc: 'pH, distribución de especies y diagramas de un sistema o de mezclas.',
+    id: 'acidobase', labelKey: 'hub.acidobase.label',
+    descKey: 'hub.acidobase.desc',
     assumptions: 'Balance de cargas exacto (bisección) · pKa por etapa.',
     views: [
-      { id: 'acidobase', label: 'Sistema único', component: AcidoBase },
-      { id: 'mezclas', label: 'Mezclas', component: Mezclas },
+      { id: 'acidobase', labelKey: 'view.acidobase.label', component: AcidoBase },
+      { id: 'mezclas', labelKey: 'view.mezclas.label', component: Mezclas },
     ],
   },
   {
-    id: 'complejos', label: 'Complejos',
-    desc: 'Formación de complejos, número de Bjerrum, sistemas X–M–L acoplados y constantes condicionales.',
+    id: 'complejos', labelKey: 'hub.complejos.label',
+    descKey: 'hub.complejos.desc',
     assumptions: 'Complejos mononucleares MLₙ · α de Ringbom para reacciones parásitas.',
     views: [
-      { id: 'complejos', label: 'Equilibrio (pL)', component: Complejos },
-      { id: 'especiacion', label: 'Especiación vs pH', component: EspeciacionMetal },
-      { id: 'condicionalesedta', label: 'K′ condicional', component: ConstantesCondicionales },
+      { id: 'complejos', labelKey: 'view.complejos.label', component: Complejos },
+      { id: 'especiacion', labelKey: 'view.especiacion.label', component: EspeciacionMetal },
+      { id: 'condicionalesedta', labelKey: 'view.condicionalesedta.label', component: ConstantesCondicionales },
     ],
   },
   {
-    id: 'redox', label: 'Redox',
-    desc: 'Escala de predicción, potencial condicional E°′ y diagramas de Pourbaix.',
+    id: 'redox', labelKey: 'hub.redox.label',
+    descKey: 'hub.redox.desc',
     assumptions: 'pe = E/0.05916 V (convención de Sillén) · E°′ = f(pH) por mH/n · Pourbaix data-driven vía ley de Hess.',
     views: [
-      { id: 'redox', label: 'Escala y DUZP', component: Redox },
-      { id: 'potencialcond', label: 'E°′ condicional', component: PotencialCondicional },
-      { id: 'pourbaix', label: 'Pourbaix (E–pH)', component: Pourbaix },
+      { id: 'redox', labelKey: 'view.redox.label', component: Redox },
+      { id: 'potencialcond', labelKey: 'view.potencialcond.label', component: PotencialCondicional },
+      { id: 'pourbaix', labelKey: 'view.pourbaix.label', component: Pourbaix },
     ],
   },
   {
-    id: 'solubilidad', label: 'Solubilidad',
-    desc: 'Kps, efecto del pH e ion común, hidróxidos anfóteros, precipitación selectiva y competitiva.',
+    id: 'solubilidad', labelKey: 'hub.solubilidad.label',
+    descKey: 'hub.solubilidad.desc',
     assumptions: 'Sólidos iónicos MmXx con Kps · anión básico y complejos hidroxo vía α · selección de fases por prueba de combinaciones (2 sales).',
     views: [
-      { id: 'solubilidad', label: 'Kps e ion común', component: Solubilidad },
-      { id: 'solsal', label: 'Solubilidad y pH', component: SolubilidadSal },
-      { id: 'solcond', label: 'Precipitación selectiva', component: SolubilidadCondicional },
-      { id: 'solcomp', label: 'Competitiva (2 sales)', component: PrecipitacionCompetitiva },
+      { id: 'solubilidad', labelKey: 'view.solubilidad.label', component: Solubilidad },
+      { id: 'solsal', labelKey: 'view.solsal.label', component: SolubilidadSal },
+      { id: 'solcond', labelKey: 'view.solcond.label', component: SolubilidadCondicional },
+      { id: 'solcomp', labelKey: 'view.solcomp.label', component: PrecipitacionCompetitiva },
     ],
   },
   {
-    id: 'separaciones', label: 'Separaciones',
-    desc: 'Extracción líquido-líquido e intercambio iónico condicionados por el pH.',
+    id: 'separaciones', labelKey: 'hub.separaciones.label',
+    descKey: 'hub.separaciones.desc',
     assumptions: 'Reparto de la especie neutra (D = Kd·α) · resina con balance en 3 compartimentos.',
     views: [
-      { id: 'extraccion', label: 'Extracción L–L', component: ExtraccionLiquido },
-      { id: 'ionexchange', label: 'Intercambio iónico', component: IntercambioIonico },
+      { id: 'extraccion', labelKey: 'view.extraccion.label', component: ExtraccionLiquido },
+      { id: 'ionexchange', labelKey: 'view.ionexchange.label', component: IntercambioIonico },
     ],
   },
   {
-    id: 'titulaciones', label: 'Titulaciones',
-    desc: 'Curvas de valoración ácido-base, EDTA, redox, precipitación y potenciométricas.',
+    id: 'titulaciones', labelKey: 'hub.titulaciones.label',
+    descKey: 'hub.titulaciones.desc',
     assumptions: 'pH/pM/pe exactos punto a punto con dilución · función de Gran y cuantitatividad.',
     views: [
-      { id: 'titulacion', label: 'Curvas de titulación', component: Titulacion },
+      { id: 'titulacion', labelKey: 'view.titulacion.label', component: Titulacion },
     ],
   },
   {
-    id: 'actividad', label: 'Actividad',
-    desc: 'Coeficientes γ — Debye–Hückel, Kielland, Davies o Güntelberg — fuerza iónica y pKw aparente.',
+    id: 'actividad', labelKey: 'hub.actividad.label',
+    descKey: 'hub.actividad.desc',
     assumptions: 'Debye–Hückel extendida (a ≈ 3 Å) válida a I ≲ 0.1 M · K′w = Kw/(γH·γOH).',
     views: [
-      { id: 'actividad', label: 'Debye–Hückel', component: Actividad },
+      { id: 'actividad', labelKey: 'view.actividad.label', component: Actividad },
     ],
   },
 ];
@@ -131,6 +136,7 @@ function initialViewId(): string | null {
 }
 
 export default function App() {
+  const t = useT();
   const { showActivityNote, setShowActivityNote } = useActivityNote();
   const [activeViewId, setActiveViewId] = useState<string | null>(initialViewId);
   // Remember the last visited view per hub so hub tabs return where you left off.
@@ -169,23 +175,23 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <button type="button" className="brand brand-btn" onClick={goHome} aria-label="Ir al inicio">
+        <button type="button" className="brand brand-btn" onClick={goHome} aria-label={t('chrome.goHome')}>
           <BrandLogo size={32} className="brand-logo" />
           <div className="brand-text">
             <h1>Equilibria Lab</h1>
-            <span className="brand-sub">Simulador de equilibrio químico</span>
+            <span className="brand-sub">{t('chrome.tagline')}</span>
           </div>
         </button>
         <MobileNav
-          sections={HUBS.map(({ id, label }) => ({ id, label }))}
+          sections={HUBS.map(({ id, labelKey }) => ({ id, label: t(labelKey) }))}
           sectionId={hub?.id ?? ''}
           onSectionChange={openHub}
-          tabs={(hub?.views ?? []).map(({ id, label }) => ({ id, label }))}
+          tabs={(hub?.views ?? []).map(({ id, labelKey }) => ({ id, label: t(labelKey) }))}
           tabId={activeViewId ?? ''}
           onTabChange={openView}
           showTabs={showSubTabs}
         />
-        <nav className="sections desktop-only" role="tablist" aria-label="Temas">
+        <nav className="sections desktop-only" role="tablist" aria-label={t('chrome.topics')}>
           {HUBS.map((h) => {
             const selected = hub?.id === h.id;
             return (
@@ -197,17 +203,18 @@ export default function App() {
                 className={selected ? 'section-btn active' : 'section-btn'}
                 onClick={() => openHub(h.id)}
               >
-                {h.label}
+                {t(h.labelKey)}
               </button>
             );
           })}
         </nav>
+        <LanguageToggle />
         <ThemeToggle />
       </header>
 
       {hub && showSubTabs && (
         <div className="subnav desktop-only">
-          <div className="subnav-tabs" role="tablist" aria-label={`Vistas de ${hub.label}`}>
+          <div className="subnav-tabs" role="tablist" aria-label={`${t('chrome.viewsOf')} ${t(hub.labelKey)}`}>
             {hub.views.map((v) => {
               const selected = activeViewId === v.id;
               return (
@@ -219,13 +226,13 @@ export default function App() {
                   className={selected ? 'subnav-tab active' : 'subnav-tab'}
                   onClick={() => openView(v.id)}
                 >
-                  {v.label}
+                  {t(v.labelKey)}
                 </button>
               );
             })}
           </div>
           <details className="hub-assumptions">
-            <summary>ⓘ Supuestos</summary>
+            <summary>{t('chrome.assumptionsShort')}</summary>
             <p>{hub.assumptions}</p>
           </details>
         </div>
@@ -233,23 +240,23 @@ export default function App() {
 
       <main className="content">
         {view ? (
-          <Suspense fallback={<div className="module-loading">Cargando…</div>}>
+          <Suspense fallback={<div className="module-loading">{t('chrome.loading')}</div>}>
             <view.component />
           </Suspense>
         ) : (
-          <Home hubs={HUBS.map(({ id, label, desc, views }) => ({
-            id, label, desc, views: views.map(({ id: vid, label: vlabel }) => ({ id: vid, label: vlabel })),
+          <Home hubs={HUBS.map(({ id, labelKey, descKey, views }) => ({
+            id, label: t(labelKey), desc: t(descKey),
+            views: views.map(({ id: vid, labelKey: vLabelKey }) => ({ id: vid, label: t(vLabelKey) })),
           }))} onOpenView={openView} />
         )}
       </main>
 
       <footer className="assumptions">
         <details className="assumptions-details">
-          <summary>Supuestos y opciones</summary>
+          <summary>{t('chrome.assumptionsLong')}</summary>
           <p className="assumptions-text">
-            T = 25 °C · actividades ≈ concentraciones · K<sub>w</sub> = 10⁻¹⁴ ·
-            exporta gráficas con el botón flotante sobre la gráfica
-            {hub && <> · <strong>{hub.label}:</strong> {hub.assumptions}</>}
+            {t('chrome.assumptionsBase1')}<sub>w</sub>{t('chrome.assumptionsBase2')}
+            {hub && <> · <strong>{t(hub.labelKey)}:</strong> {hub.assumptions}</>}
           </p>
         </details>
         <span className="footer-meta">
@@ -260,7 +267,7 @@ export default function App() {
                 checked={showActivityNote}
                 onChange={(e) => setShowActivityNote(e.target.checked)}
               />
-              Mostrar corrección γ
+              {t('chrome.showActivityCorrection')}
             </label>
           )}
           <span className="footer-version">v{version}</span>

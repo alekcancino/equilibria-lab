@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 — 2026-07-11
+
+### Bilingual UI (ES/EN) — infrastructure + Ácido-base pilot
+
+- New language toggle in the top bar (`LanguageToggle`, next to the theme toggle), backed by a fully-typed `{key: {es, en}}` dictionary (`src/i18n/translations.ts`) and a `useT()` hook. Mirrors the existing `useTheme()` pattern: localStorage persistence, an inline pre-hydration script in `index.html` so the choice survives a fresh page load without a flash of the wrong language.
+- **Translated:** shared chrome (nav, footer, panel/share/saved-systems buttons, mobile nav), `Controls.tsx`'s generic shared components (`ModelBadge`, `DbPanel`, `SystemPresetPicker`, `ConstantList`, `HelpTip`), all glossary tooltips (`lib/glossary.ts`), `AcidSystemEditor`, and the full **Ácido-base** module.
+- **Not yet translated:** the other 13 modules' own JSX and database-driven preset text — these stay Spanish regardless of the toggle until translated in follow-up PRs. This is the intended behavior of an incremental rollout.
+- Chemistry notation, formulas and user-entered free-text labels are never translated.
+
 ## 0.8.0 — 2026-07-11
 
 ### Dark mode redesign: neutral charcoal (Instagram/WhatsApp-style), plus theme bugs fixed

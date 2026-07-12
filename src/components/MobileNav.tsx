@@ -1,3 +1,5 @@
+import { useT } from '../hooks/useT';
+
 interface SectionOption {
   id: string;
   label: string;
@@ -28,17 +30,18 @@ export default function MobileNav({
   onTabChange,
   showTabs,
 }: MobileNavProps) {
+  const t = useT();
   return (
     <div className="mobile-nav">
       <label className="mobile-nav-field">
-        <span className="mobile-nav-label">Tema</span>
+        <span className="mobile-nav-label">{t('mobilenav.topic')}</span>
         <select
           className="mobile-nav-select"
           value={sectionId}
           onChange={(e) => onSectionChange(e.target.value)}
-          aria-label="Tema del simulador"
+          aria-label={t('mobilenav.topicAria')}
         >
-          {sectionId === '' && <option value="" disabled>Inicio</option>}
+          {sectionId === '' && <option value="" disabled>{t('mobilenav.home')}</option>}
           {sections.map((s) => (
             <option key={s.id} value={s.id}>{s.label}</option>
           ))}
@@ -46,15 +49,15 @@ export default function MobileNav({
       </label>
       {showTabs && (
         <label className="mobile-nav-field">
-          <span className="mobile-nav-label">Vista</span>
+          <span className="mobile-nav-label">{t('mobilenav.view')}</span>
           <select
             className="mobile-nav-select"
             value={tabId}
             onChange={(e) => onTabChange(e.target.value)}
-            aria-label="Módulo activo"
+            aria-label={t('mobilenav.viewAria')}
           >
-            {tabs.map((t) => (
-              <option key={t.id} value={t.id}>{t.label}</option>
+            {tabs.map((tab) => (
+              <option key={tab.id} value={tab.id}>{tab.label}</option>
             ))}
           </select>
         </label>

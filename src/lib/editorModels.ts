@@ -2,6 +2,21 @@ import { ACIDS } from './database';
 import { REDOX_COUPLES } from './redoxDatabase';
 import type { RedoxCouple } from './redox';
 import { genericSpeciesLabels } from './speciesNames';
+import type { Lang } from '../hooks/useLanguage';
+
+// Generic placeholder labels in both languages — a plain lookup table (not the
+// translations.ts dictionary) since this is a non-React lib file that can't
+// call useT(). isGenericSystemLabel checks BOTH so the auto-rename-on-edit
+// behavior keeps working regardless of which language generated the label
+// currently sitting in the free-text field.
+const GENERIC_LABELS: Record<'strongAcid' | 'strongBase' | 'weakAcid' | 'weakBase' | 'polyAcid' | 'polyBase', Record<Lang, string>> = {
+  strongAcid: { es: 'Ácido fuerte', en: 'Strong acid' },
+  strongBase: { es: 'Base fuerte', en: 'Strong base' },
+  weakAcid: { es: 'Ácido débil', en: 'Weak acid' },
+  weakBase: { es: 'Base débil', en: 'Weak base' },
+  polyAcid: { es: 'Ácido poliprótico', en: 'Polyprotic acid' },
+  polyBase: { es: 'Base poliprótica', en: 'Polyprotic base' },
+};
 
 /** State of a user-defined acid-base system. */
 export interface AcidSystem {
@@ -34,7 +49,8 @@ export function acidSystemFromPreset(id: string, strongWithoutPKa = false): Acid
 
 export function strongAcidSystem(isBase = false): AcidSystem {
   return {
-    label: isBase ? 'Base fuerte' : 'Ácido fuerte',
+    // Titulacion.tsx isn't translated yet — always Spanish until its turn.
+    label: isBase ? GENERIC_LABELS.strongBase.es : GENERIC_LABELS.strongAcid.es,
     z0: isBase ? 1 : 0,
     pKas: [],
     speciesLabels: null,
@@ -42,19 +58,15 @@ export function strongAcidSystem(isBase = false): AcidSystem {
   };
 }
 
-export function inferredSystemLabel(z0: number, pKas: number[]): string {
+export function inferredSystemLabel(z0: number, pKas: number[], lang: Lang = 'es'): string {
   const isBase = z0 > 0;
-  if (pKas.length === 0) return isBase ? 'Base fuerte' : 'Ácido fuerte';
-  if (pKas.length === 1) return isBase ? 'Base débil' : 'Ácido débil';
-  return isBase ? 'Base poliprótica' : 'Ácido poliprótico';
+  if (pKas.length === 0) return GENERIC_LABELS[isBase ? 'strongBase' : 'strongAcid'][lang];
+  if (pKas.length === 1) return GENERIC_LABELS[isBase ? 'weakBase' : 'weakAcid'][lang];
+  return GENERIC_LABELS[isBase ? 'polyBase' : 'polyAcid'][lang];
 }
 
 export function isGenericSystemLabel(label: string): boolean {
-  return [
-    'Ácido fuerte', 'Base fuerte',
-    'Ácido débil', 'Base débil',
-    'Ácido poliprótico', 'Base poliprótica',
-  ].includes(label);
+  return Object.values(GENERIC_LABELS).some((byLang) => label === byLang.es || label === byLang.en);
 }
 
 export function systemLabels(sys: AcidSystem): string[] {
