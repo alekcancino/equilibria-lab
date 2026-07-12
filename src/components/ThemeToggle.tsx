@@ -1,7 +1,9 @@
 import { applyTheme, useTheme } from '../hooks/useTheme';
+import { useT } from '../hooks/useT';
 
 /** Sun/moon toggle in the top bar; persists to localStorage. */
 export default function ThemeToggle() {
+  const t = useT();
   const theme = useTheme();
   const next = theme === 'dark' ? 'light' : 'dark';
   return (
@@ -9,8 +11,8 @@ export default function ThemeToggle() {
       type="button"
       className="theme-toggle"
       onClick={() => applyTheme(next)}
-      aria-label={next === 'dark' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
-      title={next === 'dark' ? 'Modo oscuro' : 'Modo claro'}
+      aria-label={next === 'dark' ? t('theme.switchToDark') : t('theme.switchToLight')}
+      title={next === 'dark' ? t('theme.dark') : t('theme.light')}
     >
       {theme === 'dark' ? (
         // Sun

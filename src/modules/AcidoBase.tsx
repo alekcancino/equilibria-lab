@@ -13,19 +13,21 @@ import { ladderFractions, ladderLogC, predominanceZones } from '../lib/ladder';
 import { solvePH, saltCounterIons, defaultStartIndex } from '../lib/equilibrium';
 import type { GammaModel } from '../lib/activity';
 import { useActivityNote } from '../context/ActivityContext';
+import { useT } from '../hooks/useT';
 
 const PH_POINTS = 400;
-const GAMMA_MODELS: { value: GammaModel; label: string }[] = [
-  { value: 'dh', label: 'D-H extendida' },
-  { value: 'davies', label: 'Davies' },
-  { value: 'guntelberg', label: 'Güntelberg' },
-];
 function isValidGammaModel(v: unknown): v is GammaModel {
   return v === 'dh' || v === 'davies' || v === 'guntelberg';
 }
 
 /** Acid-base equilibrium (mono and polyprotic): DUZP + α distribution + logC diagram. */
 export default function AcidoBase() {
+  const t = useT();
+  const GAMMA_MODELS: { value: GammaModel; label: string }[] = useMemo(() => [
+    { value: 'dh', label: t('acidoBase.gammaDH') },
+    { value: 'davies', label: t('acidoBase.gammaDavies') },
+    { value: 'guntelberg', label: t('acidoBase.gammaGuntelberg') },
+  ], [t]);
   const { showActivityNote } = useActivityNote();
   const [system, setSystem] = useState<AcidSystem>(defaultAcidSystem());
   const [conc, setConc] = useState(0.1);
@@ -59,7 +61,7 @@ export default function AcidoBase() {
     'C / M': conc.toFixed(4),
     'I / M': ionicStrength.toFixed(3),
     'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel,
-  }), [system.label, conc, ionicStrength, gammaModel]);
+  }), [system.label, conc, ionicStrength, gammaModel, GAMMA_MODELS]);
 
   const pHSystem = useMemo(() => {
     // "pH disolución pura" dissolves the system at its default ladder index
@@ -83,11 +85,11 @@ export default function AcidoBase() {
     }
     return series.map((ys, j) => ({
       x: phs, y: ys, type: 'scatter', mode: 'lines',
-      name: labels[j] ?? `Especie ${j}`,
+      name: labels[j] ?? t('acidoBase.speciesFallback', { n: j }),
       line: { width: 3, color: SPECIES_COLORS[j % SPECIES_COLORS.length] },
       hovertemplate: `α = %{y:.3f}<extra>${labels[j] ?? ''}</extra>`,
     }));
-  }, [system, labels, ionicStrength, gammaModel]);
+  }, [system, labels, ionicStrength, gammaModel, t]);
 
   // logC vs pH diagram (Sillén) with H₃O⁺/OH⁻ lines
   const logCTraces = useMemo<Data[]>(() => {
@@ -104,7 +106,7 @@ export default function AcidoBase() {
     }
     const data: Data[] = series.map((ys, j) => ({
       x: phs, y: ys, type: 'scatter', mode: 'lines',
-      name: labels[j] ?? `Especie ${j}`,
+      name: labels[j] ?? t('acidoBase.speciesFallback', { n: j }),
       line: { width: 3, color: SPECIES_COLORS[j % SPECIES_COLORS.length] },
       hovertemplate: `log C = %{y:.2f}<extra>${labels[j] ?? ''}</extra>`,
     }));
@@ -113,7 +115,7 @@ export default function AcidoBase() {
       { x: phs, y: ohLine, type: 'scatter', mode: 'lines', name: 'OH⁻', line: { width: 2, color: '#95a5a6', dash: 'dot' } },
     );
     return data;
-  }, [system, labels, logCtotal, ionicStrength, gammaModel]);
+  }, [system, labels, logCtotal, ionicStrength, gammaModel, t]);
 
   const zones = useMemo(
     () => predominanceZones(system.pKas, labels, 0, 14, true, system.z0, ionicStrength, gammaModel),
@@ -143,21 +145,21 @@ export default function AcidoBase() {
   const diagrams = [
     {
       id: 'duzp',
-      label: 'DUZP',
+      label: t('acidoBase.tabDUZP'),
       node: (
         <DUZP
           zones={zones}
           pMin={0}
           pMax={14}
           pLabel="pH"
-          marker={showSystemPH ? { p: pHSystem, label: `disol. pura · pH ${pHSystem.toFixed(2)}` } : undefined}
-          caption="Zonas de predominio"
+          marker={showSystemPH ? { p: pHSystem, label: t('acidoBase.pureSolutionMarker', { ph: pHSystem.toFixed(2) }) } : undefined}
+          caption={t('acidoBase.duzpCaption')}
         />
       ),
     },
     {
       id: 'alpha',
-      label: 'Distribución α',
+      label: t('acidoBase.tabAlpha'),
       node: (
         <Chart data={alphaTraces} xTitle="pH" yTitle="Fracción α" xRange={[0, 14]} yRange={[0, 1.02]}
           shapes={showSystemPH ? [{ type: 'line', x0: pHSystem, x1: pHSystem, y0: 0, y1: 1.02, line: { color: MARKER_COLOR, width: 2, dash: 'dashdot' } }] : []}
@@ -166,7 +168,7 @@ export default function AcidoBase() {
     },
     {
       id: 'logc',
-      label: 'log C',
+      label: t('acidoBase.tabLogC'),
       node: (
         <Chart data={logCTraces} xTitle="pH" yTitle="log C" xRange={[0, 14]} yRange={[-12, 0.5]}
           shapes={systemShape} exportName="equilibria-acidobase-logc" exportMetadata={exportMetadata} />
@@ -176,16 +178,16 @@ export default function AcidoBase() {
 
   return (
     <div className="module">
-      <PanelShell title="Equilibrio ácido-base" onReset={reset} moduleId="acidobase">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('acidoBase.title')} onReset={reset} moduleId="acidobase">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
           <AcidSystemEditor system={system} onChange={setSystem} allowAquaCations />
         </PanelSection>
-        <PanelSection title="Condiciones" icon="⚗">
-          <ConcSlider label="Concentración analítica" value={conc} onChange={setConc} />
-          <Toggle label="Marcar pH de la disolución pura" checked={showSystemPH} onChange={setShowSystemPH} />
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+          <ConcSlider label={t('acidoBase.concLabel')} value={conc} onChange={setConc} />
+          <Toggle label={t('acidoBase.markPureSolutionPH')} checked={showSystemPH} onChange={setShowSystemPH} />
           <details className="section-collapse">
-            <summary>Corrección por actividad</summary>
-            <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
+            <summary>{t('acidoBase.activityCorrection')}</summary>
+            <Slider label={t('acidoBase.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
             <div style={{ marginTop: 6 }}>
               <Segmented
                 options={GAMMA_MODELS}
@@ -193,38 +195,34 @@ export default function AcidoBase() {
                 onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}
               />
             </div>
-            <p className="hint">I = 0 → γ = 1 (resultado termodinámico). A I &gt; 0.1 M los pKa aparentes aumentan y el pH calculado cambia. Davies es válida hasta I ≈ 0.5 M; D-H extendida pierde precisión pasando I ≈ 0.1 M.</p>
+            <p className="hint">{t('acidoBase.activityHint')}</p>
           </details>
         </PanelSection>
         {showActivityNote && (
-          <InfoBox title="Actividad vs concentración">
+          <InfoBox title={t('acidoBase.activityNoteTitle')}>
             <p>
-              Este módulo (y la mayoría de motores) asume <strong>actividades ≈ concentraciones</strong>.
-              A I &gt; 0.1 M la corrección Debye-Hückel puede desviar el pH real; use el módulo
-              <strong> Actividad / Debye-Hückel</strong> para estimar γ.
+              {t('acidoBase.activityNoteBody1')}<strong>{t('acidoBase.activityNoteBold')}</strong>
+              {t('acidoBase.activityNoteBody2')}
+              <strong>{t('acidoBase.activityNoteModule')}</strong>{t('acidoBase.activityNoteBody3')}
             </p>
           </InfoBox>
         )}
-        <InfoBox title="Cómo leer estos diagramas">
+        <InfoBox title={t('acidoBase.howToReadTitle')}>
           <p>
-            <strong>DUZP</strong> (zonas de predominio): en cada tramo de pH domina una
-            especie; las fronteras están en los pKa.
+            <strong>{t('acidoBase.tabDUZP')}</strong>{t('acidoBase.duzpExplain')}
           </p>
           <p>
-            <strong>Distribución α</strong>: fracción de cada especie vs pH; en pH = pKa las
-            especies conjugadas se cruzan (α = 0.5).
+            <strong>{t('acidoBase.tabAlpha')}</strong>{t('acidoBase.alphaExplain')}
           </p>
           <p>
-            <strong>log C</strong> (Sillén): log de cada concentración con las líneas H₃O⁺/OH⁻.
-            La línea rosa marca el pH real de la disolución pura.
+            <strong>{t('acidoBase.tabLogC')}</strong>{t('acidoBase.logCExplain')}
           </p>
         </InfoBox>
-        <InfoBox title="¿Disolviste la sal de una forma intermedia?">
+        <InfoBox title={t('acidoBase.saltFormTitle')}>
           <p>
-            Este módulo siempre disuelve la forma <strong>más protonada</strong> (z₀) directamente.
-            Para calcular el pH de la sal de una forma intermedia o final de un sistema poliprótico
-            (ej. NaHCO₃, Na₂HPO₄, KHP) usa <strong>Mezclas</strong> — ahí el selector
-            "Forma de partida" agrega el contraión espectador correcto automáticamente.
+            {t('acidoBase.saltFormBody1')}<strong>{t('acidoBase.saltFormBold')}</strong>
+            {t('acidoBase.saltFormBody2')}<strong>{t('acidoBase.saltFormBold2')}</strong>
+            {t('acidoBase.saltFormBody3')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -232,16 +230,16 @@ export default function AcidoBase() {
         <DiagramTabs tabs={diagrams} />
         <ResultCardRow items={[
           {
-            label: 'pH disolución pura',
+            label: t('acidoBase.pureSolutionPH'),
             value: pHInvalid ? '—' : pHSystem.toFixed(2),
             accent: true,
           },
           {
-            label: `% de ${pHInvalid ? 'especie dom.' : labels[domIdx]} a pH`,
+            label: t('acidoBase.pctDominantSpecies', { species: pHInvalid ? t('acidoBase.pctDominantSpeciesFallback') : labels[domIdx] }),
             value: pHInvalid ? '—' : `${pctDominante.toFixed(1)} %`,
           },
           {
-            label: 'pH 50 % transición (pKa)',
+            label: t('acidoBase.transitionPH'),
             value: transitionPKa !== null ? transitionPKa.toFixed(2) : '—',
           },
         ]} />

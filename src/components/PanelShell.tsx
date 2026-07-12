@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useT } from '../hooks/useT';
 import ShareButton from './ShareButton';
 import SavedSystemsButton from './SavedSystemsButton';
 
@@ -17,6 +18,7 @@ const STORAGE_KEY = 'equilibria-panel-open';
 
 /** Sidebar (desktop) / bottom sheet (mobile) for module variables and controls. */
 export default function PanelShell({ title, onReset, moduleId, children }: PanelShellProps) {
+  const t = useT();
   const mobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(() =>
@@ -40,7 +42,7 @@ export default function PanelShell({ title, onReset, moduleId, children }: Panel
         <ShareButton />
         {onReset && (
           <button type="button" className="reset-btn" onClick={onReset}>
-            ↺ Restablecer
+            {t('panel.reset')}
           </button>
         )}
       </div>
@@ -57,7 +59,7 @@ export default function PanelShell({ title, onReset, moduleId, children }: Panel
           aria-expanded={sheetOpen}
           aria-controls="variables-panel"
         >
-          Variables
+          {t('panel.variables')}
         </button>
         <div
           className={`panel-overlay ${sheetOpen ? 'visible' : ''}`}
@@ -69,7 +71,7 @@ export default function PanelShell({ title, onReset, moduleId, children }: Panel
           className={`panel panel-sheet ${sheetOpen ? 'open' : ''}`}
           role="dialog"
           aria-modal={sheetOpen}
-          aria-label={typeof title === 'string' ? title : 'Panel de variables'}
+          aria-label={typeof title === 'string' ? title : t('panel.ariaVariables')}
           aria-hidden={!sheetOpen}
         >
           <div className="panel-sheet-grab" aria-hidden />
@@ -77,7 +79,7 @@ export default function PanelShell({ title, onReset, moduleId, children }: Panel
             type="button"
             className="panel-sheet-close"
             onClick={() => setSheetOpen(false)}
-            aria-label="Cerrar variables"
+            aria-label={t('panel.closeVariables')}
           >
             ×
           </button>
@@ -95,7 +97,7 @@ export default function PanelShell({ title, onReset, moduleId, children }: Panel
         className="panel-collapse-btn"
         onClick={() => setCollapsed((c) => !c)}
         aria-expanded={!collapsed}
-        aria-label={collapsed ? 'Mostrar panel de variables' : 'Ocultar panel de variables'}
+        aria-label={collapsed ? t('panel.showVariables') : t('panel.hideVariables')}
       >
         {collapsed ? '›' : '‹'}
       </button>

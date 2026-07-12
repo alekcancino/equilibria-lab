@@ -3,6 +3,8 @@
 // SECONDARY = collapsible database that auto-fills and closes.
 
 import { ConstantList, DbPanel, HelpTip, LabelField, ModelBadge, SelectControl, Slider, ConcSlider } from './Controls';
+import { useT } from '../hooks/useT';
+import { useLanguage } from '../hooks/useLanguage';
 import { ACIDS } from '../lib/database';
 import { REDOX_COUPLES } from '../lib/redoxDatabase';
 import { COMPLEX_PRESETS } from '../lib/complexDatabase';
@@ -28,30 +30,32 @@ export function AcidSystemEditor({
    * saltCounterIons/defaultStartIndex in equilibrium.ts). */
   allowAquaCations?: boolean;
 }) {
+  const t = useT();
+  const lang = useLanguage();
   const presets = ACIDS.filter((a) => (includeStrong || !a.strong) && (allowAquaCations || !a.aquaCation));
   // z0 > 0 alone doesn't mean "base": an aqua-acid cation (Fe³⁺, Al³⁺, z0=+3)
   // is chemically an acid even though its most-protonated form is cationic.
   // The tell is whether the modeled pKas actually reach a neutral species
   // (charge 0) — a protonated base (BH⁺/B, BH₂²⁺/BH⁺/B…) always does; an
   // aqua-acid with only its first hydrolysis step modeled stays cationic.
-  const role = system.z0 > 0 && system.z0 - system.pKas.length <= 0 ? 'base' : 'ácido';
+  const role = system.z0 > 0 && system.z0 - system.pKas.length <= 0
+    ? t('acidSystemEditor.roleBase')
+    : t('acidSystemEditor.roleAcid');
   const classification = system.pKas.length === 0
-    ? `${role} fuerte`
+    ? t('acidSystemEditor.classStrong', { role })
     : system.pKas.length === 1
-      ? `${role} débil`
-      : `${role} poliprótico (${system.pKas.length} etapas)`;
+      ? t('acidSystemEditor.classWeak', { role })
+      : t('acidSystemEditor.classPolyprotic', { role, n: system.pKas.length });
   return (
     <div className="editor">
       <LabelField
-        label="Sistema (nombre libre)"
+        label={t('acidSystemEditor.systemLabel')}
         value={system.label}
         onChange={(label) => onChange({ ...system, label })}
       />
       {showModel && <ModelBadge model={classification} />}
       {allowNoConstants && system.pKas.length === 0 && (
-        <p className="hint">
-          Sin pKa: disociación completa. Agrega un pKa para modelar un sistema débil.
-        </p>
+        <p className="hint">{t('acidSystemEditor.noConstantsHint')}</p>
       )}
       <ConstantList
         prefix="pKa"
@@ -69,7 +73,7 @@ export function AcidSystemEditor({
           const shouldRename = allowNoConstants && isGenericSystemLabel(system.label);
           onChange({
             ...system,
-            label: shouldRename ? inferredSystemLabel(system.z0, pKas) : system.label,
+            label: shouldRename ? inferredSystemLabel(system.z0, pKas, lang) : system.label,
             pKas,
             // if the number of constants changed, database labels no longer apply
             speciesLabels: pKas.length === system.pKas.length ? system.speciesLabels : null,
@@ -78,15 +82,15 @@ export function AcidSystemEditor({
         }}
       />
       <details className="section-collapse">
-        <summary className="section-collapse-title">Tipo de sistema (carga inicial z₀)</summary>
+        <summary className="section-collapse-title">{t('acidSystemEditor.systemTypeSummary')}</summary>
         <SelectControl
-          label="Carga de la forma más protonada (z₀)"
+          label={t('acidSystemEditor.z0Label')}
           value={String(system.z0)}
           options={[
-            { value: '0', label: '0 — ácido neutro (HₙA)' },
-            { value: '1', label: '+1 — base protonada (BH⁺)' },
-            { value: '2', label: '+2 — diamina protonada (BH₂²⁺)' },
-            ...(allowAquaCations ? [{ value: '3', label: '+3 — catión acuo-ácido (Fe³⁺, Al³⁺)' }] : []),
+            { value: '0', label: t('acidSystemEditor.z0Option0') },
+            { value: '1', label: t('acidSystemEditor.z0Option1') },
+            { value: '2', label: t('acidSystemEditor.z0Option2') },
+            ...(allowAquaCations ? [{ value: '3', label: t('acidSystemEditor.z0Option3') }] : []),
           ]}
           onChange={(v) => {
             const z0 = parseInt(v, 10);
@@ -94,19 +98,14 @@ export function AcidSystemEditor({
               ...system,
               z0,
               label: allowNoConstants && isGenericSystemLabel(system.label)
-                ? inferredSystemLabel(z0, system.pKas)
+                ? inferredSystemLabel(z0, system.pKas, lang)
                 : system.label,
               speciesLabels: null,
               reference: null,
             });
           }}
         />
-        <p className="hint">
-          z₀ es la carga de la especie con todos sus protones puestos. Distingue un ácido neutro
-          (HₙA) de una base que empieza protonada (NH₄⁺, etilendiamina) o de un catión que se
-          hidroliza (Fe³⁺). Fija el balance de carga con que se calcula el pH; para un ácido
-          común déjalo en 0.
-        </p>
+        <p className="hint">{t('acidSystemEditor.z0Hint')}</p>
       </details>
       <DbPanel
         items={presets.map((a) => ({

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useT } from '../hooks/useT';
 
 interface HomeView { id: string; label: string }
 interface HomeHub { id: string; label: string; desc: string; views: HomeView[] }
@@ -65,15 +66,12 @@ export default function Home({
   hubs: HomeHub[];
   onOpenView: (viewId: string) => void;
 }) {
+  const t = useT();
   return (
     <div className="home">
       <div className="home-intro">
-        <h2>¿Qué equilibrio quieres estudiar?</h2>
-        <p>
-          Catorce motores de química analítica en siete temas. Cada tema empieza con el
-          modelo mínimo y crece contigo: agrega constantes, reacciones laterales o
-          comparaciones cuando las necesites.
-        </p>
+        <h2>{t('home.title')}</h2>
+        <p>{t('home.intro')}</p>
       </div>
       <div className="home-grid">
         {hubs.map((h) => (

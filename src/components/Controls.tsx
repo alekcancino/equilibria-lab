@@ -1,6 +1,8 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { GLOSSARY } from '../lib/glossary';
+import { useLanguage } from '../hooks/useLanguage';
+import { useT } from '../hooks/useT';
 
 /**
  * Small ⓘ affordance next to a cryptic control label. Shows a styled tooltip on
@@ -10,6 +12,8 @@ import { GLOSSARY } from '../lib/glossary';
 export function HelpTip({ id }: { id: string }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const lang = useLanguage();
+  const t = useT();
   const entry = GLOSSARY[id];
   if (!entry) return null;
 
@@ -27,7 +31,7 @@ export function HelpTip({ id }: { id: string }) {
         ref={btnRef}
         type="button"
         className="help-tip-btn"
-        aria-label={`Ayuda: ${entry.meaning}`}
+        aria-label={`${t('controls.help')}: ${entry.meaning[lang]}`}
         aria-expanded={pos !== null}
         onMouseEnter={show}
         onMouseLeave={hide}
@@ -43,8 +47,8 @@ export function HelpTip({ id }: { id: string }) {
           role="tooltip"
           style={{ position: 'fixed', top: pos.top, left: pos.left, opacity: 1, transform: 'translateY(0)' }}
         >
-          <span className="help-tip-meaning">{entry.meaning}</span>
-          <span className="help-tip-units">{entry.units}</span>
+          <span className="help-tip-meaning">{entry.meaning[lang]}</span>
+          <span className="help-tip-units">{entry.units[lang]}</span>
         </span>,
         document.body,
       )}
@@ -316,6 +320,7 @@ export function ConstantList({
   initialValue?: number;
   helpId?: string;
 }) {
+  const t = useT();
   return (
     <div className="constant-list">
       {values.map((v, i) => (
@@ -333,7 +338,7 @@ export function ConstantList({
           </div>
           <button
             className="mini-btn"
-            title="Quitar constante"
+            title={t('controls.removeConstant')}
             onClick={() => onChange(values.filter((_, j) => j !== i))}
             disabled={values.length <= minItems}
           >
@@ -351,7 +356,7 @@ export function ConstantList({
               : Math.min((values[values.length - 1] ?? initialValue) + 3, max),
           ])}
         >
-          + Agregar {prefix}
+          + {t('controls.add')} {prefix}
         </button>
       )}
     </div>
@@ -371,16 +376,18 @@ export interface DbItem {
 }
 
 export function DbPanel({
-  items, onSelect, title = 'Ejemplos de la base de datos',
+  items, onSelect, title,
 }: {
   items: DbItem[];
   onSelect: (id: string) => void;
   title?: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
+  const otherGroup = t('controls.otherGroup');
   const hasGroups = items.some((it) => it.group);
   const groups = hasGroups
-    ? [...new Set(items.map((it) => it.group ?? 'Otros'))]
+    ? [...new Set(items.map((it) => it.group ?? otherGroup))]
     : [null];
 
   const renderItem = (it: DbItem) => (
@@ -399,12 +406,12 @@ export function DbPanel({
 
   return (
     <details className="db-panel" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary>{title}</summary>
+      <summary>{title ?? t('controls.dbExamples')}</summary>
       {groups.map((g) => (
         <div key={g ?? 'all'}>
           {g && <p className="db-group-title">{g}</p>}
           <div className="db-grid">
-            {items.filter((it) => (g ? (it.group ?? 'Otros') === g : true)).map(renderItem)}
+            {items.filter((it) => (g ? (it.group ?? otherGroup) === g : true)).map(renderItem)}
           </div>
         </div>
       ))}
@@ -417,17 +424,18 @@ export function DbPanel({
  * Groups by `group`; each item calls onSelect(id) and closes.
  */
 export function SystemPresetPicker({
-  items, onSelect, title = 'Cargar sistema completo',
+  items, onSelect, title,
 }: {
   items: { id: string; name: string; group: string; detail: string }[];
   onSelect: (id: string) => void;
   title?: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const groups = [...new Set(items.map((it) => it.group))];
   return (
     <details className="preset-picker" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary><span className="preset-picker-spark" aria-hidden>✦</span> {title}</summary>
+      <summary><span className="preset-picker-spark" aria-hidden>✦</span> {title ?? t('controls.loadFullSystem')}</summary>
       {groups.map((g) => (
         <div key={g} className="preset-group">
           <p className="preset-group-title">{g}</p>
@@ -454,10 +462,11 @@ export function ModelBadge({
   model: string;
   additions?: Array<string | false | null | undefined>;
 }) {
+  const t = useT();
   const active = additions.filter((item): item is string => typeof item === 'string' && item.length > 0);
   return (
     <div className="system-classification">
-      <span><strong>Modelo detectado:</strong> {model}</span>
+      <span><strong>{t('controls.modelDetected')}:</strong> {model}</span>
       {active.length > 0 && (
         <span className="model-additions">
           {active.map((item) => <span key={item} className="model-chip">+ {item}</span>)}

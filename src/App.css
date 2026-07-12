@@ -1979,6 +1979,30 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
 .topbar .sections { margin-left: auto; }
 .topbar .sections + .theme-toggle { margin-left: 0; }
 
+.lang-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+}
+.lang-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.lang-toggle:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+/* Sits right after the theme toggle — .theme-toggle's own auto-margin already
+   pushed this trailing pair to the far right, same reasoning as the reset above. */
+.theme-toggle + .lang-toggle { margin-left: 0; }
+
 /* Per-hub assumptions disclosure at the right end of the subnav */
 .hub-assumptions {
   position: relative;
@@ -2138,6 +2162,12 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
     position: absolute;
     top: calc(10px + env(safe-area-inset-top));
     right: max(14px, env(safe-area-inset-right));
+    margin-left: 0;
+  }
+  .lang-toggle {
+    position: absolute;
+    top: calc(10px + env(safe-area-inset-top));
+    right: calc(34px + 8px + max(14px, env(safe-area-inset-right)));
     margin-left: 0;
   }
 }

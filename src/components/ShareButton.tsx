@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useT } from '../hooks/useT';
 
 /** Copies the current URL to clipboard and shows a brief confirmation. */
 export default function ShareButton() {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   const handleClick = async () => {
@@ -27,10 +29,10 @@ export default function ShareButton() {
       type="button"
       className={`share-btn${copied ? ' share-btn--copied' : ''}`}
       onClick={handleClick}
-      aria-label="Compartir enlace de este escenario"
-      title="Compartir"
+      aria-label={t('share.ariaLabel')}
+      title={t('share.label')}
     >
-      {copied ? '¡Enlace copiado!' : (
+      {copied ? t('share.copied') : (
         <>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
             <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2" />
@@ -38,7 +40,7 @@ export default function ShareButton() {
             <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="2" />
             <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" strokeWidth="2" />
           </svg>
-          Compartir
+          {t('share.label')}
         </>
       )}
     </button>
