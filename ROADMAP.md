@@ -216,6 +216,28 @@ construction (normalized fractions, Langmuir-type saturation formulas, explicit 
 are legitimately unbounded error metrics (Gran-plot "% error", a deviation not a fraction),
 not the same class of bug.
 
+### Dark mode redesign: neutral charcoal, Instagram/WhatsApp-style (2026-07-11) — resolved
+
+User-reported: "el modo oscuro se ve feo, puede ser algo mas tipo como instagram modo oscuro."
+The old dark palette was a blue/navy-tinted slate (`#0F172A` base) — not a rendering bug per
+se, but a visual identity mismatch with what "good dark mode" looks like in modern apps
+(Instagram, WhatsApp, X): true-neutral charcoal surfaces, flat elevation via subtle borders
+rather than colorful ambient glow. Redesigned `tokens.css`'s dark theme around a neutral
+palette (`#0A0A0B` bg → `#1A1A1C` cards → `#2E2E31` borders, true black `#000000` page
+backdrop) and removed the colorful radial-gradient washes (`--bg-grad`, `--content-wash`) that
+injected blue/teal tint into what should read as neutral.
+
+While auditing for the tint, found and fixed several **actual** theme bugs — surfaces
+hardcoded to a light color regardless of theme, invisible until you actually toggled dark
+mode and looked: `.db-item` (preset chips) and `.plot-toolbar-btn` (every chart's floating
+toolbar) were pinned to white/near-white; `.badge.ok`/`.badge.warn` (e.g. Pourbaix's
+"diagrama simplificado" note), `.editor`, `.share-btn--copied` were pinned to light green/cream
+tints. Added a `--warn-soft` token (mirroring the existing `--ok-soft`) and a `--topbar-sheen`
+token so the topbar's light-mode-only glossy highlight goes flat in dark instead of leaving a
+stray white line. Also re-tuned `Predominance2D`'s dark fill-mix target to the new neutral
+`--plot-bg` (it was tuned to the old navy). Verified end-to-end with real-render QA across
+Home, Complejos, the Sillén 2D map, and Pourbaix, plus a light-mode regression check.
+
 ### Near-term
 
 | Feature | Notes |

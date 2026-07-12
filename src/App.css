@@ -46,7 +46,7 @@ html, body, #root {
   padding-top: env(safe-area-inset-top);
   background: var(--topbar-grad);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6), var(--shadow-sm);
+  box-shadow: 0 1px 0 var(--topbar-sheen), var(--shadow-sm);
   flex-shrink: 0;
 }
 
@@ -413,7 +413,7 @@ html, body, #root {
   padding: 0;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.94);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
   color: var(--text);
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(31, 41, 51, 0.08);
@@ -716,8 +716,8 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   line-height: 1.4;
 }
 
-.badge.ok { background: #eafaf1; color: var(--ok); }
-.badge.warn { background: #fdf2e3; color: var(--warn); }
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
 
 /* ---------- Caja didáctica ---------- */
 .info-box {
@@ -903,7 +903,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   margin-bottom: 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fbfcfd;
+  background: var(--surface-alt);
 }
 
 /* An editor nested inside a section card is redundant — flatten it (no card-in-card) */
@@ -993,7 +993,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   padding: 7px 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--surface);
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -1344,9 +1344,9 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 .share-btn:hover { color: var(--accent); border-color: var(--accent); }
 
 .share-btn--copied {
-  color: #059669;
-  border-color: #059669;
-  background: #ecfdf5;
+  color: var(--ok);
+  border-color: var(--ok);
+  background: var(--ok-soft);
 }
 
 .saved-systems {

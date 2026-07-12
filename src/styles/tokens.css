@@ -16,6 +16,7 @@
   --ok: #059669;
   --ok-soft: #E7F8F0;
   --warn: #D97706;
+  --warn-soft: #FDF2E3;
 
   /* Direction "E" (C+D hybrid) — premium accent + ambient surfaces */
   --accent-2: #8B5CF6;                                   /* violet, gradient end */
@@ -83,6 +84,8 @@
   --topbar-grad: linear-gradient(180deg, #FFFFFF 0%, #FBFBFE 100%);
   --surface-grad: linear-gradient(180deg, #FFFFFF 0%, #FCFCFF 100%);
   --content-wash: radial-gradient(130% 100% at 92% -12%, #ECEEFF 0%, rgba(236, 238, 255, 0) 48%);
+  /* Glossy 1px top highlight on the topbar — a light-mode-only touch; flat/off in dark. */
+  --topbar-sheen: rgba(255, 255, 255, 0.6);
 
   /* Plotly chrome */
   --plot-bg: #ffffff;
@@ -92,47 +95,52 @@
   --plot-font-size-mobile: 12px;
 }
 
-/* Dark theme — slate-900 canvas, mid-tone accents. Series colors for charts
-   are remapped separately in lib/plotTheme.ts (validated against #16203A). */
+/* Dark theme — neutral charcoal canvas (Instagram/WhatsApp-style: true-neutral
+   surfaces, no blue/navy tint, flat elevation via subtle borders rather than
+   colorful ambient glow). Series colors for charts are remapped separately in
+   lib/plotTheme.ts (re-validated against the new --plot-bg #141416: near-identical
+   lightness to the old #16203A, only the hue tint was removed, so contrast holds). */
 :root[data-theme="dark"] {
-  --bg: #0F172A;
-  --surface: #1E293B;
-  --surface-alt: #253349;
-  --border: #334155;
-  --text: #E2E8F0;
-  --text-muted: #94A3B8;
-  --accent: #818CF8;
-  --accent-hover: #A5B4FC;
-  --accent-soft: rgba(99, 102, 241, 0.18);
-  --accent-violet: #818CF8;
-  --accent-teal: #818CF8;
-  --ok: #34D399;
-  --ok-soft: rgba(16, 185, 129, 0.16);
+  --bg: #0A0A0B;
+  --surface: #1A1A1C;
+  --surface-alt: #232325;
+  --border: #2E2E31;
+  --text: #F2F2F3;
+  --text-muted: #9A9A9E;
+  --accent: #8B8CF9;
+  --accent-hover: #A5A6FF;
+  --accent-soft: rgba(139, 140, 249, 0.16);
+  --accent-violet: #8B8CF9;
+  --accent-teal: #8B8CF9;
+  --ok: #3DDC97;
+  --ok-soft: rgba(61, 220, 151, 0.14);
   --warn: #FBBF24;
+  --warn-soft: rgba(251, 191, 36, 0.14);
 
-  --accent-2: #A78BFA;
-  --bg-grad:
-    radial-gradient(120% 92% at 88% -12%, rgba(99, 102, 241, 0.14) 0%, rgba(99, 102, 241, 0) 44%),
-    radial-gradient(80% 65% at 2% 108%, rgba(45, 212, 191, 0.08) 0%, rgba(45, 212, 191, 0) 42%),
-    var(--bg);
-  --glass-bg: rgba(15, 23, 42, 0.72);
-  --glass-border: rgba(51, 65, 85, 0.82);
+  --accent-2: #B39DFB;
+  /* Flat canvas — no colorful ambient wash behind the app card in dark mode. */
+  --bg-grad: var(--bg);
+  --glass-bg: rgba(10, 10, 11, 0.72);
+  --glass-border: rgba(46, 46, 49, 0.82);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.24);
-  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.28), 0 6px 16px rgba(0, 0, 0, 0.36);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.28), 0 6px 18px -4px rgba(0, 0, 0, 0.42);
-  --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.30), 0 22px 48px -12px rgba(0, 0, 0, 0.55);
-  --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.28);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px -4px rgba(0, 0, 0, 0.5);
+  --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.4), 0 22px 48px -12px rgba(0, 0, 0, 0.6);
+  --focus-ring: 0 0 0 3px rgba(139, 140, 249, 0.32);
 
-  --page-bg: #0B1120;
+  --page-bg: #000000;
 
-  --topbar-grad: linear-gradient(180deg, #1B2740 0%, #182338 100%);
-  --surface-grad: linear-gradient(180deg, #202D45 0%, #1E293B 100%);
-  --content-wash: radial-gradient(130% 100% at 92% -12%, rgba(99, 102, 241, 0.10) 0%, rgba(99, 102, 241, 0) 48%);
+  --topbar-grad: linear-gradient(180deg, #1C1C1E 0%, #18181A 100%);
+  --surface-grad: linear-gradient(180deg, #1E1E20 0%, #1A1A1C 100%);
+  /* Flat content area — no colorful wash, same reasoning as --bg-grad. */
+  --content-wash: none;
+  /* No glossy highlight — flat neutral chrome, Instagram/WhatsApp-style. */
+  --topbar-sheen: transparent;
 
-  --plot-bg: #16203A;
-  --plot-grid: #26334D;
-  --plot-axis: #3D4C68;
+  --plot-bg: #141416;
+  --plot-grid: #2A2A2D;
+  --plot-axis: #3A3A3E;
 }
 
 @media (max-width: 800px) {
