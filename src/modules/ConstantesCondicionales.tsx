@@ -25,6 +25,7 @@ import {
   type SideReactionEditorState,
 } from '../lib/sideReactions';
 import { EDTA_METAL_PRESETS } from '../lib/indicatorDatabase';
+import { useT } from '../hooks/useT';
 
 // ── Base de datos de complejos M–EDTA ───────────────────────────────────────
 
@@ -102,6 +103,7 @@ const PH_MIN = 1;
 const PH_MAX = 14;
 
 export default function ConstantesCondicionales() {
+  const t = useT();
   const { carryOver, setCarryOver } = useComplejosCarryOver();
   // Computed once at mount — seedFromCarryOver is only ever consumed by
   // useShareableState's own internal lazy useState initializer, but eagerly
@@ -319,7 +321,7 @@ export default function ConstantesCondicionales() {
     const traces: Data[] = [
       {
         x: curve1.pHs, y: curve1.logAlphaH, type: 'scatter', mode: 'lines',
-        name: 'log α_Y(H) — protonación',
+        name: t('condicionales.traceProtonationY'),
         line: { width: 2.5, color: C_ALPHA_H },
         hovertemplate: `log α_Y(H) = %{y:.2f}<extra>α_Y(H)</extra>`,
       },
@@ -327,7 +329,7 @@ export default function ConstantesCondicionales() {
     if (s.side.showOH && s.side.logBetasOH.length > 0) {
       traces.push({
         x: curve1.pHs, y: curve1.logAlphaOH, type: 'scatter', mode: 'lines',
-        name: 'log α_M(OH) — hidrólisis',
+        name: t('condicionales.traceHydrolysis'),
         line: { width: 2.5, color: C_ALPHA_OH },
         hovertemplate: `log α_M(OH) = %{y:.2f}<extra>α_M(OH)</extra>`,
       });
@@ -335,7 +337,7 @@ export default function ConstantesCondicionales() {
     if (s.side.showAux && s.side.logBetasAux.length > 0) {
       traces.push({
         x: curve1.pHs, y: curve1.logAlphaL, type: 'scatter', mode: 'lines',
-        name: `log α_M(${s.side.auxLabel}) — aux`,
+        name: t('condicionales.traceAux', { x: s.side.auxLabel }),
         line: { width: 2.5, color: C_ALPHA_L },
         hovertemplate: `log α_M(L) = %{y:.2f}<extra>α_M(${s.side.auxLabel})</extra>`,
       });
@@ -343,23 +345,23 @@ export default function ConstantesCondicionales() {
     if (s.side.showComplex) {
       traces.push({
         x: curve1.pHs, y: curve1.logAlphaComplex, type: 'scatter', mode: 'lines',
-        name: 'log α_MY — complejo',
+        name: t('condicionales.traceComplex'),
         line: { width: 2.5, color: C_ALPHA_CX },
         hovertemplate: `log α_MY = %{y:.2f}<extra>α_MY</extra>`,
       });
     }
     return traces;
-  }, [curve1, s.side]);
+  }, [curve1, s.side, t]);
 
   // ── Veredicto ──────────────────────────────────────────────────────────────
 
   const verdict = useMemo(() => {
-    if (logKmax < s.threshold) return { text: 'No factible al umbral elegido', ok: false };
-    if (!feasWin) return { text: 'Factible pero ventana muy estrecha', ok: false };
+    if (logKmax < s.threshold) return { text: t('condicionales.notFeasible'), ok: false };
+    if (!feasWin) return { text: t('condicionales.feasibleNarrow'), ok: false };
     const width = feasWin[1] - feasWin[0];
-    if (width < 0.5) return { text: `Ventana muy estrecha (${width.toFixed(1)} unid. pH)`, ok: false };
-    return { text: `Factible ✓ · pH ${feasWin[0].toFixed(1)}–${feasWin[1].toFixed(1)}`, ok: true };
-  }, [logKmax, s.threshold, feasWin]);
+    if (width < 0.5) return { text: t('condicionales.veryNarrowWindow', { width: width.toFixed(1) }), ok: false };
+    return { text: t('condicionales.feasibleOk', { a: feasWin[0].toFixed(1), b: feasWin[1].toFixed(1) }), ok: true };
+  }, [logKmax, s.threshold, feasWin, t]);
 
   // ── UI ─────────────────────────────────────────────────────────────────────
 
@@ -367,13 +369,13 @@ export default function ConstantesCondicionales() {
     id: p.id,
     label: p.metal,
     detail: `log Kf = ${p.logKf.toFixed(2)}`,
-    group: p.group === 'M²⁺' ? 'Metales bivalentes' : 'Metales trivalentes',
+    group: p.group === 'M²⁺' ? t('condicionales.divalentMetals') : t('condicionales.trivalentMetals'),
   }));
 
   const diagrams = [
     {
       id: 'logk',
-      label: "log K′ = f(pH)",
+      label: t('condicionales.tabLogKPrime'),
       node: (
         <Chart
           data={logKTraces}
@@ -389,7 +391,7 @@ export default function ConstantesCondicionales() {
     },
     {
       id: 'alpha',
-      label: 'Coeficientes α',
+      label: t('condicionales.tabAlphaCoefficients'),
       node: (
         <Chart
           data={alphaTraces}
@@ -405,21 +407,21 @@ export default function ConstantesCondicionales() {
 
   return (
     <div className="module">
-      <PanelShell title="Constantes condicionales" onReset={reset} moduleId="condicionalesedta">
-        <PanelSection title="Metal y ligando" icon="⚛">
+      <PanelShell title={t('condicionales.title')} onReset={reset} moduleId="condicionalesedta">
+        <PanelSection title={t('condicionales.metalLigandSection')} icon="⚛">
         <ModelBadge
-          model="equilibrio principal M–Y"
+          model={t('condicionales.primaryEquilibrium')}
           additions={[
-            s.side.ligandPKas.length > 0 && 'protonación del ligando',
-            s.side.showOH && 'hidrólisis del metal',
-            s.side.showAux && 'ligando auxiliar',
-            s.side.showComplex && 'protonación del complejo',
-            s.showMask && 'competencia entre metales',
-            s.showMulti && 'varias reacciones principales',
-            s.useActivity && `K′f corregida a I = ${s.ionicI.toPrecision(2)} M`,
+            s.side.ligandPKas.length > 0 && t('condicionales.additionLigandProtonation'),
+            s.side.showOH && t('condicionales.additionMetalHydrolysis'),
+            s.side.showAux && t('condicionales.additionAuxLigand'),
+            s.side.showComplex && t('condicionales.additionComplexProtonation'),
+            s.showMask && t('condicionales.additionMetalCompetition'),
+            s.showMulti && t('condicionales.additionMultipleReactions'),
+            s.useActivity && t('condicionales.additionActivityCorrected', { i: s.ionicI.toPrecision(2) }),
           ]}
         />
-        <LabelField label="Metal (M)" value={s.metalLabel} onChange={(v) => set('metalLabel', v)} />
+        <LabelField label={t('condicionales.metalMLabel')} value={s.metalLabel} onChange={(v) => set('metalLabel', v)} />
         <Slider
           label="log Kf (M–Y)"
           helpId="logKf"
@@ -437,7 +439,7 @@ export default function ConstantesCondicionales() {
         />
 
         <Toggle
-          label="Varias reacciones principales (NiGly₁,₂,₃…)"
+          label={t('condicionales.multiReactionsToggle')}
           checked={s.showMulti}
           onChange={(v) => set('showMulti', v)}
         />
@@ -446,7 +448,7 @@ export default function ConstantesCondicionales() {
             {s.extraReactions.map((rx, i) => (
               <div key={i} style={{ marginBottom: 8 }}>
                 <LabelField
-                  label={`Reacción ${i + 2}`}
+                  label={t('condicionales.reactionN', { n: i + 2 })}
                   value={rx.label}
                   onChange={(label) => {
                     const next = [...s.extraReactions];
@@ -471,7 +473,7 @@ export default function ConstantesCondicionales() {
                   className="preset-chip"
                   onClick={() => set('extraReactions', s.extraReactions.filter((_, j) => j !== i))}
                 >
-                  Quitar
+                  {t('condicionales.removeButton')}
                 </button>
               </div>
             ))}
@@ -479,13 +481,13 @@ export default function ConstantesCondicionales() {
               className="preset-chip"
               onClick={() => set('extraReactions', [...s.extraReactions, { label: 'M–L₂', logKf: 8 }])}
             >
-              + reacción principal
+              {t('condicionales.addReactionButton')}
             </button>
           </div>
         )}
 
         <Slider
-          label="Evaluar log K′ en pH"
+          label={t('condicionales.evalAtPHLabel')}
           value={s.evalPH}
           min={1}
           max={14}
@@ -494,7 +496,7 @@ export default function ConstantesCondicionales() {
           decimals={1}
         />
         <ConcSlider
-          label="Concentración analítica del complejante (exceso sobre el metal)"
+          label={t('condicionales.analyticalConcLabel')}
           helpId="co"
           value={s.co}
           onChange={(v) => set('co', v)}
@@ -502,11 +504,10 @@ export default function ConstantesCondicionales() {
           max={0}
         />
         <p className="hint">
-          % formado a Co: fracción del metal complejada con el ligando en exceso;
-          pH 10/50/90 % marcan la ventana de la reacción.
+          {t('condicionales.pctFormedHint')}
         </p>
         <Slider
-          label="% formado objetivo (enmascaramiento)"
+          label={t('condicionales.targetPctLabel')}
           value={s.targetPct}
           min={0.01}
           max={99.99}
@@ -517,58 +518,55 @@ export default function ConstantesCondicionales() {
         />
         <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
           <button className="preset-chip" onClick={() => set('targetPct', 0.1)}>
-            0.1 % (reacción despreciable)
+            {t('condicionales.negligibleChip')}
           </button>
           <button className="preset-chip" onClick={() => set('targetPct', 99.9)}>
-            99.9 % (enmascarado)
+            {t('condicionales.maskedChip')}
           </button>
         </div>
         <p className="hint">
-          ¿A qué pH el metal queda {s.targetPct.toFixed(2)} % formado con el ligando en exceso?
-          — pregunta estándar de enmascaramiento selectivo.
+          {t('condicionales.targetPctHint', { pct: s.targetPct.toFixed(2) })}
         </p>
         </PanelSection>
 
-        <PanelSection title="Parámetros" icon="⚙">
+        <PanelSection title={t('condicionales.paramsSection')} icon="⚙">
         <div className="control">
           <div className="control-header">
-            <span className="control-label">Umbral de cuantitatividad</span>
+            <span className="control-label">{t('condicionales.thresholdLabel')}</span>
             <span className="control-value">{s.threshold}</span>
           </div>
           <div className="segmented" style={{ marginTop: 6 }}>
-            {([6, 8, 10] as const).map((t) => (
+            {([6, 8, 10] as const).map((th) => (
               <button
-                key={t}
-                className={s.threshold === t ? 'seg-btn active' : 'seg-btn'}
-                onClick={() => set('threshold', t)}
+                key={th}
+                className={s.threshold === th ? 'seg-btn active' : 'seg-btn'}
+                onClick={() => set('threshold', th)}
               >
-                {t}
+                {th}
               </button>
             ))}
           </div>
-          <p className="hint">6 = reacción cuantitativa · 8 = titulación nítida (0.01 M)</p>
+          <p className="hint">{t('condicionales.thresholdHint')}</p>
         </div>
 
         <Toggle
-          label="Corrección de actividad (K′f a I > 0)"
+          label={t('condicionales.activityToggle')}
           checked={s.useActivity}
           onChange={(v) => set('useActivity', v)}
         />
         {s.useActivity && (
           <div className="mask-section">
-            <ConcSlider label="Fuerza iónica I" helpId="ionicStrength" value={s.ionicI} onChange={(v) => set('ionicI', v)} min={-3} max={0} />
-            <NumberSegmented label="Carga del metal (zM)" value={s.zM} options={[1, 2, 3, 4]} onChange={(v) => set('zM', v)} />
+            <ConcSlider label={t('complejos.ionicStrengthLabel')} helpId="ionicStrength" value={s.ionicI} onChange={(v) => set('ionicI', v)} min={-3} max={0} />
+            <NumberSegmented label={t('complejos.metalChargeLabel')} value={s.zM} options={[1, 2, 3, 4]} onChange={(v) => set('zM', v)} />
             <p className="hint">
-              log K′f = log Kf + log γ_M + log γ_Y − log γ(MY), con Y⁴⁻ (zY = −4) y
-              z(MY) = zM − 4 (Debye–Hückel extendida, a = 3 Å). La misma corrección se
-              aplica a todos los metales mostrados (se asume la misma zM).
+              {t('condicionales.activityHint')}
             </p>
           </div>
         )}
 
         {/* 2nd metal — comparison / masking */}
         <Toggle
-          label="Comparar con 2.º metal"
+          label={t('condicionales.compareSecondMetal')}
           checked={s.showMask}
           onChange={(v) => set('showMask', v)}
         />
@@ -577,11 +575,11 @@ export default function ConstantesCondicionales() {
             <DbPanel
               items={dbItems}
               onSelect={applyPreset2}
-              title="Presets 2.º metal"
+              title={t('condicionales.presetsSecondMetal')}
             />
-            <LabelField label="2.º metal" value={s.metal2Label} onChange={(v) => set('metal2Label', v)} />
+            <LabelField label={t('condicionales.secondMetalLabel')} value={s.metal2Label} onChange={(v) => set('metal2Label', v)} />
             <Slider
-              label="log Kf (2.º metal–EDTA)"
+              label={t('condicionales.logKf2Label')}
               value={s.logKf2}
               min={1}
               max={30}
@@ -591,13 +589,13 @@ export default function ConstantesCondicionales() {
             />
             {feasWin2 && (
               <p className="hint">
-                2.º metal: pH {feasWin2[0].toFixed(1)}–{feasWin2[1].toFixed(1)}
+                {t('condicionales.secondMetalWindow', { a: feasWin2[0].toFixed(1), b: feasWin2[1].toFixed(1) })}
                 {feasWin && (
                   (() => {
                     const overlap = [Math.max(feasWin[0], feasWin2[0]), Math.min(feasWin[1], feasWin2[1])];
                     return overlap[0] < overlap[1]
-                      ? ` · Solapan en pH ${overlap[0].toFixed(1)}–${overlap[1].toFixed(1)}`
-                      : ' · Sin solapamiento → separación selectiva posible';
+                      ? t('condicionales.overlapText', { a: overlap[0].toFixed(1), b: overlap[1].toFixed(1) })
+                      : t('condicionales.noOverlapText');
                   })()
                 )}
               </p>
@@ -608,41 +606,40 @@ export default function ConstantesCondicionales() {
         <DbPanel
           items={dbItems}
           onSelect={applyPreset}
-          title="Presets M–EDTA"
+          title={t('condicionales.presetsMEDTA')}
         />
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
         <ResultCard items={[
-          { label: 'pH óptimo', value: pHopt.toFixed(1) },
-          { label: 'log K\'máx', value: logKmax.toFixed(1), helpId: 'logKprime' },
-          { label: `log K′ a pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(2), helpId: 'logKprime' },
-          { label: `pendiente d(log K′)/dpH a pH ${s.evalPH.toFixed(1)}`, value: slopeAtEval.toFixed(2) },
-          { label: 'Ventana óptima', value: feasWin ? `pH ${feasWin[0].toFixed(1)}–${feasWin[1].toFixed(1)}` : 'No supera el umbral' },
-          { label: `% formado a Co (pH ${s.evalPH.toFixed(1)})`, value: `${pctFormado.toFixed(1)} %` },
-          { label: 'pH para 10 / 50 / 90 %', value: `${fmtPH(phForPct.p10)} / ${fmtPH(phForPct.p50)} / ${fmtPH(phForPct.p90)}` },
-          { label: `pH para ${s.targetPct.toFixed(2)} % formado`, value: fmtPH(phForTarget) },
+          { label: t('condicionales.optimalPH'), value: pHopt.toFixed(1) },
+          { label: t('condicionales.logKmax'), value: logKmax.toFixed(1), helpId: 'logKprime' },
+          { label: t('condicionales.logKAtPH', { ph: s.evalPH.toFixed(1) }), value: logKAtEval.toFixed(2), helpId: 'logKprime' },
+          { label: t('condicionales.slopeAtPH', { ph: s.evalPH.toFixed(1) }), value: slopeAtEval.toFixed(2) },
+          { label: t('condicionales.optimalWindow'), value: feasWin ? `pH ${feasWin[0].toFixed(1)}–${feasWin[1].toFixed(1)}` : t('condicionales.belowThreshold') },
+          { label: t('condicionales.pctFormedAtCo', { ph: s.evalPH.toFixed(1) }), value: `${pctFormado.toFixed(1)} %` },
+          { label: t('condicionales.phFor10_50_90'), value: `${fmtPH(phForPct.p10)} / ${fmtPH(phForPct.p50)} / ${fmtPH(phForPct.p90)}` },
+          { label: t('condicionales.phForPctFormed', { pct: s.targetPct.toFixed(2) }), value: fmtPH(phForTarget) },
           {
-            label: 'Factibilidad',
+            label: t('condicionales.feasibility'),
             value: verdict.text,
           },
         ]} />
         </PanelSection>
 
-        <InfoBox title="Constante condicional de Ringbom">
+        <InfoBox title={t('condicionales.infoBoxTitle')}>
           <p>
-            Las <strong>reacciones parásitas</strong> (secundarias) consumen metal o ligando,
-            reduciendo la constante efectiva: <code>log K' = log K − log α_M − log α_Y</code>.
+            {t('condicionales.para1Prefix')}<strong>{t('condicionales.para1Bold')}</strong>{t('condicionales.para1Rest')}
+            <code>{t('condicionales.para1Code')}</code>.
           </p>
           <p>
-            <strong>α_Y(H)</strong>: a pH bajo el EDTA se protona (H₄Y, H₃Y⁻…) y queda menos
-            Y⁴⁻ libre → K' cae. <strong>α_M(OH)</strong>: a pH alto el metal hidroliza → K' también cae.
-            La <em>campana</em> es el resultado de ambos efectos opuestos.
+            <strong>{t('condicionales.para2AlphaYBold')}</strong>{t('condicionales.para2AlphaYRest')}{' '}
+            <strong>{t('condicionales.para2AlphaMBold')}</strong>{t('condicionales.para2AlphaMRest')}
+            <em>{t('condicionales.para2BellEm')}</em>{t('condicionales.para2BellRest')}
           </p>
           <p>
-            La <strong>banda azul</strong> marca la ventana donde log K' ≥ umbral; la línea naranja
-            punteada es el umbral. <strong>log K' ≥ 8</strong> garantiza una titulación nítida
-            a concentración típica (0.01 M).
+            {t('condicionales.para3Prefix')}<strong>{t('condicionales.para3BandBold')}</strong>{t('condicionales.para3BandRest')}
+            <strong>{t('condicionales.para3ThresholdBold')}</strong>{t('condicionales.para3ThresholdRest')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -650,11 +647,11 @@ export default function ConstantesCondicionales() {
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="logk" />
         <ResultCardRow items={[
-          { label: `% formado a Co`, value: `${pctFormado.toFixed(1)} %`, accent: true },
-          { label: 'pH 50 %', value: fmtPH(phForPct.p50) },
-          { label: 'pH óptimo', value: pHopt.toFixed(1) },
-          { label: "log K′máx", value: logKmax.toFixed(1), helpId: 'logKprime' },
-          { label: `log K′ pH ${s.evalPH.toFixed(1)}`, value: logKAtEval.toFixed(1), helpId: 'logKprime' },
+          { label: t('condicionales.pctFormedAtCoShort'), value: `${pctFormado.toFixed(1)} %`, accent: true },
+          { label: t('condicionales.ph50'), value: fmtPH(phForPct.p50) },
+          { label: t('condicionales.optimalPH'), value: pHopt.toFixed(1) },
+          { label: t('condicionales.logKmax'), value: logKmax.toFixed(1), helpId: 'logKprime' },
+          { label: t('condicionales.logKAtPHShort', { ph: s.evalPH.toFixed(1) }), value: logKAtEval.toFixed(1), helpId: 'logKprime' },
         ]} />
       </section>
     </div>

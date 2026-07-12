@@ -238,7 +238,33 @@ stray white line. Also re-tuned `Predominance2D`'s dark fill-mix target to the n
 `--plot-bg` (it was tuned to the old navy). Verified end-to-end with real-render QA across
 Home, Complejos, the Sillén 2D map, and Pourbaix, plus a light-mode regression check.
 
-### Bilingual UI — EspeciacionMetal module (2026-07-12) — in progress
+### Bilingual UI — ConstantesCondicionales module (2026-07-12) — in progress
+
+Fourth module. Translated the full **ConstantesCondicionales** ("Conditional K′", Ringbom's
+conditional constant module) — metal/ligand panel, the multi-primary-reaction and second-metal
+comparison sections, the parameters panel (quantitativity threshold, activity correction), the
+result panel, both diagram tabs (log K′ = f(pH), α coefficients) and the "Ringbom's conditional
+constant" InfoBox.
+
+Found and fixed a real jargon issue while cross-checking against the literature: "reacciones
+parásitas" was about to become "parasitic reactions" — the correct standard English term
+(Ringbom, and matching this app's own `alphaY` glossary entry) is **side reactions** (side
+reaction coefficients α), so that's what shipped instead.
+
+QA also caught a real regression bug of my own making: splitting a `<strong>`-wrapped sentence
+into separate bold/body translation keys silently dropped the leading article ("La " before
+"banda azul") from both languages, breaking the Spanish text. Fixed by adding a dedicated
+`*Prefix` key per language (empty for English, since "The blue band" needs the article but "Side
+reactions" reads fine without one) — documented as a checklist item in `AGENTS.md` so future
+translations catch this before shipping, not after.
+
+Verified end-to-end with real-render QA: full module in English across both diagram tabs, the
+multi-reaction and second-metal-comparison branches, no console errors, and a full Spanish-mode
+regression (including the fixed paragraph) confirming zero remaining text drift.
+
+Remaining: translate the other 10 modules one at a time, following the pattern in `AGENTS.md`.
+
+### Bilingual UI — EspeciacionMetal module (2026-07-12)
 
 Third module. Translated the full **EspeciacionMetal** ("Speciation vs pH") module: metal +
 hydrolysis panel, auxiliary-ligand and second-agent disclosures, species-names editor, the
@@ -259,8 +285,6 @@ auxiliary-ligand and second-agent disclosures (bold formatting on the map2d-empt
 via HTML dump), no console errors, and a full Spanish-mode regression confirming zero visual
 change (database-driven preset descriptions in `SPECIATION_PRESETS` correctly stay Spanish,
 same as Complejos' database examples).
-
-Remaining: translate the other 11 modules one at a time, following the pattern in `AGENTS.md`.
 
 ### Bilingual UI — Complejos + SideReactionEditor (2026-07-11)
 
@@ -328,7 +352,7 @@ one shipped.
 | Feature | Notes |
 | --- | --- |
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
-| **Bilingual UI (Spanish / English)** | 🔶 In progress — infrastructure, Ácido-base, Complejos and EspeciacionMetal shipped (see resolved sections above). Remaining: translate the other 11 modules one at a time. |
+| **Bilingual UI (Spanish / English)** | 🔶 In progress — infrastructure, Ácido-base, Complejos, EspeciacionMetal and ConstantesCondicionales shipped (see resolved sections above). Remaining: translate the other 10 modules one at a time. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | ✅ Done — pL–pH, pL–pX and pH–log[M] (Sillén) maps, dark-mode remap, CSV/PNG export, and the Sillén map's M1/M2 comparison + side-reaction mask all shipped (see resolved section above). |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |
