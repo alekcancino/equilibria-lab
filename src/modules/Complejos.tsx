@@ -12,6 +12,7 @@ import {
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import Predominance2D from '../components/Predominance2D';
+import { useT } from '../hooks/useT';
 import { SPECIES_COLORS } from '../lib/database';
 import { predominanceZones } from '../lib/ladder';
 import { predominanceGrid } from '../lib/predominance2D';
@@ -89,6 +90,7 @@ function effectiveLabels(s: ComplexState): string[] {
 
 /** Multi-ligand complexation equilibrium: DUZP + α distribution + Bjerrum + logC. */
 export default function Complejos() {
+  const t = useT();
   const { carryOver, setCarryOver } = useComplejosCarryOver();
   const [sys, setSys] = useState<ComplexState>(() => seedFromCarryOver(carryOver));
   const [cM, setCM] = useState(0.01);
@@ -141,8 +143,8 @@ export default function Complejos() {
 
   const scaleX = useCallback((pL: number) => pL + logAlphaM, [logAlphaM]);
   const xLabel = sideMode === 'ringbom'
-    ? `pX′ condicional (pH ${pHScale.toFixed(1)})`
-    : 'pL (−log[L])';
+    ? t('complejos.conditionalPXLabel', { ph: pHScale.toFixed(1) })
+    : t('complejos.pLAxisLabel');
 
   // Coupled X branch — non-null only in 'acoplada' mode with the aux ligand enabled.
   const xBranch = useMemo(
@@ -357,12 +359,12 @@ export default function Complejos() {
   const diagrams = [
     {
       id: 'equil',
-      label: 'Equilibrio (pL)',
+      label: t('complejos.tabEquil'),
       node: (
         <Chart
           data={alphaTraces}
           xTitle={xLabel}
-          yTitle="Fracción α"
+          yTitle={t('complejos.alphaFraction')}
           xRange={[0, xMax]}
           yRange={[0, 1.02]}
           shapes={equilShape}
@@ -373,7 +375,7 @@ export default function Complejos() {
     },
     {
       id: 'duzp',
-      label: 'DUZP',
+      label: t('complejos.tabDUZP'),
       node: (
         <DUZP
           zones={zones}
@@ -381,18 +383,18 @@ export default function Complejos() {
           pMax={xMax}
           pLabel={sideMode === 'ringbom' ? 'pX′' : 'pL'}
           marker={equilMarker}
-          caption="Zonas de predominio"
+          caption={t('complejos.duzpCaption')}
         />
       ),
     },
     {
       id: 'alpha',
-      label: 'Distribución α',
+      label: t('complejos.tabAlpha'),
       node: (
         <Chart
           data={alphaTraces}
           xTitle={xLabel}
-          yTitle="Fracción α"
+          yTitle={t('complejos.alphaFraction')}
           xRange={[0, xMax]}
           yRange={[0, 1.02]}
           shapes={equilShape}
@@ -403,12 +405,12 @@ export default function Complejos() {
     },
     {
       id: 'bjerrum',
-      label: 'Bjerrum n̄',
+      label: t('complejos.tabBjerrum'),
       node: (
         <Chart
           data={bjerrumTraces}
           xTitle={xLabel}
-          yTitle="n̄ (ligandos coordinados)"
+          yTitle={t('complejos.bjerrumYTitle')}
           xRange={[0, xMax]}
           yRange={[0, nBarMax + 0.2]}
           shapes={showEquil && pLEq < pLmax + 1 ? [{ type: 'line', x0: scaleX(pLEqClipped), x1: scaleX(pLEqClipped), y0: 0, y1: nBarMax + 0.2, line: { color: '#CC79A7', width: 2, dash: 'dashdot' } }] : []}
@@ -419,7 +421,7 @@ export default function Complejos() {
     },
     {
       id: 'logc',
-      label: 'log C',
+      label: t('complejos.tabLogC'),
       node: (
         <Chart
           data={logCTraces}
@@ -435,7 +437,7 @@ export default function Complejos() {
     },
     {
       id: 'map2d',
-      label: 'Mapa 2D (pL–pX)',
+      label: t('complejos.tabMap2D'),
       node: grid2D ? (
         <Predominance2D
           grid={grid2D}
@@ -444,18 +446,18 @@ export default function Complejos() {
           xLabel={`pL (−log[${sys.ligandLabel || 'L'}])`}
           yLabel={`pX (−log[${side.auxLabel || 'X'}])`}
           marker={coupledEq && Number.isFinite(coupledEq.pL) && Number.isFinite(coupledEq.pX)
-            ? { x: coupledEq.pL, y: coupledEq.pX, label: 'equilibrio' }
+            ? { x: coupledEq.pL, y: coupledEq.pX, label: t('complejos.map2dEquilLabel') }
             : undefined}
-          caption="Zonas de predominio en 2D"
+          caption={t('complejos.map2dCaption')}
           exportName="equilibria-complejos-map2d"
           exportMetadata={exportMetadata}
         />
       ) : (
         <div className="map2d-empty">
           <p>
-            Activa el modo <strong>X–M–L acoplado</strong> (un segundo agente complejante con
-            log β) para dibujar el mapa 2D pL–pX. Con un solo ligando la predominancia es 1D —
-            usa la pestaña <strong>Distribución α</strong> o <strong>DUZP</strong>.
+            {t('complejos.map2dEmptyPrefix')} <strong>{t('complejos.map2dEmptyModeBold')}</strong>{' '}
+            {t('complejos.map2dEmptyMid')} <strong>{t('complejos.tabAlpha')}</strong>{' '}
+            {t('complejos.map2dEmptyOr')} <strong>{t('complejos.tabDUZP')}</strong>{t('complejos.map2dEmptySuffix')}
           </p>
         </div>
       ),
@@ -464,26 +466,26 @@ export default function Complejos() {
 
   return (
     <div className="module">
-      <PanelShell title="Equilibrio de complejación" onReset={reset} moduleId="complejos">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('complejos.title')} onReset={reset} moduleId="complejos">
+        <PanelSection title={t('complejos.systemSection')} icon="⚛">
           <ModelBadge
             model={sys.logBetas.length === 1
-              ? 'complejo 1:1 (ML)'
-              : `complejación sucesiva hasta ML${sys.logBetas.length}`}
+              ? t('complejos.model11')
+              : t('complejos.modelSuccessive', { n: sys.logBetas.length })}
             additions={[
-              showEquil && 'balance de masa y pL de equilibrio',
-              sideMode === 'ringbom' && 'escala pX′ condicional',
-              xBranch !== null && 'X–M–L acoplado (dos ligandos)',
-              useActivity && `β′ corregidas a I = ${ionicI.toPrecision(2)} M`,
+              showEquil && t('complejos.additionMassBalance'),
+              sideMode === 'ringbom' && t('complejos.additionCondScale'),
+              xBranch !== null && t('complejos.additionCoupled'),
+              useActivity && t('complejos.additionActivity', { i: ionicI.toPrecision(2) }),
             ]}
           />
           <LabelField
-            label="Metal (nombre libre)"
+            label={t('complejos.metalLabel')}
             value={sys.metalLabel}
             onChange={(metalLabel) => setSys({ ...sys, metalLabel, speciesLabels: null, reference: null })}
           />
           <LabelField
-            label="Ligando (nombre libre)"
+            label={t('complejos.ligandLabel')}
             value={sys.ligandLabel}
             onChange={(ligandLabel) => setSys({ ...sys, ligandLabel, speciesLabels: null, reference: null })}
           />
@@ -497,7 +499,7 @@ export default function Complejos() {
             onChange={(logBetas) => setSys({ ...sys, logBetas, speciesLabels: null, reference: null })}
           />
           <DbPanel
-            title="Ejemplos de la base de datos"
+            title={t('complejos.dbExamples')}
             items={COMPLEX_PRESETS.map((p) => ({
               id: p.id,
               label: `${p.metalLabel} / ${p.ligandLabel}`,
@@ -511,33 +513,32 @@ export default function Complejos() {
           />
         </PanelSection>
 
-        <PanelSection title="Condiciones" icon="⚗">
-          <ConcSlider label="Concentración total del metal (cM)" value={cM} onChange={setCM} />
-          <ConcSlider label="Concentración total del ligando (cL)" value={cL} onChange={setCL} />
-          <Toggle label="Marcar pL de equilibrio en diagramas" checked={showEquil} onChange={setShowEquil} />
-          <Toggle label="Corrección de actividad (β′ a I > 0)" checked={useActivity} onChange={setUseActivity} />
+        <PanelSection title={t('complejos.conditionsSection')} icon="⚗">
+          <ConcSlider label={t('complejos.cmLabel')} value={cM} onChange={setCM} />
+          <ConcSlider label={t('complejos.clLabel')} value={cL} onChange={setCL} />
+          <Toggle label={t('complejos.markEquilPL')} checked={showEquil} onChange={setShowEquil} />
+          <Toggle label={t('complejos.activityToggle')} checked={useActivity} onChange={setUseActivity} />
           {useActivity && (
             <div className="mask-section">
-              <ConcSlider label="Fuerza iónica I" helpId="ionicStrength" value={ionicI} onChange={setIonicI} min={-3} max={0} />
-              <NumberSegmented label="Carga del metal (zM)" value={zM} options={[1, 2, 3, 4]} onChange={setZM} />
-              <NumberSegmented label="Carga del ligando (zL)" value={zL} options={[-4, -3, -2, -1, 0]} onChange={setZL} />
+              <ConcSlider label={t('complejos.ionicStrengthLabel')} helpId="ionicStrength" value={ionicI} onChange={setIonicI} min={-3} max={0} />
+              <NumberSegmented label={t('complejos.metalChargeLabel')} value={zM} options={[1, 2, 3, 4]} onChange={setZM} />
+              <NumberSegmented label={t('complejos.ligandChargeLabel')} value={zL} options={[-4, -3, -2, -1, 0]} onChange={setZL} />
               <p className="hint">
-                log β′ᵢ = log βᵢ + log γ_M + i·log γ_L − log γ(MLᵢ), con z(MLᵢ) = zM + i·zL
-                (Debye–Hückel extendida, a = 3 Å). Un ligando neutro (zL = 0) no corrige.
-                {xBranch !== null && ' Las β de la rama X permanecen ideales.'}
+                {t('complejos.activityHint')}
+                {xBranch !== null && t('complejos.activityHintXBranch')}
               </p>
             </div>
           )}
           <div>
             <div className="control-header">
-              <span className="control-label">Segundo agente complejante (X)</span>
+              <span className="control-label">{t('complejos.secondAgentLabel')}</span>
             </div>
             <div style={{ marginTop: 6 }}>
               <Segmented
                 options={[
-                  { value: 'ninguna', label: 'Ninguna' },
-                  { value: 'ringbom', label: 'pX′ (Ringbom)' },
-                  { value: 'acoplada', label: 'X–M–L acoplada' },
+                  { value: 'ninguna', label: t('complejos.sideModeNone') },
+                  { value: 'ringbom', label: t('complejos.sideModeRingbom') },
+                  { value: 'acoplada', label: t('complejos.sideModeCoupled') },
                 ]}
                 value={sideMode}
                 onChange={(v) => {
@@ -552,84 +553,75 @@ export default function Complejos() {
           </div>
           {sideMode === 'ringbom' && (
             <div className="mask-section">
-              <Slider label="pH fijo" value={pHScale} min={0} max={14} step={0.1} onChange={setPHScale} decimals={1} />
+              <Slider label={t('complejos.fixedPHLabel')} value={pHScale} min={0} max={14} step={0.1} onChange={setPHScale} decimals={1} />
               <SideReactionEditor state={side} onChange={setSide} showLigandPKas={false} />
-              <p className="hint">pX′ = pL + log α_M (hidrólisis + auxiliar) a pH fijo.</p>
+              <p className="hint">{t('complejos.ringbomHint')}</p>
             </div>
           )}
           {sideMode === 'acoplada' && (
             <div className="mask-section">
-              <Slider label="pH fijo" value={pHScale} min={0} max={14} step={0.1} onChange={setPHScale} decimals={1} />
+              <Slider label={t('complejos.fixedPHLabel')} value={pHScale} min={0} max={14} step={0.1} onChange={setPHScale} decimals={1} />
               <SideReactionEditor
                 state={side}
                 onChange={setSide}
                 showLigandPKas={false}
                 showComplexSection={false}
                 showHydrolysisSection={false}
-                auxLigandTitle={`Ligando X (${side.auxLabel || 'X'}) — presets y log β`}
+                auxLigandTitle={t('complejos.xLigandTitle', { x: side.auxLabel || 'X' })}
               />
               {xBranch === null && (
                 <p className="hint">
-                  Activa el ligando auxiliar (X) con al menos un log β para acoplar la segunda rama.
+                  {t('complejos.enableAuxHint')}
                 </p>
               )}
               <p className="hint">
-                <strong>X es un segundo agente complejante disuelto</strong> (NH₃, citrato, en…) que
-                compite con {sys.ligandLabel || 'L'} por el metal — no el disolvente (el agua ya
-                está en los log β).
+                <strong>{t('complejos.xIsAgentBold')}</strong>{' '}
+                {t('complejos.xIsAgentRest', { ligand: sys.ligandLabel || 'L' })}
               </p>
               <p className="hint">
-                Equilibrio acoplado: M se reparte entre {sys.ligandLabel || 'L'} y X resolviendo
-                ambos balances de masa simultáneamente — no es el corrimiento α de Ringbom.
-                El pH solo interviene cuando X se da como total analítico con pKa.
+                {t('complejos.coupledHint', { ligand: sys.ligandLabel || 'L' })}
               </p>
             </div>
           )}
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
             {
-              label: 'pL de equilibrio',
+              label: t('complejos.pLEquilResult'),
               value: Number.isNaN(pLEq)
-                ? 'sin solución'
-                : pLEq > pLmax ? `> ${pLmax.toFixed(0)} (sin ligando)` : pLEq.toFixed(3),
+                ? t('complejos.noSolution')
+                : pLEq > pLmax ? `> ${pLmax.toFixed(0)} (${t('complejos.noLigand')})` : pLEq.toFixed(3),
             },
             ...(coupledEq ? [{
-              label: 'pX de equilibrio',
+              label: t('complejos.pXEquilResult'),
               value: Number.isFinite(coupledEq.pX) ? coupledEq.pX.toFixed(3) : '—',
             }] : []),
-            { label: 'n̄ en equilibrio', value: eqValid ? nBarEq.toFixed(2) : '—' },
+            { label: t('complejos.nBarEquilResult'), value: eqValid ? nBarEq.toFixed(2) : '—' },
             {
-              label: 'Especie dominante',
+              label: t('complejos.dominantSpecies'),
               value: eqValid ? `${labels[domIdx]} (α = ${alphasEq[domIdx].toFixed(3)})` : '—',
             },
           ]} />
         </PanelSection>
 
-        <InfoBox title="Cómo leer estos diagramas">
+        <InfoBox title={t('complejos.howToReadTitle')}>
           <p>
-            <strong>DUZP</strong>: en cada tramo de pL domina una especie.
-            La escala crece hacia la derecha (pL alto = poco ligando libre = metal sin complejarse).
+            <strong>{t('complejos.tabDUZP')}</strong>{t('complejos.duzpExplain')}
           </p>
           <p>
-            <strong>Bjerrum n̄</strong>: número medio de ligandos coordinados;
-            sus inflexiones ocurren cerca de cada log Kᵢ escalonada.
+            <strong>{t('complejos.bjerrumExplainTitle')}</strong>{t('complejos.bjerrumExplain')}
           </p>
           <p>
-            <strong>Distribución α / log C</strong>: igual que en ácido-base
-            pero sobre el eje pL. La línea rosa marca el pL del sistema real.
+            <strong>{t('complejos.alphaLogCTitle')}</strong>{t('complejos.alphaLogCExplain')}
           </p>
           {xBranch !== null && (
             <>
               <p>
-                <strong>X–M–L acoplado</strong>: no se modelan especies mixtas MXL
-                (supuesto estándar). La hidrólisis puede entrar como X = OH⁻ con pX fijo = 14 − pH.
+                <strong>{t('complejos.xmlTitle')}</strong>{t('complejos.xmlExplain')}
               </p>
               <p>
-                El agua como disolvente ya está incluida: los log β son relativos al
-                acuocomplejo M(H₂O)ₙ. Un disolvente coordinante (ej. NH₃) se modela
-                como X con concentración libre fija alta.
+                {t('complejos.solventNote')}
               </p>
             </>
           )}
@@ -640,26 +632,26 @@ export default function Complejos() {
         <DiagramTabs tabs={diagrams} initialId="equil" />
         <ResultCardRow items={[
           {
-            label: '% formado',
+            label: t('complejos.pctFormed'),
             value: eqValid ? `${pctFormado.toFixed(1)} %` : '—',
             accent: true,
           },
-          { label: '% libre (disociado)', value: eqValid ? `${pctDisociado.toFixed(1)} %` : '—' },
+          { label: t('complejos.pctFree'), value: eqValid ? `${pctDisociado.toFixed(1)} %` : '—' },
           ...(xBranch !== null
-            ? [{ label: `% en ${side.auxLabel || 'X'}`, value: eqValid ? `${pctEnX.toFixed(1)} %` : '—' }]
-            : [{ label: 'pL para 50 %', value: Number.isFinite(pL50) ? pL50.toFixed(2) : '—' }]),
+            ? [{ label: t('complejos.pctInX', { x: side.auxLabel || 'X' }), value: eqValid ? `${pctEnX.toFixed(1)} %` : '—' }]
+            : [{ label: t('complejos.pLFor50'), value: Number.isFinite(pL50) ? pL50.toFixed(2) : '—' }]),
           {
-            label: sideMode === 'ringbom' ? 'pX′ equilibrio' : 'pL equilibrio',
+            label: sideMode === 'ringbom' ? t('complejos.pXEquilPH') : t('complejos.pLEquilPH'),
             value: Number.isNaN(pLEq)
               ? '—'
               : pLEq > pLmax ? `>${pLmax.toFixed(0)}` : scaleX(pLEq).toFixed(2),
           },
           ...(coupledEq ? [{
-            label: 'pX equilibrio',
+            label: t('complejos.pXEquilibrium'),
             value: Number.isFinite(coupledEq.pX) ? coupledEq.pX.toFixed(2) : '—',
           }] : []),
-          { label: 'n̄ equilibrio', value: eqValid ? nBarEq.toFixed(2) : '—' },
-          { label: 'Dominante', value: eqValid ? `${labels[domIdx]}` : '—' },
+          { label: t('complejos.nBarEquilibrium'), value: eqValid ? nBarEq.toFixed(2) : '—' },
+          { label: t('complejos.dominant'), value: eqValid ? `${labels[domIdx]}` : '—' },
         ]} />
       </section>
     </div>

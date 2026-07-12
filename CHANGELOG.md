@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.1 — 2026-07-11
+
+### Bilingual UI (ES/EN) — Complejos module + shared SideReactionEditor
+
+- **Translated:** the full **Complejos** module (system, conditions, result, all 6 diagram tabs, the "how to read" InfoBox, both the Ringbom pX′ and the coupled X–M–L side-reaction modes) and the shared `SideReactionEditor` component (used by Complejos, EspeciacionMetal, ConstantesCondicionales, PotencialCondicional, SolubilidadCondicional, Titulacion, IntercambioIonico) — the editor's own labels/hints now render in the active language wherever it's embedded, even inside modules whose own JSX is still Spanish.
+- Chemistry terminology cross-checked against the literature before translating (Bjerrum formation function/mean ligand number n̄, Ringbom's "conditional constant", "auxiliary complexing agent") — confirmed correct, no changes needed.
+- Also reviewed the Ácido-base pilot's English strings for jargon accuracy: tightened a few phrasings ("pH stretch" → "pH range", "boundaries sit at" → "with boundaries at", "the real pH" → "the actual pH", one awkward `z0Hint` clause) — no incorrect terms found.
+- Prose with inline bold sub-phrases (the map2d-empty hint, the spec-mode hint) is now split into separate bold/body translation keys instead of one flat string, so `<strong>` formatting survives translation.
+
 ## 0.9.0 — 2026-07-11
 
 ### Bilingual UI (ES/EN) — infrastructure + Ácido-base pilot

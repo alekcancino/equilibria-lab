@@ -199,7 +199,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   duzp: {
     meaning: {
       es: 'Diagrama Unidimensional de Zonas de Predominio: cada tramo del eje muestra qué especie domina; las fronteras están en los pKa/pM/pL.',
-      en: 'One-dimensional Predominance Zone Diagram: each stretch of the axis shows which species dominates; boundaries sit at the pKa/pM/pL values.',
+      en: 'One-dimensional Predominance Zone Diagram: each interval of the axis shows which species dominates; boundaries sit at the pKa/pM/pL values.',
     },
     units: { es: 'n/a', en: 'n/a' },
   },
