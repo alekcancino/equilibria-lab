@@ -610,6 +610,45 @@ export const translations = {
   'mezclas.betaTraceName': { es: 'β (mezcla)', en: 'β (mixture)' },
   'mezclas.componentsResult': { es: 'Componentes', en: 'Components' },
   'mezclas.titrantResult': { es: 'Titulante', en: 'Titrant' },
+
+  // ── CoupleEditor (shared: Redox, PotencialCondicional) ──────────────────────
+  'coupleEditor.nameLabel': { es: 'Par redox (nombre libre)', en: 'Redox couple (free name)' },
+  'coupleEditor.e0Label': { es: 'E° (V vs ENH)', en: 'E° (V vs NHE)' },
+  'coupleEditor.nLabel': { es: 'n (electrones)', en: 'n (electrons)' },
+  'coupleEditor.mHLabel': { es: 'm H⁺ (protones en la semirreacción)', en: 'm H⁺ (protons in the half-reaction)' },
+
+  // ── Redox module ─────────────────────────────────────────────────────────
+  'redox.duzpCaption': { es: 'Zonas de predominio (pe°′ condicional)', en: 'Predominance zones (conditional pe°′)' },
+  'redox.tabPredictionScale': { es: 'Escala de predicción', en: 'Prediction scale' },
+  'redox.scaleCaption': { es: 'Oxidante arriba · reductor abajo · pe°′ condicional', en: 'Oxidant on top · reductant below · conditional pe°′' },
+  'redox.title': { es: 'Equilibrio redox', en: 'Redox equilibrium' },
+  'redox.couplesSection': { es: 'Pares redox', en: 'Redox couples' },
+  'redox.predictionModel': { es: 'predicción de reacción entre dos pares redox', en: 'reaction prediction between two redox couples' },
+  'redox.additionPHConditioned': { es: 'potencial condicionado por pH', en: 'pH-conditioned potential' },
+  'redox.couple1Title': { es: 'Par 1', en: 'Couple 1' },
+  'redox.couple2Title': { es: 'Par 2', en: 'Couple 2' },
+  'redox.mediumPHLabel': { es: 'pH del medio', en: 'pH of the medium' },
+  'redox.conditionalPE': { es: 'pe°′ {ox}/{red}', en: 'pe°′ {ox}/{red}' },
+  'redox.spontaneousReaction': { es: 'Reacción espontánea', en: 'Spontaneous reaction' },
+  'redox.duzpExplain': {
+    es: ' (zonas de predominio): en cada tramo de pe domina una especie; las fronteras están en los pe°′ condicionales de cada par.',
+    en: ' (predominance zones): one species dominates each pe range, with boundaries at the conditional pe°′ of each couple.',
+  },
+  'redox.scaleInfoTitle': { es: 'Cómo leer la escala de predicción', en: 'How to read the prediction scale' },
+  'redox.scaleExplainPrefix': {
+    es: 'En la escala de pe, cada par se coloca en su pe°′ condicional con el oxidante arriba y el reductor abajo. El oxidante del par con pe°′ ',
+    en: 'On the pe scale, each couple sits at its conditional pe°′, with the oxidant on top and the reductant below. The oxidant of the couple with the ',
+  },
+  'redox.higherEm': { es: 'mayor', en: 'higher pe°′' },
+  'redox.scaleExplainMid': {
+    es: ' reacciona espontáneamente con el reductor del par con pe°′ ',
+    en: ' reacts spontaneously with the reductant of the couple with the ',
+  },
+  'redox.lowerEm': { es: 'menor', en: 'lower pe°′' },
+  'redox.scaleExplainSuffix': {
+    es: ', con log K = n₁·n₂·Δpe°′. Mueve el pH y observa cómo los pares con H⁺ en su semirreacción se desplazan — un oxidante puede dejar de serlo al subir el pH.',
+    en: ', with log K = n₁·n₂·Δpe°′. Move the pH and watch how couples with H⁺ in their half-reaction shift — an oxidant can stop being one as the pH rises.',
+  },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type TKey = keyof typeof translations;

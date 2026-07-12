@@ -238,7 +238,28 @@ stray white line. Also re-tuned `Predominance2D`'s dark fill-mix target to the n
 `--plot-bg` (it was tuned to the old navy). Verified end-to-end with real-render QA across
 Home, Complejos, the Sillén 2D map, and Pourbaix, plus a light-mode regression check.
 
-### Bilingual UI — Mezclas module (2026-07-12) — in progress
+### Bilingual UI — Redox module (2026-07-12) — in progress
+
+Sixth module, first in the Redox hub. Translated the full **Redox** module (prediction between
+two redox couples: DUZP, α distribution vs pe, and the prediction scale) plus the shared
+`CoupleEditor` component (also used by PotencialCondicional) — its own strings now render in the
+active language everywhere, matching the `SideReactionEditor` pattern from the Complejos hub.
+
+Handled a genuine EN/ES word-order mismatch in the "how to read the prediction scale" paragraph:
+Spanish places "pe°′" *before* the emphasized comparison word ("par con pe°′ **mayor**"), while
+natural English places it *after* ("the couple with the **higher** pe°′"). Rather than force a
+single shared prefix/em/mid/em/suffix template to match both languages' word order (impossible
+without per-language reordering), each language's `<em>`-wrapped key carries its own "pe°′"
+placement (`higherEm`: es "mayor" / en "higher pe°′") so both read grammatically.
+
+Verified end-to-end with real-render QA: full module in English across all three diagram tabs,
+a mixed-rollout regression check on PotencialCondicional (still Spanish, but the shared
+`CoupleEditor` renders in English inside it, no console errors), and a full Spanish-mode
+regression confirming zero visual change.
+
+Remaining: translate the other 8 modules one at a time, following the pattern in `AGENTS.md`.
+
+### Bilingual UI — Mezclas module (2026-07-12)
 
 Fifth module, second in the Ácido-base hub. Translated the full **Mezclas** (multicomponent
 mixtures) module: the up-to-4-row system editor (each row reusing `AcidSystemEditor`, already
@@ -257,8 +278,6 @@ strings passed in depending on caller, matching the established export-stays-Spa
 Verified end-to-end with real-render QA: full module in English including the titration section
 (toggling on the strong-acid titrant), the activity-correction block, and a full Spanish-mode
 regression confirming zero visual change.
-
-Remaining: translate the other 9 modules one at a time, following the pattern in `AGENTS.md`.
 
 ### Bilingual UI — ConstantesCondicionales module (2026-07-12)
 
@@ -372,7 +391,7 @@ one shipped.
 | Feature | Notes |
 | --- | --- |
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
-| **Bilingual UI (Spanish / English)** | 🔶 In progress — infrastructure, Ácido-base, Complejos, EspeciacionMetal, ConstantesCondicionales and Mezclas shipped (see resolved sections above). Remaining: translate the other 9 modules one at a time. |
+| **Bilingual UI (Spanish / English)** | 🔶 In progress — infrastructure, Ácido-base, Complejos, EspeciacionMetal, ConstantesCondicionales, Mezclas and Redox shipped (see resolved sections above). Remaining: translate the other 8 modules one at a time. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | ✅ Done — pL–pH, pL–pX and pH–log[M] (Sillén) maps, dark-mode remap, CSV/PNG export, and the Sillén map's M1/M2 comparison + side-reaction mask all shipped (see resolved section above). |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |
