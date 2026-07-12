@@ -14,9 +14,11 @@ import {
 import { sideStackFromEditor } from '../lib/sideReactions';
 import { formatMolar } from '../lib/format';
 import { APPLICATION_PRESETS, RESIN_PRESETS } from '../lib/ionExchangeDatabase';
+import { useT } from '../hooks/useT';
 
 /** Ion exchange: selectivity, batch, isotherm, and column breakthrough. */
 export default function IntercambioIonico() {
+  const t = useT();
   const [resinId, setResinId] = useState('dowex50');
   const [labelA, setLabelA] = useState('Ca²⁺');
   const [labelB, setLabelB] = useState('Na⁺');
@@ -196,23 +198,28 @@ export default function IntercambioIonico() {
 
   const barTraces = useMemo<Data[]>(() => [
     {
-      x: [`Disolución (${labelA})`, `Disolución (${labelB})`, `Resina (${labelA})`, `Resina (${labelB})`],
+      x: [
+        t('intercambioIonico.solutionLabel', { label: labelA }),
+        t('intercambioIonico.solutionLabel', { label: labelB }),
+        t('intercambioIonico.resinLabel', { label: labelA }),
+        t('intercambioIonico.resinLabel', { label: labelB }),
+      ],
       y: [eq.cAeq, eq.cBeq, eq.fracAInResin, eq.fracBInResin],
       type: 'bar',
       marker: { color: ['#0072B2', '#D55E00', '#0072B2', '#D55E00'] },
       hovertemplate: '%{x}<br>=%{y:.4f}<extra></extra>',
     },
-  ], [eq, labelA, labelB]);
+  ], [eq, labelA, labelB, t]);
 
   const tabs = [
     {
       id: 'bars',
-      label: 'Reparto (lote)',
+      label: t('intercambioIonico.tabBatchDistribution'),
       node: (
         <Chart
           data={barTraces}
           xTitle=""
-          yTitle="Concentración (M) o fracción en resina"
+          yTitle={t('intercambioIonico.concOrResinFractionLabel')}
           exportName="equilibria-ion-exchange-bars"
           exportMetadata={exportMetadata}
         />
@@ -220,7 +227,7 @@ export default function IntercambioIonico() {
     },
     {
       id: 'isotherm',
-      label: 'Isoterma q vs C',
+      label: t('intercambioIonico.tabIsotherm'),
       node: (
         <Chart
           data={[{
@@ -232,8 +239,8 @@ export default function IntercambioIonico() {
             line: { width: 3, color: '#0072B2' },
             hovertemplate: 'C = %{x:.2e} M<br>q = %{y:.3f} eq/L<extra></extra>',
           }]}
-          xTitle={`[${labelA}] en equilibrio (M)`}
-          yTitle="q en resina (eq/L)"
+          xTitle={t('intercambioIonico.equilibriumConcLabel', { label: labelA })}
+          yTitle={t('intercambioIonico.qInResinLabel')}
           exportName="equilibria-ion-exchange-isotherm"
           exportMetadata={exportMetadata}
         />
@@ -253,8 +260,8 @@ export default function IntercambioIonico() {
             line: { width: 3, color: '#0072B2' },
             hovertemplate: 'BV = %{x:.2f}<br>C/C₀ = %{y:.3f}<extra></extra>',
           }]}
-          xTitle="Volúmenes de lecho (BV)"
-          yTitle="C / C₀ en el efluente"
+          xTitle={t('intercambioIonico.bedVolumesLabel')}
+          yTitle={t('intercambioIonico.cOverC0EffluentLabel')}
           yRange={[0, 1.05]}
           exportName="equilibria-ion-exchange-breakthrough"
           exportMetadata={exportMetadata}
@@ -263,7 +270,7 @@ export default function IntercambioIonico() {
     },
     {
       id: 'ksel',
-      label: 'Ksel vs carga',
+      label: t('intercambioIonico.tabKselVsCharge'),
       node: (
         <Chart
           data={[{
@@ -271,11 +278,11 @@ export default function IntercambioIonico() {
             y: kselCurve.fracA,
             type: 'scatter',
             mode: 'lines',
-            name: `% ${labelA} en resina`,
+            name: t('intercambioIonico.pctInResinLabel', { label: labelA }),
             line: { width: 3, color: '#0072B2' },
           }]}
-          xTitle="Ksel (A preferido sobre B)"
-          yTitle={`Fracción de ${labelA} en resina`}
+          xTitle={t('intercambioIonico.kselPreferredLabel')}
+          yTitle={t('intercambioIonico.fractionInResinLabel', { label: labelA })}
           xRange={[0.01, 100]}
           shapes={[{
             type: 'line',
@@ -289,7 +296,7 @@ export default function IntercambioIonico() {
     },
     ...(showCraig && craigResult.bv.length > 0 ? [{
       id: 'multizona',
-      label: 'Multi-zona',
+      label: t('intercambioIonico.tabMultizone'),
       node: (
         <Chart
           data={[labelA, labelC, ...(showIonD ? [labelD] : [])].map((label, i) => ({
@@ -301,7 +308,7 @@ export default function IntercambioIonico() {
             line: { width: 3, color: ['#0072B2', '#D55E00', '#009E73'][i] },
             hovertemplate: 'BV = %{x:.1f}<br>C/C₀ = %{y:.3f}<extra></extra>',
           }))}
-          xTitle="Volúmenes de lecho (BV)"
+          xTitle={t('intercambioIonico.bedVolumesLabel')}
           yTitle="C / C₀"
           yRange={[0, 1.05]}
           exportName="equilibria-ion-exchange-multizona"
@@ -311,7 +318,7 @@ export default function IntercambioIonico() {
     }] : []),
     ...(showCompetitive ? [{
       id: 'dph',
-      label: 'D y φ vs pH',
+      label: t('intercambioIonico.tabDPhiVsPH'),
       node: (
         <Chart
           data={[
@@ -321,7 +328,7 @@ export default function IntercambioIonico() {
             },
             {
               x: distCurve.pHs, y: distCurve.phi, type: 'scatter', mode: 'lines',
-              name: 'φ (fracción en resina)', line: { width: 2.5, color: '#D55E00', dash: 'dot' },
+              name: t('intercambioIonico.phiFractionLabel'), line: { width: 2.5, color: '#D55E00', dash: 'dot' },
               yaxis: 'y2',
             },
           ]}
@@ -334,17 +341,17 @@ export default function IntercambioIonico() {
     }] : []),
     ...(showCompetitive && showElution ? [{
       id: 'elution',
-      label: 'Elución EDTA (3 comp.)',
+      label: t('intercambioIonico.tabEdtaElution'),
       node: (
         <Chart
           data={[{
             x: elution.pHs, y: elution.fractions.map((f) => f * 100),
             type: 'scatter', mode: 'lines',
-            name: '% Ni eluido', line: { width: 3, color: '#009E73' },
+            name: t('intercambioIonico.pctNiEluted'), line: { width: 3, color: '#009E73' },
             hovertemplate: 'pH = %{x:.1f}<br>%{y:.1f} % eluido<extra></extra>',
           }]}
-          xTitle="pH de elución"
-          yTitle="% Ni recuperado de la resina"
+          xTitle={t('intercambioIonico.elutionPHLabel')}
+          yTitle={t('intercambioIonico.pctNiRecoveredLabel')}
           yRange={[0, 105]}
           shapes={[{
             type: 'line', x0: elution.pH, x1: elution.pH, y0: 0, y1: 105,
@@ -359,13 +366,13 @@ export default function IntercambioIonico() {
 
   return (
     <div className="module">
-      <PanelShell title="Intercambio iónico" onReset={reset} moduleId="ionex">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('intercambioIonico.title')} onReset={reset} moduleId="ionex">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
         <ModelBadge
-          model="equilibrio binario A↔B · isoterma · columna ideal 1D"
-          additions={[zA !== zB ? `cargas zA:zB = ${zA}:${zB}` : null]}
+          model={t('intercambioIonico.model')}
+          additions={[zA !== zB ? t('intercambioIonico.chargesAddition', { a: zA, b: zB }) : null]}
         />
-        <p className="hint">Resinas:</p>
+        <p className="hint">{t('intercambioIonico.resinsHint')}</p>
         <div className="preset-chip-row" style={{ marginBottom: 8 }}>
           {RESIN_PRESETS.map((p) => (
             <button
@@ -377,7 +384,7 @@ export default function IntercambioIonico() {
             </button>
           ))}
         </div>
-        <p className="hint">Aplicaciones:</p>
+        <p className="hint">{t('intercambioIonico.applicationsHint')}</p>
         <div className="preset-chip-row" style={{ marginBottom: 10 }}>
           {APPLICATION_PRESETS.map((p) => (
             <button
@@ -398,63 +405,62 @@ export default function IntercambioIonico() {
             </button>
           ))}
         </div>
-        <LabelField label="Catión A" value={labelA} onChange={setLabelA} />
-        <NumberSegmented label={`Carga de ${labelA} (zA)`} value={zA} options={[1, 2, 3, 4]} onChange={setZA} />
-        <LabelField label="Catión B" value={labelB} onChange={setLabelB} />
-        <NumberSegmented label={`Carga de ${labelB} (zB)`} value={zB} options={[1, 2, 3, 4]} onChange={setZB} />
-        <ConcSlider label={`[${labelA}] inicial`} value={cA0} onChange={setCA0} min={-4} max={-1} />
-        <ConcSlider label={`[${labelB}] inicial`} value={cB0} onChange={setCB0} min={-4} max={-1} />
-        <Slider label="Ksel (A sobre B)" helpId="Ksel" value={selectivity} min={0.1} max={50} step={0.1} onChange={setSelectivity} decimals={1} />
+        <LabelField label={t('intercambioIonico.cationALabel')} value={labelA} onChange={setLabelA} />
+        <NumberSegmented label={t('intercambioIonico.chargeOfLabel', { label: labelA, z: 'zA' })} value={zA} options={[1, 2, 3, 4]} onChange={setZA} />
+        <LabelField label={t('intercambioIonico.cationBLabel')} value={labelB} onChange={setLabelB} />
+        <NumberSegmented label={t('intercambioIonico.chargeOfLabel', { label: labelB, z: 'zB' })} value={zB} options={[1, 2, 3, 4]} onChange={setZB} />
+        <ConcSlider label={t('intercambioIonico.initialConcLabel', { label: labelA })} value={cA0} onChange={setCA0} min={-4} max={-1} />
+        <ConcSlider label={t('intercambioIonico.initialConcLabel', { label: labelB })} value={cB0} onChange={setCB0} min={-4} max={-1} />
+        <Slider label={t('intercambioIonico.kselOverLabel')} helpId="Ksel" value={selectivity} min={0.1} max={50} step={0.1} onChange={setSelectivity} decimals={1} />
         {zA !== zB && (
           <p className="hint">
-            Estequiometría {zB}A + {zA}B̄ ⇌ {zB}Ā + {zA}B (convención Gaines-Thomas). Diluir la
-            disolución favorece al ion de mayor carga — efecto concentración-valencia.
+            {t('intercambioIonico.stoichiometryHint', { zA, zB })}
           </p>
         )}
-        <Slider label="Capacidad de resina (eq/L)" helpId="capacity" value={resinCapacity} min={0.5} max={5} step={0.1} onChange={setResinCapacity} decimals={1} />
-        <Slider label="Volumen de resina (L)" value={resinVolume} min={0.01} max={0.2} step={0.01} onChange={setResinVolume} decimals={2} />
-        <Slider label="Volumen de disolución (L)" value={volume} min={0.05} max={0.5} step={0.01} onChange={setVolume} decimals={2} />
-        <Slider label="Caudal (L/min, columna)" value={flowRate} min={0.01} max={0.2} step={0.01} onChange={setFlowRate} decimals={2} />
+        <Slider label={t('intercambioIonico.resinCapacityLabel')} helpId="capacity" value={resinCapacity} min={0.5} max={5} step={0.1} onChange={setResinCapacity} decimals={1} />
+        <Slider label={t('intercambioIonico.resinVolumeLabel')} value={resinVolume} min={0.01} max={0.2} step={0.01} onChange={setResinVolume} decimals={2} />
+        <Slider label={t('intercambioIonico.solutionVolumeLabel')} value={volume} min={0.05} max={0.5} step={0.01} onChange={setVolume} decimals={2} />
+        <Slider label={t('intercambioIonico.flowRateLabel')} value={flowRate} min={0.01} max={0.2} step={0.01} onChange={setFlowRate} decimals={2} />
         </PanelSection>
 
-        <PanelSection title="Competencia con H⁺ (pH)" icon="⚗">
+        <PanelSection title={t('intercambioIonico.hCompetitionSection')} icon="⚗">
         <Toggle
-          label="Competencia catiónica con H⁺ (D vs pH)"
+          label={t('intercambioIonico.cationicCompetitionToggle')}
           checked={showCompetitive}
           onChange={setShowCompetitive}
         />
         {showCompetitive && (
           <div className="mask-section">
             <Slider label="K²_H/M" helpId="K2HM" value={kHSquared} min={0.1} max={20} step={0.1} onChange={setKHSquared} decimals={1} />
-            <Slider label="pH bulk" value={pHBulk} min={1} max={14} step={0.1} onChange={setPHBulk} decimals={1} />
-            <ConcSlider label="[H⁺]_resina (M)" value={hResin} onChange={setHResin} min={-4} max={-1} />
-            <Slider label="CI (meq/g)" value={ciMeq} min={1} max={10} step={0.5} onChange={setCiMeq} decimals={1} />
+            <Slider label={t('intercambioIonico.pHBulkLabel')} value={pHBulk} min={1} max={14} step={0.1} onChange={setPHBulk} decimals={1} />
+            <ConcSlider label={t('intercambioIonico.hResinConcLabel')} value={hResin} onChange={setHResin} min={-4} max={-1} />
+            <Slider label={t('intercambioIonico.ciLabel')} value={ciMeq} min={1} max={10} step={0.5} onChange={setCiMeq} decimals={1} />
             <Slider label="m_R (g)" value={massResinG} min={0.1} max={5} step={0.1} onChange={setMassResinG} decimals={1} />
             <Slider label="V (L)" value={volumeL} min={0.05} max={1} step={0.05} onChange={setVolumeL} decimals={2} />
             <SideReactionEditor state={side} onChange={setSide} showLigandPKas={false} />
-            <Toggle label="Elución con EDTA (acoplado)" checked={showElution} onChange={setShowElution} />
+            <Toggle label={t('intercambioIonico.edtaElutionToggle')} checked={showElution} onChange={setShowElution} />
             {showElution && (
               <>
                 <Slider label="log Kf NiY" value={logKfNiY} min={10} max={25} step={0.01} onChange={setLogKfNiY} decimals={2} />
                 <ConcSlider label="[EDTA] (M)" value={cEdta} onChange={setCEdta} min={-3} max={0} />
                 <Slider label="V EDTA (L)" value={vEdta} min={0.05} max={0.5} step={0.05} onChange={setVEdta} decimals={2} />
-                <Slider label="n Ni en resina (mol)" value={nNiResin} min={0.0001} max={0.01} step={0.0001} onChange={setNNiResin} decimals={4} />
+                <Slider label={t('intercambioIonico.nNiInResinLabel')} value={nNiResin} min={0.0001} max={0.01} step={0.0001} onChange={setNNiResin} decimals={4} />
               </>
             )}
           </div>
         )}
         </PanelSection>
 
-        <PanelSection title="Columna multi-zona" icon="📊" collapsible defaultOpen={false}>
+        <PanelSection title={t('intercambioIonico.multizoneColumnSection')} icon="📊" collapsible defaultOpen={false}>
           <Toggle
-            label="Modelo Craig (N platos teóricos)"
+            label={t('intercambioIonico.craigModelToggle')}
             checked={showCraig}
             onChange={setShowCraig}
           />
           {showCraig && (
             <div className="mask-section">
               <Slider
-                label="Platos teóricos N"
+                label={t('intercambioIonico.theoreticalPlatesLabel')}
                 value={nPlates}
                 min={1}
                 max={50}
@@ -462,11 +468,11 @@ export default function IntercambioIonico() {
                 onChange={setNPlates}
                 decimals={0}
               />
-              <p className="hint">N=1 → frente sigmoidal; N mayor → frente más nítido. σ = BV₅₀/√N</p>
-              <LabelField label={`Segundo ion (C, compite con ${labelB})`} value={labelC} onChange={setLabelC} />
-              <ConcSlider label={`[${labelC}] inicial`} value={cC0} onChange={setCC0} min={-4} max={-1} />
+              <p className="hint">{t('intercambioIonico.plateHint')}</p>
+              <LabelField label={t('intercambioIonico.secondIonLabel', { label: labelB })} value={labelC} onChange={setLabelC} />
+              <ConcSlider label={t('intercambioIonico.initialConcLabel', { label: labelC })} value={cC0} onChange={setCC0} min={-4} max={-1} />
               <Slider
-                label={`Ksel (${labelC}/${labelB})`}
+                label={t('intercambioIonico.kselRatioLabel', { a: labelC, b: labelB })}
                 value={kCB}
                 min={0.1}
                 max={20}
@@ -475,16 +481,16 @@ export default function IntercambioIonico() {
                 decimals={1}
               />
               <Toggle
-                label="Añadir tercer ion competidor (D)"
+                label={t('intercambioIonico.addThirdIonToggle')}
                 checked={showIonD}
                 onChange={setShowIonD}
               />
               {showIonD && (
                 <>
-                  <LabelField label={`Tercer ion (D, compite con ${labelB})`} value={labelD} onChange={setLabelD} />
-                  <ConcSlider label={`[${labelD}] inicial`} value={cD0} onChange={setCD0} min={-4} max={-1} />
+                  <LabelField label={t('intercambioIonico.thirdIonLabel', { label: labelB })} value={labelD} onChange={setLabelD} />
+                  <ConcSlider label={t('intercambioIonico.initialConcLabel', { label: labelD })} value={cD0} onChange={setCD0} min={-4} max={-1} />
                   <Slider
-                    label={`Ksel (${labelD}/${labelB})`}
+                    label={t('intercambioIonico.kselRatioLabel', { a: labelD, b: labelB })}
                     value={kDB}
                     min={0.1}
                     max={20}
@@ -498,46 +504,45 @@ export default function IntercambioIonico() {
           )}
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: `[${labelA}] final`, value: formatMolar(eq.cAeq) },
-            { label: `[${labelB}] final`, value: formatMolar(eq.cBeq) },
-            { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(1)} %` },
-            { label: 'Ksel (referencia)', value: selectivityFromKd(selectivity, 1).toFixed(1) },
+            { label: t('intercambioIonico.finalConcLabel', { label: labelA }), value: formatMolar(eq.cAeq) },
+            { label: t('intercambioIonico.finalConcLabel', { label: labelB }), value: formatMolar(eq.cBeq) },
+            { label: t('intercambioIonico.labelInResinLabel', { label: labelA }), value: `${(eq.fracAInResin * 100).toFixed(1)} %` },
+            { label: t('intercambioIonico.kselReferenceLabel'), value: selectivityFromKd(selectivity, 1).toFixed(1) },
             ...(showCompetitive ? [
-              { label: `φ a pH ${pHBulk.toFixed(1)}`, value: `${(phiAtBulk * 100).toFixed(1)} %` },
+              { label: t('intercambioIonico.phiAtPHLabel', { ph: pHBulk.toFixed(1) }), value: `${(phiAtBulk * 100).toFixed(1)} %` },
               ...(showElution ? [
-                { label: 'pH óptimo elución EDTA', value: elution.pH.toFixed(1) },
-                { label: 'Fracción eluida (3 comp.)', value: `${(elution.fractionEluted * 100).toFixed(0)} %` },
+                { label: t('intercambioIonico.optimalElutionPHLabel'), value: elution.pH.toFixed(1) },
+                { label: t('intercambioIonico.elutedFractionLabel'), value: `${(elution.fractionEluted * 100).toFixed(0)} %` },
               ] : []),
             ] : []),
           ]} />
         </PanelSection>
 
-        <InfoBox title="Selectividad, isoterma y columna">
+        <InfoBox title={t('intercambioIonico.infoBoxTitle')}>
           <p>
-            La ley <code>K_A/B = (y_A·x_B)/(y_B·x_A)</code> gobierna el equilibrio en lote.
-            La <strong>isoterma</strong> muestra q (eq/L resina) vs la concentración en disolución.
-            El <strong>breakthrough</strong> es un modelo ideal: el efluente alcanza C/C₀ ≈ 1
-            tras agotar la capacidad del lecho.
+            {t('intercambioIonico.para1Prefix')}<code>{t('intercambioIonico.para1Code')}</code>
+            {t('intercambioIonico.para1Mid1')}<strong>{t('intercambioIonico.isothermBold')}</strong>
+            {t('intercambioIonico.para1Mid2')}<strong>{t('intercambioIonico.breakthroughBold')}</strong>{t('intercambioIonico.para1Suffix')}
           </p>
         </InfoBox>
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={tabs} />
         <ResultCardRow items={[
-          { label: `${labelA} en resina`, value: `${(eq.fracAInResin * 100).toFixed(1)} %`, accent: true },
+          { label: t('intercambioIonico.labelInResinLabel', { label: labelA }), value: `${(eq.fracAInResin * 100).toFixed(1)} %`, accent: true },
           ...(showCompetitive
-            ? [{ label: `φ a pH ${pHBulk.toFixed(1)}`, value: `${(phiAtBulk * 100).toFixed(1)} %` }]
+            ? [{ label: t('intercambioIonico.phiAtPHLabel', { ph: pHBulk.toFixed(1) }), value: `${(phiAtBulk * 100).toFixed(1)} %` }]
             : []),
           ...(showCompetitive && showElution
-            ? [{ label: 'pH elución', value: elution.pH.toFixed(1) }]
+            ? [{ label: t('intercambioIonico.elutionPHShortLabel'), value: elution.pH.toFixed(1) }]
             : []),
           ...(showCraig && craigResult.bvBreaks.length >= 2 ? [
-            { label: `BV₅₀ ${labelA}`, value: craigResult.bvBreaks[0].toFixed(0) },
-            { label: `BV₅₀ ${labelC}`, value: craigResult.bvBreaks[1].toFixed(0) },
+            { label: t('intercambioIonico.bv50Label', { label: labelA }), value: craigResult.bvBreaks[0].toFixed(0) },
+            { label: t('intercambioIonico.bv50Label', { label: labelC }), value: craigResult.bvBreaks[1].toFixed(0) },
             ...(showIonD && craigResult.bvBreaks.length >= 3
-              ? [{ label: `BV₅₀ ${labelD}`, value: craigResult.bvBreaks[2].toFixed(0) }]
+              ? [{ label: t('intercambioIonico.bv50Label', { label: labelD }), value: craigResult.bvBreaks[2].toFixed(0) }]
               : []),
           ] : []),
         ]} />
