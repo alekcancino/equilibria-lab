@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0 — 2026-07-12
+
+### Bilingual UI (ES/EN) — SolubilidadCondicional module
+
+- **Translated:** the full **SolubilidadCondicional** ("Selective precipitation") module — the two-metal hydroxide comparison with amphoteric (U-curve) support, the masking-by-auxiliary-ligand branch, the pKsp′ = f(pH) and log s = f(pX) tabs, the 2D Sillén map with M2 saturation overlay, and the InfoBox.
+- Translated the built-in database's group labels by switching `OH_PRESETS`' `group` field to stable keys translated at the call site, instead of leaving them hardcoded Spanish.
+
 ## 0.9.9 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — SolubilidadSal module

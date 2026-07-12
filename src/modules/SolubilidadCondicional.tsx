@@ -28,6 +28,7 @@ import {
 import { solubilityPXCurve } from '../lib/solubility';
 import { SPECIES_COLORS } from '../lib/database';
 import { toSub } from '../lib/complexDatabase';
+import { useT } from '../hooks/useT';
 
 // ── Metal hydroxide database ──────────────────────────────────────────────────
 
@@ -44,22 +45,22 @@ interface OHPreset {
 
 const OH_PRESETS: OHPreset[] = [
   // Trivalent — precipitate at acidic pH
-  { id: 'fe3oh', metal: 'Fe³⁺', formula: 'Fe(OH)₃', n: 3, pKsp: 38.7, logBetasOH: [11.81, 21.68, 30.67], group: 'M³⁺ (precipitan a pH ácido)' },
-  { id: 'al',    metal: 'Al³⁺', formula: 'Al(OH)₃', n: 3, pKsp: 32.9, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'M³⁺ (precipitan a pH ácido)' },
-  { id: 'cr3oh', metal: 'Cr³⁺', formula: 'Cr(OH)₃', n: 3, pKsp: 30.2, logBetasOH: [10.1, 17.8, 24.6, 27.1], group: 'M³⁺ (precipitan a pH ácido)' },
-  { id: 'la',    metal: 'La³⁺', formula: 'La(OH)₃', n: 3, pKsp: 20.7, logBetasOH: [], group: 'M³⁺ (precipitan a pH ácido)' },
+  { id: 'fe3oh', metal: 'Fe³⁺', formula: 'Fe(OH)₃', n: 3, pKsp: 38.7, logBetasOH: [11.81, 21.68, 30.67], group: 'trivalentAcidic' },
+  { id: 'al',    metal: 'Al³⁺', formula: 'Al(OH)₃', n: 3, pKsp: 32.9, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'trivalentAcidic' },
+  { id: 'cr3oh', metal: 'Cr³⁺', formula: 'Cr(OH)₃', n: 3, pKsp: 30.2, logBetasOH: [10.1, 17.8, 24.6, 27.1], group: 'trivalentAcidic' },
+  { id: 'la',    metal: 'La³⁺', formula: 'La(OH)₃', n: 3, pKsp: 20.7, logBetasOH: [], group: 'trivalentAcidic' },
   // Bivalent — precipitate at intermediate pH
-  { id: 'cu2oh', metal: 'Cu²⁺', formula: 'Cu(OH)₂', n: 2, pKsp: 19.7, logBetasOH: [6.0, 11.8], group: 'M²⁺ (precipitan a pH intermedio)' },
-  { id: 'pb2oh', metal: 'Pb²⁺', formula: 'Pb(OH)₂', n: 2, pKsp: 20.0, logBetasOH: [6.29, 10.89, 13.94], group: 'M²⁺ (precipitan a pH intermedio)' },
-  { id: 'zn2oh', metal: 'Zn²⁺', formula: 'Zn(OH)₂', n: 2, pKsp: 16.2, logBetasOH: [5.04, 10.43, 13.7, 15.2], group: 'M²⁺ (precipitan a pH intermedio)' },
-  { id: 'ni2oh', metal: 'Ni²⁺', formula: 'Ni(OH)₂', n: 2, pKsp: 15.2, logBetasOH: [4.97, 8.55], group: 'M²⁺ (precipitan a pH intermedio)' },
-  { id: 'co2oh', metal: 'Co²⁺', formula: 'Co(OH)₂', n: 2, pKsp: 14.9, logBetasOH: [4.35, 8.4], group: 'M²⁺ (precipitan a pH intermedio)' },
-  { id: 'fe2oh', metal: 'Fe²⁺', formula: 'Fe(OH)₂', n: 2, pKsp: 15.1, logBetasOH: [4.5, 7.4], group: 'M²⁺ (precipitan a pH intermedio)' },
-  { id: 'cd2oh', metal: 'Cd²⁺', formula: 'Cd(OH)₂', n: 2, pKsp: 14.4, logBetasOH: [3.9, 7.7], group: 'M²⁺ (precipitan a pH intermedio)' },
-  { id: 'mn2oh', metal: 'Mn²⁺', formula: 'Mn(OH)₂', n: 2, pKsp: 12.7, logBetasOH: [3.4, 6.2], group: 'M²⁺ (precipitan a pH intermedio)' },
+  { id: 'cu2oh', metal: 'Cu²⁺', formula: 'Cu(OH)₂', n: 2, pKsp: 19.7, logBetasOH: [6.0, 11.8], group: 'divalentIntermediate' },
+  { id: 'pb2oh', metal: 'Pb²⁺', formula: 'Pb(OH)₂', n: 2, pKsp: 20.0, logBetasOH: [6.29, 10.89, 13.94], group: 'divalentIntermediate' },
+  { id: 'zn2oh', metal: 'Zn²⁺', formula: 'Zn(OH)₂', n: 2, pKsp: 16.2, logBetasOH: [5.04, 10.43, 13.7, 15.2], group: 'divalentIntermediate' },
+  { id: 'ni2oh', metal: 'Ni²⁺', formula: 'Ni(OH)₂', n: 2, pKsp: 15.2, logBetasOH: [4.97, 8.55], group: 'divalentIntermediate' },
+  { id: 'co2oh', metal: 'Co²⁺', formula: 'Co(OH)₂', n: 2, pKsp: 14.9, logBetasOH: [4.35, 8.4], group: 'divalentIntermediate' },
+  { id: 'fe2oh', metal: 'Fe²⁺', formula: 'Fe(OH)₂', n: 2, pKsp: 15.1, logBetasOH: [4.5, 7.4], group: 'divalentIntermediate' },
+  { id: 'cd2oh', metal: 'Cd²⁺', formula: 'Cd(OH)₂', n: 2, pKsp: 14.4, logBetasOH: [3.9, 7.7], group: 'divalentIntermediate' },
+  { id: 'mn2oh', metal: 'Mn²⁺', formula: 'Mn(OH)₂', n: 2, pKsp: 12.7, logBetasOH: [3.4, 6.2], group: 'divalentIntermediate' },
   // Alkaline earth — precipitate at basic pH
-  { id: 'mg2oh', metal: 'Mg²⁺', formula: 'Mg(OH)₂', n: 2, pKsp: 11.2, logBetasOH: [2.6], group: 'M²⁺ más solubles' },
-  { id: 'ca2oh', metal: 'Ca²⁺', formula: 'Ca(OH)₂', n: 2, pKsp: 4.7,  logBetasOH: [], group: 'M²⁺ más solubles' },
+  { id: 'mg2oh', metal: 'Mg²⁺', formula: 'Mg(OH)₂', n: 2, pKsp: 11.2, logBetasOH: [2.6], group: 'divalentSoluble' },
+  { id: 'ca2oh', metal: 'Ca²⁺', formula: 'Ca(OH)₂', n: 2, pKsp: 4.7,  logBetasOH: [], group: 'divalentSoluble' },
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────────
@@ -137,6 +138,7 @@ const C_THRESH = 'rgba(127,140,141,0.9)'; // threshold line
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SolubilidadCondicional() {
+  const t = useT();
   const [s, setS] = useShareableState<State>('solcond', defaultState());
 
   const setM1 = (patch: Partial<MetalState>) =>
@@ -311,13 +313,13 @@ export default function SolubilidadCondicional() {
     if (!s.showM2) return null;
     if (selectiveWindow) {
       const w = selectiveWindow[1] - selectiveWindow[0];
-      return { text: `Separación posible ✓ — ventana de ${w.toFixed(1)} unid. pH`, ok: true };
+      return { text: t('solubilidadCondicional.separationPossible', { w: w.toFixed(1) }), ok: true };
     }
     if (pH1precip !== null && pH2precip !== null && pH1precip >= pH2precip) {
-      return { text: `M2 precipita antes que M1 — sin separación selectiva`, ok: false };
+      return { text: t('solubilidadCondicional.m2PrecipitatesFirst'), ok: false };
     }
-    return { text: 'Uno de los metales no alcanza el umbral en pH 0–14', ok: false };
-  }, [s.showM2, selectiveWindow, pH1precip, pH2precip]);
+    return { text: t('solubilidadCondicional.noThresholdReached'), ok: false };
+  }, [s.showM2, selectiveWindow, pH1precip, pH2precip, t]);
 
   const purityAtM1Precip = useMemo(() => {
     if (!s.showM2 || pH1precip === null || !curve2) return null;
@@ -354,8 +356,13 @@ export default function SolubilidadCondicional() {
 
   // ── Database items ────────────────────────────────────────────────────────
 
+  const groupLabels: Record<string, string> = {
+    trivalentAcidic: t('solubilidadCondicional.groupTrivalentAcidic'),
+    divalentIntermediate: t('solubilidadCondicional.groupDivalentIntermediate'),
+    divalentSoluble: t('solubilidadCondicional.groupDivalentSoluble'),
+  };
   const dbItems = OH_PRESETS.map((p) => ({
-    id: p.id, label: p.formula, detail: `${p.metal} · pKps ${p.pKsp}`, group: p.group,
+    id: p.id, label: p.formula, detail: `${p.metal} · pKps ${p.pKsp}`, group: groupLabels[p.group] ?? p.group,
   }));
 
   // ── pKsp' = f(pH) curve ───────────────────────────────────────────────────
@@ -463,9 +470,9 @@ export default function SolubilidadCondicional() {
     return {
       points: curve2.pHs.map((pH, i) => ({ x: pH, y: curve2.logS[i] })),
       color: C2,
-      label: `${s.m2.formula} satura`,
+      label: t('solubilidadCondicional.saturatesLabel', { formula: s.m2.formula }),
     };
-  }, [curve2, s.m2.formula]);
+  }, [curve2, s.m2.formula, t]);
 
   // ── Diagrams ──────────────────────────────────────────────────────────────
 
@@ -477,7 +484,7 @@ export default function SolubilidadCondicional() {
         <Chart
           data={traces}
           xTitle="pH"
-          yTitle="log s  (solubilidad molar)"
+          yTitle={t('solubilidadCondicional.logSAxisLabel')}
           xRange={[0, 14]}
           yRange={[yMin, yMax]}
           shapes={shapes}
@@ -493,7 +500,7 @@ export default function SolubilidadCondicional() {
         <Chart
           data={pKspTraces}
           xTitle="pH"
-          yTitle="pKps′ (producto de solubilidad condicional)"
+          yTitle={t('solubilidadCondicional.pKspAxisLabel')}
           xRange={[0, 14]}
           yRange={[pKspYMin, pKspYMax]}
           exportName="equilibria-pksp-cond"
@@ -512,7 +519,7 @@ export default function SolubilidadCondicional() {
             line: { width: 3, color: '#7c3aed' },
           }]}
           xTitle={`p[${s.ligandX}]`}
-          yTitle="log s (solubilidad molar)"
+          yTitle={t('solubilidadCondicional.logSAxisLabel')}
           xRange={[0, 14]}
           yRange={[yMin, yMax]}
           exportName="equilibria-sol-px"
@@ -522,7 +529,7 @@ export default function SolubilidadCondicional() {
     }] : []),
     {
       id: 'map2d',
-      label: 'Mapa 2D (pH–log[M])',
+      label: t('solubilidadCondicional.tabMap2D'),
       node: (
         <Predominance2D
           grid={grid2D}
@@ -530,8 +537,8 @@ export default function SolubilidadCondicional() {
           labels={map2DLabels}
           xLabel="pH"
           yLabel={`log[${s.m1.label}] total`}
-          marker={{ x: minSolubility.pH, y: minSolubility.logS, label: 'mín. solubilidad' }}
-          caption={`Zonas de predominio en 2D — ${s.m1.formula}`}
+          marker={{ x: minSolubility.pH, y: minSolubility.logS, label: t('solubilidadCondicional.minSolubilityMarker') }}
+          caption={t('solubilidadCondicional.map2dCaptionDash', { formula: s.m1.formula })}
           overlayCurve={map2DOverlay}
           exportName="equilibria-sol-map2d"
           exportMetadata={exportMetadata}
@@ -542,16 +549,16 @@ export default function SolubilidadCondicional() {
 
   return (
     <div className="module">
-      <PanelShell title="Precipitación selectiva" onReset={reset} moduleId="solcond">
-        <PanelSection title="Metal 1 (precipitar)" icon="①">
+      <PanelShell title={t('solubilidadCondicional.title')} onReset={reset} moduleId="solcond">
+        <PanelSection title={t('solubilidadCondicional.metal1Section')} icon="①">
           <ModelBadge
             model={s.m1.logBetasOH.length === 0
-              ? 'precipitación simple del hidróxido'
-              : `precipitación con ${s.m1.logBetasOH.length} complejo(s) hidroxo soluble(s)`}
-            additions={[s.showM2 && 'separación selectiva entre dos metales', minHasInterior && 'mínimo de solubilidad (curva en U)']}
+              ? t('solubilidadCondicional.simplePrecipitationModel')
+              : t('solubilidadCondicional.complexPrecipitationModel', { n: s.m1.logBetasOH.length })}
+            additions={[s.showM2 && t('solubilidadCondicional.selectiveSeparationAddition'), minHasInterior && t('solubilidadCondicional.uCurveAddition')]}
           />
-          <DbPanel items={dbItems} onSelect={(id) => setM1({ ...fromPreset(id) })} title="Presets M(OH)n" />
-          <p className="hint" style={{ marginBottom: 4 }}>Presets anfóteros (curva U por redisolución):</p>
+          <DbPanel items={dbItems} onSelect={(id) => setM1({ ...fromPreset(id) })} title={t('solubilidadCondicional.presetsMOHn')} />
+          <p className="hint" style={{ marginBottom: 4 }}>{t('solubilidadCondicional.amphotericPresetsHint')}</p>
           <div className="preset-chip-row" style={{ marginBottom: 8 }}>
             {ANFOTERO_PRESETS.map((p) => (
               <button key={p.id} className="preset-chip" onClick={() => applyAnfotero(p.id)}>
@@ -559,12 +566,12 @@ export default function SolubilidadCondicional() {
               </button>
             ))}
           </div>
-          <LabelField label="Metal" value={s.m1.label} onChange={(v) => setM1({ label: v })} />
-          <LabelField label="Fórmula" value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
+          <LabelField label={t('solubilidadCondicional.metalLabel')} value={s.m1.label} onChange={(v) => setM1({ label: v })} />
+          <LabelField label={t('pourbaix.formulaLabel')} value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
           <Slider label="pKps" helpId="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
           <div className="control">
             <div className="control-header">
-              <span className="control-label">Estequiometría n (M(OH)_n)</span>
+              <span className="control-label">{t('solubilidadCondicional.stoichiometryN')}</span>
               <span className="control-value">{s.m1.n}</span>
             </div>
             <div className="segmented" style={{ marginTop: 6 }}>
@@ -580,7 +587,7 @@ export default function SolubilidadCondicional() {
             </div>
           </div>
           <Disclosure
-            title="Complejos hidroxo de M1 (log β)"
+            title={t('solubilidadCondicional.hydroxoComplexesM1Title')}
             open={s.hydroxoOpen}
             onToggle={(open) => setS((p) => ({ ...p, hydroxoOpen: open }))}
           >
@@ -591,10 +598,10 @@ export default function SolubilidadCondicional() {
               onChange={(v) => setM1({ logBetasOH: v })}
               min={-50} max={40} maxItems={5} minItems={0} initialValue={5}
             />
-            <p className="hint">Incluir formas anfóteras (β₄ para M(OH)₄⁻) da forma de U a la curva.</p>
+            <p className="hint">{t('solubilidadCondicional.amphotericFormsHint')}</p>
           </Disclosure>
           <Toggle
-            label="Enmascaramiento por ligando auxiliar (NH₃, glicinato…)"
+            label={t('solubilidadCondicional.maskingToggle')}
             checked={s.showSideMask}
             onChange={(v) => setS((p) => ({ ...p, showSideMask: v }))}
           />
@@ -609,17 +616,17 @@ export default function SolubilidadCondicional() {
           )}
         </PanelSection>
 
-        <PanelSection title="Comparar 2.º metal" icon="②">
-          <Toggle label="Separación selectiva entre dos metales" checked={s.showM2} onChange={(v) => setS((p) => ({ ...p, showM2: v }))} />
+        <PanelSection title={t('solubilidadCondicional.compareSecondMetalSection')} icon="②">
+          <Toggle label={t('solubilidadCondicional.selectiveSeparationToggle')} checked={s.showM2} onChange={(v) => setS((p) => ({ ...p, showM2: v }))} />
           {s.showM2 && (
             <div className="mask-section">
-              <DbPanel items={dbItems} onSelect={(id) => setM2({ ...fromPreset(id) })} title="Presets M2" />
-              <LabelField label="2.º metal" value={s.m2.label} onChange={(v) => setM2({ label: v })} />
-              <LabelField label="Fórmula" value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
+              <DbPanel items={dbItems} onSelect={(id) => setM2({ ...fromPreset(id) })} title={t('solubilidadCondicional.presetsM2')} />
+              <LabelField label={t('condicionales.secondMetalLabel')} value={s.m2.label} onChange={(v) => setM2({ label: v })} />
+              <LabelField label={t('pourbaix.formulaLabel')} value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
               <Slider label="pKps" helpId="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
               <div className="control">
                 <div className="control-header">
-                  <span className="control-label">Estequiometría n</span>
+                  <span className="control-label">{t('solubilidadCondicional.stoichiometryNShort')}</span>
                   <span className="control-value">{s.m2.n}</span>
                 </div>
                 <div className="segmented" style={{ marginTop: 6 }}>
@@ -638,9 +645,9 @@ export default function SolubilidadCondicional() {
           )}
         </PanelSection>
 
-        <PanelSection title="Umbral y operación" icon="⚗">
+        <PanelSection title={t('solubilidadCondicional.thresholdOperationSection')} icon="⚗">
           <Slider
-            label="Fuerza iónica I"
+            label={t('complejos.ionicStrengthLabel')}
             helpId="ionicStrength"
             value={s.ionicStrength}
             min={0} max={0.5} step={0.01}
@@ -648,15 +655,15 @@ export default function SolubilidadCondicional() {
             decimals={2}
           />
           <Toggle
-            label="Umbral desde concentración analítica C"
+            label={t('solubilidadCondicional.thresholdFromConcToggle')}
             checked={s.useCThreshold}
             onChange={(v) => setS((p) => ({ ...p, useCThreshold: v }))}
           />
           {s.useCThreshold ? (
-            <ConcSlider label="C analítica (M)" value={s.cAnalytic} onChange={(v) => setS((p) => ({ ...p, cAnalytic: v }))} min={-4} max={-1} />
+            <ConcSlider label={t('solubilidadCondicional.analyticalCLabel')} value={s.cAnalytic} onChange={(v) => setS((p) => ({ ...p, cAnalytic: v }))} min={-4} max={-1} />
           ) : (
             <Slider
-              label="log s_umbral"
+              label={t('solubilidadCondicional.logSThresholdLabel')}
               value={s.logSThreshold}
               min={-10}
               max={-1}
@@ -666,7 +673,7 @@ export default function SolubilidadCondicional() {
             />
           )}
           <Slider
-            label="pH de operación (co-precipitación)"
+            label={t('solubilidadCondicional.operatingPHLabel')}
             value={s.operatingPH}
             min={0}
             max={14}
@@ -675,66 +682,64 @@ export default function SolubilidadCondicional() {
             decimals={1}
           />
           <p className="hint">
-            Precipitación "completa" cuando s &lt; 10^{s.logSThreshold.toFixed(0)} M
-            {' '}(línea punteada gris). Banda verde: ventana selectiva. Rosa: pH de operación;
-            naranja punteada: redisolución; verde discontinua: mínimo de solubilidad.
+            {t('solubilidadCondicional.thresholdHint', { v: s.logSThreshold.toFixed(0) })}
           </p>
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
         <ResultCard items={[
           {
-            label: `pH donde ${s.m1.formula} precipita`,
-            value: pH1precip !== null ? `pH ${pH1precip.toFixed(1)}` : 'No alcanza umbral',
+            label: t('solubilidadCondicional.pHWherePrecipitates', { formula: s.m1.formula }),
+            value: pH1precip !== null ? `pH ${pH1precip.toFixed(1)}` : t('solubilidadCondicional.doesNotReachThreshold'),
           },
           ...(minHasInterior ? [{
-            label: `Mínima solubilidad de ${s.m1.formula}`,
+            label: t('solubilidadCondicional.minSolubilityOf', { formula: s.m1.formula }),
             value: `pH ${minSolubility.pH.toFixed(1)} · log s ${minSolubility.logS.toFixed(2)}`,
           }] : []),
           ...(s.showM2 ? [{
-            label: `pH donde ${s.m2.formula} precipita`,
-            value: pH2precip !== null ? `pH ${pH2precip.toFixed(1)}` : 'No alcanza umbral',
+            label: t('solubilidadCondicional.pHWherePrecipitates', { formula: s.m2.formula }),
+            value: pH2precip !== null ? `pH ${pH2precip.toFixed(1)}` : t('solubilidadCondicional.doesNotReachThreshold'),
           }] : []),
           ...(selectiveWindow ? [{
-            label: 'Ventana selectiva',
+            label: t('solubilidadCondicional.selectiveWindowLabel'),
             value: `pH ${selectiveWindow[0].toFixed(1)}–${selectiveWindow[1].toFixed(1)}`,
           }] : []),
-          ...(verdict ? [{ label: 'Veredicto', value: verdict.text }] : []),
+          ...(verdict ? [{ label: t('solubilidadCondicional.verdictLabel'), value: verdict.text }] : []),
           ...(purityAtM1Precip !== null ? [{
-            label: 'Pureza teórica de M1 al precipitar',
-            value: `${purityAtM1Precip.toFixed(1)} % (s₁/(s₁+s₂) a pH ${pH1precip!.toFixed(1)})`,
+            label: t('solubilidadCondicional.theoreticalPurityLabel'),
+            value: t('solubilidadCondicional.purityValueTemplate', { v: purityAtM1Precip.toFixed(1), ph: pH1precip!.toFixed(1) }),
           }] : []),
           ...(redissolutionPH !== null ? [{
-            label: `Redisolución de ${s.m1.formula}`,
-            value: `pH ≈ ${redissolutionPH.toFixed(1)} (curva en U)`,
+            label: t('solubilidadCondicional.redissolutionOf', { formula: s.m1.formula }),
+            value: t('solubilidadCondicional.redissolutionValueTemplate', { v: redissolutionPH.toFixed(1) }),
           }] : []),
           ...(coprecipAtOp ? [
             {
-              label: `log s₁ a pH ${s.operatingPH.toFixed(1)}`,
+              label: t('solubilidadCondicional.logS1AtPH', { ph: s.operatingPH.toFixed(1) }),
               value: coprecipAtOp.logS1.toFixed(2),
             },
             {
-              label: `log s₂ a pH ${s.operatingPH.toFixed(1)}`,
+              label: t('solubilidadCondicional.logS2AtPH', { ph: s.operatingPH.toFixed(1) }),
               value: coprecipAtOp.logS2.toFixed(2),
             },
             {
-              label: 'Pureza M1 en operación',
-              value: `${coprecipAtOp.purityM1.toFixed(1)} % · co-precip. M2: ${coprecipAtOp.fracM2.toFixed(2)} %`,
+              label: t('solubilidadCondicional.purityM1Operating'),
+              value: t('solubilidadCondicional.purityOperatingValueTemplate', { v: coprecipAtOp.purityM1.toFixed(1), v2: coprecipAtOp.fracM2.toFixed(2) }),
             },
           ] : []),
         ]} />
         </PanelSection>
 
-        <PanelSection title="Efecto de complejante (pX)" icon="✦">
+        <PanelSection title={t('solubilidadCondicional.complexantEffectSection')} icon="✦">
           <Toggle
-            label="log s = f(pX) — efecto de complejante"
+            label={t('solubilidadCondicional.pxToggle')}
             checked={s.showPX}
             onChange={(v) => setS((p) => ({ ...p, showPX: v }))}
           />
           {s.showPX && (
             <div className="mask-section">
-              <LabelField label="Complejante X" value={s.ligandX} onChange={(v) => setS((p) => ({ ...p, ligandX: v }))} />
-              <Slider label="pH fijo" value={s.pHForPX} min={0} max={14} step={0.1} onChange={(v) => setS((p) => ({ ...p, pHForPX: v }))} decimals={1} />
+              <LabelField label={t('solubilidadCondicional.complexantXLabel')} value={s.ligandX} onChange={(v) => setS((p) => ({ ...p, ligandX: v }))} />
+              <Slider label={t('complejos.fixedPHLabel')} value={s.pHForPX} min={0} max={14} step={0.1} onChange={(v) => setS((p) => ({ ...p, pHForPX: v }))} decimals={1} />
               <ConstantList
                 prefix="log β(X)"
                 helpId="logBeta"
@@ -746,26 +751,18 @@ export default function SolubilidadCondicional() {
           )}
         </PanelSection>
 
-        <InfoBox title="Separación selectiva de hidróxidos">
+        <InfoBox title={t('solubilidadCondicional.infoBoxTitle')}>
           <p>
-            La solubilidad de M(OH)_n sigue <code>log s = −pKsp + n·pOH</code> (pendiente −n
-            por unidad de pH). Los metales con mayor pKsp o menor n precipitan a pH más alto.
-            Controlando el pH se puede <strong>precipitar selectivamente</strong> un metal sin
-            afectar al otro.
+            {t('solubilidadCondicional.para1Prefix')}<code>{t('solubilidadCondicional.para1Code')}</code>
+            {t('solubilidadCondicional.para1Mid')}<strong>{t('solubilidadCondicional.selectivelyPrecipitateBold')}</strong>{t('solubilidadCondicional.para1Suffix')}
           </p>
           <p>
-            Para metales <strong>anfóteros</strong> (Al, Zn, Cr, Pb) la curva es en U: suben
-            de nuevo a pH muy alto por formación de hidroxocomplejos aniónicos (Al(OH)₄⁻,
-            Zn(OH)₄²⁻). Los log β del panel modelan este efecto.
+            {t('solubilidadCondicional.para2Prefix')}<strong>{t('solubilidadCondicional.amphotericBold')}</strong>{t('solubilidadCondicional.para2Suffix')}
           </p>
           <p>
-            <strong>Mapa 2D (pH–log[M])</strong>: sobre la línea de saturación (curva log s de
-            arriba) precipita el sólido {s.m1.formula}; debajo, el metal disuelto se reparte
-            entre M libre y sus hidroxo-complejos (y, con enmascaramiento activo, también los
-            complejos con {s.side.auxLabel || 'X'}) según el pH — la posición vertical solo decide
-            sólido vs. disuelto, nunca qué especie disuelta domina.
-            {s.showM2 && ` La línea punteada muestra dónde satura ${s.m2.formula} — comparar
-            contra el área de ${s.m1.formula} da la ventana de separación.`}
+            <strong>{t('solubilidadCondicional.map2dBold')}</strong>
+            {t('solubilidadCondicional.para3Rest', { formula: s.m1.formula, aux: s.side.auxLabel || 'X' })}
+            {s.showM2 && t('solubilidadCondicional.para3M2Suffix', { m2Formula: s.m2.formula, m1Formula: s.m1.formula })}
           </p>
         </InfoBox>
       </PanelShell>
@@ -774,15 +771,15 @@ export default function SolubilidadCondicional() {
         <DiagramTabs tabs={tabs} initialId="logs" />
         <ResultCardRow items={[
           {
-            label: `${s.m1.formula} precipita`,
+            label: t('solubilidadCondicional.formulaPrecipitates', { formula: s.m1.formula }),
             value: pH1precip !== null ? `pH ${pH1precip.toFixed(1)}` : '—',
             accent: true,
           },
           ...(minHasInterior
-            ? [{ label: 'Mín. solubilidad', value: `pH ${minSolubility.pH.toFixed(1)}` }]
+            ? [{ label: t('solubilidadCondicional.minSolubilityShort'), value: `pH ${minSolubility.pH.toFixed(1)}` }]
             : []),
           ...(selectiveWindow
-            ? [{ label: 'Ventana selectiva', value: `${selectiveWindow[0].toFixed(1)}–${selectiveWindow[1].toFixed(1)}` }]
+            ? [{ label: t('solubilidadCondicional.selectiveWindowLabel'), value: `${selectiveWindow[0].toFixed(1)}–${selectiveWindow[1].toFixed(1)}` }]
             : []),
         ]} />
       </section>
