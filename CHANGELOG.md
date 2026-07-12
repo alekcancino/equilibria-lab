@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.8 — 2026-07-12
+
+### Bilingual UI (ES/EN) — Solubilidad module
+
+- **Translated:** the full **Solubilidad** module — ionic-salt (Ksp) mode with stoichiometry, common-ion effect and conditional Ksp, and molecular acid/base solid mode with intrinsic solubility S₀, including both InfoBox formula branches.
+
 ## 0.9.7 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — Pourbaix module
