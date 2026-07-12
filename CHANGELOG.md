@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 — 2026-07-11
+
+### Sillén map M1/M2 comparison + side-reaction mask
+
+- **Precipitación selectiva**: the Sillén *Mapa 2D (pH–log[M])* now respects both existing 1D-chart capabilities. When the side-reaction mask is active, the map uses the metal's masked saturation boundary and dissolved-species ladder (now including the masking ligand's own complexes, e.g. Zn(NH₃)ₖ) instead of the bare-hydroxide baseline. When the M2 comparison is active, M2's own saturation curve is overlaid as a dashed reference line — giving a direct visual of the separation window without merging two independent chemical systems into one grid.
+- New `solubilityRegimeFractionsMasked()` (`lib/sideReactions.ts`) and `Predominance2D`'s new `overlayCurve` prop. 4 new unit tests.
+- This completes the 2D-predominance-maps feature set: pL–pH, pL–pX, Sillén pH–log[M], dark-mode remap, CSV/PNG export, and now M1/M2 + masking.
+
 ## 0.6.2 — 2026-07-11
 
 ### CSV/PNG export for the 2D predominance maps

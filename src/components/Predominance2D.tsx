@@ -22,6 +22,13 @@ interface Predominance2DProps {
   exportName?: string;
   /** Module-specific parameters prepended as # comments in the CSV. */
   exportMetadata?: Record<string, string>;
+  /**
+   * Reference curve drawn on top of the field without being part of the
+   * dominant-species grid — e.g. a second system's own boundary line, for
+   * visual comparison against this one (Sillén map's M1/M2 separation
+   * window). Points outside the plot's x/y range are simply not drawn.
+   */
+  overlayCurve?: { points: { x: number; y: number }[]; color: string; label: string };
 }
 
 /**
@@ -86,7 +93,7 @@ const NO_SOLUTION_DARK: [number, number, number, number] = [42, 58, 85, 110];
  */
 export default function Predominance2D({
   grid, colors, labels, xLabel, yLabel, marker, caption,
-  exportName = 'equilibria-mapa2d', exportMetadata,
+  exportName = 'equilibria-mapa2d', exportMetadata, overlayCurve,
 }: Predominance2DProps) {
   const { nx, ny, xRange, yRange } = grid;
   const isDark = useTheme() === 'dark';
@@ -138,11 +145,21 @@ export default function Predominance2D({
   const yTicks = [yRange[0], (yRange[0] + yRange[1]) / 2, yRange[1]];
 
   const legendRows = Math.ceil(present.length / LEGEND_COLS);
-  const H = LEGEND_TOP + legendRows * LEGEND_ROW_H + 8;
+  const overlayLegendY = LEGEND_TOP + legendRows * LEGEND_ROW_H;
+  const H = overlayLegendY + (overlayCurve ? LEGEND_ROW_H : 0) + 8;
 
   const markerInside = marker
     && marker.x >= xRange[0] && marker.x <= xRange[1]
     && marker.y >= yRange[0] && marker.y <= yRange[1];
+
+  // Clip to the visible plot range — an out-of-range boundary (e.g. M2 never
+  // saturates in this window) simply draws nothing instead of a bogus line.
+  const overlayPolyline = overlayCurve
+    ? overlayCurve.points
+      .filter((p) => p.x >= xRange[0] && p.x <= xRange[1] && p.y >= yRange[0] && p.y <= yRange[1])
+      .map((p) => `${toPx(p.x)},${toPy(p.y)}`)
+      .join(' ')
+    : '';
 
   const exportCsv = useCallback(() => {
     const meta: Record<string, string> = {
@@ -256,6 +273,11 @@ export default function Predominance2D({
           </g>
         )}
 
+        {/* Reference curve (e.g. a second system's own boundary, for comparison) */}
+        {overlayPolyline && (
+          <polyline points={overlayPolyline} fill="none" stroke={overlayCurve!.color} strokeWidth={2} strokeDasharray="7 4" />
+        )}
+
         {/* Legend — only species present in the map */}
         {present.map((idx, k) => {
           const col = k % LEGEND_COLS;
@@ -272,6 +294,16 @@ export default function Predominance2D({
             </g>
           );
         })}
+
+        {/* Overlay legend row — a line swatch, not a filled region */}
+        {overlayCurve && (
+          <g>
+            <line x1={PAD_L} y1={overlayLegendY - 4} x2={PAD_L + 20} y2={overlayLegendY - 4} stroke={overlayCurve.color} strokeWidth={2} strokeDasharray="5 3" />
+            <text x={PAD_L + 28} y={overlayLegendY + 1} fontSize={15} fill="var(--text)">
+              {overlayCurve.label}
+            </text>
+          </g>
+        )}
       </svg>
       <PlotToolbar onExport={exportPng} onExportCSV={exportCsv} />
     </div>

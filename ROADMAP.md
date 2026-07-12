@@ -172,8 +172,30 @@ meaningless "reset zoom" affordance. Verified end-to-end: real button clicks in 
 page decoded to a 96 KB PNG (visually confirmed — all text renders, no invisible
 CSS-var fallback) and unit-tested `gridToCSV` output shape/content (11 tests).
 
-Remaining for v2: extending the Sillén map to the M1/M2 comparison + side-reaction mask
-already available on the 1D `log s = f(pH)` tab.
+**Sillén map M1/M2 comparison + side-reaction mask (2026-07-11) — done, v2 complete.**
+Two extensions, both scoped precisely rather than attempting a single merged field:
+
+- **Side-reaction mask**: when the masking-ligand editor is active, the map now uses
+  `solubilityRegimeFractionsMasked` (`lib/sideReactions.ts`) instead of the baseline
+  `solubilityRegimeFractions`. The saturation boundary shifts by α_M(OH)·α_M(L) (same
+  formula `hydroxideSolCurveMasked` already used for the 1D curve), and the dissolved
+  ladder gains the masking ligand's own complexes via `speciationFractions` — evaluated
+  at the ligand's pH-dependent free concentration (`composeAlphas` already resolves
+  whichever spec mode — free/total/fixedPX — is active), so the "y only decides
+  solid-vs-solution" invariant established for the whole Sillén map design still holds.
+  Verified: 1 M free NH₃ makes Zn(NH₃)₃ dominate almost the entire dissolved region and
+  visibly shrinks the solid U (masking raises solubility), exactly as the four new unit
+  tests predict.
+- **M1/M2 comparison**: rather than overlaying two full predominance fields (visually
+  incoherent — M1 and M2 are independent chemical systems), M2's own saturation curve is
+  drawn as a reference line on top of M1's field (`Predominance2D`'s new
+  `overlayCurve` prop — clipped to the visible range, its own legend row). Reuses
+  `curve2` (already computed for the 1D chart) directly, no new engine code. Gives a
+  direct visual of the separation window without conflating two systems' species into
+  one grid.
+
+Verified end-to-end with real-render QA (Zn(OH)₂ + NH₃ mask + Cu(OH)₂ overlay) and a
+regression check confirming the unmasked/no-M2 baseline is pixel-identical to before.
 
 ### Near-term
 
@@ -182,7 +204,7 @@ already available on the 1D `log s = f(pH)` tab.
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
 | **Bilingual UI (Spanish / English)** | Toggle between Spanish and English for all labels, tooltips, and InfoBox content. Chemistry notation and formula strings remain language-neutral. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
-| **2D predominance diagrams — v2** | pL–pH, pL–pX and pH–log[M] (Sillén) maps shipped, dark-mode remap and CSV/PNG export done (see resolved section above). Remaining: the Sillén map's M1/M2 comparison + side-reaction mask. |
+| **2D predominance diagrams** | ✅ Done — pL–pH, pL–pX and pH–log[M] (Sillén) maps, dark-mode remap, CSV/PNG export, and the Sillén map's M1/M2 comparison + side-reaction mask all shipped (see resolved section above). |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |
 
 ### Medium-term
