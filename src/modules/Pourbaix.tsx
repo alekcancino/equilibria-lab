@@ -12,6 +12,7 @@ import {
   type ArbSpecies, type ArbCouple,
 } from '../lib/pourbaix';
 import { formatMolar } from '../lib/format';
+import { useT } from '../hooks/useT';
 
 // ── Arbitrary custom system types ─────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ function SpeciesEditor({
   species: ArbSpecies[];
   onChange: (s: ArbSpecies[]) => void;
 }) {
+  const t = useT();
   const ions = species.filter((s) => s.kind === 'ion');
 
   function update(idx: number, patch: Partial<ArbSpecies>) {
@@ -66,14 +68,14 @@ function SpeciesEditor({
         <div key={i} className="editor-card" style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="editor-title" style={{ fontSize: 12, color: sp.kind === 'ion' ? '#0072B2' : sp.kind === 'hydroxide' ? '#D55E00' : '#009E73', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {sp.kind === 'ion' ? 'Ion' : sp.kind === 'hydroxide' ? 'Hidróxido' : 'Metal'}
+              {sp.kind === 'ion' ? t('pourbaix.kindIon') : sp.kind === 'hydroxide' ? t('pourbaix.kindHydroxide') : t('pourbaix.kindMetal')}
             </span>
             <button onClick={() => remove(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 14, padding: '0 2px' }}>✕</button>
           </div>
 
           <div className="control">
             <div className="control-header">
-              <span className="control-label">Fórmula</span>
+              <span className="control-label">{t('pourbaix.formulaLabel')}</span>
             </div>
             <input
               className="label-input"
@@ -86,7 +88,7 @@ function SpeciesEditor({
           {sp.kind === 'ion' && (
             <div className="control">
               <div className="control-header">
-                <span className="control-label">Carga z</span>
+                <span className="control-label">{t('pourbaix.chargeZLabel')}</span>
                 <span className="control-value">{sp.z}</span>
               </div>
               <div className="segmented" style={{ marginTop: 4 }}>
@@ -104,7 +106,7 @@ function SpeciesEditor({
             <>
               <div className="control">
                 <div className="control-header">
-                  <span className="control-label">Carga z</span>
+                  <span className="control-label">{t('pourbaix.chargeZLabel')}</span>
                   <span className="control-value">{sp.z}</span>
                 </div>
                 <div className="segmented" style={{ marginTop: 4 }}>
@@ -124,7 +126,7 @@ function SpeciesEditor({
               />
               <div className="control">
                 <div className="control-header">
-                  <span className="control-label">Ion de referencia</span>
+                  <span className="control-label">{t('pourbaix.referenceIonLabel')}</span>
                 </div>
                 <select
                   className="select-control"
@@ -142,9 +144,9 @@ function SpeciesEditor({
         </div>
       ))}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <button className="btn-secondary" onClick={addIon} style={{ fontSize: 12 }}>+ Ion</button>
-        <button className="btn-secondary" onClick={addHydrox} style={{ fontSize: 12 }}>+ Hidróxido</button>
-        <button className="btn-secondary" onClick={addMetal} style={{ fontSize: 12 }}>+ Metal</button>
+        <button className="btn-secondary" onClick={addIon} style={{ fontSize: 12 }}>{t('pourbaix.addIonButton')}</button>
+        <button className="btn-secondary" onClick={addHydrox} style={{ fontSize: 12 }}>{t('pourbaix.addHydroxideButton')}</button>
+        <button className="btn-secondary" onClick={addMetal} style={{ fontSize: 12 }}>{t('pourbaix.addMetalButton')}</button>
       </div>
     </div>
   );
@@ -161,6 +163,7 @@ function CoupleEditorArb({
   species: ArbSpecies[];
   onChange: (c: ArbCouple[]) => void;
 }) {
+  const t = useT();
   const ions   = species.filter((s) => s.kind === 'ion').map((s) => s.formula);
   const metals = species.filter((s) => s.kind === 'metal').map((s) => s.formula);
   const redOpts = [...ions, ...metals];
@@ -183,20 +186,20 @@ function CoupleEditorArb({
         <div key={i} className="editor-card" style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 12, color: '#0072B2', fontWeight: 700 }}>
-              Par redox {i + 1}
+              {t('pourbaix.redoxCoupleN', { n: i + 1 })}
             </span>
             <button onClick={() => remove(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 14, padding: '0 2px' }}>✕</button>
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
             <div className="control" style={{ flex: 1 }}>
-              <div className="control-header"><span className="control-label">Ox (izq.)</span></div>
+              <div className="control-header"><span className="control-label">{t('pourbaix.oxLeftLabel')}</span></div>
               <select className="select-control" value={c.ox} onChange={(e) => update(i, { ox: e.target.value })} style={{ marginTop: 4, width: '100%' }}>
                 {ions.map((f) => <option key={f} value={f}>{f}</option>)}
               </select>
             </div>
             <div className="control" style={{ flex: 1 }}>
-              <div className="control-header"><span className="control-label">Red (der.)</span></div>
+              <div className="control-header"><span className="control-label">{t('pourbaix.redRightLabel')}</span></div>
               <select className="select-control" value={c.red} onChange={(e) => update(i, { red: e.target.value })} style={{ marginTop: 4, width: '100%' }}>
                 {redOpts.map((f) => <option key={f} value={f}>{f}</option>)}
               </select>
@@ -212,7 +215,7 @@ function CoupleEditorArb({
 
           <div className="control">
             <div className="control-header">
-              <span className="control-label">Electrones n</span>
+              <span className="control-label">{t('pourbaix.electronsNLabel')}</span>
               <span className="control-value">{c.n}</span>
             </div>
             <div className="segmented" style={{ marginTop: 4 }}>
@@ -226,7 +229,7 @@ function CoupleEditorArb({
           </div>
         </div>
       ))}
-      <button className="btn-secondary" onClick={addCouple} style={{ fontSize: 12 }}>+ Par redox</button>
+      <button className="btn-secondary" onClick={addCouple} style={{ fontSize: 12 }}>{t('pourbaix.addCoupleButton')}</button>
     </div>
   );
 }
@@ -254,6 +257,7 @@ function nearestRegionName(
 
 /** Pourbaix diagrams (E vs pH) derived from primitive thermodynamic data. */
 export default function Pourbaix() {
+  const t = useT();
   const systems = availableSystems();
   const [systemId, setSystemId] = useState('fe');
   const [useCustom, setUseCustom] = useState(false);
@@ -332,13 +336,13 @@ export default function Pourbaix() {
       const w = waterLines();
       const phs = [0, 14];
       data.push(
-        { x: phs, y: phs.map((p) => w.o2.A - w.o2.B * p), type: 'scatter', mode: 'lines', name: 'O₂/H₂O', line: { width: 1.5, color: '#7F8C8D', dash: 'dash' }, hovertemplate: 'O₂ + 4H⁺ + 4e⁻ → 2H₂O<extra>límite O₂</extra>' },
-        { x: phs, y: phs.map((p) => w.h2.A - w.h2.B * p), type: 'scatter', mode: 'lines', name: 'H₂O/H₂', line: { width: 1.5, color: '#7F8C8D', dash: 'dot' },  hovertemplate: '2H⁺ + 2e⁻ → H₂<extra>límite H₂</extra>' },
+        { x: phs, y: phs.map((p) => w.o2.A - w.o2.B * p), type: 'scatter', mode: 'lines', name: 'O₂/H₂O', line: { width: 1.5, color: '#7F8C8D', dash: 'dash' }, hovertemplate: `O₂ + 4H⁺ + 4e⁻ → 2H₂O<extra>${t('pourbaix.o2LimitLabel')}</extra>` },
+        { x: phs, y: phs.map((p) => w.h2.A - w.h2.B * p), type: 'scatter', mode: 'lines', name: 'H₂O/H₂', line: { width: 1.5, color: '#7F8C8D', dash: 'dot' },  hovertemplate: `2H⁺ + 2e⁻ → H₂<extra>${t('pourbaix.h2LimitLabel')}</extra>` },
       );
     }
 
     return { traces: data, annotations: ann };
-  }, [diagram, arbDiagram, showWater]);
+  }, [diagram, arbDiagram, showWater, t]);
 
   const predominant = useMemo(() => {
     const src = diagram ?? arbDiagram;
@@ -359,15 +363,15 @@ export default function Pourbaix() {
 
   return (
     <div className="module">
-      <PanelShell title="Diagrama de Pourbaix" onReset={reset} moduleId="pourbaix">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('pourbaix.title')} onReset={reset} moduleId="pourbaix">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
           <ModelBadge
-            model={useCustom ? 'sistema arbitrario (N parejas + N sólidos)' : 'sistema metal–agua de múltiples especies'}
-            additions={[!useCustom && 'especies de base de datos', showWater && 'estabilidad del agua']}
+            model={useCustom ? t('pourbaix.arbitrarySystemModel') : t('pourbaix.metalWaterSystemModel')}
+            additions={[!useCustom && t('pourbaix.additionDbSpecies'), showWater && t('pourbaix.additionWaterStability')]}
           />
 
           <Toggle
-            label="Modo personalizado (sistema propio)"
+            label={t('pourbaix.customModeToggle')}
             checked={useCustom}
             onChange={(v) => { setUseCustom(v); setEditWarnings([]); }}
           />
@@ -375,71 +379,66 @@ export default function Pourbaix() {
           {!useCustom ? (
             <>
               <SelectControl
-                label="Sistema metal–H₂O"
+                label={t('pourbaix.metalWaterSystemLabel')}
                 value={systemId}
                 options={systems.map((s) => ({ value: s.id, label: s.name }))}
                 onChange={(v) => { setSystemId(v); setEditWarnings([]); }}
               />
               {diagram && diagram.excluded.length > 0 && (
                 <p className="badge warn">
-                  Diagrama simplificado — especies excluidas: {diagram.excluded.join(', ')}
+                  {t('pourbaix.simplifiedDiagramWarning', { list: diagram.excluded.join(', ') })}
                 </p>
               )}
               <button type="button" className="add-btn" onClick={editCurrentSystem}>
-                Editar este sistema
+                {t('pourbaix.editSystemButton')}
               </button>
               <p className="hint">
-                Parte de este preset en modo personalizado para cambiar constantes, agregar
-                especies o usarlo como base de tu propio sistema.
+                {t('pourbaix.editSystemHint')}
               </p>
             </>
           ) : (
             <>
               {editWarnings.length > 0 && (
                 <p className="badge warn">
-                  No convertidas a modo personalizado (edítalas a mano si las necesitas): {editWarnings.join(', ')}
+                  {t('pourbaix.notConvertedWarning', { list: editWarnings.join(', ') })}
                 </p>
               )}
-              <p className="editor-title" style={{ color: '#0072B2', marginBottom: 6 }}>Especies</p>
+              <p className="editor-title" style={{ color: '#0072B2', marginBottom: 6 }}>{t('pourbaix.speciesTitle')}</p>
               <SpeciesEditor species={arb.species} onChange={(species) => setArb((a) => ({ ...a, species }))} />
-              <p className="editor-title" style={{ color: '#0072B2', marginTop: 12, marginBottom: 6 }}>Pares redox fundamentales</p>
+              <p className="editor-title" style={{ color: '#0072B2', marginTop: 12, marginBottom: 6 }}>{t('pourbaix.fundamentalCouplesTitle')}</p>
               <CoupleEditorArb couples={arb.couples} species={arb.species} onChange={(couples) => setArb((a) => ({ ...a, couples }))} />
             </>
           )}
         </PanelSection>
 
-        <PanelSection title="Condiciones" icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
           <Slider
-            label={`log C de especies disueltas (${formatMolar(Math.pow(10, logC))})`}
+            label={t('pourbaix.logCLabel', { molar: formatMolar(Math.pow(10, logC)) })}
             value={logC} min={-6} max={0} step={0.5}
             onChange={setLogC}
             decimals={1}
           />
-          <Toggle label="Líneas de estabilidad del agua" checked={showWater} onChange={setShowWater} />
+          <Toggle label={t('pourbaix.waterStabilityLinesToggle')} checked={showWater} onChange={setShowWater} />
         </PanelSection>
 
-        <PanelSection title="Cursor" icon="✦">
-          <Slider label="pH del cursor" value={cursorPH} min={0} max={14} step={0.1} onChange={setCursorPH} decimals={1} />
-          <Slider label="E del cursor (V)" value={cursorE} min={-1.6} max={2.2} step={0.05} onChange={setCursorE} decimals={2} />
+        <PanelSection title={t('pourbaix.cursorSection')} icon="✦">
+          <Slider label={t('potencialcond.cursorPHLabel')} value={cursorPH} min={0} max={14} step={0.1} onChange={setCursorPH} decimals={1} />
+          <Slider label={t('pourbaix.cursorELabel')} value={cursorE} min={-1.6} max={2.2} step={0.05} onChange={setCursorE} decimals={2} />
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: 'Condiciones', value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
-            { label: 'Especie predominante (aprox.)', value: predominant },
+            { label: t('pourbaix.conditionsResultLabel'), value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
+            { label: t('pourbaix.predominantApproxLabel'), value: predominant },
           ]} />
         </PanelSection>
 
-        <InfoBox title="¿Cómo se construye este diagrama?">
+        <InfoBox title={t('pourbaix.infoBoxTitle')}>
           <p>
-            Solo E° de los pares base y pKsp de los hidróxidos son datos de entrada.
-            Todos los potenciales de frontera con
-            sólidos se <strong>derivan por ley de Hess</strong>, así que los puntos triples
-            cierran exactamente — pasa el cursor por cada línea para ver su ecuación.
+            {t('pourbaix.para1Prefix')}<strong>{t('pourbaix.hessBold')}</strong>{t('pourbaix.para1Suffix')}
           </p>
           <p>
-            En modo personalizado agrega cualquier número de iones, hidróxidos y pares redox.
-            Las fronteras sólido/metal y sólido/sólido se generan automáticamente.
+            {t('pourbaix.para2')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -447,7 +446,7 @@ export default function Pourbaix() {
         <Chart
           data={traces}
           xTitle="pH"
-          yTitle="E (V vs ENH)"
+          yTitle={t('pourbaix.eAxisLabel')}
           xRange={[0, 14]}
           yRange={[-1.6, 2.2]}
           shapes={cursorShapes}
@@ -456,9 +455,9 @@ export default function Pourbaix() {
           exportMetadata={exportMetadata}
         />
         <ResultCardRow items={[
-          { label: 'Especie predominante', value: predominant, accent: true },
-          { label: 'Condiciones', value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
-          { label: 'log C disueltas', value: formatMolar(Math.pow(10, logC)) },
+          { label: t('pourbaix.predominantSpeciesLabel'), value: predominant, accent: true },
+          { label: t('pourbaix.conditionsResultLabel'), value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
+          { label: t('pourbaix.logCDissolvedLabel'), value: formatMolar(Math.pow(10, logC)) },
         ]} />
       </section>
     </div>
