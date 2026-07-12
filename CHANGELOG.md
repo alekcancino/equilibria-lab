@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.3 — 2026-07-12
+
+### Bilingual UI (ES/EN) — IntercambioIonico module
+
+- **Translated:** the full **IntercambioIonico** ("Ion exchange") module — resin/application preset hints, the binary A↔B batch equilibrium setup, the H⁺-competition branch (shared `SideReactionEditor` plus coupled EDTA elution), the Craig multi-zone column branch (2nd/3rd competing ions), all 7 diagram tabs, and the InfoBox. Completes the Separaciones hub: ExtraccionLiquido and IntercambioIonico are both now bilingual. Export metadata stays Spanish per the established precedent.
+
 ## 0.10.2 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — ExtraccionLiquido module
