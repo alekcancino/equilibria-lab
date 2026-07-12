@@ -3,6 +3,7 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import { useShareEffect } from '../hooks/useShareableState';
+import { useT } from '../hooks/useT';
 import {
   ConcSlider, DbPanel, Disclosure, InfoBox, LabelField, NumberSegmented, PanelSection, ResultCard, ResultCardRow,
   Segmented, ModelBadge, SelectControl, Slider, SystemPresetPicker, Toggle,
@@ -74,13 +75,17 @@ interface IndResult {
   badge: 'ok' | 'marginal' | 'blocked' | 'weak';
 }
 
-const IND_BADGE_LABEL: Record<string, string> = { ok: '✅ Apto', marginal: '🟡 Marginal', blocked: '⚠ Bloqueado', weak: '✗ Débil' };
-const IND_BADGE_CLS: Record<string, string>   = { ok: 'badge ok', marginal: 'badge warn', blocked: 'badge warn', weak: 'badge warn' };
-
 /** Indicator badges — rendered in the side panel. */
 function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
   metalId: string; logBetasOH: number[]; pH: number; logKMY_pH: number;
 }) {
+  const t = useT();
+  const IND_BADGE_LABEL: Record<string, string> = {
+    ok: t('titulacion.badgeSuitable'), marginal: t('titulacion.badgeMarginal'),
+    blocked: t('titulacion.badgeBlocked'), weak: t('titulacion.badgeWeak'),
+  };
+  const IND_BADGE_CLS: Record<string, string> = { ok: 'badge ok', marginal: 'badge warn', blocked: 'badge warn', weak: 'badge warn' };
+
   const results = useMemo((): IndResult[] =>
     METAL_INDICATORS.flatMap((ind) => {
       const entry = ind.metals.find((m) => m.metalId === metalId);
@@ -97,7 +102,7 @@ function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
   );
 
   if (results.length === 0) {
-    return <p className="hint" style={{ marginTop: 6 }}>Sin datos de indicadores para este metal.</p>;
+    return <p className="hint" style={{ marginTop: 6 }}>{t('titulacion.noIndicatorDataShort')}</p>;
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -112,9 +117,9 @@ function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
             <span>ΔlogK = <strong style={{ color: 'var(--text)' }}>{deltaLogK.toFixed(1)}</strong></span>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorFree, border: '1px solid #ccc' }} title="Color libre" />
+            <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorFree, border: '1px solid #ccc' }} title={t('titulacion.freeColorTitle')} />
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>→</span>
-            <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorMIn, border: '1px solid #ccc' }} title="Color M-In" />
+            <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorMIn, border: '1px solid #ccc' }} title={t('titulacion.mInColorTitle')} />
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>pH {ind.pHRange[0]}–{ind.pHRange[1]}</span>
           </div>
         </div>
@@ -127,6 +132,7 @@ function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
 function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
   metalId: string; logKf: number; logBetasOH: number[]; pH: number;
 }) {
+  const t = useT();
   const curveMY = useMemo(() =>
     condLogKCurve(logKf, EDTA_PKAS, logBetasOH, [], 0, [1, 14], 400),
     [logKf, logBetasOH],
@@ -173,8 +179,8 @@ function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
   if (indCurves.length === 0) {
     return (
       <div className="empty-plot">
-        <p>Sin datos de indicadores para este metal en la base de datos.</p>
-        <p className="hint">Selecciona un metal del panel para ver los indicadores disponibles.</p>
+        <p>{t('titulacion.noIndicatorDataDb')}</p>
+        <p className="hint">{t('titulacion.selectMetalHint')}</p>
       </div>
     );
   }
@@ -195,6 +201,7 @@ function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
 /* ───────────────────────── Acid–base ───────────────────────── */
 
 function AcidBaseTitration({ mode }: { mode: Mode }) {
+  const t = useT();
   const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem());
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cAnalyte, setCAnalyte] = useState(0.1);
@@ -257,7 +264,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
       const maxD = Math.max(...der.d.map(Math.abs), 1e-9);
       data.push({
         x: der.v, y: der.d.map((d) => (Math.abs(d) / maxD) * 14),
-        type: 'scatter', mode: 'lines', name: '|dpH/dV| (escalada)',
+        type: 'scatter', mode: 'lines', name: t('mezclas.derivativeTraceName'),
         line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
       });
     }
@@ -279,16 +286,16 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
       const pHeq = idx > 0 ? curve.pHs[idx] : NaN;
       annList.push({
         x: veq, y: 13.5,
-        text: `P.E.${curve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
+        text: `${t('titulacion.pE')}${curve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
         showarrow: false, font: { color: '#2C3E50', size: 12 },
       });
       info.push({
-        label: `Equivalencia${curve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
+        label: `${t('titulacion.equivalenceLabel')}${curve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
         value: `${veq.toFixed(2)} mL · pH ${pHeq.toFixed(2)}`,
       });
     });
     return { traces: data, shapes: shapeList, annotations: annList, eqInfo: info };
-  }, [curve, showIndicator, showDerivative, indicator, vMax]);
+  }, [curve, showIndicator, showDerivative, indicator, vMax, t]);
 
   const lastEq = curve.equivalenceVolumes[curve.equivalenceVolumes.length - 1];
   const lastIdx = lastEq !== undefined ? curve.volumes.findIndex((v) => v >= lastEq) : -1;
@@ -318,16 +325,16 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
 
   const granTraces = useMemo<Data[]>(() => [
     {
-      x: gran.v1, y: gran.F1, type: 'scatter', mode: 'lines', name: 'F₁ (antes del P.E.)',
+      x: gran.v1, y: gran.F1, type: 'scatter', mode: 'lines', name: t('titulacion.granBeforePE'),
       line: { width: 2.5, color: '#0072B2' },
-      hovertemplate: 'V = %{x:.2f} mL<br>F₁ = %{y:.2e}<extra>Antes P.E.</extra>',
+      hovertemplate: `V = %{x:.2f} mL<br>F₁ = %{y:.2e}<extra>${t('titulacion.granBeforePEShort')}</extra>`,
     },
     {
-      x: gran.v2, y: gran.F2, type: 'scatter', mode: 'lines', name: 'F₂ (después del P.E.)',
+      x: gran.v2, y: gran.F2, type: 'scatter', mode: 'lines', name: t('titulacion.granAfterPE'),
       line: { width: 2.5, color: '#D55E00', dash: 'dash' },
-      hovertemplate: 'V = %{x:.2f} mL<br>F₂ = %{y:.2e}<extra>Después P.E.</extra>',
+      hovertemplate: `V = %{x:.2f} mL<br>F₂ = %{y:.2e}<extra>${t('titulacion.granAfterPEShort')}</extra>`,
     },
-  ], [gran]);
+  ], [gran, t]);
 
   const granShapes = useMemo<Partial<Shape>[]>(() => {
     const list: Partial<Shape>[] = curve.equivalenceVolumes.map((veq) => ({
@@ -354,14 +361,24 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel,
   }), [system.label, titrantName, cAnalyte, vAnalyte, cTitrant, ionicStrength, gammaModel]);
 
+  const gammaModelsT: { value: GammaModel; label: string }[] = [
+    { value: 'dh', label: t('acidoBase.gammaDH') },
+    { value: 'davies', label: t('acidoBase.gammaDavies') },
+    { value: 'guntelberg', label: t('acidoBase.gammaGuntelberg') },
+  ];
+
+  const systemKind = analyteKind === 'equilibrium'
+    ? system.pKas.length > 1 ? t('titulacion.kindPolyprotic') : t('titulacion.kindWeak')
+    : analyteKind === 'strong-base' ? t('titulacion.kindStrongBase') : t('titulacion.kindStrongAcid');
+
   return (
     <>
-      <PanelShell title="Titulación ácido-base" onReset={reset} moduleId="titulacion">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('titulacion.acidBaseTitle')} onReset={reset} moduleId="titulacion">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
           <Segmented
             options={[
-              { value: 'base', label: 'Titulante básico' },
-              { value: 'acid', label: 'Titulante ácido' },
+              { value: 'base', label: t('titulacion.titrantBaseSeg') },
+              { value: 'acid', label: t('titulacion.titrantAcidSeg') },
             ]}
             value={titrantIsAcid ? 'acid' : 'base'}
             onChange={(v) => {
@@ -371,59 +388,53 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             }}
           />
           <ModelBadge
-            model={`titulación ácido-base (titulante ${titrantIsAcid ? 'ácido' : 'básico'}) de ${
-              analyteKind === 'equilibrium'
-                ? system.pKas.length > 1 ? 'sistema poliprótico' : 'sistema débil'
-                : analyteKind === 'strong-base' ? 'base fuerte' : 'ácido fuerte'
-            }`}
-            additions={[showIndicator && 'indicador visual', showDerivative && 'derivada']}
+            model={t('titulacion.acidBaseModelBadge', {
+              titrant: titrantIsAcid ? t('titulacion.titrantAcidWord') : t('titulacion.titrantBaseWord'),
+              kind: systemKind,
+            })}
+            additions={[showIndicator && t('titulacion.addVisualIndicator'), showDerivative && t('mezclas.additionDerivative')]}
           />
           <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} allowAquaCations />
         </PanelSection>
-        <PanelSection title="Condiciones" icon="⚗">
-          <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
-          <Slider label="Volumen de la muestra" value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
-          <ConcSlider label={`Concentración de ${titrantName}`} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+          <ConcSlider label={t('titulacion.analyteConcLabel')} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
+          <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
+          <ConcSlider label={t('titulacion.concOfLabel', { name: titrantName })} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
         </PanelSection>
-        <PanelSection title="Detección" icon="✦">
+        <PanelSection title={t('titulacion.detectionSection')} icon="✦">
           <SelectControl
-            label="Indicador visual"
+            label={t('titulacion.visualIndicatorLabel')}
             value={indicatorId}
             options={INDICATORS.map((i) => ({ value: i.id, label: `${i.name} (${i.range[0]}–${i.range[1]})` }))}
             onChange={setIndicatorId}
           />
-          <Toggle label="Mostrar zona de vire" checked={showIndicator} onChange={setShowIndicator} />
-          <Toggle label="Mostrar derivada dpH/dV" checked={showDerivative} onChange={setShowDerivative} />
+          <Toggle label={t('titulacion.showTransitionRangeToggle')} checked={showIndicator} onChange={setShowIndicator} />
+          <Toggle label={t('titulacion.showDerivativeDpHToggle')} checked={showDerivative} onChange={setShowDerivative} />
           <details className="section-collapse">
-            <summary>Corrección por actividad</summary>
-            <Slider label="Fuerza iónica I" helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
+            <summary>{t('acidoBase.activityCorrection')}</summary>
+            <Slider label={t('acidoBase.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
             <div style={{ marginTop: 6 }}>
               <Segmented
-                options={GAMMA_MODELS}
+                options={gammaModelsT}
                 value={gammaModel}
                 onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}
               />
             </div>
-            <p className="hint">I = 0 → γ = 1 (resultado termodinámico). Desplaza toda la curva pH = f(V), no solo la equivalencia.</p>
+            <p className="hint">{t('titulacion.activityHint')}</p>
           </details>
         </PanelSection>
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           {eqInfo.length > 0 && <ResultCard items={eqInfo} />}
           {showIndicator && Number.isFinite(pHLastEq) && (
             <p className={indicatorOk ? 'badge ok' : 'badge warn'}>
               {indicatorOk
-                ? `✓ ${indicator.name} vira cerca del punto de equivalencia`
-                : `⚠ ${indicator.name} vira lejos de la equivalencia (pH ${pHLastEq.toFixed(1)})`}
+                ? t('titulacion.indicatorOkMsg', { name: indicator.name })
+                : t('titulacion.indicatorFarMsg', { name: indicator.name, ph: pHLastEq.toFixed(1) })}
             </p>
           )}
         </PanelSection>
-        <InfoBox title="Método de cálculo">
-          <p>
-            Balance de cargas exacto resuelto por bisección con dilución incluida —
-            válido para ácidos y bases fuertes, débiles y polipróticos. Sin pKa el
-            analito se trata como electrolito fuerte; al agregar constantes, el modelo
-            cambia automáticamente a un equilibrio débil.
-          </p>
+        <InfoBox title={t('titulacion.calcMethodTitle')}>
+          <p>{t('titulacion.acidBaseInfoBody')}</p>
         </InfoBox>
       </PanelShell>
       <section className="plot-area">
@@ -436,7 +447,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
               node: (
                 <Chart
                   data={traces}
-                  xTitle={`Volumen de ${titrantName} agregado (mL)`}
+                  xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })}
                   yTitle="pH"
                   xRange={[0, vMax]}
                   yRange={[0, 14]}
@@ -455,8 +466,8 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
                   <div style={{ flex: 1, minHeight: 0 }}>
                     <Chart
                       data={granTraces}
-                      xTitle={`Volumen de ${titrantName} agregado (mL)`}
-                      yTitle="Función de Gran F"
+                      xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })}
+                      yTitle={t('titulacion.granFunctionYTitle')}
                       xRange={[0, vMax]}
                       shapes={granShapes}
                       exportName="equilibria-titulacion-gran"
@@ -464,8 +475,8 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
                     />
                   </div>
                   <p className="hint" style={{ margin: '4px 8px 2px' }}>
-                    F₁ = (V₀+V)·[H⁺] es lineal <em>antes</em> del P.E. y su extrapolación (línea
-                    verde) cruza cero en V<sub>eq</sub> = {Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—'}.
+                    {t('titulacion.granHintPrefix')}<em>{t('titulacion.granHintBeforeEm')}</em>{t('titulacion.granHintMid')}
+                    <sub>eq</sub> = {Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—'}.
                   </p>
                 </div>
               ),
@@ -473,11 +484,11 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
           ]}
         />
         <ResultCardRow items={[
-          { label: 'pH en equivalencia', value: Number.isFinite(pHLastEq) ? pHLastEq.toFixed(2) : '—', accent: true },
+          { label: t('titulacion.pHAtEquivalence'), value: Number.isFinite(pHLastEq) ? pHLastEq.toFixed(2) : '—', accent: true },
           { label: 'Veq (Gran)', value: Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—', helpId: 'gran' },
-          { label: 'q (cuantitatividad)', value: Number.isFinite(qPercent) ? `${qPercent >= 99.95 ? qPercent.toFixed(3) : qPercent.toFixed(1)} %` : '—' },
+          { label: t('titulacion.qQuantitativity'), value: Number.isFinite(qPercent) ? `${qPercent >= 99.95 ? qPercent.toFixed(3) : qPercent.toFixed(1)} %` : '—' },
           ...(Number.isFinite(granErrorPct)
-            ? [{ label: '% error P.E.', value: `${granErrorPct.toFixed(2)} %` }]
+            ? [{ label: t('titulacion.pctErrorPE'), value: `${granErrorPct.toFixed(2)} %` }]
             : []),
         ]} />
       </section>
@@ -488,6 +499,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
 /* ───────────────────────── Complexometric (EDTA) ────────────────────────── */
 
 function EdtaTitration({ mode }: { mode: Mode }) {
+  const t = useT();
   const defaultPreset = EDTA_METAL_PRESETS[0]; // Ca²⁺
   const [metalId, setMetalId] = useState(defaultPreset.id);
   const [label, setLabel] = useState(`${defaultPreset.metal}`);
@@ -596,7 +608,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
   }, [logKf, logBetasOH]);
 
   const xData = axis === 'x' ? curve.xs : curve.volumes;
-  const xTitle = axis === 'x' ? 'x = n_Y / n_M⁰' : `Volumen de ${edtaInFlask ? label : 'EDTA'} agregado (mL)`;
+  const xTitle = axis === 'x' ? 'x = n_Y / n_M⁰' : t('mezclas.volumeAddedLabel', { titrant: edtaInFlask ? label : 'EDTA' });
   const eqX = axis === 'x' ? curve.xEq : curve.vEq;
 
   const titTraces = useMemo<Data[]>(() => {
@@ -642,7 +654,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
   const diagrams = useMemo(() => [
     {
       id: 'tit',
-      label: 'Curva de titulación',
+      label: t('titulacion.titrationCurveTab'),
       node: (
         <Chart
           data={titTraces}
@@ -657,7 +669,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     },
     {
       id: 'ind',
-      label: 'Indicadores',
+      label: t('titulacion.indicatorsTab'),
       node: (
         <IndicadorChart
           metalId={metalId}
@@ -667,91 +679,89 @@ function EdtaTitration({ mode }: { mode: Mode }) {
         />
       ),
     },
-  ], [titTraces, titShapes, xTitle, vMax, axis, traceY, metalId, logKf, logBetasOH, pH, exportMetadata]);
+  ], [titTraces, titShapes, xTitle, vMax, axis, traceY, metalId, logKf, logBetasOH, pH, exportMetadata, t]);
 
   return (
     <>
-      <PanelShell title="Titulación complejométrica" onReset={reset} moduleId="titulacion">
+      <PanelShell title={t('titulacion.edtaTitle')} onReset={reset} moduleId="titulacion">
         <SystemPresetPicker
           items={SYSTEM_PRESETS.map((p) => ({ id: p.id, name: p.name, group: p.group, detail: p.detail }))}
           onSelect={applyFullSystem}
         />
-        <PanelSection title="Sistema" icon="⚛">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
           <Segmented
             options={[
-              { value: 'direct', label: 'Metal + EDTA (directa)' },
-              { value: 'inverse', label: 'EDTA + metal (retro)' },
+              { value: 'direct', label: t('titulacion.directMode') },
+              { value: 'inverse', label: t('titulacion.backTitrationMode') },
             ]}
             value={edtaInFlask ? 'inverse' : 'direct'}
             onChange={(v) => setEdtaInFlask(v === 'inverse')}
           />
           <ModelBadge
-            model={edtaInFlask ? 'titulación complejométrica por retroceso' : 'titulación complejométrica directa'}
-            additions={[logBetasOH.length > 0 && 'hidrólisis en selección de indicador']}
+            model={edtaInFlask ? t('titulacion.edtaModelBack') : t('titulacion.edtaModelDirect')}
+            additions={[logBetasOH.length > 0 && t('titulacion.addHydrolysisIndicatorSelection')]}
           />
-          <LabelField label="Ion metálico (nombre libre)" value={label} onChange={setLabel} />
+          <LabelField label={t('titulacion.metalIonFreeNameLabel')} value={label} onChange={setLabel} />
           <Slider
-            label="log Kf del complejo M–EDTA"
+            label={t('titulacion.logKfComplexLabel')}
             helpId="logKf"
             value={logKf} min={1} max={28} step={0.01}
             onChange={(v) => setLogKf(v)}
           />
           <DbPanel
-            title="Metales (base de datos)"
+            title={t('titulacion.metalsDbTitle')}
             items={EDTA_METAL_PRESETS.map((p) => ({
               id: p.id,
               label: p.metal,
               detail: `log Kf = ${p.logKf.toFixed(2)}`,
-              group: p.group === 'M²⁺' ? 'Metales bivalentes' : 'Metales trivalentes',
+              group: p.group === 'M²⁺' ? t('condicionales.divalentMetals') : t('condicionales.trivalentMetals'),
             }))}
             onSelect={applyPreset}
           />
         </PanelSection>
-        <PanelSection title="Condiciones" icon="⚗">
-          <Slider label="pH del buffer" value={pH} min={1} max={13} step={0.1} onChange={setPH} decimals={1} />
-          <ConcSlider label={`Concentración en el matraz (${flaskName})`} value={cFlask} onChange={setCFlask} min={-4} max={-1} />
-          <Slider label="Volumen del matraz" value={vFlask} min={5} max={100} step={1} onChange={setVFlask} unit="mL" decimals={0} />
-          <ConcSlider label={`Concentración del titulante (${buretName})`} value={cBuret} onChange={setCBuret} min={-4} max={-1} />
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+          <Slider label={t('titulacion.bufferPHLabel')} value={pH} min={1} max={13} step={0.1} onChange={setPH} decimals={1} />
+          <ConcSlider label={t('titulacion.concInFlaskLabel', { name: flaskName })} value={cFlask} onChange={setCFlask} min={-4} max={-1} />
+          <Slider label={t('titulacion.flaskVolumeLabel')} value={vFlask} min={5} max={100} step={1} onChange={setVFlask} unit="mL" decimals={0} />
+          <ConcSlider label={t('titulacion.concOfTitrantLabel', { name: buretName })} value={cBuret} onChange={setCBuret} min={-4} max={-1} />
         </PanelSection>
-        <PanelSection title="Gráfica" icon="∿">
+        <PanelSection title={t('titulacion.chartSection')} icon="∿">
           <div className="control">
-            <div className="control-header"><span className="control-label">Eje horizontal</span></div>
+            <div className="control-header"><span className="control-label">{t('titulacion.horizontalAxisLabel')}</span></div>
             <div className="segmented" style={{ marginTop: 6 }}>
-              <button className={axis === 'volume' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('volume')}>Volumen</button>
-              <button className={axis === 'x' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('x')}>Avance x</button>
+              <button className={axis === 'volume' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('volume')}>{t('titulacion.volumeAxisOption')}</button>
+              <button className={axis === 'x' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('x')}>{t('titulacion.progressAxisOption')}</button>
             </div>
           </div>
           <div className="control">
-            <div className="control-header"><span className="control-label">Trazas</span></div>
+            <div className="control-header"><span className="control-label">{t('titulacion.tracesLabel')}</span></div>
             <div className="segmented" style={{ marginTop: 6 }}>
-              {(['pM', 'pY', 'both'] as const).map((t) => (
-                <button key={t} className={traceY === t ? 'seg-btn active' : 'seg-btn'} onClick={() => setTraceY(t)}>
-                  {t === 'both' ? 'pM′ + pY′' : `${t}′`}
+              {(['pM', 'pY', 'both'] as const).map((tr) => (
+                <button key={tr} className={traceY === tr ? 'seg-btn active' : 'seg-btn'} onClick={() => setTraceY(tr)}>
+                  {tr === 'both' ? 'pM′ + pY′' : `${tr}′`}
                 </button>
               ))}
             </div>
           </div>
         </PanelSection>
-        <Disclosure title="Reacciones parásitas">
+        <Disclosure title={t('titulacion.sideReactionsDisclosure')}>
           <SideReactionEditor state={side} onChange={setSide} showLigandPKas={false} />
         </Disclosure>
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: 'α(Y⁴⁻) a este pH', value: formatSci(1 / aY, 3) },
-            { label: "log K′f condicional", value: curve.logKfCond.toFixed(2) },
-            { label: axis === 'x' ? 'x de equivalencia' : 'Volumen de equivalencia', value: axis === 'x' ? `${curve.xEq.toFixed(2)}` : `${curve.vEq.toFixed(2)} mL` },
-            { label: "pM′ al 50 %", value: at50.pM.toFixed(2) },
-            { label: "pY′ al 50 %", value: at50.pY.toFixed(2) },
-            { label: "pM′ al 150 %", value: at150.pM.toFixed(2) },
+            { label: t('titulacion.alphaYAtPHLabel'), value: formatSci(1 / aY, 3) },
+            { label: t('titulacion.condLogKfLabel'), value: curve.logKfCond.toFixed(2) },
+            { label: axis === 'x' ? t('titulacion.xEqLabel') : t('titulacion.volEqLabel'), value: axis === 'x' ? `${curve.xEq.toFixed(2)}` : `${curve.vEq.toFixed(2)} mL` },
+            { label: t('titulacion.pMAt50'), value: at50.pM.toFixed(2) },
+            { label: t('titulacion.pYAt50'), value: at50.pY.toFixed(2) },
+            { label: t('titulacion.pMAt150'), value: at150.pM.toFixed(2) },
           ]} />
           <p className={feasible ? 'badge ok' : 'badge warn'}>
-            {feasible
-              ? "✓ Titulación factible (log K′f ≥ 8): salto nítido"
-              : "⚠ log K′f < 8: salto pobre. Sube el pH o elige un metal con Kf mayor"}
+            {feasible ? t('titulacion.edtaFeasibleMsg') : t('titulacion.edtaNotFeasibleMsg')}
           </p>
         </PanelSection>
 
-        <Disclosure title={`Indicadores metalocrómicos a pH ${pH.toFixed(1)}`}>
+        <Disclosure title={t('titulacion.metallochromicDisclosure', { ph: pH.toFixed(1) })}>
           <IndicadorBadges
             metalId={metalId}
             logBetasOH={logBetasOH}
@@ -760,11 +770,9 @@ function EdtaTitration({ mode }: { mode: Mode }) {
           />
         </Disclosure>
 
-        <InfoBox title="Método de cálculo">
+        <InfoBox title={t('titulacion.calcMethodTitle')}>
           <p>
-            K′f = Kf / (αM(OH) · αY(H)) al pH del buffer. Balance de masas cuadrático exacto en
-            cada punto. Retro: EDTA en exceso en el matraz, se titula con el metal.
-            La pestaña <em>Indicadores</em> muestra el criterio ΔlogK ≥ 5.
+            {t('titulacion.edtaInfoBodyPrefix')}<em>{t('titulacion.edtaInfoIndicatorsEm')}</em>{t('titulacion.edtaInfoBodySuffix')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -772,12 +780,12 @@ function EdtaTitration({ mode }: { mode: Mode }) {
         <DiagramTabs tabs={diagrams} />
         <ResultCardRow items={[
           {
-            label: axis === 'x' ? 'x equivalencia' : 'V equivalencia',
+            label: axis === 'x' ? t('titulacion.xEquivalenceShort') : t('titulacion.vEquivalenceShort'),
             value: axis === 'x' ? curve.xEq.toFixed(2) : `${curve.vEq.toFixed(1)} mL`,
           },
-          { label: 'pM′ al 50 %', value: at50.pM.toFixed(2), accent: true },
-          { label: 'pM′ al 150 %', value: at150.pM.toFixed(2) },
-          { label: 'pH óptimo mín.', value: pHOptimo !== null ? `≥ ${pHOptimo.toFixed(1)}` : '> 14' },
+          { label: t('titulacion.pMAt50'), value: at50.pM.toFixed(2), accent: true },
+          { label: t('titulacion.pMAt150'), value: at150.pM.toFixed(2) },
+          { label: t('titulacion.minOptimalPH'), value: pHOptimo !== null ? `≥ ${pHOptimo.toFixed(1)}` : '> 14' },
         ]} />
       </section>
     </>
@@ -787,6 +795,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
 /* ───────────────────────── Redox ───────────────────────── */
 
 function RedoxTitration({ mode }: { mode: Mode }) {
+  const t = useT();
   const [analyte, setAnalyte] = useState<CoupleState>(coupleFromPreset('fe'));
   const [titrant, setTitrant] = useState<CoupleState>(coupleFromPreset('ce'));
   const [direction, setDirection] = useState<'oxidante' | 'reductor'>('oxidante');
@@ -836,7 +845,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
       const span = Math.max(...y) - Math.min(...y);
       data.push({
         x: der.v, y: der.d.map((d) => Math.min(...y) + (Math.abs(d) / maxD) * span),
-        type: 'scatter', mode: 'lines', name: '|dE/dV| (escalada)',
+        type: 'scatter', mode: 'lines', name: t('titulacion.derivativeTraceNameDe'),
         line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
       });
     }
@@ -845,11 +854,11 @@ function RedoxTitration({ mode }: { mode: Mode }) {
       line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
     }];
     const annList: Partial<Annotations>[] = [{
-      x: curve.vEq, y: Math.max(...y), text: 'P.E.', showarrow: false,
+      x: curve.vEq, y: Math.max(...y), text: t('titulacion.pE'), showarrow: false,
       font: { color: '#2C3E50', size: 12 },
     }];
     return { traces: data, shapes: shapeList, annotations: annList };
-  }, [curve, usePe, showDerivative]);
+  }, [curve, usePe, showDerivative, t]);
 
   const quantitative = curve.logK >= 6;
   const pHDependent = analyte.mH > 0 || titrant.mH > 0;
@@ -866,63 +875,59 @@ function RedoxTitration({ mode }: { mode: Mode }) {
 
   return (
     <>
-      <PanelShell title="Titulación redox" onReset={reset} moduleId="titulacion">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('titulacion.redoxTitle')} onReset={reset} moduleId="titulacion">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
           <Segmented
             options={[
-              { value: 'oxidante', label: 'Oxidación' },
-              { value: 'reductor', label: 'Reducción' },
+              { value: 'oxidante', label: t('titulacion.oxidationOption') },
+              { value: 'reductor', label: t('titulacion.reductionOption') },
             ]}
             value={direction}
             onChange={(v) => setDirection(v as 'oxidante' | 'reductor')}
           />
           <ModelBadge
-            model={direction === 'oxidante' ? 'titulación por oxidación' : 'titulación por reducción'}
-            additions={[pHDependent && 'potencial condicionado por pH', usePe && 'eje pe', showDerivative && 'derivada']}
+            model={direction === 'oxidante' ? t('titulacion.redoxModelOxidation') : t('titulacion.redoxModelReduction')}
+            additions={[pHDependent && t('redox.additionPHConditioned'), usePe && t('titulacion.addPeAxis'), showDerivative && t('mezclas.additionDerivative')]}
           />
           <p className="hint">
             {direction === 'oxidante'
-              ? `Analito inicia como ${analyte.red}; titulante: ${titrant.ox}.`
-              : `Analito inicia como ${analyte.ox}; titulante: ${titrant.red}.`}
+              ? t('titulacion.analyteStartsAsOx', { analyte: analyte.red, titrant: titrant.ox })
+              : t('titulacion.analyteStartsAsOx', { analyte: analyte.ox, titrant: titrant.red })}
           </p>
-          <CoupleEditor title="Par del analito" couple={analyte} onChange={setAnalyte} />
-          <CoupleEditor title="Par del titulante" couple={titrant} onChange={setTitrant} />
+          <CoupleEditor title={t('titulacion.analytePairTitle')} couple={analyte} onChange={setAnalyte} />
+          <CoupleEditor title={t('titulacion.titrantPairTitle')} couple={titrant} onChange={setTitrant} />
         </PanelSection>
-        <PanelSection title="Condiciones" icon="⚗">
-          <Slider label="pH del medio (amortiguado)" value={pH} min={0} max={8} step={0.1} onChange={setPH} decimals={1} />
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+          <Slider label={t('titulacion.bufferedMediumPHLabel')} value={pH} min={0} max={8} step={0.1} onChange={setPH} decimals={1} />
           {pHDependent && (
-            <p className="hint">⚠ Hay H⁺ en la semirreacción: pe°′ condicional depende del pH.</p>
+            <p className="hint">{t('titulacion.hInHalfReactionHint')}</p>
           )}
-          <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={-1} />
-          <Slider label="Volumen de la muestra" value={vAnalyte} min={10} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
-          <ConcSlider label="Concentración del titulante" value={cTitrant} onChange={setCTitrant} min={-4} max={-1} />
-          <Toggle label="Eje en pe (en lugar de E)" checked={usePe} onChange={setUsePe} />
-          <Toggle label="Mostrar derivada dE/dV" checked={showDerivative} onChange={setShowDerivative} />
+          <ConcSlider label={t('titulacion.analyteConcLabel')} value={cAnalyte} onChange={setCAnalyte} min={-4} max={-1} />
+          <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={10} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
+          <ConcSlider label={t('titulacion.concOfTitrantSimpleLabel')} value={cTitrant} onChange={setCTitrant} min={-4} max={-1} />
+          <Toggle label={t('titulacion.peAxisToggle')} checked={usePe} onChange={setUsePe} />
+          <Toggle label={t('titulacion.showDerivativeDeToggle')} checked={showDerivative} onChange={setShowDerivative} />
         </PanelSection>
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: 'Volumen de equivalencia', value: `${curve.vEq.toFixed(2)} mL` },
-            { label: 'E en equivalencia', value: `${curve.EEq.toFixed(3)} V (pe ${curve.peEq.toFixed(2)})` },
-            { label: 'log K de la reacción', value: curve.logK.toFixed(1) },
+            { label: t('titulacion.volEqLabel'), value: `${curve.vEq.toFixed(2)} mL` },
+            { label: t('titulacion.eAtEquivalenceLabel'), value: `${curve.EEq.toFixed(3)} V (pe ${curve.peEq.toFixed(2)})` },
+            { label: t('titulacion.logKReactionLabel'), value: curve.logK.toFixed(1) },
           ]} />
           <p className={quantitative ? 'badge ok' : 'badge warn'}>
             {quantitative
-              ? `✓ Reacción cuantitativa (log K = ${curve.logK.toFixed(0)} ≥ 6)`
-              : `⚠ log K = ${curve.logK.toFixed(1)} < 6: reacción no cuantitativa`}
+              ? t('titulacion.redoxQuantitativeMsg', { k: curve.logK.toFixed(0) })
+              : t('titulacion.redoxNotQuantitativeMsg', { k: curve.logK.toFixed(1) })}
           </p>
         </PanelSection>
-        <InfoBox title="Método de cálculo">
-          <p>
-            Balance de electrones exacto por bisección, convención pe = E/0.05916
-            (Sillén). Soporta estequiometría n₁ ≠ n₂ y pe°′ condicional al
-            pH para pares con H⁺ en la semirreacción.
-          </p>
+        <InfoBox title={t('titulacion.calcMethodTitle')}>
+          <p>{t('titulacion.redoxInfoBody')}</p>
         </InfoBox>
       </PanelShell>
       <section className="plot-area">
         <Chart
           data={traces}
-          xTitle={`Volumen de ${buretSpecies} agregado (mL)`}
+          xTitle={t('mezclas.volumeAddedLabel', { titrant: buretSpecies })}
           yTitle={usePe ? 'pe' : 'E (V vs ENH)'}
           xRange={[0, vMax]}
           shapes={shapes}
@@ -931,9 +936,9 @@ function RedoxTitration({ mode }: { mode: Mode }) {
           exportMetadata={exportMetadata}
         />
         <ResultCardRow items={[
-          { label: 'V de equivalencia', value: `${curve.vEq.toFixed(2)} mL`, accent: true },
-          { label: usePe ? 'pe en equivalencia' : 'E en equivalencia', value: usePe ? curve.peEq.toFixed(2) : `${curve.EEq.toFixed(3)} V` },
-          { label: 'log K reacción', value: curve.logK.toFixed(1) },
+          { label: t('titulacion.vOfEquivalenceShort'), value: `${curve.vEq.toFixed(2)} mL`, accent: true },
+          { label: usePe ? t('titulacion.peAtEquivalenceShort') : t('titulacion.eAtEquivalenceLabel'), value: usePe ? curve.peEq.toFixed(2) : `${curve.EEq.toFixed(3)} V` },
+          { label: t('titulacion.logKReactionShort'), value: curve.logK.toFixed(1) },
         ]} />
       </section>
     </>
@@ -943,6 +948,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
 /* ───────────────────────── Precipitation ─────────────────────────────────── */
 
 function PrecipTitration({ mode }: { mode: Mode }) {
+  const t = useT();
   const [presetId, setPresetId] = useState('cl');
   const [pKsp, setPKsp] = useState(9.74);
   const [cationName, setCationName] = useState('Ag⁺');
@@ -1027,12 +1033,12 @@ function PrecipTitration({ mode }: { mode: Mode }) {
       const span = Math.max(...y.filter(Number.isFinite)) - Math.min(...y.filter(Number.isFinite));
       data.push({
         x: der.v, y: der.d.map((d) => (Math.abs(d) / maxD) * span * 0.6),
-        type: 'scatter', mode: 'lines', name: '|dp/dV| (escalada)',
+        type: 'scatter', mode: 'lines', name: t('titulacion.derivativeTraceNameDp'),
         line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
       });
     }
     return data;
-  }, [curve, showPCation, showDerivative, pCatLabel, pAniLabel]);
+  }, [curve, showPCation, showDerivative, pCatLabel, pAniLabel, t]);
 
   const shapes = useMemo<Partial<Shape>[]>(() => {
     const list: Partial<Shape>[] = [{
@@ -1050,7 +1056,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
 
   const annotations = useMemo<Partial<Annotations>[]>(() => {
     const list: Partial<Annotations>[] = [{
-      x: curve.vEq, y: yMax, text: 'P.E.', showarrow: false,
+      x: curve.vEq, y: yMax, text: t('titulacion.pE'), showarrow: false,
       font: { color: '#2C3E50', size: 12 },
     }];
     if (showMohr && showPCation && isAgSystem) {
@@ -1062,16 +1068,16 @@ function PrecipTitration({ mode }: { mode: Mode }) {
       });
     }
     return list;
-  }, [curve.vEq, showMohr, showPCation, isAgSystem, mohrPAg, vMax, yMax, pCatLabel]);
+  }, [curve.vEq, showMohr, showPCation, isAgSystem, mohrPAg, vMax, yMax, pCatLabel, t]);
 
   const sharpness = pKsp >= 6;
   return (
     <>
-      <PanelShell title="Titulación por precipitación" onReset={reset} moduleId="titulacion">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('titulacion.precipTitle')} onReset={reset} moduleId="titulacion">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
           <ModelBadge
-            model={`titulación por precipitación ${m}:${x}`}
-            additions={[showPCation && `eje p(${cationName})`, showMohr && showPCation && 'indicador Mohr', showDerivative && 'derivada']}
+            model={t('titulacion.precipModelBadge', { m, x })}
+            additions={[showPCation && t('titulacion.addPCationAxis', { cation: cationName }), showMohr && showPCation && t('titulacion.addMohrIndicator'), showDerivative && t('mezclas.additionDerivative')]}
           />
           <p className="hint">{m > 1 ? `${m}` : ''}{cationName} + {x > 1 ? `${x}` : ''}{anionName} → {saltFormula}↓</p>
           <div className="preset-chip-row" style={{ marginBottom: 8 }}>
@@ -1085,87 +1091,68 @@ function PrecipTitration({ mode }: { mode: Mode }) {
               </button>
             ))}
           </div>
-          <LabelField label="Catión titulante" value={cationName} onChange={setCationName} />
-          <LabelField label="Anión analito" value={anionName} onChange={setAnionName} />
-          <LabelField label="Fórmula del precipitado" value={saltFormula} onChange={setSaltFormula} />
-          <NumberSegmented label="Estequiometría MmXx — coef. catión m" value={m} options={[1, 2, 3, 4]} onChange={setM} />
-          <NumberSegmented label="Estequiometría MmXx — coef. anión x" value={x} options={[1, 2, 3, 4]} onChange={setX} />
-          <Slider label="pKps del precipitado" helpId="pKsp" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
+          <LabelField label={t('titulacion.titrantCationLabel')} value={cationName} onChange={setCationName} />
+          <LabelField label={t('titulacion.analyteAnionLabel')} value={anionName} onChange={setAnionName} />
+          <LabelField label={t('titulacion.precipitateFormulaLabel')} value={saltFormula} onChange={setSaltFormula} />
+          <NumberSegmented label={t('titulacion.stoichCationLabel')} value={m} options={[1, 2, 3, 4]} onChange={setM} />
+          <NumberSegmented label={t('titulacion.stoichAnionLabel')} value={x} options={[1, 2, 3, 4]} onChange={setX} />
+          <Slider label={t('titulacion.pKspLabel')} helpId="pKsp" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
         </PanelSection>
 
-        <PanelSection title="Condiciones" icon="⚗">
-          <ConcSlider label={`Concentración de ${anionName}`} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
-          <Slider label="Volumen de la muestra" value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
-          <ConcSlider label={`Concentración de ${cationName}`} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+          <ConcSlider label={t('titulacion.concOfLabel', { name: anionName })} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
+          <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
+          <ConcSlider label={t('titulacion.concOfLabel', { name: cationName })} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
         </PanelSection>
 
-        <PanelSection title="Visualización" icon="✦">
-          <Toggle label={`Eje en p(${cationName}) en lugar de p(${anionName})`} checked={showPCation} onChange={setShowPCation} />
+        <PanelSection title={t('titulacion.visualizationSection')} icon="✦">
+          <Toggle label={t('titulacion.pCationAxisToggle', { cation: cationName, anion: anionName })} checked={showPCation} onChange={setShowPCation} />
           {isAgSystem && showPCation && (
-            <Toggle label="Marcador indicador Mohr" checked={showMohr} onChange={setShowMohr} />
+            <Toggle label={t('titulacion.mohrMarkerToggle')} checked={showMohr} onChange={setShowMohr} />
           )}
           {isAgSystem && showPCation && showMohr && (
             <>
               <ConcSlider
-                label="Concentración de CrO₄²⁻ (indicador)"
+                label={t('titulacion.chromateConcLabel')}
                 value={cChromate}
                 onChange={setCChromate}
                 min={-4}
                 max={-1}
               />
-              <p className="hint">
-                Mohr clásico: 5×10⁻³ M. Demasiado cromato colorea la disolución y
-                adelanta el punto final; demasiado poco lo retrasa (Fajans/Volhard lo evitan).
-              </p>
+              <p className="hint">{t('titulacion.mohrClassicHint')}</p>
             </>
           )}
-          <Toggle label="Mostrar derivada dp/dV" checked={showDerivative} onChange={setShowDerivative} />
+          <Toggle label={t('titulacion.showDerivativeDpToggle')} checked={showDerivative} onChange={setShowDerivative} />
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: 'Volumen de equivalencia', value: `${curve.vEq.toFixed(2)} mL` },
-            { label: m === 1 && x === 1 ? 'p en equivalencia (½ pKps)' : 'p en equivalencia', value: curve.pAgEq.toFixed(2) },
+            { label: t('titulacion.volEqLabel'), value: `${curve.vEq.toFixed(2)} mL` },
+            { label: m === 1 && x === 1 ? t('titulacion.pAtEquivalenceHalfPKsp') : t('titulacion.pAtEquivalence'), value: curve.pAgEq.toFixed(2) },
             ...(isAgSystem && showPCation ? [{
-              label: 'Indicador Mohr',
+              label: t('titulacion.mohrIndicatorLabel'),
               value: `pAg = ${mohrPAg.toFixed(2)} (Δ = ${(mohrPAg - curve.pAgEq).toFixed(2)})`,
             }] : []),
           ]} />
           <p className={sharpness ? 'badge ok' : 'badge warn'}>
             {sharpness
-              ? `✓ Salto nítido esperado (pKps = ${pKsp.toFixed(2)} ≥ 6)`
-              : `⚠ pKps < 6: el salto puede ser difuso`}
+              ? t('titulacion.sharpJumpMsg', { ksp: pKsp.toFixed(2) })
+              : t('titulacion.diffuseJumpMsg')}
           </p>
         </PanelSection>
 
-        <InfoBox title="Métodos de detección del punto final">
-          <p>
-            <strong>Mohr</strong> (solo Ag⁺): indicador K₂CrO₄; el Ag₂CrO₄ rojo precipita
-            al superar la equivalencia. Válido para Cl⁻ y Br⁻ en medio neutro.
-          </p>
-          <p>
-            <strong>Volhard</strong>: retrotitulación con SCN⁻ y Fe³⁺; funciona en
-            medio ácido para Cl⁻, Br⁻, I⁻ y SCN⁻.
-          </p>
-          <p>
-            <strong>Fajans</strong>: indicador de adsorción (fluoresceína); el cambio de
-            color ocurre en la superficie del precipitado en el punto de equivalencia.
-          </p>
-          <p>
-            <strong>Otros sistemas</strong>: BaSO₄, CaC₂O₄, PbSO₄ se titulan por
-            potenciometría directa o por retrogravimetría.
-          </p>
-          <p>
-            <strong>Estequiometría</strong>: el modelo soporta cualquier proporción MmXx
-            (ej. m=2,x=1 para Ag₂CrO₄) — ajusta los coeficientes arriba si tu precipitado
-            no es 1:1.
-          </p>
+        <InfoBox title={t('titulacion.endpointMethodsTitle')}>
+          <p><strong>{t('titulacion.mohrBold')}</strong>{t('titulacion.mohrBody')}</p>
+          <p><strong>{t('titulacion.volhardBold')}</strong>{t('titulacion.volhardBody')}</p>
+          <p><strong>{t('titulacion.fajansBold')}</strong>{t('titulacion.fajansBody')}</p>
+          <p><strong>{t('titulacion.otherSystemsBold')}</strong>{t('titulacion.otherSystemsBody')}</p>
+          <p><strong>{t('titulacion.stoichiometryBold')}</strong>{t('titulacion.stoichiometryBody')}</p>
         </InfoBox>
       </PanelShell>
       <section className="plot-area">
         <Chart
           data={traces}
-          xTitle={`Volumen de ${cationName} agregado (mL)`}
+          xTitle={t('mezclas.volumeAddedLabel', { titrant: cationName })}
           yTitle={yLabel}
           xRange={[0, vMax]}
           yRange={[0, yMax]}
@@ -1183,11 +1170,11 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           }}
         />
         <ResultCardRow items={[
-          { label: 'V de equivalencia', value: `${curve.vEq.toFixed(2)} mL`, accent: true },
-          { label: 'p en equivalencia', value: curve.pAgEq.toFixed(2) },
+          { label: t('titulacion.vOfEquivalenceShort'), value: `${curve.vEq.toFixed(2)} mL`, accent: true },
+          { label: t('titulacion.pAtEquivalence'), value: curve.pAgEq.toFixed(2) },
           ...(isAgSystem && showPCation
-            ? [{ label: 'Indicador Mohr (pAg)', value: mohrPAg.toFixed(2) }]
-            : [{ label: 'pKps', value: pKsp.toFixed(2) }]),
+            ? [{ label: `${t('titulacion.mohrIndicatorLabel')} (pAg)`, value: mohrPAg.toFixed(2) }]
+            : [{ label: t('titulacion.pKspShort'), value: pKsp.toFixed(2) }]),
         ]} />
       </section>
     </>
@@ -1201,6 +1188,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
 const S_POT = 59.16; // mV / pH
 
 function PotenciometricaTitration({ mode }: { mode: Mode }) {
+  const t = useT();
   const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem());
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cAnalyte, setCAnalyte] = useState(0.1);
@@ -1267,8 +1255,8 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
       const weight = j >= 0 ? Math.abs(d1.d[j]) / maxD1 : 0;
       if (weight > bestWeight) {
         bestWeight = weight;
-        const t = -d2.d[i - 1] / (d2.d[i] - d2.d[i - 1]);
-        bestV = d2.v[i - 1] + t * (d2.v[i] - d2.v[i - 1]);
+        const frac = -d2.d[i - 1] / (d2.d[i] - d2.d[i - 1]);
+        bestV = d2.v[i - 1] + frac * (d2.v[i] - d2.v[i - 1]);
       }
     }
     return bestV;
@@ -1292,21 +1280,21 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
 
   // E = f(V) traces
   const efVTraces = useMemo<Data[]>(() => {
-    const t: Data[] = [{
+    const arr: Data[] = [{
       x: curve.volumes, y: Es, type: 'scatter', mode: 'lines', name: 'E (mV)',
       line: { width: 3, color: '#0072B2' },
       hovertemplate: 'V = %{x:.2f} mL<br>E = %{y:.1f} mV<extra></extra>',
     }];
-    if (showDeriv1) t.push({
+    if (showDeriv1) arr.push({
       x: d1.v, y: d1Scaled, type: 'scatter', mode: 'lines',
-      name: '|dE/dV| (escalada)', line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
+      name: t('titulacion.derivativeTraceNameDe'), line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
     });
-    if (showDeriv2) t.push({
+    if (showDeriv2) arr.push({
       x: d2.v, y: d2Scaled, type: 'scatter', mode: 'lines',
-      name: 'd²E/dV² (escalada)', line: { width: 2, color: '#CC79A7', dash: 'dash' }, hoverinfo: 'skip',
+      name: t('titulacion.derivativeTraceNameD2e'), line: { width: 2, color: '#CC79A7', dash: 'dash' }, hoverinfo: 'skip',
     });
-    return t;
-  }, [curve.volumes, Es, showDeriv1, showDeriv2, d1, d1Scaled, d2, d2Scaled]);
+    return arr;
+  }, [curve.volumes, Es, showDeriv1, showDeriv2, d1, d1Scaled, d2, d2Scaled, t]);
 
   const efVShapes = useMemo<Partial<Shape>[]>(() => {
     const s: Partial<Shape>[] = curve.equivalenceVolumes.map((veq) => ({
@@ -1322,7 +1310,7 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
 
   const efVAnnotations = useMemo<Partial<Annotations>[]>(() => {
     const a: Partial<Annotations>[] = curve.equivalenceVolumes.map((veq) => ({
-      x: veq, y: eMax, text: 'P.E.', showarrow: false, font: { color: '#2C3E50', size: 12 },
+      x: veq, y: eMax, text: t('titulacion.pE'), showarrow: false, font: { color: '#2C3E50', size: 12 },
     }));
     if (showDeriv2 && zeroCrossing !== null) a.push({
       x: zeroCrossing, y: eMin + eSpan * 0.1,
@@ -1330,7 +1318,7 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
       showarrow: false, font: { color: '#CC79A7', size: 10 },
     });
     return a;
-  }, [curve.equivalenceVolumes, showDeriv2, zeroCrossing, eMax, eMin, eSpan]);
+  }, [curve.equivalenceVolumes, showDeriv2, zeroCrossing, eMax, eMin, eSpan, t]);
 
   // Gran plot
   const gran = useMemo(
@@ -1340,16 +1328,16 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
 
   const granTraces = useMemo<Data[]>(() => [
     {
-      x: gran.v1, y: gran.F1, type: 'scatter', mode: 'lines', name: 'F₁ (antes del P.E.)',
+      x: gran.v1, y: gran.F1, type: 'scatter', mode: 'lines', name: t('titulacion.granBeforePE'),
       line: { width: 2.5, color: '#0072B2' },
-      hovertemplate: 'V = %{x:.2f} mL<br>F₁ = %{y:.2e}<extra>Antes P.E.</extra>',
+      hovertemplate: `V = %{x:.2f} mL<br>F₁ = %{y:.2e}<extra>${t('titulacion.granBeforePEShort')}</extra>`,
     },
     {
-      x: gran.v2, y: gran.F2, type: 'scatter', mode: 'lines', name: 'F₂ (después del P.E.)',
+      x: gran.v2, y: gran.F2, type: 'scatter', mode: 'lines', name: t('titulacion.granAfterPE'),
       line: { width: 2.5, color: '#D55E00', dash: 'dash' },
-      hovertemplate: 'V = %{x:.2f} mL<br>F₂ = %{y:.2e}<extra>Después P.E.</extra>',
+      hovertemplate: `V = %{x:.2f} mL<br>F₂ = %{y:.2e}<extra>${t('titulacion.granAfterPEShort')}</extra>`,
     },
-  ], [gran]);
+  ], [gran, t]);
 
   const granShapes = useMemo<Partial<Shape>[]>(
     () => curve.equivalenceVolumes.map((veq) => ({
@@ -1373,11 +1361,11 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
   const diagrams = [
     {
       id: 'efV',
-      label: 'E = f(V)',
+      label: t('titulacion.efVTab'),
       node: (
         <Chart
           data={efVTraces}
-          xTitle={`Volumen de ${titrantName} (mL)`}
+          xTitle={t('titulacion.volumeOfLabel', { titrant: titrantName })}
           yTitle="E (mV)"
           xRange={[0, vMax]}
           yRange={[eMin - 20, eMax + 20]}
@@ -1390,14 +1378,14 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
     },
     {
       id: 'gran',
-      label: 'Gráfica de Gran',
+      label: t('titulacion.granChartTab'),
       node: (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           <div style={{ flex: 1, minHeight: 0 }}>
             <Chart
               data={granTraces}
-              xTitle={`Volumen de ${titrantName} (mL)`}
-              yTitle="Función de Gran F"
+              xTitle={t('titulacion.volumeOfLabel', { titrant: titrantName })}
+              yTitle={t('titulacion.granFunctionYTitle')}
               xRange={[0, vMax]}
               shapes={granShapes}
               exportName="equilibria-gran"
@@ -1405,7 +1393,7 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
             />
           </div>
           <p className="hint" style={{ margin: '4px 8px 2px' }}>
-            F₁ es lineal solo <em>antes</em> del P.E.; F₂ es lineal solo <em>después</em>. Las colas curvas son artefacto — extrapolando el segmento lineal hasta F=0 se obtiene V<sub>eq</sub>.
+            {t('titulacion.granOnlyBeforeAfterHint')}<em>{t('titulacion.beforeEm')}</em>{t('titulacion.granOnlyMid')}<em>{t('titulacion.afterEm')}</em>{t('titulacion.granOnlySuffix')}<sub>eq</sub>.
           </p>
         </div>
       ),
@@ -1415,14 +1403,18 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
   const veqFromZero = zeroCrossing;
   const veqFromCurve = curve.equivalenceVolumes[curve.equivalenceVolumes.length - 1];
 
+  const systemKind = analyteKind === 'equilibrium'
+    ? system.pKas.length > 1 ? t('titulacion.kindPolyprotic') : t('titulacion.kindWeak')
+    : analyteKind === 'strong-base' ? t('titulacion.kindStrongBase') : t('titulacion.kindStrongAcid');
+
   return (
     <>
-      <PanelShell title="Titulación potenciométrica" onReset={reset} moduleId="titulacion">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('titulacion.potentiometricTitle')} onReset={reset} moduleId="titulacion">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
           <Segmented
             options={[
-              { value: 'base', label: 'Titulante básico' },
-              { value: 'acid', label: 'Titulante ácido' },
+              { value: 'base', label: t('titulacion.titrantBaseSeg') },
+              { value: 'acid', label: t('titulacion.titrantAcidSeg') },
             ]}
             value={titrantIsAcid ? 'acid' : 'base'}
             onChange={(v) => {
@@ -1432,68 +1424,59 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
             }}
           />
           <ModelBadge
-            model={`titulación potenciométrica (titulante ${titrantIsAcid ? 'ácido' : 'básico'}) de ${
-              analyteKind === 'equilibrium'
-                ? system.pKas.length > 1 ? 'sistema poliprótico' : 'sistema débil'
-                : analyteKind === 'strong-base' ? 'base fuerte' : 'ácido fuerte'
-            }`}
-            additions={[showDeriv1 && 'primera derivada', showDeriv2 && 'segunda derivada']}
+            model={t('titulacion.potentiometricModelBadge', {
+              titrant: titrantIsAcid ? t('titulacion.titrantAcidWord') : t('titulacion.titrantBaseWord'),
+              kind: systemKind,
+            })}
+            additions={[showDeriv1 && t('titulacion.addFirstDerivative'), showDeriv2 && t('titulacion.addSecondDerivative')]}
           />
           <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} allowAquaCations />
         </PanelSection>
-        <PanelSection title="Condiciones" icon="⚗">
-          <ConcSlider label="Concentración del analito" value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
-          <Slider label="Volumen de la muestra" value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
-          <ConcSlider label={`Concentración de ${titrantName}`} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+          <ConcSlider label={t('titulacion.analyteConcLabel')} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
+          <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
+          <ConcSlider label={t('titulacion.concOfLabel', { name: titrantName })} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
         </PanelSection>
-        <PanelSection title="Electrodo de vidrio" icon="✦">
+        <PanelSection title={t('titulacion.glassElectrodeSection')} icon="✦">
           <Slider
-            label="K_ref (constante del electrodo, mV)"
+            label={t('titulacion.krefLabel')}
             helpId="Kref"
             value={Kref} min={0} max={800} step={10}
             onChange={setKref} decimals={0}
           />
-          <p className="hint">E = K_ref − 59.16·pH · S ≈ 59 mV/pH a 25 °C (factor de Nernst)</p>
-          <Toggle label="Mostrar |dE/dV| (1.ª derivada)" checked={showDeriv1} onChange={setShowDeriv1} />
-          <Toggle label="Mostrar d²E/dV² (2.ª derivada)" checked={showDeriv2} onChange={setShowDeriv2} />
+          <p className="hint">{t('titulacion.nernstHint')}</p>
+          <Toggle label={t('titulacion.showFirstDerivativeToggle')} checked={showDeriv1} onChange={setShowDeriv1} />
+          <Toggle label={t('titulacion.showSecondDerivativeToggle')} checked={showDeriv2} onChange={setShowDeriv2} />
         </PanelSection>
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: 'V_eq (del balance exacto)', value: `${veqFromCurve?.toFixed(2) ?? '—'} mL` },
+            { label: t('titulacion.veqExactBalanceLabel'), value: `${veqFromCurve?.toFixed(2) ?? '—'} mL` },
             ...(showDeriv2 ? [{
-              label: 'V_eq (cruce d²E/dV² = 0)',
+              label: t('titulacion.veqZeroCrossingLabel'),
               value: veqFromZero !== null ? `${veqFromZero.toFixed(2)} mL` : '—',
             }] : []),
-            { label: 'E en el P.E.', value: veqFromCurve !== undefined ? (() => {
+            { label: t('titulacion.eAtPELabel'), value: veqFromCurve !== undefined ? (() => {
                 const idx = curve.volumes.findIndex((v) => v >= veqFromCurve);
                 return idx > 0 ? `${Es[idx].toFixed(1)} mV (pH ${curve.pHs[idx].toFixed(2)})` : '—';
               })() : '—' },
           ]} />
         </PanelSection>
-        <InfoBox title="Métodos de localización del P.E.">
+        <InfoBox title={t('titulacion.endpointLocationTitle')}>
+          <p><strong>{t('titulacion.firstDerivBold')}</strong>{t('titulacion.firstDerivBody')}</p>
+          <p><strong>{t('titulacion.secondDerivBold')}</strong>{t('titulacion.secondDerivBody')}</p>
           <p>
-            <strong>1.ª derivada</strong>: el máximo de |dE/dV| señala el punto de inflexión
-            (punto de equivalencia). Ambiguo si el salto es asimétrico.
-          </p>
-          <p>
-            <strong>2.ª derivada</strong>: el cruce por cero de d²E/dV² es más preciso y no
-            depende de la simetría del salto. Es el estándar en instrumentación moderna.
-          </p>
-          <p>
-            <strong>Gráfica de Gran</strong>: linealiza el segmento pre- y post-equivalencia.
-            F₁ = (V₀+V)·[H⁺] cae a cero en V_eq; F₂ = (V₀+V)·[OH⁻] sube desde cero.
-            Excelente para detectar P.E. con <strong>poco salto</strong>.
+            <strong>{t('titulacion.granChartBold')}</strong>{t('titulacion.granChartBodyPrefix')}<strong>{t('titulacion.smallJumpBold')}</strong>.
           </p>
         </InfoBox>
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="efV" />
         <ResultCardRow items={[
-          { label: 'V de equivalencia', value: veqFromCurve !== undefined ? `${veqFromCurve.toFixed(2)} mL` : '—', accent: true },
+          { label: t('titulacion.vOfEquivalenceShort'), value: veqFromCurve !== undefined ? `${veqFromCurve.toFixed(2)} mL` : '—', accent: true },
           ...(showDeriv2 && veqFromZero !== null
-            ? [{ label: 'V_eq (d²E/dV²=0)', value: `${veqFromZero.toFixed(2)} mL` }]
+            ? [{ label: t('titulacion.vEqZeroCrossingShort'), value: `${veqFromZero.toFixed(2)} mL` }]
             : []),
-          { label: 'E en el P.E.', value: veqFromCurve !== undefined ? (() => {
+          { label: t('titulacion.eAtPELabel'), value: veqFromCurve !== undefined ? (() => {
               const idx = curve.volumes.findIndex((v) => v >= veqFromCurve);
               return idx > 0 ? `${Es[idx].toFixed(0)} mV` : '—';
             })() : '—' },
@@ -1505,21 +1488,21 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
 
 /* ───────────────────────── Contenedor ───────────────────────── */
 
-const MODES: { value: Mode; label: string }[] = [
-  { value: 'acidobase', label: 'Ácido-base' },
-  { value: 'edta', label: 'Complejométrica' },
-  { value: 'redox', label: 'Redox' },
-  { value: 'precip', label: 'Precipitación' },
-  { value: 'potenciometrica', label: 'Potenciométrica' },
-];
-
 export default function Titulacion() {
+  const t = useT();
+  const MODES: { value: Mode; label: string }[] = [
+    { value: 'acidobase', label: t('titulacion.modeAcidBase') },
+    { value: 'edta', label: t('titulacion.modeEdta') },
+    { value: 'redox', label: t('titulacion.modeRedox') },
+    { value: 'precip', label: t('titulacion.modePrecip') },
+    { value: 'potenciometrica', label: t('titulacion.modePotentiometric') },
+  ];
   const [mode, setMode] = useState<Mode>(initialTitulacionMode);
   const modeLabel = MODES.find((m) => m.value === mode)?.label ?? '';
   return (
     <div className="module-with-tabs">
       <details className="tit-mode-collapse" open>
-        <summary className="tit-mode-summary">Tipo de titulación: {modeLabel}</summary>
+        <summary className="tit-mode-summary">{t('titulacion.modeSummary', { mode: modeLabel })}</summary>
         <div className="chart-tabs">
           {MODES.map((m) => (
             <button

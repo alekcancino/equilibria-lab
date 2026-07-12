@@ -238,7 +238,35 @@ stray white line. Also re-tuned `Predominance2D`'s dark fill-mix target to the n
 `--plot-bg` (it was tuned to the old navy). Verified end-to-end with real-render QA across
 Home, Complejos, the Sillén 2D map, and Pourbaix, plus a light-mode regression check.
 
-### Bilingual UI — IntercambioIonico module (2026-07-12) — in progress
+### Bilingual UI — Titulacion module (2026-07-12) — in progress
+
+Fifteenth module, and the largest by far — the unified Titulaciones hub, with 5 independent
+sub-modes each implemented as its own function component: acid-base (Gran plot, indicator
+transition range, activity correction), EDTA/complexometric (direct and back-titration, shared
+metallochromic-indicator helpers `IndicadorBadges`/`IndicadorChart`, side-reactions disclosure),
+redox (oxidation/reduction, pe axis), precipitation (Mohr/Volhard/Fajans endpoint methods,
+variable MmXx stoichiometry), and potentiometric (Nernstian glass electrode, 1st/2nd derivative
+endpoint location, Gran plot). ~150 new translation keys under `titulacion.*`, reusing
+`mezclas.volumeAddedLabel`/`derivativeTraceName`, `acidoBase.systemSection`/`conditionsSection`/
+`gammaDH`/`gammaDavies`/`gammaGuntelberg`, `complejos.resultSection`, `redox.additionPHConditioned`,
+and `condicionales.divalentMetals`/`trivalentMetals` where the wording matched exactly.
+
+Two composed `ModelBadge` templates (acid-base and potentiometric) interpolate a titrant-kind
+fragment and a system-kind fragment into one sentence — verified the EN/ES word order lines up
+without reordering. Found and fixed a local-variable-shadows-`t` bug in the potentiometric
+sub-component (a bisection loop's scratch variable and the E-vs-V trace array were both named
+`t`, colliding with `const t = useT()`) — caught immediately by `tsc -b`, not by runtime QA.
+Also caught a bare untranslated `'pKps'` literal in the precipitation sub-mode's default
+ResultCardRow (Spanish anion-order notation) that needed the established `pKps → pKsp`
+notational translation, matching the `SolubilidadCondicional` precedent.
+
+Verified end-to-end with real-render QA across all 5 sub-modes in English (including the Gran
+plot, indicator badges, Mohr endpoint marker, and both derivative toggles), no console errors,
+and a full Spanish-mode regression on every sub-mode confirming zero visual drift.
+
+Remaining: translate Actividad, the last module, to complete the bilingual UI rollout (16/16).
+
+### Bilingual UI — IntercambioIonico module (2026-07-12)
 
 Fourteenth module, second and last in the Separaciones hub — the hub is now fully bilingual.
 Translated the full **IntercambioIonico** ("Ion exchange") module: the resin/application preset
@@ -513,7 +541,7 @@ one shipped.
 | Feature | Notes |
 | --- | --- |
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
-| **Bilingual UI (Spanish / English)** | 🔶 In progress — infrastructure + 14 of 16 modules shipped, Ácido-base/Redox/Solubilidad/Separaciones hubs fully bilingual (see resolved sections above). Remaining: translate Titulacion and Actividad. |
+| **Bilingual UI (Spanish / English)** | 🔶 In progress — infrastructure + 15 of 16 modules shipped, Ácido-base/Redox/Solubilidad/Separaciones/Titulaciones hubs fully bilingual (see resolved sections above). Remaining: translate Actividad, the last module. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | ✅ Done — pL–pH, pL–pX and pH–log[M] (Sillén) maps, dark-mode remap, CSV/PNG export, and the Sillén map's M1/M2 comparison + side-reaction mask all shipped (see resolved section above). |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |
