@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.7 — 2026-07-12
+
+### Bilingual UI (ES/EN) — Pourbaix module
+
+- **Translated:** the full **Pourbaix** module — database-preset and custom (arbitrary species/couples) modes, the species/couple editors, and the InfoBox. Completes the Redox hub: Redox, PotencialCondicional and Pourbaix are all now bilingual.
+- Confirmed the module's database (`pourbaixSystems.json`) correctly stays Spanish, matching the established database-content precedent.
+
 ## 0.9.6 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — PotencialCondicional module
