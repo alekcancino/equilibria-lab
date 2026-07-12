@@ -1471,6 +1471,55 @@ export const translations = {
     en: '. The curved tails are an artifact — extrapolating the linear segment to F=0 gives V',
   },
   'titulacion.vEqZeroCrossingShort': { es: 'V_eq (d²E/dV²=0)', en: 'V_eq (d²E/dV²=0)' },
+
+  // ── Actividad module ────────────────────────────────────────────────────────
+  'actividad.title': { es: 'Actividad y Debye-Hückel', en: 'Activity and Debye–Hückel' },
+  'actividad.modelDH': { es: 'D-H extendida (a = 3 Å)', en: 'Extended D-H (a = 3 Å)' },
+  'actividad.modelKielland': { es: 'D-H con a por ion (Kielland)', en: 'D-H with per-ion a (Kielland)' },
+  'actividad.modelDavies': { es: 'Davies', en: 'Davies' },
+  'actividad.modelGuntelberg': { es: 'Güntelberg', en: 'Güntelberg' },
+  'actividad.gammaModelLabel': { es: 'Modelo de γ', en: 'γ model' },
+  'actividad.ionicStrengthAxisLabel': { es: 'Fuerza iónica I (M)', en: 'Ionic strength I (M)' },
+  'actividad.gammaAxisLabel': { es: 'Coeficiente de actividad γ', en: 'Activity coefficient γ' },
+  'actividad.extendedOption': { es: 'Extendida', en: 'Extended' },
+  'actividad.kiellandOption': { es: 'Kielland', en: 'Kielland' },
+  'actividad.kiellandIonLabel': { es: 'Ion (a de Kielland)', en: 'Ion (Kielland a)' },
+  'actividad.ionicChargeLabel': { es: 'Carga iónica |z|', en: 'Ionic charge |z|' },
+  'actividad.iSourceLabel': { es: 'Fuente de I', en: 'Source of I' },
+  'actividad.imposeIOption': { es: 'Imponer I', en: 'Impose I' },
+  'actividad.byElectrolyteOption': { es: 'Por electrolito', en: 'By electrolyte' },
+  'actividad.imposedIonicStrengthLabel': { es: 'Fuerza iónica I impuesta', en: 'Imposed ionic strength I' },
+  'actividad.fixedIHint': {
+    es: 'I fija: cambiar la carga z no altera I (útil para leer γ a I constante).',
+    en: 'Fixed I: changing the charge z does not change I (useful for reading γ at constant I).',
+  },
+  'actividad.electrolyteConcLabel': { es: 'Concentración del electrolito', en: 'Electrolyte concentration' },
+  'actividad.referencePHLabel': { es: 'pH de referencia', en: 'Reference pH' },
+  'actividad.gammaZ1A3Label': { es: 'γ (z = 1, a = 3 Å)', en: 'γ (z = 1, a = 3 Å)' },
+  'actividad.gammaZ2A3Label': { es: 'γ (z = 2, a = 3 Å)', en: 'γ (z = 2, a = 3 Å)' },
+  'actividad.gammaZ3A3Label': { es: 'γ (z = 3, a = 3 Å)', en: 'γ (z = 3, a = 3 Å)' },
+  'actividad.apparentPKw': { es: 'pKw aparente', en: 'Apparent pKw' },
+  'actividad.activityCoeffModelsTitle': { es: 'Modelos de coeficiente de actividad', en: 'Activity coefficient models' },
+  'actividad.dhExtendedBold': { es: 'D-H extendida', en: 'Extended D-H' },
+  'actividad.dhExtendedBody': {
+    es: ' con a = 3 Å genérico; válida hasta I ≈ 0.1 M.',
+    en: ' with a generic a = 3 Å; valid up to I ≈ 0.1 M.',
+  },
+  'actividad.kiellandBold': { es: 'Kielland', en: 'Kielland' },
+  'actividad.kiellandBody': {
+    es: ': la misma ecuación con el tamaño a tabulado por ion — ej. a = 9 Å para H⁺, 6 Å para Ca²⁺.',
+    en: ': the same equation with the size a tabulated per ion — e.g. a = 9 Å for H⁺, 6 Å for Ca²⁺.',
+  },
+  'actividad.daviesBold': { es: 'Davies', en: 'Davies' },
+  'actividad.daviesBody': {
+    es: '; sin parámetro de tamaño, usable hasta I ≈ 0.5 M. Es la forma que usa Spana/HALTAFALL.',
+    en: '; no size parameter, usable up to I ≈ 0.5 M. It is the form used by Spana/HALTAFALL.',
+  },
+  'actividad.guntelbergBold': { es: 'Güntelberg', en: 'Güntelberg' },
+  'actividad.guntelbergBody': {
+    es: ' — la forma simplificada de muchos cursos. A I = 0.2 y z = 2 da γ = 0.241, mientras la D-H extendida con a = 3 Å da 0.233: si tu libro reporta otro valor, revisa qué convención usa.',
+    en: ' — the simplified form used in many courses. At I = 0.2 and z = 2 it gives γ = 0.241, while the extended D-H with a = 3 Å gives 0.233: if your textbook reports a different value, check which convention it uses.',
+  },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type TKey = keyof typeof translations;

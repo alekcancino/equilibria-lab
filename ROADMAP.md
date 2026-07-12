@@ -238,7 +238,26 @@ stray white line. Also re-tuned `Predominance2D`'s dark fill-mix target to the n
 `--plot-bg` (it was tuned to the old navy). Verified end-to-end with real-render QA across
 Home, Complejos, the Sillén 2D map, and Pourbaix, plus a light-mode regression check.
 
-### Bilingual UI — Titulacion module (2026-07-12) — in progress
+### Bilingual UI — Actividad module, rollout complete (2026-07-12)
+
+Sixteenth and final module. Translated the full **Actividad** ("Activity and Debye–Hückel")
+module: the 4-way γ-model picker (extended D-H, Kielland with its 15-ion size database,
+Davies, Güntelberg), the "impose I" vs "by electrolyte" ionic-strength source toggle, and the
+4-paragraph InfoBox comparing all four models' equations and validity ranges. A separate
+translated `modelLabelsT` map was kept alongside the existing module-level `MODEL_LABELS` (used
+only for `exportMetadata`, which stays Spanish) — the same "translated copy for display,
+original for export" pattern used earlier for `GAMMA_MODELS` in Titulacion.
+
+This completes the bilingual UI rollout: **all 16 modules across all 7 hubs are now fully
+translated** (ES/EN), together with all shared chrome and editors. See AGENTS.md's "Language
+rules" section for the final state and the one remaining deliberate exception (`HUBS.assumptions`
+in App.tsx).
+
+Verified end-to-end with real-render QA: full module in English in both the default and
+Kielland/impose-I branches, no console errors, and a full Spanish-mode regression confirming
+zero visual drift.
+
+### Bilingual UI — Titulacion module (2026-07-12)
 
 Fifteenth module, and the largest by far — the unified Titulaciones hub, with 5 independent
 sub-modes each implemented as its own function component: acid-base (Gran plot, indicator
@@ -541,7 +560,7 @@ one shipped.
 | Feature | Notes |
 | --- | --- |
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
-| **Bilingual UI (Spanish / English)** | 🔶 In progress — infrastructure + 15 of 16 modules shipped, Ácido-base/Redox/Solubilidad/Separaciones/Titulaciones hubs fully bilingual (see resolved sections above). Remaining: translate Actividad, the last module. |
+| **Bilingual UI (Spanish / English)** | ✅ Done — all 16 modules across all 7 hubs fully bilingual (see resolved sections above). |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | ✅ Done — pL–pH, pL–pX and pH–log[M] (Sillén) maps, dark-mode remap, CSV/PNG export, and the Sillén map's M1/M2 comparison + side-reaction mask all shipped (see resolved section above). |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |

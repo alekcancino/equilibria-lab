@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useShareEffect } from '../hooks/useShareableState';
+import { useT } from '../hooks/useT';
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -51,6 +52,7 @@ function logGammaOf(model: GammaModel, z: number, I: number): number {
 
 /** Ionic activity: extended Debye-Hückel, Kielland sizes, Davies, Güntelberg (25 °C). */
 export default function Actividad() {
+  const t = useT();
   const [cIon, setCIon] = useState(0.1);
   const [z, setZ] = useState(1);
   const [pH, setPH] = useState(7);
@@ -142,6 +144,13 @@ export default function Actividad() {
     ...(model === 'kielland' ? { Ion: ion.label, 'a / Å': String(ion.a) } : {}),
   }), [model, zEff, cIon, I, ion]);
 
+  const modelLabelsT: Record<GammaModel, string> = {
+    dh: t('actividad.modelDH'),
+    kielland: t('actividad.modelKielland'),
+    davies: t('actividad.modelDavies'),
+    guntelberg: t('actividad.modelGuntelberg'),
+  };
+
   const tabs = [
     {
       id: 'gamma',
@@ -149,8 +158,8 @@ export default function Actividad() {
       node: (
         <Chart
           data={gammaTraces}
-          xTitle="Fuerza iónica I (M)"
-          yTitle="Coeficiente de actividad γ"
+          xTitle={t('actividad.ionicStrengthAxisLabel')}
+          yTitle={t('actividad.gammaAxisLabel')}
           xRange={[0, 2]}
           yRange={[0, 1.05]}
           shapes={I > 0 ? [{
@@ -166,20 +175,20 @@ export default function Actividad() {
 
   return (
     <div className="module">
-      <PanelShell title="Actividad y Debye-Hückel" onReset={reset} moduleId="actividad">
-        <PanelSection title="Sistema" icon="⚛">
-          <ModelBadge model={MODEL_LABELS[model]} />
+      <PanelShell title={t('actividad.title')} onReset={reset} moduleId="actividad">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+          <ModelBadge model={modelLabelsT[model]} />
           <div className="control">
             <div className="control-header">
-              <span className="control-label">Modelo de γ</span>
+              <span className="control-label">{t('actividad.gammaModelLabel')}</span>
             </div>
             <div style={{ marginTop: 6 }}>
               <Segmented
                 options={[
-                  { value: 'dh', label: 'Extendida' },
-                  { value: 'kielland', label: 'Kielland' },
-                  { value: 'davies', label: 'Davies' },
-                  { value: 'guntelberg', label: 'Güntelberg' },
+                  { value: 'dh', label: t('actividad.extendedOption') },
+                  { value: 'kielland', label: t('actividad.kiellandOption') },
+                  { value: 'davies', label: t('actividad.modelDavies') },
+                  { value: 'guntelberg', label: t('actividad.modelGuntelberg') },
                 ]}
                 value={model}
                 onChange={(v) => setModel(isValidModel(v) ? v : 'dh')}
@@ -189,7 +198,7 @@ export default function Actividad() {
           {model === 'kielland' ? (
             <div className="control">
               <div className="control-header">
-                <span className="control-label">Ion (a de Kielland)</span>
+                <span className="control-label">{t('actividad.kiellandIonLabel')}</span>
                 <span className="control-value">a = {ion.a} Å · z = {ion.z}</span>
               </div>
               <select
@@ -206,7 +215,7 @@ export default function Actividad() {
           ) : (
             <div className="control">
               <div className="control-header">
-                <span className="control-label">Carga iónica |z|</span>
+                <span className="control-label">{t('actividad.ionicChargeLabel')}</span>
                 <span className="control-value">{z}</span>
               </div>
               <div className="segmented" style={{ marginTop: 6 }}>
@@ -219,16 +228,16 @@ export default function Actividad() {
             </div>
           )}
         </PanelSection>
-        <PanelSection title="Condiciones" icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
           <div className="control">
             <div className="control-header">
-              <span className="control-label">Fuente de I</span>
+              <span className="control-label">{t('actividad.iSourceLabel')}</span>
             </div>
             <div style={{ marginTop: 6 }}>
               <Segmented
                 options={[
-                  { value: 'impose', label: 'Imponer I' },
-                  { value: 'electrolyte', label: 'Por electrolito' },
+                  { value: 'impose', label: t('actividad.imposeIOption') },
+                  { value: 'electrolyte', label: t('actividad.byElectrolyteOption') },
                 ]}
                 value={iMode}
                 onChange={(v) => setIMode(v as 'impose' | 'electrolyte')}
@@ -237,20 +246,20 @@ export default function Actividad() {
           </div>
           {iMode === 'impose' ? (
             <>
-              <ConcSlider label="Fuerza iónica I impuesta" helpId="ionicStrength" value={iDirect} onChange={setIDirect} min={-3} max={0} />
-              <p className="hint">I fija: cambiar la carga z no altera I (útil para leer γ a I constante).</p>
+              <ConcSlider label={t('actividad.imposedIonicStrengthLabel')} helpId="ionicStrength" value={iDirect} onChange={setIDirect} min={-3} max={0} />
+              <p className="hint">{t('actividad.fixedIHint')}</p>
             </>
           ) : (
-            <ConcSlider label="Concentración del electrolito" value={cIon} onChange={setCIon} min={-3} max={0} />
+            <ConcSlider label={t('actividad.electrolyteConcLabel')} value={cIon} onChange={setCIon} min={-3} max={0} />
           )}
-          <Slider label="pH de referencia" value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
+          <Slider label={t('actividad.referencePHLabel')} value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
         </PanelSection>
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: 'Fuerza iónica I', value: formatMolar(I) },
-            { label: model === 'kielland' ? 'γ (z = 1, a = 3 Å)' : 'γ (z = 1)', value: gamma1.toFixed(3) },
-            { label: model === 'kielland' ? 'γ (z = 2, a = 3 Å)' : 'γ (z = 2)', value: gamma2.toFixed(3) },
-            { label: model === 'kielland' ? 'γ (z = 3, a = 3 Å)' : 'γ (z = 3)', value: gamma3.toFixed(3) },
+            { label: t('acidoBase.ionicStrengthLabel'), value: formatMolar(I) },
+            { label: model === 'kielland' ? t('actividad.gammaZ1A3Label') : 'γ (z = 1)', value: gamma1.toFixed(3) },
+            { label: model === 'kielland' ? t('actividad.gammaZ2A3Label') : 'γ (z = 2)', value: gamma2.toFixed(3) },
+            { label: model === 'kielland' ? t('actividad.gammaZ3A3Label') : 'γ (z = 3)', value: gamma3.toFixed(3) },
             {
               label: model === 'kielland' ? `log γ (${ion.label})` : `log γ (z = ${z})`,
               value: logGammaMain.toFixed(3),
@@ -258,28 +267,22 @@ export default function Actividad() {
             ...(model === 'kielland'
               ? [{ label: `γ (${ion.label})`, value: gammaMain.toFixed(3) }]
               : []),
-            { label: 'pKw aparente', value: pKwApp.toFixed(2), helpId: 'pKwApp' },
+            { label: t('actividad.apparentPKw'), value: pKwApp.toFixed(2), helpId: 'pKwApp' },
             { label: 'a_H ≈ γ·[H⁺]', value: formatSci(gammaH * Math.pow(10, -pH)) },
           ]} />
         </PanelSection>
-        <InfoBox title="Modelos de coeficiente de actividad">
+        <InfoBox title={t('actividad.activityCoeffModelsTitle')}>
           <p>
-            <strong>D-H extendida</strong>: <code>log γ = −0.51 z² √I / (1 + 0.33·a·√I)</code> con
-            a = 3 Å genérico; válida hasta I ≈ 0.1 M.
+            <strong>{t('actividad.dhExtendedBold')}</strong>: <code>log γ = −0.51 z² √I / (1 + 0.33·a·√I)</code>{t('actividad.dhExtendedBody')}
           </p>
           <p>
-            <strong>Kielland</strong>: la misma ecuación con el tamaño a tabulado por ion —
-            ej. a = 9 Å para H⁺, 6 Å para Ca²⁺.
+            <strong>{t('actividad.kiellandBold')}</strong>{t('actividad.kiellandBody')}
           </p>
           <p>
-            <strong>Davies</strong>: <code>log γ = −0.51 z² (√I/(1+√I) − 0.3·I)</code>; sin
-            parámetro de tamaño, usable hasta I ≈ 0.5 M. Es la forma que usa Spana/HALTAFALL.
+            <strong>{t('actividad.daviesBold')}</strong>: <code>log γ = −0.51 z² (√I/(1+√I) − 0.3·I)</code>{t('actividad.daviesBody')}
           </p>
           <p>
-            <strong>Güntelberg</strong>: <code>log γ = −0.5 z² √I/(1+√I)</code> — la forma
-            simplificada de muchos cursos. A I = 0.2 y z = 2 da γ = 0.241, mientras la D-H
-            extendida con a = 3 Å da 0.233: si tu libro reporta otro valor, revisa qué
-            convención usa.
+            <strong>{t('actividad.guntelbergBold')}</strong>: <code>log γ = −0.5 z² √I/(1+√I)</code>{t('actividad.guntelbergBody')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -287,14 +290,14 @@ export default function Actividad() {
         <DiagramTabs tabs={tabs} />
         <ResultCardRow items={[
           {
-            label: 'Fuerza iónica I',
+            label: t('acidoBase.ionicStrengthLabel'),
             value: Number.isFinite(I) ? formatMolar(I) : '—',
             accent: true,
           },
           { label: 'γ (z = 1)', value: Number.isFinite(gamma1) ? gamma1.toFixed(3) : '—' },
           { label: 'γ (z = 2)', value: Number.isFinite(gamma2) ? gamma2.toFixed(2) : '—' },
           { label: 'γ (z = 3)', value: Number.isFinite(gamma3) ? gamma3.toFixed(2) : '—' },
-          { label: 'pKw aparente', value: Number.isFinite(pKwApp) ? pKwApp.toFixed(2) : '—', helpId: 'pKwApp' },
+          { label: t('actividad.apparentPKw'), value: Number.isFinite(pKwApp) ? pKwApp.toFixed(2) : '—', helpId: 'pKwApp' },
         ]} />
       </section>
     </div>

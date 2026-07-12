@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.5 — 2026-07-12
+
+### Bilingual UI (ES/EN) — Actividad module, rollout complete
+
+- **Translated:** the full **Actividad** ("Activity and Debye–Hückel") module — the 4-way γ-model picker (extended D-H, Kielland with its 15-ion size database, Davies, Güntelberg), the "impose I" vs "by electrolyte" ionic-strength source toggle, and the 4-paragraph InfoBox comparing all four models.
+- **This completes the bilingual UI rollout: all 16 modules across all 7 hubs are now fully translated (ES/EN).**
+
 ## 0.10.4 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — Titulacion module
