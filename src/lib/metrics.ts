@@ -7,25 +7,45 @@
 //     reaches X% (X ∈ {10,50,90}), solved by bisection.
 //
 // Exact definitions:
-//   % formed (1:1 complex)       = ñ·100          (ñ = bjerrumNumber)
-//   % dissociated                = (1 − ñ)·100
+//   % formed (any ladder MLₙ)    = (1 − α_free)·100
+//   % dissociated                = α_free·100
 //   % acid-base species at pH    = αᵢ·100
 //   fraction formed at Co (excess ligand) = K'·Co / (1 + K'·Co)
 
-import { bjerrumNumber } from './complexation';
+import { complexFractions } from './complexation';
 import { alphaFractions } from './equilibrium';
 import { alphaH, alphaOH } from './conditional';
 
-// ── Complexation percentages (1:1) ───────────────────────────────────────────
+// ── Complexation percentages ─────────────────────────────────────────────────
 
-/** Percent formed for a 1:1 complex at a given pL: ñ·100. */
-export function percentFormed(pL: number, logBetas: number[]): number {
-  return bjerrumNumber(pL, logBetas) * 100;
+/**
+ * Percent of total metal that has reacted into ANY complexed form (not free
+ * M): (1 − α_free)·100. `alphaFree` is the free-metal fraction — index 0 of
+ * whatever fraction vector the caller already has (complexFractions,
+ * twoLigandFractions, speciationFractions all put free M there by this
+ * codebase's convention), so this works unmodified for 1:1 complexes, N-step
+ * ladders (MLₙ) and coupled X–M–L systems alike.
+ *
+ * This replaces an earlier ñ·100 (bjerrumNumber, mean ligand number) formula
+ * that was only a genuine percentage for 1:1 complexes — for a 4-step ladder
+ * (e.g. Zn–NH₃) ñ itself ranges 0–4, so ñ·100 showed values like "312.5 %",
+ * which is not a physical percentage. (1 − α_free) is always in [0, 1] by
+ * construction, for any number of steps.
+ */
+export function percentComplexed(alphaFree: number): number {
+  return (1 - alphaFree) * 100;
 }
 
-/** Percent dissociated for a 1:1 complex at a given pL: (1 − ñ)·100. */
-export function percentDissociated(pL: number, logBetas: number[]): number {
-  return (1 - bjerrumNumber(pL, logBetas)) * 100;
+/**
+ * pL at which percentComplexed reaches targetPercent (bisection over pL).
+ * For a 1:1 complex this coincides with pL = log β₁ at 50 % — same value the
+ * old ñ-based formula gave, since with only two species (M, ML) the ladder
+ * and the free-metal-fraction definitions are mathematically identical.
+ */
+export function pLForPercentComplexed(logBetas: number[], targetPercent: number): number {
+  const hi = (logBetas[logBetas.length - 1] ?? 6) + 8;
+  const metric = (pL: number) => percentComplexed(complexFractions(pL, logBetas)[0] ?? 0);
+  return operatingPoint(metric, targetPercent, -4, hi);
 }
 
 // ── Acid-base species percentages ────────────────────────────────────────────
@@ -92,15 +112,6 @@ export function operatingPoint(
     if (fa * fm < 0) { b = mid; } else { a = mid; fa = fm; }
   }
   return (a + b) / 2;
-}
-
-/**
- * pL at which the percent formed of the complex reaches targetPercent (bisection over pL).
- * For a 1:1 complex, %formed = 50 occurs at pL = log β₁.
- */
-export function pLForPercentFormed(logBetas: number[], targetPercent: number): number {
-  const hi = (logBetas[logBetas.length - 1] ?? 6) + 8;
-  return operatingPoint((pL) => percentFormed(pL, logBetas), targetPercent, -4, hi);
 }
 
 /**

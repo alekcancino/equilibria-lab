@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 — 2026-07-11
+
+### Fix: "% formado" could show impossible values above 100 % (Complejos)
+
+- **Complejos**: the accent metric "% formado" used ñ·100 (bjerrumNumber, the mean ligand coordination number) as if it were a percentage. For a 1:1 complex ñ is bounded to [0, 1], so that's harmless — but for an N-step ladder (e.g. Zn–NH₃, 4 steps) ñ ranges 0–4, so the UI showed values like **"312.5 %"**, which isn't physically possible. Same bug affected the coupled X–M–L branch and the "pL para 50 %" operating point.
+- Fixed by computing every one of these from the free-metal fraction (`1 − α_free`) instead of ñ — always bounded to [0, 100] regardless of how many complexation steps the system has, and mathematically identical to the old formula for the common 1:1 case (verified: no regression). `lib/metrics.ts`'s `percentFormed`/`percentDissociated`/`pLForPercentFormed` (ñ-based, 1:1-only) are replaced by `percentComplexed`/`pLForPercentComplexed` (α_free-based, works for any ladder).
+- Audited every other percentage-based metric in the app (titrations, ion exchange, competitive precipitation, conditional constants, acid-base/speciation fractions) for the same class of bug — all are either provably bounded by construction (normalized fractions, Langmuir-type saturation formulas, explicit clamps) or are legitimately unbounded error metrics (e.g. Gran-plot % error), not mislabeled percentages.
+
 ## 0.7.0 — 2026-07-11
 
 ### Sillén map M1/M2 comparison + side-reaction mask

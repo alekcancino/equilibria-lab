@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { solvePL } from '../complexation';
+import { solvePL, complexFractions } from '../complexation';
 import {
-  percentFormed, percentDissociated, percentSpeciesAtPH,
+  percentComplexed, percentSpeciesAtPH,
   fractionFormedExcess, condLogKAtPH, operatingPoint,
-  pLForPercentFormed, pHForPercentFormed,
+  pLForPercentComplexed, pHForPercentFormed,
 } from '../metrics';
 
 const tol = (val: number, expected: number, delta = 0.02) =>
@@ -11,28 +11,39 @@ const tol = (val: number, expected: number, delta = 0.02) =>
 
 // ── % formed / dissociated (Complexation) ────────────────────────────────────
 
-describe('percentFormed / percentDissociated', () => {
+describe('percentComplexed', () => {
   it('EQ2 Q4 — logβ=[1.3], cM=cL=0.01 → % dissociated ≈ 85 %', () => {
     const logBetas = [1.3];
     const pLeq = solvePL(0.01, 0.01, logBetas);
+    const alphaFree = complexFractions(pLeq, logBetas)[0];
     // Golden value: ~85 % dissociated (equivalent to [L]free/cL).
-    tol(percentDissociated(pLeq, logBetas), 85, 2);
-    tol(percentFormed(pLeq, logBetas), 15, 2);
+    tol(alphaFree * 100, 85, 2);
+    tol(percentComplexed(alphaFree), 15, 2);
     // % formed + % dissociated = 100
-    tol(percentFormed(pLeq, logBetas) + percentDissociated(pLeq, logBetas), 100, 1e-9);
+    tol(percentComplexed(alphaFree) + alphaFree * 100, 100, 1e-9);
   });
 
   it('pL for 50 % formed in a 1:1 complex equals log β₁', () => {
-    tol(pLForPercentFormed([8], 50), 8, 0.1);
-    tol(pLForPercentFormed([1.3], 50), 1.3, 0.1);
+    tol(pLForPercentComplexed([8], 50), 8, 0.1);
+    tol(pLForPercentComplexed([1.3], 50), 1.3, 0.1);
   });
 
   it('pL for 10/90 % are symmetric around log β₁ (±1 decade)', () => {
     // For 1:1, ñ = β[L]/(1+β[L]); 10 % ⇒ β[L]=1/9, 90 % ⇒ β[L]=9.
     // pL(10%) = logβ + log9, pL(90%) = logβ − log9.
     const logB = 5;
-    tol(pLForPercentFormed([logB], 90), logB - Math.log10(9), 0.1);
-    tol(pLForPercentFormed([logB], 10), logB + Math.log10(9), 0.1);
+    tol(pLForPercentComplexed([logB], 90), logB - Math.log10(9), 0.1);
+    tol(pLForPercentComplexed([logB], 10), logB + Math.log10(9), 0.1);
+  });
+
+  it('a 4-step ladder (Zn–NH₃) never exceeds 100 %, unlike the old ñ·100 formula', () => {
+    // Reproduces the reported bug: ñ reaches ~3.13 at this pL (would show "312.5 %").
+    const logBetas = [2.21, 4.5, 6.86, 8.89]; // Zn(NH3)1..4, cumulative log β
+    const pL = 0.5; // high free [NH3] — deep into the ladder
+    const alphaFree = complexFractions(pL, logBetas)[0];
+    const pct = percentComplexed(alphaFree);
+    expect(pct).toBeGreaterThanOrEqual(0);
+    expect(pct).toBeLessThanOrEqual(100);
   });
 });
 
