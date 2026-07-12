@@ -3,11 +3,12 @@
 // translated (they're already international/language-neutral); only static
 // prose (labels, hints, button/menu text) goes through this dictionary.
 //
-// Scope of this pilot: shared chrome (nav, panel, share/save buttons) +
-// generic Controls.tsx defaults + AcidSystemEditor + the Ácido-base module.
-// Every other module's JSX stays hardcoded Spanish until translated in a
-// follow-up PR — toggling to English elsewhere simply shows Spanish there,
-// which is expected for an incremental rollout, not a bug.
+// Scope translated so far: shared chrome (nav, panel, share/save buttons) +
+// generic Controls.tsx defaults + AcidSystemEditor + SideReactionEditor +
+// the Ácido-base and Complejos modules. Every other module's JSX stays
+// hardcoded Spanish until translated in a follow-up PR — toggling to
+// English elsewhere simply shows Spanish there, which is expected for an
+// incremental rollout, not a bug.
 //
 // Every key requires BOTH `es` and `en` in the same object literal, so a
 // missing translation is a compile error, not a silent fallback.
@@ -155,7 +156,7 @@ export const translations = {
   'acidSystemEditor.z0Option3': { es: '+3 — catión acuo-ácido (Fe³⁺, Al³⁺)', en: '+3 — aqua-acid cation (Fe³⁺, Al³⁺)' },
   'acidSystemEditor.z0Hint': {
     es: 'z₀ es la carga de la especie con todos sus protones puestos. Distingue un ácido neutro (HₙA) de una base que empieza protonada (NH₄⁺, etilendiamina) o de un catión que se hidroliza (Fe³⁺). Fija el balance de carga con que se calcula el pH; para un ácido común déjalo en 0.',
-    en: 'z₀ is the charge of the species with every proton attached. It distinguishes a neutral acid (HₙA) from a base that starts protonated (NH₄⁺, ethylenediamine) or a cation that hydrolyzes (Fe³⁺). It sets the charge balance the pH is solved from; for an ordinary acid leave it at 0.',
+    en: 'z₀ is the charge of the species with every proton attached. It distinguishes a neutral acid (HₙA) from a base that starts protonated (NH₄⁺, ethylenediamine) or a cation that hydrolyzes (Fe³⁺). It sets the charge balance used to compute the pH; for an ordinary acid, leave it at 0.',
   },
   'acidSystemEditor.roleAcid': { es: 'ácido', en: 'acid' },
   'acidSystemEditor.roleBase': { es: 'base', en: 'base' },
@@ -193,7 +194,7 @@ export const translations = {
   'acidoBase.howToReadTitle': { es: 'Cómo leer estos diagramas', en: 'How to read these diagrams' },
   'acidoBase.duzpExplain': {
     es: ' (zonas de predominio): en cada tramo de pH domina una especie; las fronteras están en los pKa.',
-    en: ' (predominance zones): one species dominates each pH stretch; boundaries sit at the pKa values.',
+    en: ' (predominance zones): one species dominates each pH range, with boundaries at the pKa values.',
   },
   'acidoBase.alphaExplain': {
     es: ': fracción de cada especie vs pH; en pH = pKa las especies conjugadas se cruzan (α = 0.5).',
@@ -201,7 +202,7 @@ export const translations = {
   },
   'acidoBase.logCExplain': {
     es: ' (Sillén): log de cada concentración con las líneas H₃O⁺/OH⁻. La línea rosa marca el pH real de la disolución pura.',
-    en: ' (Sillén): log of each concentration with the H₃O⁺/OH⁻ lines. The pink line marks the real pH of the pure solution.',
+    en: ' (Sillén): log of each concentration with the H₃O⁺/OH⁻ lines. The pink line marks the actual pH of the pure solution.',
   },
   'acidoBase.saltFormTitle': { es: '¿Disolviste la sal de una forma intermedia?', en: 'Did you dissolve an intermediate salt form?' },
   'acidoBase.saltFormBody1': {
@@ -228,6 +229,158 @@ export const translations = {
   'acidoBase.pctDominantSpeciesFallback': { es: 'especie dom.', en: 'dominant species' },
   'acidoBase.transitionPH': { es: 'pH 50 % transición (pKa)', en: 'pH 50 % transition (pKa)' },
   'acidoBase.speciesFallback': { es: 'Especie {n}', en: 'Species {n}' },
+
+  // ── Shared SideReactionEditor (Ringbom side-reaction / auxiliary-ligand
+  //    stack) — also reused by EspeciacionMetal/PotencialCondicional/
+  //    ConstantesCondicionales/IntercambioIonico/SolubilidadCondicional/
+  //    Titulación, none translated yet, so this editor may show as an
+  //    English island there until their own turn. ──────────────────────────
+  'sideReactionEditor.ligandPKasTitle': { es: 'pKas del ligando Y (EDTA por defecto)', en: 'pKas of ligand Y (EDTA by default)' },
+  'sideReactionEditor.auxLigandTitleDefault': { es: 'Ligando auxiliar α_M(L)', en: 'Auxiliary ligand α_M(L)' },
+  'sideReactionEditor.hydrolysisTitle': { es: 'Hidrólisis del metal α_M(OH)', en: 'Metal hydrolysis α_M(OH)' },
+  'sideReactionEditor.presetsLabel': { es: 'Presets (metal + ligando):', en: 'Presets (metal + ligand):' },
+  'sideReactionEditor.agentName': { es: 'Nombre del agente', en: 'Agent name' },
+  'sideReactionEditor.howMuchDissolved': { es: 'Cuánto {aux} hay disuelto', en: 'How much {aux} is dissolved' },
+  'sideReactionEditor.free': { es: '[{aux}] libre', en: 'Free [{aux}]' },
+  'sideReactionEditor.total': { es: 'Total analítica', en: 'Analytical total' },
+  'sideReactionEditor.fixedPX': { es: 'pX′ fijo', en: 'Fixed pX′' },
+  'sideReactionEditor.specModeFreeBody': {
+    es: ': concentración de equilibrio del agente ya libre.',
+    en: ': equilibrium concentration of the agent already free.',
+  },
+  'sideReactionEditor.specModeTotalBody': {
+    es: ': lo que agregaste al vaso (requiere su pKa; el resto lo reparte la protonación).',
+    en: ': what you added to the vessel (requires its pKa; protonation splits the rest).',
+  },
+  'sideReactionEditor.specModeFixedBody': {
+    es: ': fijas −log[{aux}′] directamente.',
+    en: ': you fix −log[{aux}′] directly.',
+  },
+  'sideReactionEditor.freeConcLabel': { es: '[{aux}] libre (M)', en: 'Free [{aux}] (M)' },
+  'sideReactionEditor.totalAddedLabel': { es: '{aux} total agregado (M)', en: '{aux} total added (M)' },
+  'sideReactionEditor.conjugateAcidPrefix': { es: 'pKa (ácido conjugado)', en: 'pKa (conjugate acid)' },
+  'sideReactionEditor.nh3Hint': {
+    es: 'NH₃/NH₄⁺: pKa ≈ 9.2. Glicina: usar el pKa del ácido conjugado.',
+    en: 'NH₃/NH₄⁺: pKa ≈ 9.2. Glycine: use the pKa of the conjugate acid.',
+  },
+  'sideReactionEditor.targetPX': { es: 'pX′ objetivo (−log[{aux}′])', en: 'Target pX′ (−log[{aux}′])' },
+  'sideReactionEditor.complexProtonationTitle': { es: 'Protonación / hidrólisis del complejo MY', en: 'Protonation / hydrolysis of the MY complex' },
+  'sideReactionEditor.complexHint': {
+    es: 'Ej. ZnHY (log β = 19.44) para protonación del complejo, ZnOHY (4.54) para complejo hidroxo.',
+    en: 'E.g. ZnHY (log β = 19.44) for complex protonation, ZnOHY (4.54) for the hydroxo complex.',
+  },
+
+  // ── Complejos module ───────────────────────────────────────────────────────
+  'complejos.title': { es: 'Equilibrio de complejación', en: 'Complexation equilibrium' },
+  'complejos.conditionalPXLabel': { es: 'pX′ condicional (pH {ph})', en: 'Conditional pX′ (pH {ph})' },
+  'complejos.pLAxisLabel': { es: 'pL (−log[L])', en: 'pL (−log[L])' },
+  'complejos.systemSection': { es: 'Sistema', en: 'System' },
+  'complejos.conditionsSection': { es: 'Condiciones', en: 'Conditions' },
+  'complejos.resultSection': { es: 'Resultado', en: 'Result' },
+  'complejos.model11': { es: 'complejo 1:1 (ML)', en: '1:1 complex (ML)' },
+  'complejos.modelSuccessive': { es: 'complejación sucesiva hasta ML{n}', en: 'successive complexation up to ML{n}' },
+  'complejos.additionMassBalance': { es: 'balance de masa y pL de equilibrio', en: 'mass balance and equilibrium pL' },
+  'complejos.additionCondScale': { es: 'escala pX′ condicional', en: 'conditional pX′ scale' },
+  'complejos.additionCoupled': { es: 'X–M–L acoplado (dos ligandos)', en: 'coupled X–M–L (two ligands)' },
+  'complejos.additionActivity': { es: 'β′ corregidas a I = {i} M', en: 'β′ corrected at I = {i} M' },
+  'complejos.metalLabel': { es: 'Metal (nombre libre)', en: 'Metal (free name)' },
+  'complejos.ligandLabel': { es: 'Ligando (nombre libre)', en: 'Ligand (free name)' },
+  'complejos.cmLabel': { es: 'Concentración total del metal (cM)', en: 'Total metal concentration (cM)' },
+  'complejos.clLabel': { es: 'Concentración total del ligando (cL)', en: 'Total ligand concentration (cL)' },
+  'complejos.markEquilPL': { es: 'Marcar pL de equilibrio en diagramas', en: 'Mark equilibrium pL on diagrams' },
+  'complejos.activityToggle': { es: 'Corrección de actividad (β′ a I > 0)', en: 'Activity correction (β′ at I > 0)' },
+  'complejos.ionicStrengthLabel': { es: 'Fuerza iónica I', en: 'Ionic strength I' },
+  'complejos.metalChargeLabel': { es: 'Carga del metal (zM)', en: 'Metal charge (zM)' },
+  'complejos.ligandChargeLabel': { es: 'Carga del ligando (zL)', en: 'Ligand charge (zL)' },
+  'complejos.activityHint': {
+    es: 'log β′ᵢ = log βᵢ + log γ_M + i·log γ_L − log γ(MLᵢ), con z(MLᵢ) = zM + i·zL (Debye–Hückel extendida, a = 3 Å). Un ligando neutro (zL = 0) no corrige.',
+    en: 'log β′ᵢ = log βᵢ + log γ_M + i·log γ_L − log γ(MLᵢ), with z(MLᵢ) = zM + i·zL (extended Debye–Hückel, a = 3 Å). A neutral ligand (zL = 0) needs no correction.',
+  },
+  'complejos.activityHintXBranch': { es: ' Las β de la rama X permanecen ideales.', en: ' The X branch\'s β values stay ideal.' },
+  'complejos.secondAgentLabel': { es: 'Segundo agente complejante (X)', en: 'Second complexing agent (X)' },
+  'complejos.sideModeNone': { es: 'Ninguna', en: 'None' },
+  'complejos.sideModeRingbom': { es: 'pX′ (Ringbom)', en: 'pX′ (Ringbom)' },
+  'complejos.sideModeCoupled': { es: 'X–M–L acoplada', en: 'Coupled X–M–L' },
+  'complejos.fixedPHLabel': { es: 'pH fijo', en: 'Fixed pH' },
+  'complejos.ringbomHint': { es: 'pX′ = pL + log α_M (hidrólisis + auxiliar) a pH fijo.', en: 'pX′ = pL + log α_M (hydrolysis + auxiliary) at fixed pH.' },
+  'complejos.xLigandTitle': { es: 'Ligando X ({x}) — presets y log β', en: 'Ligand X ({x}) — presets and log β' },
+  'complejos.enableAuxHint': {
+    es: 'Activa el ligando auxiliar (X) con al menos un log β para acoplar la segunda rama.',
+    en: 'Enable the auxiliary ligand (X) with at least one log β to couple the second branch.',
+  },
+  'complejos.xIsAgentBold': {
+    es: 'X es un segundo agente complejante disuelto',
+    en: 'X is a second dissolved complexing agent',
+  },
+  'complejos.xIsAgentRest': {
+    es: '(NH₃, citrato, en…) que compite con {ligand} por el metal — no el disolvente (el agua ya está en los log β).',
+    en: '(NH₃, citrate, en…) competing with {ligand} for the metal — not the solvent (water is already baked into the log β).',
+  },
+  'complejos.coupledHint': {
+    es: 'Equilibrio acoplado: M se reparte entre {ligand} y X resolviendo ambos balances de masa simultáneamente — no es el corrimiento α de Ringbom. El pH solo interviene cuando X se da como total analítico con pKa.',
+    en: 'Coupled equilibrium: M is split between {ligand} and X by solving both mass balances simultaneously — this is not the Ringbom α shift. pH only enters when X is given as an analytical total with a pKa.',
+  },
+  'complejos.pLEquilResult': { es: 'pL de equilibrio', en: 'Equilibrium pL' },
+  'complejos.noSolution': { es: 'sin solución', en: 'no solution' },
+  'complejos.noLigand': { es: 'sin ligando', en: 'no ligand' },
+  'complejos.pXEquilResult': { es: 'pX de equilibrio', en: 'Equilibrium pX' },
+  'complejos.nBarEquilResult': { es: 'n̄ en equilibrio', en: 'n̄ at equilibrium' },
+  'complejos.dominantSpecies': { es: 'Especie dominante', en: 'Dominant species' },
+  'complejos.howToReadTitle': { es: 'Cómo leer estos diagramas', en: 'How to read these diagrams' },
+  'complejos.duzpExplain': {
+    es: ': en cada tramo de pL domina una especie. La escala crece hacia la derecha (pL alto = poco ligando libre = metal sin complejarse).',
+    en: ': one species dominates each pL range. The scale grows to the right (high pL = little free ligand = metal not yet complexed).',
+  },
+  'complejos.bjerrumExplainTitle': { es: 'Bjerrum n̄', en: 'Bjerrum n̄' },
+  'complejos.bjerrumExplain': {
+    es: ': número medio de ligandos coordinados; sus inflexiones ocurren cerca de cada log Kᵢ escalonada.',
+    en: ': mean number of ligands bound (Bjerrum formation function); its inflections sit near each stepwise log Kᵢ.',
+  },
+  'complejos.alphaLogCTitle': { es: 'Distribución α / log C', en: 'α distribution / log C' },
+  'complejos.alphaLogCExplain': {
+    es: ': igual que en ácido-base pero sobre el eje pL. La línea rosa marca el pL del sistema real.',
+    en: ': same as in acid-base but over the pL axis. The pink line marks the pL of the real system.',
+  },
+  'complejos.xmlTitle': { es: 'X–M–L acoplado', en: 'Coupled X–M–L' },
+  'complejos.xmlExplain': {
+    es: ': no se modelan especies mixtas MXL (supuesto estándar). La hidrólisis puede entrar como X = OH⁻ con pX fijo = 14 − pH.',
+    en: ': mixed MXL species are not modeled (standard assumption). Hydrolysis can enter as X = OH⁻ with fixed pX = 14 − pH.',
+  },
+  'complejos.solventNote': {
+    es: 'El agua como disolvente ya está incluida: los log β son relativos al acuocomplejo M(H₂O)ₙ. Un disolvente coordinante (ej. NH₃) se modela como X con concentración libre fija alta.',
+    en: 'Water as solvent is already accounted for: the log β values are relative to the aqua complex M(H₂O)ₙ. A coordinating solvent (e.g. NH₃) is modeled as X with a high fixed free concentration.',
+  },
+  'complejos.pctFormed': { es: '% formado', en: '% formed' },
+  'complejos.pctFree': { es: '% libre (disociado)', en: '% free (dissociated)' },
+  'complejos.pctInX': { es: '% en {x}', en: '% in {x}' },
+  'complejos.pLFor50': { es: 'pL para 50 %', en: 'pL for 50 %' },
+  'complejos.pXEquilPH': { es: 'pX′ equilibrio', en: 'pX′ equilibrium' },
+  'complejos.pLEquilPH': { es: 'pL equilibrio', en: 'pL equilibrium' },
+  'complejos.pXEquilibrium': { es: 'pX equilibrio', en: 'pX equilibrium' },
+  'complejos.nBarEquilibrium': { es: 'n̄ equilibrio', en: 'n̄ equilibrium' },
+  'complejos.dominant': { es: 'Dominante', en: 'Dominant' },
+  'complejos.tabEquil': { es: 'Equilibrio (pL)', en: 'Equilibrium (pL)' },
+  'complejos.tabDUZP': { es: 'DUZP', en: 'DUZP' },
+  'complejos.tabAlpha': { es: 'Distribución α', en: 'α distribution' },
+  'complejos.tabBjerrum': { es: 'Bjerrum n̄', en: 'Bjerrum n̄' },
+  'complejos.tabLogC': { es: 'log C', en: 'log C' },
+  'complejos.tabMap2D': { es: 'Mapa 2D (pL–pX)', en: '2D map (pL–pX)' },
+  'complejos.alphaFraction': { es: 'Fracción α', en: 'α fraction' },
+  'complejos.duzpCaption': { es: 'Zonas de predominio', en: 'Predominance zones' },
+  'complejos.bjerrumYTitle': { es: 'n̄ (ligandos coordinados)', en: 'n̄ (ligands bound)' },
+  'complejos.map2dCaption': { es: 'Zonas de predominio en 2D', en: '2D predominance zones' },
+  'complejos.map2dEquilLabel': { es: 'equilibrio', en: 'equilibrium' },
+  'complejos.map2dEmptyPrefix': { es: 'Activa el modo', en: 'Enable the' },
+  'complejos.map2dEmptyModeBold': { es: 'X–M–L acoplado', en: 'coupled X–M–L' },
+  'complejos.map2dEmptyMid': {
+    es: '(un segundo agente complejante con log β) para dibujar el mapa 2D pL–pX. Con un solo ligando la predominancia es 1D — usa la pestaña',
+    en: 'mode (a second complexing agent with a log β) to draw the pL–pX 2D map. With a single ligand, predominance is 1D — use the',
+  },
+  'complejos.map2dEmptyOr': { es: 'o', en: 'or' },
+  'complejos.map2dEmptySuffix': { es: '.', en: ' tab.' },
+  'complejos.dbExamples': { es: 'Ejemplos de la base de datos', en: 'Database examples' },
+  'complejos.equilMarker': { es: 'equil. · {axis} {value}', en: 'equil. · {axis} {value}' },
+  'complejos.speciesFallback': { es: 'ML{n}', en: 'ML{n}' },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type TKey = keyof typeof translations;

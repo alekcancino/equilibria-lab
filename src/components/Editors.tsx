@@ -160,8 +160,8 @@ export function SideReactionEditor({
   state,
   onChange,
   showLigandPKas = true,
-  ligandTitle = 'pKas del ligando Y (EDTA por defecto)',
-  auxLigandTitle = 'Ligando auxiliar α_M(L)',
+  ligandTitle,
+  auxLigandTitle,
   showComplexSection = true,
   showHydrolysisSection = true,
 }: {
@@ -183,6 +183,7 @@ export function SideReactionEditor({
    * consumes the auxiliary-ligand section (OH enters as X with fixed pX). */
   showHydrolysisSection?: boolean;
 }) {
+  const t = useT();
   const set = <K extends keyof SideReactionEditorState>(k: K, v: SideReactionEditorState[K]) =>
     onChange({ ...state, [k]: v });
 
@@ -195,7 +196,7 @@ export function SideReactionEditor({
     <>
       {showLigandPKas && (
         <details className="section-collapse">
-          <summary className="section-collapse-title">{ligandTitle}</summary>
+          <summary className="section-collapse-title">{ligandTitle ?? t('sideReactionEditor.ligandPKasTitle')}</summary>
           <ConstantList
             prefix="pKa"
             helpId="pKa"
@@ -216,7 +217,7 @@ export function SideReactionEditor({
         open={state.showOH}
         onToggle={(e) => set('showOH', (e.target as HTMLDetailsElement).open)}
       >
-        <summary className="section-collapse-title">Hidrólisis del metal α_M(OH)</summary>
+        <summary className="section-collapse-title">{t('sideReactionEditor.hydrolysisTitle')}</summary>
         <ConstantList
           prefix="log β(OH)"
           helpId="logBetaOH"
@@ -239,8 +240,8 @@ export function SideReactionEditor({
         open={state.showAux}
         onToggle={(e) => set('showAux', (e.target as HTMLDetailsElement).open)}
       >
-        <summary className="section-collapse-title">{auxLigandTitle}</summary>
-        <p className="hint" style={{ marginBottom: 6 }}>Presets (metal + ligando):</p>
+        <summary className="section-collapse-title">{auxLigandTitle ?? t('sideReactionEditor.auxLigandTitleDefault')}</summary>
+        <p className="hint" style={{ marginBottom: 6 }}>{t('sideReactionEditor.presetsLabel')}</p>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
           {COMPLEX_PRESETS.map((cp) => (
             <button
@@ -260,7 +261,7 @@ export function SideReactionEditor({
             </button>
           ))}
         </div>
-        <LabelField label="Nombre del agente" value={state.auxLabel} onChange={(v) => set('auxLabel', v)} />
+        <LabelField label={t('sideReactionEditor.agentName')} value={state.auxLabel} onChange={(v) => set('auxLabel', v)} />
         <ConstantList
           prefix="log β"
           helpId="logBeta"
@@ -272,14 +273,14 @@ export function SideReactionEditor({
         />
         <div className="control">
           <div className="control-header">
-            <span className="control-label">Cuánto {aux} hay disuelto</span>
+            <span className="control-label">{t('sideReactionEditor.howMuchDissolved', { aux })}</span>
             <HelpTip id="ligFree" />
           </div>
           <div className="segmented" style={{ marginTop: 6 }}>
             {([
-              { value: 'free', label: `[${aux}] libre` },
-              { value: 'total', label: 'Total analítica' },
-              { value: 'fixedPX', label: 'pX′ fijo' },
+              { value: 'free', label: t('sideReactionEditor.free', { aux }) },
+              { value: 'total', label: t('sideReactionEditor.total') },
+              { value: 'fixedPX', label: t('sideReactionEditor.fixedPX') },
             ] as const).map(({ value, label }) => (
               <button
                 key={value}
@@ -291,19 +292,19 @@ export function SideReactionEditor({
             ))}
           </div>
           <p className="hint">
-            <strong>[{aux}] libre</strong>: concentración de equilibrio del agente ya libre.{' '}
-            <strong>Total analítica</strong>: lo que agregaste al vaso (requiere su pKa; el resto lo reparte la protonación).{' '}
-            <strong>pX′ fijo</strong>: fijas −log[{aux}′] directamente.
+            <strong>{t('sideReactionEditor.free', { aux })}</strong>{t('sideReactionEditor.specModeFreeBody')}{' '}
+            <strong>{t('sideReactionEditor.total')}</strong>{t('sideReactionEditor.specModeTotalBody')}{' '}
+            <strong>{t('sideReactionEditor.fixedPX')}</strong>{t('sideReactionEditor.specModeFixedBody', { aux })}
           </p>
         </div>
         {state.auxSpecMode === 'free' && (
-          <ConcSlider label={`[${aux}] libre (M)`} helpId="ligFree" value={state.cAuxFree} onChange={(v) => set('cAuxFree', v)} />
+          <ConcSlider label={t('sideReactionEditor.freeConcLabel', { aux })} helpId="ligFree" value={state.cAuxFree} onChange={(v) => set('cAuxFree', v)} />
         )}
         {state.auxSpecMode === 'total' && (
           <>
-            <ConcSlider label={`${aux} total agregado (M)`} value={state.cAuxTotal} onChange={(v) => set('cAuxTotal', v)} min={-3} max={1} />
+            <ConcSlider label={t('sideReactionEditor.totalAddedLabel', { aux })} value={state.cAuxTotal} onChange={(v) => set('cAuxTotal', v)} min={-3} max={1} />
             <ConstantList
-              prefix="pKa (ácido conjugado)"
+              prefix={t('sideReactionEditor.conjugateAcidPrefix')}
               helpId="pKa"
               values={state.auxPKas}
               onChange={(v) => set('auxPKas', v)}
@@ -313,11 +314,11 @@ export function SideReactionEditor({
               minItems={1}
               initialValue={9.2}
             />
-            <p className="hint">NH₃/NH₄⁺: pKa ≈ 9.2. Glicina: usar el pKa del ácido conjugado.</p>
+            <p className="hint">{t('sideReactionEditor.nh3Hint')}</p>
           </>
         )}
         {state.auxSpecMode === 'fixedPX' && (
-          <Slider label={`pX′ objetivo (−log[${aux}′])`} helpId="pXprime" value={state.pXFixed} min={0} max={14} step={0.1} onChange={(v) => set('pXFixed', v)} decimals={1} />
+          <Slider label={t('sideReactionEditor.targetPX', { aux })} helpId="pXprime" value={state.pXFixed} min={0} max={14} step={0.1} onChange={(v) => set('pXFixed', v)} decimals={1} />
         )}
       </details>
 
@@ -327,7 +328,7 @@ export function SideReactionEditor({
           open={state.showComplex}
           onToggle={(e) => set('showComplex', (e.target as HTMLDetailsElement).open)}
         >
-          <summary className="section-collapse-title">Protonación / hidrólisis del complejo MY</summary>
+          <summary className="section-collapse-title">{t('sideReactionEditor.complexProtonationTitle')}</summary>
           <Slider
             label="log K (MY + H⁺ ⇌ MHY)"
             helpId="logKprotonation"
@@ -354,7 +355,7 @@ export function SideReactionEditor({
             }}
             decimals={2}
           />
-          <p className="hint">Ej. ZnHY (log β = 19.44) para protonación del complejo, ZnOHY (4.54) para complejo hidroxo.</p>
+          <p className="hint">{t('sideReactionEditor.complexHint')}</p>
         </details>
       )}
     </>
