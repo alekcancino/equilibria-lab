@@ -32,6 +32,7 @@ const INK_DARK: Record<string, string> = {
   '#95a5a6': '#7C8BA3',
   '#aaaaaa': '#5A6B85',
   '#e8ecef': '#2A3A55',
+  '#94a3b8': '#B8C4D6', // solid-phase color in the 2D Sillén map (Predominance2D)
 };
 
 /**

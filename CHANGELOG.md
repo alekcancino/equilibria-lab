@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 — 2026-07-11
+
+### Dark-mode fix for the 2D predominance maps
+
+- The canvas-painted field in `Predominance2D` (pL–pH, pL–pX, Sillén pH–log[M]) ignored the active theme, always painting the light `SPECIES_COLORS` hexes regardless of dark mode. Fixed by reusing the same `toDarkColors()` remap already used by the 1D Plotly charts, and switching the fill's white-tint mix target to the app's dark plot-bg navy so filled regions read as the same surface family as the line charts instead of washed-out light patches. Added a dark twin for the Sillén map's solid-phase gray.
+
 ## 0.6.0 — 2026-07-11
 
 ### Sillén solubility map (pH–log[M])

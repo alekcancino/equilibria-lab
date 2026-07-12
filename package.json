@@ -1,6 +1,6 @@
 {
   "name": "equilibria-lab",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Interactive web simulator for chemical equilibrium — acid-base, complexation, redox, solubility, titrations, and coupled equilibria. Fully client-side, no backend required.",
   "homepage": "https://equilibria-lab.vercel.app",
   "repository": {
