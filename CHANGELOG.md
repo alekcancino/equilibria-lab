@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.3 — 2026-07-12
+
+### Bilingual UI (ES/EN) — ConstantesCondicionales module
+
+- **Translated:** the full **ConstantesCondicionales** ("Conditional K′") module — metal/ligand panel, multi-primary-reaction and second-metal comparison sections, parameters panel, result panel, both diagram tabs, and the "Ringbom's conditional constant" InfoBox.
+- Jargon fix found during literature cross-check: "reacciones parásitas" → **"side reactions"** (Ringbom's standard term), not the literal "parasitic reactions".
+- Regression bug found and fixed during QA: splitting a `<strong>`-wrapped sentence into bold/body keys had silently dropped a leading "La "/"The " article from one paragraph — fixed with a dedicated per-language prefix key, and documented as a checklist item in `AGENTS.md` for future module translations.
+
 ## 0.9.2 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — EspeciacionMetal module
