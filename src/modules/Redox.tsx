@@ -13,11 +13,13 @@ import { alphaRedox, peConditional, NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
 import { paddedAxisRange } from '../lib/format';
 import type { Zone } from '../lib/ladder';
+import { useT } from '../hooks/useT';
 
 const PE_POINTS = 400;
 
 /** Redox diagrams: DUZP + α vs pe + prediction scale (Sillén pe convention). */
 export default function Redox() {
+  const t = useT();
   const [couple1, setCouple1] = useState<CoupleState>(coupleFromPreset('fe'));
   const [couple2, setCouple2] = useState<CoupleState>(coupleFromPreset('ce'));
   const [pH, setPH] = useState(0);
@@ -100,25 +102,25 @@ export default function Redox() {
   const diagrams = [
     {
       id: 'duzp',
-      label: 'DUZP',
+      label: t('complejos.tabDUZP'),
       node: (
         <DUZP
           zones={duzpZones}
           pMin={peMin}
           pMax={peMax}
           pLabel="pe"
-          caption="Zonas de predominio (pe°′ condicional)"
+          caption={t('redox.duzpCaption')}
         />
       ),
     },
     {
       id: 'alpha',
-      label: 'Distribución α',
+      label: t('complejos.tabAlpha'),
       node: (
         <Chart
           data={alphaView.data}
           xTitle="pe"
-          yTitle="Fracción α"
+          yTitle={t('complejos.alphaFraction')}
           xRange={[peMin, peMax]}
           yRange={[0, 1.12]}
           shapes={alphaView.shapes}
@@ -130,13 +132,13 @@ export default function Redox() {
     },
     {
       id: 'escala',
-      label: 'Escala de predicción',
+      label: t('redox.tabPredictionScale'),
       node: (
         <RedoxPredictionScale
           couples={scaleCouples}
           peMin={peMin}
           peMax={peMax}
-          caption="Oxidante arriba · reductor abajo · pe°′ condicional"
+          caption={t('redox.scaleCaption')}
         />
       ),
     },
@@ -144,46 +146,42 @@ export default function Redox() {
 
   return (
     <div className="module">
-      <PanelShell title="Equilibrio redox" onReset={reset} moduleId="redox">
-        <PanelSection title="Pares redox" icon="⚛">
+      <PanelShell title={t('redox.title')} onReset={reset} moduleId="redox">
+        <PanelSection title={t('redox.couplesSection')} icon="⚛">
           <ModelBadge
-            model="predicción de reacción entre dos pares redox"
-            additions={[(couple1.mH > 0 || couple2.mH > 0) && 'potencial condicionado por pH']}
+            model={t('redox.predictionModel')}
+            additions={[(couple1.mH > 0 || couple2.mH > 0) && t('redox.additionPHConditioned')]}
           />
-          <CoupleEditor title="Par 1" couple={couple1} onChange={setCouple1} />
-          <CoupleEditor title="Par 2" couple={couple2} onChange={setCouple2} />
+          <CoupleEditor title={t('redox.couple1Title')} couple={couple1} onChange={setCouple1} />
+          <CoupleEditor title={t('redox.couple2Title')} couple={couple2} onChange={setCouple2} />
         </PanelSection>
-        <PanelSection title="Condiciones" icon="⚗">
-          <Slider label="pH del medio" value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+          <Slider label={t('redox.mediumPHLabel')} value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
         </PanelSection>
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: `pe°′ ${couple1.ox}/${couple1.red}`, value: `${pe01.toFixed(2)} (${(pe01 * NERNST_S).toFixed(3)} V)` },
-            { label: `pe°′ ${couple2.ox}/${couple2.red}`, value: `${pe02.toFixed(2)} (${(pe02 * NERNST_S).toFixed(3)} V)` },
-            { label: 'Reacción espontánea', value: `${strong.ox.ox} + ${strong.red.red}` },
+            { label: t('redox.conditionalPE', { ox: couple1.ox, red: couple1.red }), value: `${pe01.toFixed(2)} (${(pe01 * NERNST_S).toFixed(3)} V)` },
+            { label: t('redox.conditionalPE', { ox: couple2.ox, red: couple2.red }), value: `${pe02.toFixed(2)} (${(pe02 * NERNST_S).toFixed(3)} V)` },
+            { label: t('redox.spontaneousReaction'), value: `${strong.ox.ox} + ${strong.red.red}` },
             { label: 'log K', value: logK.toFixed(1) },
           ]} />
         </PanelSection>
-        <InfoBox title="Cómo leer estos diagramas">
+        <InfoBox title={t('complejos.howToReadTitle')}>
           <p>
-            <strong>DUZP</strong> (zonas de predominio): en cada tramo de pe domina una
-            especie; las fronteras están en los pe°′ condicionales de cada par.
+            <strong>{t('complejos.tabDUZP')}</strong>{t('redox.duzpExplain')}
           </p>
         </InfoBox>
-        <InfoBox title="Cómo leer la escala de predicción">
+        <InfoBox title={t('redox.scaleInfoTitle')}>
           <p>
-            En la escala de pe, cada par se coloca en su pe°′ condicional con el
-            oxidante arriba y el reductor abajo. El oxidante del par con pe°′ <em>mayor</em>{' '}
-            reacciona espontáneamente con el reductor del par con pe°′ <em>menor</em>,
-            con log K = n₁·n₂·Δpe°′. Mueve el pH y observa cómo los pares con H⁺
-            en su semirreacción se desplazan — un oxidante puede dejar de serlo al subir el pH.
+            {t('redox.scaleExplainPrefix')}<em>{t('redox.higherEm')}</em>
+            {t('redox.scaleExplainMid')}<em>{t('redox.lowerEm')}</em>{t('redox.scaleExplainSuffix')}
           </p>
         </InfoBox>
       </PanelShell>
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="alpha" />
         <ResultCardRow items={[
-          { label: 'Reacción espontánea', value: `${strong.ox.ox} + ${strong.red.red}`, accent: true },
+          { label: t('redox.spontaneousReaction'), value: `${strong.ox.ox} + ${strong.red.red}`, accent: true },
           { label: 'log K', value: logK.toFixed(1) },
         ]} />
       </section>

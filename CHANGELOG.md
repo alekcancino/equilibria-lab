@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.5 — 2026-07-12
+
+### Bilingual UI (ES/EN) — Redox module
+
+- **Translated:** the full **Redox** module (DUZP, α distribution vs pe, prediction scale) and the shared `CoupleEditor` component (also used by PotencialCondicional).
+- Handled a real EN/ES word-order mismatch in the prediction-scale explanation ("par con pe°′ mayor" vs "the couple with the higher pe°′") by giving each language's emphasized key its own "pe°′" placement instead of forcing a single shared template.
+
 ## 0.9.4 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — Mezclas module

@@ -129,19 +129,20 @@ export function CoupleEditor({
   couple: CoupleState;
   onChange: (c: CoupleState) => void;
 }) {
+  const t = useT();
   const edited = (patch: Partial<CoupleState>) =>
     onChange({ ...couple, ...patch, reference: '', caveat: undefined, name: patch.name ?? couple.name });
   return (
     <div className="editor">
       <p className="editor-title">{title}</p>
       <LabelField
-        label="Par redox (nombre libre)"
+        label={t('coupleEditor.nameLabel')}
         value={couple.name}
         onChange={(name) => onChange({ ...couple, name })}
       />
-      <Slider label="E° (V vs ENH)" value={couple.E0} min={-1} max={2} step={0.01} onChange={(E0) => edited({ E0 })} decimals={2} unit="V" helpId="E0" />
-      <Slider label="n (electrones)" value={couple.n} min={1} max={6} step={1} onChange={(n) => edited({ n })} decimals={0} helpId="n" />
-      <Slider label="m H⁺ (protones en la semirreacción)" value={couple.mH} min={0} max={14} step={1} onChange={(mH) => edited({ mH })} decimals={0} helpId="mH" />
+      <Slider label={t('coupleEditor.e0Label')} value={couple.E0} min={-1} max={2} step={0.01} onChange={(E0) => edited({ E0 })} decimals={2} unit="V" helpId="E0" />
+      <Slider label={t('coupleEditor.nLabel')} value={couple.n} min={1} max={6} step={1} onChange={(n) => edited({ n })} decimals={0} helpId="n" />
+      <Slider label={t('coupleEditor.mHLabel')} value={couple.mH} min={0} max={14} step={1} onChange={(mH) => edited({ mH })} decimals={0} helpId="mH" />
       {couple.caveat && <p className="badge warn">⚠ {couple.caveat}</p>}
       <DbPanel
         items={REDOX_COUPLES.map((c) => ({
