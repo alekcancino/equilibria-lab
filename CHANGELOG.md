@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.9 — 2026-07-12
+
+### Bilingual UI (ES/EN) — SolubilidadSal module
+
+- **Translated:** the full **SolubilidadSal** ("Solubility and pH") module — the reusable salt editor, the 1- or 2-system comparison, both diagram tabs (log S = f(pH) and α distribution), and the InfoBox.
+
 ## 0.9.8 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — Solubilidad module

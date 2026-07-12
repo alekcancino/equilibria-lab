@@ -11,6 +11,7 @@ import {
 import { alphaFractions } from '../lib/equilibrium';
 import { logActivityCoefficient } from '../lib/activity';
 import { formatMolar } from '../lib/format';
+import { useT } from '../hooks/useT';
 
 // ── Database ───────────────────────────────────────────────────────────────────
 
@@ -111,6 +112,7 @@ function SalEditor({ sal, onChange }: {
   sal: SalState;
   onChange: (patch: Partial<SalState>) => void;
 }) {
+  const t = useT();
   const activePreset = PRESETS.find(
     (p) => p.name === sal.name && p.pKsp === sal.pKsp && p.p === sal.p && p.q === sal.q && p.zM === sal.zM,
   );
@@ -131,29 +133,28 @@ function SalEditor({ sal, onChange }: {
         ))}
       </div>
 
-      <LabelField label="Nombre del sólido" value={sal.name} onChange={(name) => onChange({ name })} />
-      <LabelField label="Nombre del anión" value={sal.anionName} onChange={(anionName) => onChange({ anionName })} />
+      <LabelField label={t('solubilidadSal.solidNameLabel')} value={sal.name} onChange={(name) => onChange({ name })} />
+      <LabelField label={t('solubilidadSal.anionNameLabel')} value={sal.anionName} onChange={(anionName) => onChange({ anionName })} />
       <Slider label="pKps" helpId="pKsp" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
 
-      <NumberSegmented label="Estequiometría p (catión)" value={sal.p} options={[1, 2, 3]} onChange={(p) => onChange({ p })} />
-      <NumberSegmented label="Estequiometría q (anión)" value={sal.q} options={[1, 2, 3]} onChange={(q) => onChange({ q })} />
+      <NumberSegmented label={t('solubilidadSal.stoichiometryP')} value={sal.p} options={[1, 2, 3]} onChange={(p) => onChange({ p })} />
+      <NumberSegmented label={t('solubilidadSal.stoichiometryQ')} value={sal.q} options={[1, 2, 3]} onChange={(q) => onChange({ q })} />
       <NumberSegmented
-        label="Carga del catión zM"
+        label={t('solubilidadSal.cationChargeLabel')}
         value={sal.zM}
         suffix="+"
         options={[1, 2, 3, 4]}
         onChange={(zM) => onChange({ zM })}
         hint={(
           <>
-            Solo afecta la corrección por actividad (I &gt; 0) — a I = 0 no cambia la curva.
-            Carga del anión implícita por electroneutralidad: zX = p·zM/q = {((sal.p * sal.zM) / sal.q).toFixed(2)}
-            {!Number.isInteger((sal.p * sal.zM) / sal.q) && ' (no entero — revisa p, q y zM)'}.
+            {t('solubilidadSal.zMHintPrefix')}{((sal.p * sal.zM) / sal.q).toFixed(2)}
+            {!Number.isInteger((sal.p * sal.zM) / sal.q) && t('solubilidadSal.zMHintNonInteger')}.
           </>
         )}
       />
 
       <ConstantList
-        prefix="pKa (anión)"
+        prefix={t('solubilidadSal.pKaAnionPrefix')}
         helpId="pKa"
         values={sal.pKas}
         onChange={(pKas) => onChange({ pKas })}
@@ -161,7 +162,7 @@ function SalEditor({ sal, onChange }: {
       />
       {sal.pKas.length > 0 && (
         <button className="mini-btn" style={{ marginTop: 2 }} onClick={() => onChange({ pKas: [] })}>
-          Anión de ácido fuerte (sin pKa)
+          {t('solubilidadSal.strongAcidAnionButton')}
         </button>
       )}
     </>
@@ -173,6 +174,7 @@ function SalEditor({ sal, onChange }: {
 const ALPHA_COLORS = ['#D55E00', '#E69F00', '#009E73', '#0072B2', '#CC79A7'];
 
 export default function SolubilidadSal() {
+  const t = useT();
   const [sal1, setSal1] = useState<SalState>(fromPreset(DEFAULT1));
   const [showP2, setShowP2] = useState(false);
   const [sal2, setSal2] = useState<SalState>(fromPreset(DEFAULT2));
@@ -244,17 +246,17 @@ export default function SolubilidadSal() {
 
   return (
     <div className="module">
-      <PanelShell title="Solubilidad y pH" onReset={reset} moduleId="solsal">
-        <PanelSection title="Sistema 1" icon="①">
+      <PanelShell title={t('solubilidadSal.title')} onReset={reset} moduleId="solsal">
+        <PanelSection title={t('solubilidadSal.system1Section')} icon="①">
         <ModelBadge
-          model={sal1.pKas.length === 0 ? 'solubilidad intrínseca' : 'solubilidad condicionada por pH'}
-          additions={[showP2 && 'comparación entre sistemas']}
+          model={sal1.pKas.length === 0 ? t('solubilidad.intrinsicSolubilityModel') : t('solubilidad.pHConditionedModel')}
+          additions={[showP2 && t('solubilidadSal.additionSystemComparison')]}
         />
         <SalEditor sal={sal1} onChange={(p) => setSal1((s) => ({ ...s, ...p }))} />
         </PanelSection>
 
-        <PanelSection title="Sistema 2" icon="②">
-        <Toggle label="Comparar con 2.º sistema" checked={showP2} onChange={setShowP2} />
+        <PanelSection title={t('solubilidadSal.system2Section')} icon="②">
+        <Toggle label={t('solubilidadSal.compareSecondSystem')} checked={showP2} onChange={setShowP2} />
         {showP2 && (
           <div className="mask-section">
             <SalEditor sal={sal2} onChange={(p) => setSal2((s) => ({ ...s, ...p }))} />
@@ -262,9 +264,9 @@ export default function SolubilidadSal() {
         )}
         </PanelSection>
 
-        <PanelSection title="Fuerza iónica" icon="γ">
+        <PanelSection title={t('solubilidadSal.ionicStrengthSection')} icon="γ">
           <Slider
-            label="Fuerza iónica I"
+            label={t('complejos.ionicStrengthLabel')}
             helpId="ionicStrength"
             value={ionicStrength}
             min={0} max={0.5} step={0.01}
@@ -273,21 +275,19 @@ export default function SolubilidadSal() {
           />
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
         <ResultCard items={[
-          { label: `S mínima — ${sal1.name}`, value: `log S = ${minS1.logS.toFixed(2)}  (pH ${minS1.pH.toFixed(1)})` },
-          { label: 'Fórmula (p, q)', value: `M_${sal1.p} A_${sal1.q}  →  S = (Kps / ${sal1.p ** sal1.p}·${sal1.q ** sal1.q}·αₙ^${sal1.q})^{1/${sal1.p + sal1.q}}` },
+          { label: t('solubilidadSal.minSDash', { name: sal1.name }), value: `log S = ${minS1.logS.toFixed(2)}  (pH ${minS1.pH.toFixed(1)})` },
+          { label: t('solubilidadSal.formulaPQLabel'), value: `M_${sal1.p} A_${sal1.q}  →  S = (Kps / ${sal1.p ** sal1.p}·${sal1.q ** sal1.q}·αₙ^${sal1.q})^{1/${sal1.p + sal1.q}}` },
         ]} />
         </PanelSection>
 
-        <InfoBox title="Solubilidad condicional de sales">
+        <InfoBox title={t('solubilidadSal.infoBoxTitle')}>
           <p>
-            Para M_p A_q: <code>S = (Kps / (p^p·q^q·αₙ^q))^(1/(p+q))</code>
+            {t('solubilidadSal.formulaExplainPrefix')}<code>{t('solubilidadSal.formulaExplainCode')}</code>
           </p>
           <p>
-            αₙ = fracción del anión totalmente desprotonado. A pH ácido αₙ↓ → S↑.
-            PO₄³⁻ &gt; CO₃²⁻ &gt; F⁻ &gt; SO₄²⁻ en sensibilidad al pH.
-            Anión de ácido fuerte (Cl⁻): α=1 siempre → sin dependencia de pH.
+            {t('solubilidadSal.para2')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -296,12 +296,12 @@ export default function SolubilidadSal() {
         <DiagramTabs tabs={[
           {
             id: 'logs',
-            label: 'log S = f(pH)',
+            label: t('solubilidadSal.tabLogS'),
             node: (
               <Chart
                 data={solTraces}
                 xTitle="pH"
-                yTitle="log S  (mol L⁻¹)"
+                yTitle={t('solubilidadSal.logSAxisLabel')}
                 xRange={[0, 14]}
                 yRange={yRange}
                 exportName="equilibria-sol-sal"
@@ -311,17 +311,17 @@ export default function SolubilidadSal() {
           },
           {
             id: 'alpha',
-            label: `Distribución α — ${sal1.anionName}`,
+            label: t('solubilidadSal.alphaTabLabel', { anion: sal1.anionName }),
             node: sal1.pKas.length === 0 ? (
               <div className="empty-plot">
-                <p>El anión {sal1.anionName} es la base conjugada de un ácido fuerte.</p>
-                <p className="hint">α = 1 en todo el rango de pH → solubilidad independiente del pH.</p>
+                <p>{t('solubilidadSal.strongAcidAnionText', { anion: sal1.anionName })}</p>
+                <p className="hint">{t('solubilidadSal.alphaAlwaysOneHint')}</p>
               </div>
             ) : (
               <Chart
                 data={alphaTraces}
                 xTitle="pH"
-                yTitle="Fracción molar α"
+                yTitle={t('solubilidadSal.molarFractionLabel')}
                 xRange={[0, 14]}
                 yRange={[0, 1]}
                 exportName="equilibria-sol-sal-alpha"
@@ -331,9 +331,9 @@ export default function SolubilidadSal() {
           },
         ]} />
         <ResultCardRow items={[
-          { label: `S mínima ${sal1.name}`, value: Number.isFinite(minS1.logS) ? formatMolar(Math.pow(10, minS1.logS)) : '—', accent: true },
-          { label: 'log S mínima', value: Number.isFinite(minS1.logS) ? minS1.logS.toFixed(2) : '—' },
-          { label: 'pH de S mínima', value: Number.isFinite(minS1.pH) ? minS1.pH.toFixed(1) : '—' },
+          { label: t('solubilidadSal.minSLabel', { name: sal1.name }), value: Number.isFinite(minS1.logS) ? formatMolar(Math.pow(10, minS1.logS)) : '—', accent: true },
+          { label: t('solubilidadSal.logSMinLabel'), value: Number.isFinite(minS1.logS) ? minS1.logS.toFixed(2) : '—' },
+          { label: t('solubilidadSal.pHOfMinSLabel'), value: Number.isFinite(minS1.pH) ? minS1.pH.toFixed(1) : '—' },
         ]} />
       </section>
     </div>
