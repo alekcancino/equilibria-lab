@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1 — 2026-07-12
+
+### Bilingual UI (ES/EN) — PrecipitacionCompetitiva module
+
+- **Translated:** the full **PrecipitacionCompetitiva** ("Competitive precipitation") module — fractional precipitation of two 1:1 salts sharing a common cation, the phase-selection result, both diagram tabs, and the InfoBox. Completes the Solubilidad hub: Solubilidad, SolubilidadSal, SolubilidadCondicional and PrecipitacionCompetitiva are all now bilingual.
+
 ## 0.10.0 — 2026-07-12
 
 ### Bilingual UI (ES/EN) — SolubilidadCondicional module

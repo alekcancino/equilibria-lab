@@ -13,6 +13,7 @@ import {
   type CompetitiveSalt,
 } from '../lib/solubilityCompetitive';
 import { formatMolar } from '../lib/format';
+import { useT } from '../hooks/useT';
 
 /** p-function name from an ion label: pAg from Ag⁺ (charges dropped — the
  * p-notation applies to the ion's concentration, pAg = −log[Ag⁺]). */
@@ -56,6 +57,7 @@ const PRESETS: Preset[] = [
 
 /** Competitive precipitation of two 1:1 salts sharing a cation (fractional precipitation). */
 export default function PrecipitacionCompetitiva() {
+  const t = useT();
   const [cation, setCation] = useState('Ag⁺');
   const [label1, setLabel1] = useState('Cl⁻');
   const [pKsp1, setPKsp1] = useState(9.74);
@@ -166,21 +168,21 @@ export default function PrecipitacionCompetitiva() {
   ], [sweep, label1, label2]);
 
   const phaseLabel = {
-    ninguna: 'sin precipitados',
-    sal1: `solo la sal de ${label1}`,
-    sal2: `solo la sal de ${label2}`,
-    ambas: 'ambas sales presentes',
+    ninguna: t('precipitacionCompetitiva.noPrecipitates'),
+    sal1: t('precipitacionCompetitiva.onlySaltOf', { label: label1 }),
+    sal2: t('precipitacionCompetitiva.onlySaltOf', { label: label2 }),
+    ambas: t('precipitacionCompetitiva.bothSaltsPresent'),
   }[eq.phases];
 
   const diagrams = [
     {
       id: 'pct',
-      label: '% precipitado',
+      label: t('precipitacionCompetitiva.pctPrecipitatedLabel'),
       node: (
         <Chart
           data={pctTraces}
-          xTitle={`${pIon(cation)} (−log[${cation}]) — añadir ${cation} avanza hacia la derecha`}
-          yTitle="% precipitado"
+          xTitle={t('precipitacionCompetitiva.pctXTitle', { pIon: pIon(cation), cation })}
+          yTitle={t('precipitacionCompetitiva.pctPrecipitatedLabel')}
           xRange={[pMax, pMin]}
           yRange={[0, 102]}
           shapes={windowShapes}
@@ -191,12 +193,12 @@ export default function PrecipitacionCompetitiva() {
     },
     {
       id: 'logx',
-      label: 'log [X] libre',
+      label: t('precipitacionCompetitiva.tabLogXFree'),
       node: (
         <Chart
           data={logXTraces}
           xTitle={`${pIon(cation)} (−log[${cation}])`}
-          yTitle="log [X] libre"
+          yTitle={t('precipitacionCompetitiva.logXFreeAxisLabel')}
           xRange={[pMax, pMin]}
           yRange={[-12, 0.5]}
           shapes={windowShapes}
@@ -209,21 +211,21 @@ export default function PrecipitacionCompetitiva() {
 
   return (
     <div className="module">
-      <PanelShell title="Precipitación competitiva" onReset={reset} moduleId="solcomp">
-        <PanelSection title="Sistema" icon="⚛">
+      <PanelShell title={t('precipitacionCompetitiva.title')} onReset={reset} moduleId="solcomp">
+        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
           <ModelBadge
-            model="dos sales 1:1 con catión común — selección de fases por prueba de combinaciones"
-            additions={[win.ok && 'ventana de separación cuantitativa']}
+            model={t('precipitacionCompetitiva.model')}
+            additions={[win.ok && t('precipitacionCompetitiva.additionQuantWindow')]}
           />
-          <LabelField label="Ion común (catión)" value={cation} onChange={setCation} />
-          <LabelField label="Anión 1" value={label1} onChange={setLabel1} />
+          <LabelField label={t('precipitacionCompetitiva.commonIonLabel')} value={cation} onChange={setCation} />
+          <LabelField label={t('precipitacionCompetitiva.anion1Label')} value={label1} onChange={setLabel1} />
           <Slider label={`pKps (${cation}/${label1})`} value={pKsp1} min={2} max={20} step={0.01} onChange={setPKsp1} decimals={2} />
-          <ConcSlider label={`Concentración de ${label1}`} value={cX1} onChange={setCX1} />
-          <LabelField label="Anión 2" value={label2} onChange={setLabel2} />
+          <ConcSlider label={t('precipitacionCompetitiva.concentrationOfLabel', { label: label1 })} value={cX1} onChange={setCX1} />
+          <LabelField label={t('precipitacionCompetitiva.anion2Label')} value={label2} onChange={setLabel2} />
           <Slider label={`pKps (${cation}/${label2})`} value={pKsp2} min={2} max={20} step={0.01} onChange={setPKsp2} decimals={2} />
-          <ConcSlider label={`Concentración de ${label2}`} value={cX2} onChange={setCX2} />
+          <ConcSlider label={t('precipitacionCompetitiva.concentrationOfLabel', { label: label2 })} value={cX2} onChange={setCX2} />
           <DbPanel
-            title="Ejemplos de la base de datos"
+            title={t('complejos.dbExamples')}
             items={PRESETS.map((p) => ({
               id: p.id,
               label: `${p.cation}: ${p.s1.label} / ${p.s2.label}`,
@@ -233,15 +235,13 @@ export default function PrecipitacionCompetitiva() {
           />
         </PanelSection>
 
-        <PanelSection title="Condiciones" icon="⚗">
-          <ConcSlider label={`${cation} total añadido (cM)`} value={cM} onChange={setCM} />
+        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+          <ConcSlider label={t('precipitacionCompetitiva.totalAddedLabel', { cation })} value={cM} onChange={setCM} />
           <p className="hint">
-            El punto de operación (línea rosa) se resuelve con cM total: qué fases existen
-            se decide probando las combinaciones (ninguna / sal 1 / sal 2 / ambas) y
-            aceptando la única termodinámicamente consistente.
+            {t('precipitacionCompetitiva.operatingPointHint')}
           </p>
           <Slider
-            label="Objetivo de cuantitatividad"
+            label={t('precipitacionCompetitiva.quantitativityTargetLabel')}
             value={quantPct}
             min={90}
             max={99.999}
@@ -262,49 +262,44 @@ export default function PrecipitacionCompetitiva() {
             </button>
           </div>
           <p className="hint">
-            % de la primera sal que debe haber precipitado para considerar la separación
-            cuantitativa — define el borde derecho de la ventana verde.
+            {t('precipitacionCompetitiva.quantHint')}
           </p>
         </PanelSection>
 
-        <PanelSection title="Resultado" icon="∑">
+        <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
             {
-              label: 'Precipita primero',
-              value: `sal de ${first.label} (${pIon(cation)} ${pAgAtFraction(first.pKsp, first.cX, 0).toFixed(2)})`,
+              label: t('precipitacionCompetitiva.precipitatesFirstLabel'),
+              value: t('precipitacionCompetitiva.saltOfValueTemplate', { label: first.label, pIon: pIon(cation), v: pAgAtFraction(first.pKsp, first.cX, 0).toFixed(2) }),
             },
             {
-              label: `Inicio de la sal de ${second.label}`,
+              label: t('precipitacionCompetitiva.onsetOfSaltLabel', { label: second.label }),
               value: `${pIon(cation)} ${win.pAgSecondOnset.toFixed(2)}`,
             },
             {
-              label: `${first.label} residual al iniciar la 2.ª sal`,
+              label: t('precipitacionCompetitiva.residualAtOnsetLabel', { label: first.label }),
               value: `${(win.residualFrac * 100).toPrecision(3)} %`,
             },
             {
-              label: `Separación cuantitativa (${quantPct.toFixed(2)} %)`,
+              label: t('precipitacionCompetitiva.quantSeparationLabel', { v: quantPct.toFixed(2) }),
               value: win.ok
-                ? `sí · ventana ${pIon(cation)} ${win.pAgSecondOnset.toFixed(2)}–${win.pAgQuant.toFixed(2)}`
-                : `no — la 2.ª sal arranca antes del ${quantPct.toFixed(2)} %`,
+                ? t('precipitacionCompetitiva.yesWindowTemplate', { pIon: pIon(cation), a: win.pAgSecondOnset.toFixed(2), b: win.pAgQuant.toFixed(2) })
+                : t('precipitacionCompetitiva.noBeforeTemplate', { v: quantPct.toFixed(2) }),
             },
           ]} />
         </PanelSection>
 
-        <InfoBox title="Cómo leer este módulo">
+        <InfoBox title={t('precipitacionCompetitiva.infoBoxTitle')}>
           <p>
-            <strong>Precipitación fraccionada</strong>: al añadir {cation}, {pIon(cation)} baja
-            (el eje avanza hacia la derecha) y precipita primero la sal que necesita menos catión
-            ({pIon(cation)} de inicio = pKps + log cX).
+            <strong>{t('precipitacionCompetitiva.fractionalBold')}</strong>
+            {t('precipitacionCompetitiva.fractionalRest', { cation, pIon: pIon(cation) })}
           </p>
           <p>
-            <strong>Ventana de separación</strong> (franja verde): entre el {quantPct.toFixed(2)} % de
-            la primera sal y el inicio de la segunda. El residuo de la primera cuando arranca
-            la segunda es Kps₁·cX₂/(Kps₂·cX₁) — independiente de cuánto catión se añada, y de
-            dónde se fije el objetivo de cuantitatividad.
+            <strong>{t('precipitacionCompetitiva.windowBold')}</strong>
+            {t('precipitacionCompetitiva.windowRest', { v: quantPct.toFixed(2) })}
           </p>
           <p>
-            <strong>Alcance</strong>: sales 1:1 con actividades ≈ concentraciones; sin
-            complejos solubles del catión (p. ej. AgCl₂⁻ a Cl⁻ alto queda fuera del modelo).
+            <strong>{t('precipitacionCompetitiva.scopeBold')}</strong>{t('precipitacionCompetitiva.scopeRest')}
           </p>
         </InfoBox>
       </PanelShell>
@@ -312,12 +307,12 @@ export default function PrecipitacionCompetitiva() {
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="pct" />
         <ResultCardRow items={[
-          { label: 'Fases en el punto de operación', value: phaseLabel, accent: true },
-          { label: `${pIon(cation)} operación`, value: Number.isFinite(eq.pAg) ? eq.pAg.toFixed(2) : '—' },
-          { label: `% ${label1} precipitado`, value: `${((eq.p1 / cX1) * 100).toFixed(1)} %` },
-          { label: `% ${label2} precipitado`, value: `${((eq.p2 / cX2) * 100).toFixed(1)} %` },
-          { label: `[${label1}] libre`, value: formatMolar(eq.freeX1) },
-          { label: `[${label2}] libre`, value: formatMolar(eq.freeX2) },
+          { label: t('precipitacionCompetitiva.phasesAtOperatingPoint'), value: phaseLabel, accent: true },
+          { label: t('precipitacionCompetitiva.pIonOperationLabel', { pIon: pIon(cation) }), value: Number.isFinite(eq.pAg) ? eq.pAg.toFixed(2) : '—' },
+          { label: t('precipitacionCompetitiva.pctLabelPrecipitated', { label: label1 }), value: `${((eq.p1 / cX1) * 100).toFixed(1)} %` },
+          { label: t('precipitacionCompetitiva.pctLabelPrecipitated', { label: label2 }), value: `${((eq.p2 / cX2) * 100).toFixed(1)} %` },
+          { label: t('precipitacionCompetitiva.freeLabelBracket', { label: label1 }), value: formatMolar(eq.freeX1) },
+          { label: t('precipitacionCompetitiva.freeLabelBracket', { label: label2 }), value: formatMolar(eq.freeX2) },
         ]} />
       </section>
     </div>

@@ -1015,6 +1015,62 @@ export const translations = {
   },
   'solubilidadCondicional.formulaPrecipitates': { es: '{formula} precipita', en: '{formula} precipitates' },
   'solubilidadCondicional.minSolubilityShort': { es: 'Mín. solubilidad', en: 'Min. solubility' },
+
+  // ── PrecipitacionCompetitiva module ──────────────────────────────────────
+  'precipitacionCompetitiva.noPrecipitates': { es: 'sin precipitados', en: 'no precipitates' },
+  'precipitacionCompetitiva.onlySaltOf': { es: 'solo la sal de {label}', en: 'only the {label} salt' },
+  'precipitacionCompetitiva.bothSaltsPresent': { es: 'ambas sales presentes', en: 'both salts present' },
+  'precipitacionCompetitiva.pctPrecipitatedLabel': { es: '% precipitado', en: '% precipitated' },
+  'precipitacionCompetitiva.pctXTitle': { es: '{pIon} (−log[{cation}]) — añadir {cation} avanza hacia la derecha', en: '{pIon} (−log[{cation}]) — adding {cation} moves right' },
+  'precipitacionCompetitiva.tabLogXFree': { es: 'log [X] libre', en: 'log [X] free' },
+  'precipitacionCompetitiva.logXFreeAxisLabel': { es: 'log [X] libre', en: 'log [X] free' },
+  'precipitacionCompetitiva.title': { es: 'Precipitación competitiva', en: 'Competitive precipitation' },
+  'precipitacionCompetitiva.model': {
+    es: 'dos sales 1:1 con catión común — selección de fases por prueba de combinaciones',
+    en: 'two 1:1 salts with a common cation — phase selection by combination testing',
+  },
+  'precipitacionCompetitiva.additionQuantWindow': { es: 'ventana de separación cuantitativa', en: 'quantitative separation window' },
+  'precipitacionCompetitiva.commonIonLabel': { es: 'Ion común (catión)', en: 'Common ion (cation)' },
+  'precipitacionCompetitiva.anion1Label': { es: 'Anión 1', en: 'Anion 1' },
+  'precipitacionCompetitiva.concentrationOfLabel': { es: 'Concentración de {label}', en: 'Concentration of {label}' },
+  'precipitacionCompetitiva.anion2Label': { es: 'Anión 2', en: 'Anion 2' },
+  'precipitacionCompetitiva.totalAddedLabel': { es: '{cation} total añadido (cM)', en: '{cation} total added (cM)' },
+  'precipitacionCompetitiva.operatingPointHint': {
+    es: 'El punto de operación (línea rosa) se resuelve con cM total: qué fases existen se decide probando las combinaciones (ninguna / sal 1 / sal 2 / ambas) y aceptando la única termodinámicamente consistente.',
+    en: 'The operating point (pink line) is solved with total cM: which phases exist is decided by testing the combinations (none / salt 1 / salt 2 / both) and accepting the only thermodynamically consistent one.',
+  },
+  'precipitacionCompetitiva.quantitativityTargetLabel': { es: 'Objetivo de cuantitatividad', en: 'Quantitativity target' },
+  'precipitacionCompetitiva.quantHint': {
+    es: '% de la primera sal que debe haber precipitado para considerar la separación cuantitativa — define el borde derecho de la ventana verde.',
+    en: '% of the first salt that must have precipitated to consider the separation quantitative — defines the right edge of the green window.',
+  },
+  'precipitacionCompetitiva.precipitatesFirstLabel': { es: 'Precipita primero', en: 'Precipitates first' },
+  'precipitacionCompetitiva.saltOfValueTemplate': { es: 'sal de {label} ({pIon} {v})', en: '{label} salt ({pIon} {v})' },
+  'precipitacionCompetitiva.onsetOfSaltLabel': { es: 'Inicio de la sal de {label}', en: 'Onset of the {label} salt' },
+  'precipitacionCompetitiva.residualAtOnsetLabel': { es: '{label} residual al iniciar la 2.ª sal', en: '{label} residual when the 2nd salt starts' },
+  'precipitacionCompetitiva.quantSeparationLabel': { es: 'Separación cuantitativa ({v} %)', en: 'Quantitative separation ({v} %)' },
+  'precipitacionCompetitiva.yesWindowTemplate': { es: 'sí · ventana {pIon} {a}–{b}', en: 'yes · window {pIon} {a}–{b}' },
+  'precipitacionCompetitiva.noBeforeTemplate': { es: 'no — la 2.ª sal arranca antes del {v} %', en: 'no — the 2nd salt starts before {v} %' },
+  'precipitacionCompetitiva.infoBoxTitle': { es: 'Cómo leer este módulo', en: 'How to read this module' },
+  'precipitacionCompetitiva.fractionalBold': { es: 'Precipitación fraccionada', en: 'Fractional precipitation' },
+  'precipitacionCompetitiva.fractionalRest': {
+    es: ': al añadir {cation}, {pIon} baja (el eje avanza hacia la derecha) y precipita primero la sal que necesita menos catión ({pIon} de inicio = pKps + log cX).',
+    en: ': as {cation} is added, {pIon} drops (the axis moves right) and the salt needing less cation precipitates first ({pIon} at onset = pKsp + log cX).',
+  },
+  'precipitacionCompetitiva.windowBold': { es: 'Ventana de separación', en: 'Separation window' },
+  'precipitacionCompetitiva.windowRest': {
+    es: ' (franja verde): entre el {v}% de la primera sal y el inicio de la segunda. El residuo de la primera cuando arranca la segunda es Kps₁·cX₂/(Kps₂·cX₁) — independiente de cuánto catión se añada, y de dónde se fije el objetivo de cuantitatividad.',
+    en: ' (green band): between the {v}% mark of the first salt and the onset of the second. The residual of the first salt when the second starts is Ksp₁·cX₂/(Ksp₂·cX₁) — independent of how much cation is added, and of where the quantitativity target is set.',
+  },
+  'precipitacionCompetitiva.scopeBold': { es: 'Alcance', en: 'Scope' },
+  'precipitacionCompetitiva.scopeRest': {
+    es: ': sales 1:1 con actividades ≈ concentraciones; sin complejos solubles del catión (p. ej. AgCl₂⁻ a Cl⁻ alto queda fuera del modelo).',
+    en: ': 1:1 salts with activities ≈ concentrations; no soluble cation complexes (e.g. AgCl₂⁻ at high Cl⁻ is outside the model).',
+  },
+  'precipitacionCompetitiva.phasesAtOperatingPoint': { es: 'Fases en el punto de operación', en: 'Phases at the operating point' },
+  'precipitacionCompetitiva.pIonOperationLabel': { es: '{pIon} operación', en: '{pIon} operating' },
+  'precipitacionCompetitiva.pctLabelPrecipitated': { es: '% {label} precipitado', en: '% {label} precipitated' },
+  'precipitacionCompetitiva.freeLabelBracket': { es: '[{label}] libre', en: '[{label}] free' },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type TKey = keyof typeof translations;
