@@ -22,6 +22,7 @@ import {
   logSThresholdFromConcentration,
   precipitationPHMasked,
   sideStackFromEditor,
+  solubilityRegimeFractionsMasked,
   type SideReactionEditorState,
 } from '../lib/sideReactions';
 import { solubilityPXCurve } from '../lib/solubility';
@@ -429,23 +430,42 @@ export default function SolubilidadCondicional() {
   const pKspYMax = Math.max(pKspCurve1.pKspBase, pKspCurve2 ? pKspCurve2.pKspBase : 0) + 3;
 
   // ── 2D Sillén map (pH–log[M]) for M1 ──────────────────────────────────────
-  // Baseline M1 only (no side-reaction mask, no M2 overlay) — same scoping
-  // choice as the other 2D maps: start with the well-defined single-system
-  // case. logM range mirrors the 1D log-s chart's own yMin/yMax so both tabs
-  // read on the same vertical scale.
-  const map2DLabels = useMemo(() => [
-    `${s.m1.formula} (s)`,
-    s.m1.label,
-    ...s.m1.logBetasOH.map((_, j) => `${s.m1.label.replace(/[⁺²³⁴]+$/, '')}(OH)${toSub(j + 1)}`),
-  ], [s.m1.formula, s.m1.label, s.m1.logBetasOH]);
+  // logM range mirrors the 1D log-s chart's own yMin/yMax so both tabs read
+  // on the same vertical scale. When the side-reaction mask is active, the
+  // dissolved ladder gains the masking ligand's own complexes (see
+  // solubilityRegimeFractionsMasked); when M2 is shown, its own saturation
+  // line is overlaid for a direct visual of the separation window.
+  const bareM1 = s.m1.label.replace(/[⁺²³⁴]+$/, '');
+  const map2DLabels = useMemo(() => {
+    const base = [
+      `${s.m1.formula} (s)`,
+      s.m1.label,
+      ...s.m1.logBetasOH.map((_, j) => `${bareM1}(OH)${toSub(j + 1)}`),
+    ];
+    if (s.showSideMask && sideStack.auxLigand) {
+      const auxLabel = s.side.auxLabel || 'X';
+      return [...base, ...sideStack.auxLigand.logBetasL.map((_, k) => `${bareM1}(${auxLabel})${toSub(k + 1)}`)];
+    }
+    return base;
+  }, [s.m1.formula, s.m1.label, s.m1.logBetasOH, bareM1, s.showSideMask, sideStack, s.side.auxLabel]);
   const map2DColors = useMemo(() => ['#94A3B8', ...SPECIES_COLORS], []);
   const grid2D = useMemo(
     () => predominanceGrid(
-      (pH, logM) => solubilityRegimeFractions(pH, logM, s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.ionicStrength),
+      s.showSideMask
+        ? (pH, logM) => solubilityRegimeFractionsMasked(pH, logM, s.m1.pKsp, s.m1.n, sideStack, s.ionicStrength)
+        : (pH, logM) => solubilityRegimeFractions(pH, logM, s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.ionicStrength),
       [0, 14], [yMin, yMax],
     ),
-    [s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.ionicStrength, yMin, yMax],
+    [s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.showSideMask, sideStack, s.ionicStrength, yMin, yMax],
   );
+  const map2DOverlay = useMemo(() => {
+    if (!curve2) return undefined;
+    return {
+      points: curve2.pHs.map((pH, i) => ({ x: pH, y: curve2.logS[i] })),
+      color: C2,
+      label: `${s.m2.formula} satura`,
+    };
+  }, [curve2, s.m2.formula]);
 
   // ── Diagrams ──────────────────────────────────────────────────────────────
 
@@ -512,6 +532,7 @@ export default function SolubilidadCondicional() {
           yLabel={`log[${s.m1.label}] total`}
           marker={{ x: minSolubility.pH, y: minSolubility.logS, label: 'mín. solubilidad' }}
           caption={`Zonas de predominio en 2D — ${s.m1.formula}`}
+          overlayCurve={map2DOverlay}
           exportName="equilibria-sol-map2d"
           exportMetadata={exportMetadata}
         />
@@ -740,9 +761,11 @@ export default function SolubilidadCondicional() {
           <p>
             <strong>Mapa 2D (pH–log[M])</strong>: sobre la línea de saturación (curva log s de
             arriba) precipita el sólido {s.m1.formula}; debajo, el metal disuelto se reparte
-            entre M libre y sus hidroxo-complejos según el pH — la posición vertical solo decide
+            entre M libre y sus hidroxo-complejos (y, con enmascaramiento activo, también los
+            complejos con {s.side.auxLabel || 'X'}) según el pH — la posición vertical solo decide
             sólido vs. disuelto, nunca qué especie disuelta domina.
-            {s.showSideMask && ' El mapa usa el hidróxido base (sin el enmascarante lateral).'}
+            {s.showM2 && ` La línea punteada muestra dónde satura ${s.m2.formula} — comparar
+            contra el área de ${s.m1.formula} da la ventana de separación.`}
           </p>
         </InfoBox>
       </PanelShell>

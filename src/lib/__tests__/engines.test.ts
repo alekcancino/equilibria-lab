@@ -11,7 +11,10 @@ import {
   hydroxideSolCurve, precipitationPH, logSaturation, solubilityRegimeFractions,
 } from '../conditional';
 import { peConditional, peStandard, alphaRedox, redoxTitrationCurve, conditionalEprime } from '../redox';
-import { electrodePotential, stackFromLegacy, freeLigandConcentration } from '../sideReactions';
+import {
+  electrodePotential, stackFromLegacy, freeLigandConcentration,
+  hydroxideSolCurveMasked, solubilityRegimeFractionsMasked, type SideReactionStack,
+} from '../sideReactions';
 import { granPlot, titrationCurve, titratableProtons, firstDerivative } from '../titration';
 import { ladderFractions, ladderLogC, predominanceZones } from '../ladder';
 import {
@@ -656,6 +659,52 @@ describe('solubilityRegimeFractions', () => {
     const fHigh = solubilityRegimeFractions(highPH, logSaturation(highPH, pKsp, n, logBetasOH) - 3, pKsp, n, logBetasOH);
     expect(fLow.indexOf(Math.max(...fLow))).toBe(1); // free Zn²⁺
     expect(fHigh.indexOf(Math.max(...fHigh))).toBe(1 + logBetasOH.length); // Zn(OH)₄²⁻
+  });
+});
+
+describe('solubilityRegimeFractionsMasked', () => {
+  const pKsp = 16.2; const n = 2; const logBetasOH = [5.04, 10.43, 13.7, 15.2]; // Zn(OH)2
+  const logBetasNH3 = [2.21, 4.5, 6.86, 8.89]; // Zn-NH3 stepwise-cumulative
+  const stack: SideReactionStack = {
+    ligandPKas: [],
+    hydrolysis: { logBetasOH },
+    auxLigand: { logBetasL: logBetasNH3, spec: { mode: 'free', cL: 1.0 } }, // 1 M NH3 free
+  };
+  const bareStack: SideReactionStack = { ligandPKas: [], hydrolysis: { logBetasOH } };
+
+  it('boundary matches hydroxideSolCurveMasked point-by-point (same formula, no drift)', () => {
+    const { pHs, logS } = hydroxideSolCurveMasked(pKsp, n, stack, [0, 14], 40);
+    pHs.forEach((pH, i) => {
+      const sat = logS[i];
+      // just above the boundary -> solid; just below -> dissolved.
+      expect(solubilityRegimeFractionsMasked(pH, sat + 1, pKsp, n, stack)[0]).toBe(1);
+      expect(solubilityRegimeFractionsMasked(pH, sat - 1, pKsp, n, stack)[0]).toBe(0);
+    });
+  });
+
+  it('masking raises the saturation line vs. the bare hydroxide (more soluble)', () => {
+    const pH = 10;
+    const { logS: masked } = hydroxideSolCurveMasked(pKsp, n, stack, [pH, pH], 1);
+    const { logS: bare } = hydroxideSolCurveMasked(pKsp, n, bareStack, [pH, pH], 1);
+    expect(masked[0]).toBeGreaterThan(bare[0]);
+  });
+
+  it('dissolved ladder includes the masking-ligand species and sums to 1', () => {
+    const pH = 9;
+    const sat = hydroxideSolCurveMasked(pKsp, n, stack, [pH, pH], 1).logS[0];
+    const f = solubilityRegimeFractionsMasked(pH, sat - 3, pKsp, n, stack);
+    // [solid, M, OH1..4, NH3_1..4] = 1 + 1 + 4 + 4 = 10
+    expect(f).toHaveLength(10);
+    expect(f[0]).toBe(0);
+    expect(f.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 9);
+  });
+
+  it('with 1 M free NH₃ at mid pH, an amino-complex outcompetes free Zn²⁺', () => {
+    const pH = 8; // little OH-driven hydrolysis yet, but NH3 is already strong
+    const sat = hydroxideSolCurveMasked(pKsp, n, stack, [pH, pH], 1).logS[0];
+    const f = solubilityRegimeFractionsMasked(pH, sat - 3, pKsp, n, stack);
+    const domIdx = f.indexOf(Math.max(...f));
+    expect(domIdx).toBeGreaterThan(1 + logBetasOH.length); // one of the NH3 complexes, not M or M-OH
   });
 });
 

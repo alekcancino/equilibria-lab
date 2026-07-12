@@ -5,6 +5,7 @@ import { PKW } from './constants';
 import { alphaFractions } from './equilibrium';
 import { logActivityCoefficient } from './activity';
 import { alphaH, alphaOH, alphaL, condLogK, feasibilityWindow } from './conditional';
+import { speciationFractions } from './speciation';
 
 export { feasibilityWindow };
 
@@ -220,6 +221,41 @@ export function precipitationPHMasked(
     }
   }
   return null;
+}
+
+/**
+ * 2D Sillén map with side-reaction masking: dominant regime at (pH, log[M]_total)
+ * when a masking ligand (NH₃, glycinate…) competes with hydrolysis for the metal.
+ * Same two-regime structure as the unmasked `solubilityRegimeFractions`
+ * (conditional.ts) — index 0 = solid M(OH)ₙ(s); indices 1..(nOH+nL+1) =
+ * dissolved M/M(OH)₁..ⱼ/M-Lmask₁..ₖ — except the saturation boundary is
+ * shifted by α_M(OH)·α_M(L) (matching hydroxideSolCurveMasked) and the
+ * dissolved ladder gains the masking ligand's own complexes, evaluated at its
+ * pH-dependent free concentration (composeAlphas already resolves whichever
+ * LigandSpec mode — free/total/fixedPX — the mask uses).
+ */
+export function solubilityRegimeFractionsMasked(
+  pH: number,
+  logM: number,
+  pKsp: number,
+  n: number,
+  stack: SideReactionStack,
+  I = 0,
+): number[] {
+  const pKspApp = I > 0
+    ? pKsp + logActivityCoefficient(n, I) + n * logActivityCoefficient(1, I)
+    : pKsp;
+  const logFreeMetal = -pKspApp + n * (PKW - pH);
+  const br = composeAlphas(pH, stack);
+  const logSat = logFreeMetal + Math.log10(br.alphaOH * br.alphaL);
+
+  const logBetasOH = stack.hydrolysis?.logBetasOH ?? [];
+  const logBetasL = stack.auxLigand?.logBetasL ?? [];
+  const nDissolved = logBetasOH.length + logBetasL.length + 1;
+
+  if (logM > logSat) return [1, ...new Array(nDissolved).fill(0)];
+  const pL = br.cLFree > 0 ? -Math.log10(br.cLFree) : Infinity;
+  return [0, ...speciationFractions(pH, pL, logBetasOH, logBetasL)];
 }
 
 /** Conditional pX′ scale → free coordinating [X] concentration. */
