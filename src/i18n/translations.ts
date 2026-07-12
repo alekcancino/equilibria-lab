@@ -381,6 +381,78 @@ export const translations = {
   'complejos.dbExamples': { es: 'Ejemplos de la base de datos', en: 'Database examples' },
   'complejos.equilMarker': { es: 'equil. · {axis} {value}', en: 'equil. · {axis} {value}' },
   'complejos.speciesFallback': { es: 'ML{n}', en: 'ML{n}' },
+
+  // ── Especiación del metal module ───────────────────────────────────────────
+  'especiacion.title': { es: 'Especiación del metal (M–OH–L{x} vs pH)', en: 'Metal speciation (M–OH–L{x} vs pH)' },
+  'especiacion.metalHydrolysisSection': { es: 'Metal e hidrólisis', en: 'Metal and hydrolysis' },
+  'especiacion.noHydrolysis': { es: 'sin hidrólisis modelada', en: 'no hydrolysis modeled' },
+  'especiacion.hydrolysisUpTo': { es: 'hidrólisis hasta M(OH){n}', en: 'hydrolysis up to M(OH){n}' },
+  'especiacion.complexationWith': { es: 'complejación con {ligand} hasta ML{n}', en: 'complexation with {ligand} up to ML{n}' },
+  'especiacion.secondAgentUpTo': { es: 'segundo agente {x} hasta MX{n}', en: 'second agent {x} up to MX{n}' },
+  'especiacion.exampleSystems': { es: 'Sistemas de ejemplo', en: 'Example systems' },
+  'especiacion.auxLigandSectionTitle': { es: 'Ligando auxiliar M–L', en: 'Auxiliary ligand M–L' },
+  'especiacion.auxLigandFieldLabel': { es: 'Ligando auxiliar', en: 'Auxiliary ligand' },
+  'especiacion.auxLigandHint': {
+    es: '{ligand} es un ligando disuelto que se une al metal (NH₃, citrato, en…). NH₃/NH₄⁺: pKa ≈ 9.25. Sin pKa: se asume el ligando ya libre (sin protonación).',
+    en: '{ligand} is a dissolved ligand that binds the metal (NH₃, citrate, en…). NH₃/NH₄⁺: pKa ≈ 9.25. No pKa: the ligand is assumed already free (unprotonated).',
+  },
+  'especiacion.xIsAgentRest': {
+    es: '(NH₃, citrato, en…) que compite con {ligand} por el metal. El disolvente (agua) no es X: ya está incluido en los log β.',
+    en: '(NH₃, citrate, en…) competing with {ligand} for the metal. The solvent (water) is not X: it is already baked into the log β.',
+  },
+  'especiacion.coupledHint': {
+    es: 'M se reparte entre OH⁻, {ligand} y X resolviendo los balances de masa acoplados en cada pH — sin especies mixtas (M(OH)L, MLX…). Si X se da como total analítico con pKa, su protonación entra vía α_X(H) a cada pH.',
+    en: 'M is split between OH⁻, {ligand} and X by solving the coupled mass balances at each pH — no mixed species (M(OH)L, MLX…). If X is given as an analytical total with a pKa, its protonation enters via α_X(H) at each pH.',
+  },
+  'especiacion.speciesNamesSection': { es: 'Nombres de especies', en: 'Species names' },
+  'especiacion.speciesPrefix': { es: 'Especie', en: 'Species' },
+  'especiacion.speciesNamesHint': {
+    es: 'Solo cambia cómo se muestran las especies en gráficas y resultados, no el cálculo. Editar una constante (log β, metal, ligando) restablece los nombres genéricos.',
+    en: 'Only changes how species are shown in charts and results, not the calculation. Editing a constant (log β, metal, ligand) resets the generic names.',
+  },
+  'especiacion.readingSection': { es: 'Lectura', en: 'Reading' },
+  'especiacion.readPHLabel': { es: 'pH de lectura', en: 'Read pH' },
+  'especiacion.pLFree': { es: 'pL libre', en: 'Free pL' },
+  'especiacion.pLFreeNoLigand': { es: '∞ (sin ligando)', en: '∞ (no ligand)' },
+  'especiacion.pXFree': { es: 'pX libre', en: 'Free pX' },
+  'especiacion.nBarLabel': { es: 'n̄ (L coordinados)', en: 'n̄ (L bound)' },
+  'especiacion.pctBreakdownX': { es: '% M libre / hidroxo / L / X', en: '% free M / hydroxo / L / X' },
+  'especiacion.pctBreakdownNoX': { es: '% M libre / hidroxo / L-complejado', en: '% free M / hydroxo / L-complexed' },
+  'especiacion.noSolutionPart1': {
+    es: '⚠ El balance de masa del ligando no tiene solución física a este pH (c',
+    en: '⚠ The ligand mass balance has no physical solution at this pH (c',
+  },
+  'especiacion.noSolutionPart2': { es: ' insuficiente frente a c', en: ' insufficient relative to c' },
+  'especiacion.noSolutionPart3': { es: '·n̄). Sube c', en: '·n̄). Raise c' },
+  'especiacion.noSolutionPart4': { es: ' o baja c', en: ' or lower c' },
+  'especiacion.noSolutionPart5': { es: '.', en: '.' },
+  'especiacion.gapWarning': {
+    es: '⚠ Algunos tramos de pH no tienen solución física — la curva muestra un hueco ahí.',
+    en: '⚠ Some pH ranges have no physical solution — the curve shows a gap there.',
+  },
+  'especiacion.alphaExplainBody': {
+    es: ': a cada pH se resuelven los ligandos libres (balances de masa) y el metal se reparte entre M libre, M(OH)ⱼ, MLᵢ y — si lo activas — MXₖ del segundo agente complejante; todas las ramas están acopladas por el mismo denominador.',
+    en: ': at each pH the free ligands are solved (mass balances) and the metal is split between free M, M(OH)ⱼ, MLᵢ and — if enabled — MXₖ from the second complexing agent; all branches are coupled through the same denominator.',
+  },
+  'especiacion.duzpExplainBody': { es: ': qué especie domina en cada tramo de pH.', en: ': which species dominates each pH range.' },
+  'especiacion.assumptionsTitle': { es: 'Supuestos', en: 'Assumptions' },
+  'especiacion.assumptionsBody': {
+    es: ': especie mononuclear (sin dímeros/polinucleares), sin fase sólida, actividades ≈ concentraciones.',
+    en: ': mononuclear species (no dimers/polynuclear species), no solid phase, activities ≈ concentrations.',
+  },
+  'especiacion.dominantAtReadPH': { es: 'Dominante a pH lectura', en: 'Dominant at read pH' },
+  'especiacion.pctFreeM': { es: '% M libre', en: '% free M' },
+  'especiacion.pctHydroxo': { es: '% hidroxo', en: '% hydroxo' },
+  'especiacion.pctLComplexed': { es: '% L-complejado', en: '% L-complexed' },
+  'especiacion.pctXComplexed': { es: '% X-complejado', en: '% X-complexed' },
+  'especiacion.nBarShort': { es: 'n̄', en: 'n̄' },
+  'especiacion.tabMap2D': { es: 'Mapa 2D (pL–pH)', en: '2D map (pL–pH)' },
+  'especiacion.map2dEmptyPrefix': { es: 'Activa un', en: 'Enable an' },
+  'especiacion.map2dEmptyModeBold': { es: 'ligando auxiliar (M–L)', en: 'auxiliary ligand (M–L)' },
+  'especiacion.map2dEmptyMid': {
+    es: 'con al menos un log β para dibujar el mapa 2D pL–pH. Sin ligando, la especiación solo depende del pH — usa la pestaña',
+    en: 'with at least one log β to draw the pL–pH 2D map. Without a ligand, speciation only depends on pH — use the',
+  },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type TKey = keyof typeof translations;
