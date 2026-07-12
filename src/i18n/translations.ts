@@ -880,6 +880,53 @@ export const translations = {
   'solubilidad.molecularMethodSuffix': { es: ' para una base (más soluble a pH bajo).', en: ' for a base (more soluble at low pH).' },
   'solubilidad.logSAxisLabel': { es: 'log s (solubilidad molar)', en: 'log s (molar solubility)' },
   'solubilidad.sAtPHLabel': { es: 's a pH {ph}', en: 's at pH {ph}' },
+
+  // ── SolubilidadSal module ────────────────────────────────────────────────
+  'solubilidadSal.solidNameLabel': { es: 'Nombre del sólido', en: 'Solid name' },
+  'solubilidadSal.anionNameLabel': { es: 'Nombre del anión', en: 'Anion name' },
+  'solubilidadSal.stoichiometryP': { es: 'Estequiometría p (catión)', en: 'Stoichiometry p (cation)' },
+  'solubilidadSal.stoichiometryQ': { es: 'Estequiometría q (anión)', en: 'Stoichiometry q (anion)' },
+  'solubilidadSal.cationChargeLabel': { es: 'Carga del catión zM', en: 'Cation charge zM' },
+  'solubilidadSal.zMHintPrefix': {
+    es: 'Solo afecta la corrección por actividad (I > 0) — a I = 0 no cambia la curva. Carga del anión implícita por electroneutralidad: zX = p·zM/q = ',
+    en: "Only affects the activity correction (I > 0) — at I = 0 it doesn't change the curve. Anion charge implied by electroneutrality: zX = p·zM/q = ",
+  },
+  'solubilidadSal.zMHintNonInteger': { es: ' (no entero — revisa p, q y zM)', en: ' (not an integer — check p, q and zM)' },
+  'solubilidadSal.pKaAnionPrefix': { es: 'pKa (anión)', en: 'pKa (anion)' },
+  'solubilidadSal.strongAcidAnionButton': { es: 'Anión de ácido fuerte (sin pKa)', en: 'Strong-acid anion (no pKa)' },
+  'solubilidadSal.title': { es: 'Solubilidad y pH', en: 'Solubility and pH' },
+  'solubilidadSal.system1Section': { es: 'Sistema 1', en: 'System 1' },
+  'solubilidadSal.system2Section': { es: 'Sistema 2', en: 'System 2' },
+  'solubilidadSal.additionSystemComparison': { es: 'comparación entre sistemas', en: 'comparison between systems' },
+  'solubilidadSal.compareSecondSystem': { es: 'Comparar con 2.º sistema', en: 'Compare with 2nd system' },
+  'solubilidadSal.ionicStrengthSection': { es: 'Fuerza iónica', en: 'Ionic strength' },
+  'solubilidadSal.minSDash': { es: 'S mínima — {name}', en: 'Minimum S — {name}' },
+  'solubilidadSal.formulaPQLabel': { es: 'Fórmula (p, q)', en: 'Formula (p, q)' },
+  'solubilidadSal.infoBoxTitle': { es: 'Solubilidad condicional de sales', en: 'Conditional solubility of salts' },
+  'solubilidadSal.formulaExplainPrefix': { es: 'Para M_p A_q: ', en: 'For M_p A_q: ' },
+  'solubilidadSal.formulaExplainCode': {
+    es: 'S = (Kps / (p^p·q^q·αₙ^q))^(1/(p+q))',
+    en: 'S = (Kps / (p^p·q^q·αₙ^q))^(1/(p+q))',
+  },
+  'solubilidadSal.para2': {
+    es: 'αₙ = fracción del anión totalmente desprotonado. A pH ácido αₙ↓ → S↑. PO₄³⁻ > CO₃²⁻ > F⁻ > SO₄²⁻ en sensibilidad al pH. Anión de ácido fuerte (Cl⁻): α=1 siempre → sin dependencia de pH.',
+    en: 'αₙ = fraction of the fully deprotonated anion. At acidic pH αₙ↓ → S↑. PO₄³⁻ > CO₃²⁻ > F⁻ > SO₄²⁻ in pH sensitivity. Strong-acid anion (Cl⁻): α=1 always → no pH dependence.',
+  },
+  'solubilidadSal.tabLogS': { es: 'log S = f(pH)', en: 'log S = f(pH)' },
+  'solubilidadSal.logSAxisLabel': { es: 'log S  (mol L⁻¹)', en: 'log S  (mol L⁻¹)' },
+  'solubilidadSal.alphaTabLabel': { es: 'Distribución α — {anion}', en: 'α distribution — {anion}' },
+  'solubilidadSal.strongAcidAnionText': {
+    es: 'El anión {anion} es la base conjugada de un ácido fuerte.',
+    en: 'The {anion} anion is the conjugate base of a strong acid.',
+  },
+  'solubilidadSal.alphaAlwaysOneHint': {
+    es: 'α = 1 en todo el rango de pH → solubilidad independiente del pH.',
+    en: 'α = 1 across the entire pH range → solubility is pH-independent.',
+  },
+  'solubilidadSal.molarFractionLabel': { es: 'Fracción molar α', en: 'Molar fraction α' },
+  'solubilidadSal.minSLabel': { es: 'S mínima {name}', en: 'Minimum S {name}' },
+  'solubilidadSal.logSMinLabel': { es: 'log S mínima', en: 'Minimum log S' },
+  'solubilidadSal.pHOfMinSLabel': { es: 'pH de S mínima', en: 'pH of minimum S' },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type TKey = keyof typeof translations;
