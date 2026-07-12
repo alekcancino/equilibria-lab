@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.2 — 2026-07-12
+
+### Bilingual UI (ES/EN) — EspeciacionMetal module
+
+- **Translated:** the full **EspeciacionMetal** ("Speciation vs pH") module — metal/hydrolysis panel, auxiliary-ligand and second-agent disclosures, species-names editor, the reading panel (including the multi-`<sub>` "no physical solution" hint), all 4 diagram tabs, and the "how to read" InfoBox.
+- Reused existing translation keys wherever the Spanish text matched Complejos/SideReactionEditor exactly, instead of duplicating them under a new namespace — only added `especiacion.*` keys where the wording actually differs.
+- Chemistry terms cross-checked against the literature: "speciation" (Stumm & Morgan), "mononuclear"/"polynuclear species" (Cotton & Wilkinson) — confirmed standard usage.
+
 ## 0.9.1 — 2026-07-11
 
 ### Bilingual UI (ES/EN) — Complejos module + shared SideReactionEditor
