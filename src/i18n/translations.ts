@@ -954,10 +954,10 @@ export const translations = {
   },
   'solubilidadCondicional.selectiveSeparationAddition': { es: 'separación selectiva entre dos metales', en: 'selective separation between two metals' },
   'solubilidadCondicional.uCurveAddition': { es: 'mínimo de solubilidad (curva en U)', en: 'solubility minimum (U-shaped curve)' },
-  'solubilidadCondicional.presetsMOHn': { es: 'Presets M(OH)n', en: 'M(OH)n presets' },
+  'solubilidadCondicional.presetsMOHn': { es: 'Presets M(OH)ₙ', en: 'M(OH)ₙ presets' },
   'solubilidadCondicional.amphotericPresetsHint': { es: 'Presets anfóteros (curva U por redisolución):', en: 'Amphoteric presets (U-curve from redissolution):' },
   'solubilidadCondicional.metalLabel': { es: 'Metal', en: 'Metal' },
-  'solubilidadCondicional.stoichiometryN': { es: 'Estequiometría n (M(OH)_n)', en: 'Stoichiometry n (M(OH)_n)' },
+  'solubilidadCondicional.stoichiometryN': { es: 'Estequiometría n (M(OH)ₙ)', en: 'Stoichiometry n (M(OH)ₙ)' },
   'solubilidadCondicional.hydroxoComplexesM1Title': { es: 'Complejos hidroxo de M1 (log β)', en: 'M1 hydroxo complexes (log β)' },
   'solubilidadCondicional.amphotericFormsHint': {
     es: 'Incluir formas anfóteras (β₄ para M(OH)₄⁻) da forma de U a la curva.',
@@ -994,7 +994,7 @@ export const translations = {
   'solubilidadCondicional.pxToggle': { es: 'log s = f(pX) — efecto de complejante', en: 'log s = f(pX) — complexing agent effect' },
   'solubilidadCondicional.complexantXLabel': { es: 'Complejante X', en: 'Complexing agent X' },
   'solubilidadCondicional.infoBoxTitle': { es: 'Separación selectiva de hidróxidos', en: 'Selective separation of hydroxides' },
-  'solubilidadCondicional.para1Prefix': { es: 'La solubilidad de M(OH)_n sigue ', en: 'The solubility of M(OH)_n follows ' },
+  'solubilidadCondicional.para1Prefix': { es: 'La solubilidad de M(OH)ₙ sigue ', en: 'The solubility of M(OH)ₙ follows ' },
   'solubilidadCondicional.para1Code': { es: 'log s = −pKsp + n·pOH', en: 'log s = −pKsp + n·pOH' },
   'solubilidadCondicional.para1Mid': {
     es: ' (pendiente −n por unidad de pH). Los metales con mayor pKsp o menor n precipitan a pH más alto. Controlando el pH se puede ',
