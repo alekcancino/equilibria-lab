@@ -1215,7 +1215,8 @@ export const translations = {
     es: ' muestra q (eq/L resina) vs la concentración en disolución. El ',
     en: ' shows q (eq/L resin) vs the concentration in solution. The ',
   },
-  'intercambioIonico.breakthroughBold': { es: 'breakthrough', en: 'breakthrough' },
+  'intercambioIonico.tabBreakthrough': { es: 'Curva de ruptura', en: 'Breakthrough' },
+  'intercambioIonico.breakthroughBold': { es: 'curva de ruptura (breakthrough)', en: 'breakthrough' },
   'intercambioIonico.para1Suffix': {
     es: ' es un modelo ideal: el efluente alcanza C/C₀ ≈ 1 tras agotar la capacidad del lecho.',
     en: ' is an ideal model: the effluent reaches C/C₀ ≈ 1 once the bed capacity is exhausted.',
