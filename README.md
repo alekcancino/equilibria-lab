@@ -21,8 +21,8 @@
 
 | Module | Description |
 | --- | --- |
-| **Acid–base** | Predominance zone diagram (DUZP), α fractions, log *C*–pH diagram (Sillén), and solution pH for editable HₙA / BHₙ⁺ systems. |
-| **Complexation** | Multi-ligand systems: DUZP, α distributions, Bjerrum number *n̄*, log *C* vs pL. |
+| **Acid–base** | Predominance zone diagram, α fractions, log *C*–pH diagram (Sillén), and solution pH for editable HₙA / BHₙ⁺ systems. |
+| **Complexation** | Multi-ligand systems: predominance zone diagram, α distributions, Bjerrum number *n̄*, log *C* vs pL. |
 | **Redox** | α distribution vs pe, spontaneous-reaction prediction scale, editable redox couples, log *K* of the cell reaction. |
 | **Solubility** | log *s* vs pH with conditional Ksp, editable basic anions, and common-ion effect. |
 | **Activity** | Ionic strength, γ vs *I* (extended Debye–Hückel), and model limitations. |

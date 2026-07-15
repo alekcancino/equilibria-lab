@@ -259,7 +259,7 @@ function refineBoundary(sys: MetalSpeciationSystem, lo: number, hi: number, a: n
 }
 
 /**
- * Predominance zones for the DUZP, by sweeping pH (which species dominates)
+ * Predominance zones for the predominance diagram, by sweeping pH (which species dominates)
  * and refining each crossing by bisection — same technique as
  * ladder.ts's predominanceZones, adapted since here each sample requires a
  * pL bisection solve rather than a closed-form ladder evaluation.

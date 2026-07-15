@@ -3,7 +3,7 @@ import { useShareEffect } from '../hooks/useShareableState';
 import type { Data, Shape } from 'plotly.js';
 import PanelShell from '../components/PanelShell';
 import Chart from '../components/Chart';
-import DUZP from '../components/DUZP';
+import PredominanceDiagram from '../components/PredominanceDiagram';
 import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, PanelSection, ResultCardRow, Segmented, Slider, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
@@ -20,7 +20,7 @@ function isValidGammaModel(v: unknown): v is GammaModel {
   return v === 'dh' || v === 'davies' || v === 'guntelberg';
 }
 
-/** Acid-base equilibrium (mono and polyprotic): DUZP + α distribution + logC diagram. */
+/** Acid-base equilibrium (mono and polyprotic): predominance diagram + α distribution + logC diagram. */
 export default function AcidoBase() {
   const t = useT();
   const GAMMA_MODELS: { value: GammaModel; label: string }[] = useMemo(() => [
@@ -144,16 +144,16 @@ export default function AcidoBase() {
 
   const diagrams = [
     {
-      id: 'duzp',
-      label: t('acidoBase.tabDUZP'),
+      id: 'predominance',
+      label: t('acidoBase.tabPredominance'),
       node: (
-        <DUZP
+        <PredominanceDiagram
           zones={zones}
           pMin={0}
           pMax={14}
           pLabel="pH"
           marker={showSystemPH ? { p: pHSystem, label: t('acidoBase.pureSolutionMarker', { ph: pHSystem.toFixed(2) }) } : undefined}
-          caption={t('acidoBase.duzpCaption')}
+          caption={t('acidoBase.predominanceCaption')}
         />
       ),
     },
@@ -209,7 +209,7 @@ export default function AcidoBase() {
         )}
         <InfoBox title={t('acidoBase.howToReadTitle')}>
           <p>
-            <strong>{t('acidoBase.tabDUZP')}</strong>{t('acidoBase.duzpExplain')}
+            <strong>{t('acidoBase.tabPredominance')}</strong>{t('acidoBase.predominanceExplain')}
           </p>
           <p>
             <strong>{t('acidoBase.tabAlpha')}</strong>{t('acidoBase.alphaExplain')}

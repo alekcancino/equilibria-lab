@@ -33,7 +33,7 @@ cross-check that the conversion is right.
 |----|--------------|-------------|
 | `frac-02` | `02-Fraction diagram` (Fe³⁺/OH⁻/Cl⁻) | Includes polynuclear species (Fe₂(OH)₂⁴⁺, Fe₃(OH)₄⁵⁺) — out of scope per `VALIDATION.md`'s "Where not to expect 1:1 agreement" |
 | `logc-04` | `04-Log conc diagr` (Ca/Ce/CO₃, fixed CO₂ pressure) | Polynuclear Ce hydrolysis + multiple competing solid phases + gas-fixed partial pressure — no clean single-engine match |
-| `predom-09` | `09-Predom Cd-NTA` | This is a 2D (pH × pNTA) predominance map — the app's DUZP is 1D; needs the separate "2D predominance diagrams" roadmap item first |
+| `predom-09` | `09-Predom Cd-NTA` | This is a 2D (pH × pNTA) predominance map — the app's predominance diagram is 1D; needs the separate "2D predominance diagrams" roadmap item first |
 | `pourbaix-10` | `10-Poubaix diag Cu` | The app already ships a built-in Cu Pourbaix preset from its own literature source; comparing against this file's constants first needs confirming both use compatible data (else a mismatch wouldn't mean either is wrong, just differently sourced) — a discrete follow-up, not attempted here |
 
 ## Converting Spana constants → pKa

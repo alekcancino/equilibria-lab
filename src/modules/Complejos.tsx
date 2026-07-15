@@ -4,7 +4,7 @@ import { useComplejosCarryOver, type ComplejosCarryOver } from '../context/Compl
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
-import DUZP from '../components/DUZP';
+import PredominanceDiagram from '../components/PredominanceDiagram';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, DbPanel, InfoBox, LabelField,
@@ -88,7 +88,7 @@ function effectiveLabels(s: ComplexState): string[] {
   return genericComplexLabels(s.metalLabel || 'M', s.ligandLabel || 'L', s.logBetas.length);
 }
 
-/** Multi-ligand complexation equilibrium: DUZP + α distribution + Bjerrum + logC. */
+/** Multi-ligand complexation equilibrium: predominance diagram + α distribution + Bjerrum + logC. */
 export default function Complejos() {
   const t = useT();
   const { carryOver, setCarryOver } = useComplejosCarryOver();
@@ -285,7 +285,7 @@ export default function Complejos() {
     }));
   }, [fractionSamples, labels, cM]);
 
-  // DUZP
+  // Predominance diagram
   const zones = useMemo(() => {
     if (xBranch) {
       return twoLigandPredominanceZones(cM, logBetasEff, xBranch, pHScale, labels, [0, pLmax]);
@@ -374,16 +374,16 @@ export default function Complejos() {
       ),
     },
     {
-      id: 'duzp',
-      label: t('complejos.tabDUZP'),
+      id: 'predominance',
+      label: t('complejos.tabPredominance'),
       node: (
-        <DUZP
+        <PredominanceDiagram
           zones={zones}
           pMin={0}
           pMax={xMax}
           pLabel={sideMode === 'ringbom' ? 'pX′' : 'pL'}
           marker={equilMarker}
-          caption={t('complejos.duzpCaption')}
+          caption={t('complejos.predominanceCaption')}
         />
       ),
     },
@@ -457,7 +457,7 @@ export default function Complejos() {
           <p>
             {t('complejos.map2dEmptyPrefix')} <strong>{t('complejos.map2dEmptyModeBold')}</strong>{' '}
             {t('complejos.map2dEmptyMid')} <strong>{t('complejos.tabAlpha')}</strong>{' '}
-            {t('complejos.map2dEmptyOr')} <strong>{t('complejos.tabDUZP')}</strong>{t('complejos.map2dEmptySuffix')}
+            {t('complejos.map2dEmptyOr')} <strong>{t('complejos.tabPredominance')}</strong>{t('complejos.map2dEmptySuffix')}
           </p>
         </div>
       ),
@@ -607,7 +607,7 @@ export default function Complejos() {
 
         <InfoBox title={t('complejos.howToReadTitle')}>
           <p>
-            <strong>{t('complejos.tabDUZP')}</strong>{t('complejos.duzpExplain')}
+            <strong>{t('complejos.tabPredominance')}</strong>{t('complejos.predominanceExplain')}
           </p>
           <p>
             <strong>{t('complejos.bjerrumExplainTitle')}</strong>{t('complejos.bjerrumExplain')}

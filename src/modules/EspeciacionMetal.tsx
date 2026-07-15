@@ -4,7 +4,7 @@ import { useComplejosCarryOver, type ComplejosCarryOver } from '../context/Compl
 import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
-import DUZP from '../components/DUZP';
+import PredominanceDiagram from '../components/PredominanceDiagram';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, Disclosure, InfoBox, LabelField, LabelList,
@@ -162,7 +162,7 @@ export default function EspeciacionMetal() {
 
   // Only the fields that feed the math are in the dep list — metalLabel edits
   // (a keystroke per change) must not retrigger the 300-point curve + 1500-point
-  // DUZP sweep, since neither reads a label.
+  // predominance-diagram sweep, since neither reads a label.
   const system = useMemo(
     () => toSystem(sys),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -285,16 +285,16 @@ export default function EspeciacionMetal() {
       ),
     },
     {
-      id: 'duzp',
-      label: t('complejos.tabDUZP'),
+      id: 'predominance',
+      label: t('complejos.tabPredominance'),
       node: (
-        <DUZP
+        <PredominanceDiagram
           zones={zones}
           pMin={PH_RANGE[0]}
           pMax={PH_RANGE[1]}
           pLabel="pH"
           marker={{ p: pHRead, label: `pH ${pHRead.toFixed(1)}` }}
-          caption={t('complejos.duzpCaption')}
+          caption={t('complejos.predominanceCaption')}
         />
       ),
     },
@@ -334,7 +334,7 @@ export default function EspeciacionMetal() {
           <p>
             {t('especiacion.map2dEmptyPrefix')} <strong>{t('especiacion.map2dEmptyModeBold')}</strong>{' '}
             {t('especiacion.map2dEmptyMid')} <strong>{t('complejos.tabAlpha')}</strong>{' '}
-            {t('complejos.map2dEmptyOr')} <strong>{t('complejos.tabDUZP')}</strong>{t('complejos.map2dEmptySuffix')}
+            {t('complejos.map2dEmptyOr')} <strong>{t('complejos.tabPredominance')}</strong>{t('complejos.map2dEmptySuffix')}
           </p>
         </div>
       ),
@@ -485,7 +485,7 @@ export default function EspeciacionMetal() {
             <strong>{t('complejos.tabAlpha')}</strong>{t('especiacion.alphaExplainBody')}
           </p>
           <p>
-            <strong>{t('complejos.tabDUZP')}</strong>{t('especiacion.duzpExplainBody')}
+            <strong>{t('complejos.tabPredominance')}</strong>{t('especiacion.predominanceExplainBody')}
           </p>
           <p>
             <strong>{t('especiacion.assumptionsTitle')}</strong>{t('especiacion.assumptionsBody')}

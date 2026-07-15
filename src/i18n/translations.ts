@@ -62,7 +62,7 @@ export const translations = {
     es: 'Escala de predicción, potencial condicional E°′ y diagramas de Pourbaix.',
     en: 'Prediction scale, conditional potential E°′ and Pourbaix diagrams.',
   },
-  'view.redox.label': { es: 'Escala y DUZP', en: 'Scale and DUZP' },
+  'view.redox.label': { es: 'Escala y zonas de predominio', en: 'Scale and predominance zones' },
   'view.potencialcond.label': { es: 'E°′ condicional', en: 'Conditional E°′' },
   'view.pourbaix.label': { es: 'Pourbaix (E–pH)', en: 'Pourbaix (E–pH)' },
 
@@ -192,9 +192,9 @@ export const translations = {
   'acidoBase.activityNoteModule': { es: ' Actividad / Debye-Hückel', en: ' Activity / Debye–Hückel' },
   'acidoBase.activityNoteBody3': { es: ' para estimar γ.', en: ' to estimate γ.' },
   'acidoBase.howToReadTitle': { es: 'Cómo leer estos diagramas', en: 'How to read these diagrams' },
-  'acidoBase.duzpExplain': {
-    es: ' (zonas de predominio): en cada tramo de pH domina una especie; las fronteras están en los pKa.',
-    en: ' (predominance zones): one species dominates each pH range, with boundaries at the pKa values.',
+  'acidoBase.predominanceExplain': {
+    es: ': en cada tramo de pH domina una especie; las fronteras están en los pKa.',
+    en: ': one species dominates each pH range, with boundaries at the pKa values.',
   },
   'acidoBase.alphaExplain': {
     es: ': fracción de cada especie vs pH; en pH = pKa las especies conjugadas se cruzan (α = 0.5).',
@@ -219,10 +219,10 @@ export const translations = {
     es: ' — ahí el selector "Forma de partida" agrega el contraión espectador correcto automáticamente.',
     en: ' — there the "Starting form" selector adds the correct spectator counter-ion automatically.',
   },
-  'acidoBase.tabDUZP': { es: 'DUZP', en: 'DUZP' },
+  'acidoBase.tabPredominance': { es: 'Zonas de predominio', en: 'Predominance zones' },
   'acidoBase.tabAlpha': { es: 'Distribución α', en: 'α distribution' },
   'acidoBase.tabLogC': { es: 'log C', en: 'log C' },
-  'acidoBase.duzpCaption': { es: 'Zonas de predominio', en: 'Predominance zones' },
+  'acidoBase.predominanceCaption': { es: 'Zonas de predominio', en: 'Predominance zones' },
   'acidoBase.pureSolutionMarker': { es: 'disol. pura · pH {ph}', en: 'pure solution · pH {ph}' },
   'acidoBase.pureSolutionPH': { es: 'pH disolución pura', en: 'Pure-solution pH' },
   'acidoBase.pctDominantSpecies': { es: '% de {species} a pH', en: '% of {species} at pH' },
@@ -327,7 +327,7 @@ export const translations = {
   'complejos.nBarEquilResult': { es: 'n̄ en equilibrio', en: 'n̄ at equilibrium' },
   'complejos.dominantSpecies': { es: 'Especie dominante', en: 'Dominant species' },
   'complejos.howToReadTitle': { es: 'Cómo leer estos diagramas', en: 'How to read these diagrams' },
-  'complejos.duzpExplain': {
+  'complejos.predominanceExplain': {
     es: ': en cada tramo de pL domina una especie. La escala crece hacia la derecha (pL alto = poco ligando libre = metal sin complejarse).',
     en: ': one species dominates each pL range. The scale grows to the right (high pL = little free ligand = metal not yet complexed).',
   },
@@ -360,13 +360,13 @@ export const translations = {
   'complejos.nBarEquilibrium': { es: 'n̄ equilibrio', en: 'n̄ equilibrium' },
   'complejos.dominant': { es: 'Dominante', en: 'Dominant' },
   'complejos.tabEquil': { es: 'Equilibrio (pL)', en: 'Equilibrium (pL)' },
-  'complejos.tabDUZP': { es: 'DUZP', en: 'DUZP' },
+  'complejos.tabPredominance': { es: 'Zonas de predominio', en: 'Predominance zones' },
   'complejos.tabAlpha': { es: 'Distribución α', en: 'α distribution' },
   'complejos.tabBjerrum': { es: 'Bjerrum n̄', en: 'Bjerrum n̄' },
   'complejos.tabLogC': { es: 'log C', en: 'log C' },
   'complejos.tabMap2D': { es: 'Mapa 2D (pL–pX)', en: '2D map (pL–pX)' },
   'complejos.alphaFraction': { es: 'Fracción α', en: 'α fraction' },
-  'complejos.duzpCaption': { es: 'Zonas de predominio', en: 'Predominance zones' },
+  'complejos.predominanceCaption': { es: 'Zonas de predominio', en: 'Predominance zones' },
   'complejos.bjerrumYTitle': { es: 'n̄ (ligandos coordinados)', en: 'n̄ (ligands bound)' },
   'complejos.map2dCaption': { es: 'Zonas de predominio en 2D', en: '2D predominance zones' },
   'complejos.map2dEquilLabel': { es: 'equilibrio', en: 'equilibrium' },
@@ -434,7 +434,7 @@ export const translations = {
     es: ': a cada pH se resuelven los ligandos libres (balances de masa) y el metal se reparte entre M libre, M(OH)ⱼ, MLᵢ y — si lo activas — MXₖ del segundo agente complejante; todas las ramas están acopladas por el mismo denominador.',
     en: ': at each pH the free ligands are solved (mass balances) and the metal is split between free M, M(OH)ⱼ, MLᵢ and — if enabled — MXₖ from the second complexing agent; all branches are coupled through the same denominator.',
   },
-  'especiacion.duzpExplainBody': { es: ': qué especie domina en cada tramo de pH.', en: ': which species dominates each pH range.' },
+  'especiacion.predominanceExplainBody': { es: ': qué especie domina en cada tramo de pH.', en: ': which species dominates each pH range.' },
   'especiacion.assumptionsTitle': { es: 'Supuestos', en: 'Assumptions' },
   'especiacion.assumptionsBody': {
     es: ': especie mononuclear (sin dímeros/polinucleares), sin fase sólida, actividades ≈ concentraciones.',
@@ -618,7 +618,7 @@ export const translations = {
   'coupleEditor.mHLabel': { es: 'm H⁺ (protones en la semirreacción)', en: 'm H⁺ (protons in the half-reaction)' },
 
   // ── Redox module ─────────────────────────────────────────────────────────
-  'redox.duzpCaption': { es: 'Zonas de predominio (pe°′ condicional)', en: 'Predominance zones (conditional pe°′)' },
+  'redox.predominanceCaption': { es: 'Zonas de predominio (pe°′ condicional)', en: 'Predominance zones (conditional pe°′)' },
   'redox.tabPredictionScale': { es: 'Escala de predicción', en: 'Prediction scale' },
   'redox.scaleCaption': { es: 'Oxidante arriba · reductor abajo · pe°′ condicional', en: 'Oxidant on top · reductant below · conditional pe°′' },
   'redox.title': { es: 'Equilibrio redox', en: 'Redox equilibrium' },
@@ -630,9 +630,9 @@ export const translations = {
   'redox.mediumPHLabel': { es: 'pH del medio', en: 'pH of the medium' },
   'redox.conditionalPE': { es: 'pe°′ {ox}/{red}', en: 'pe°′ {ox}/{red}' },
   'redox.spontaneousReaction': { es: 'Reacción espontánea', en: 'Spontaneous reaction' },
-  'redox.duzpExplain': {
-    es: ' (zonas de predominio): en cada tramo de pe domina una especie; las fronteras están en los pe°′ condicionales de cada par.',
-    en: ' (predominance zones): one species dominates each pe range, with boundaries at the conditional pe°′ of each couple.',
+  'redox.predominanceExplain': {
+    es: ': en cada tramo de pe domina una especie; las fronteras están en los pe°′ condicionales de cada par.',
+    en: ': one species dominates each pe range, with boundaries at the conditional pe°′ of each couple.',
   },
   'redox.scaleInfoTitle': { es: 'Cómo leer la escala de predicción', en: 'How to read the prediction scale' },
   'redox.scaleExplainPrefix': {

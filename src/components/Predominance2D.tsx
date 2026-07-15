@@ -63,7 +63,7 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 // Soften the saturated Okabe-Ito palette toward a mix target so filled regions
-// read as the app's pastel language (like DUZP zones) while staying
+// read as the app's pastel language (like the predominance diagram's zones) while staying
 // distinguishable. In light mode that target is white (the card surface); in
 // dark mode it's the same neutral charcoal used for Plotly's plot-bg
 // (#141416 — Instagram-style dark, no blue/navy tint), so filled regions sit

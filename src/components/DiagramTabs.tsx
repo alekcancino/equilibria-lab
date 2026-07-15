@@ -8,7 +8,7 @@ export interface DiagramTab {
 
 /**
  * Diagram switcher with identical layout across all equilibrium modules
- * (DUZP / α distribution / log C). Visual consistency makes the app
+ * (predominance diagram / α distribution / log C). Visual consistency makes the app
  * intuitive: learn once, apply to acid-base, complexes, and redox.
  */
 export default function DiagramTabs({ tabs, initialId }: { tabs: DiagramTab[]; initialId?: string }) {

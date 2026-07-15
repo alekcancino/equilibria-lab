@@ -16,7 +16,7 @@ Equilibria Lab occupies a niche that is underserved by existing tools: a **brows
 
 | Project | What it does | Platform | Source |
 | --- | --- | --- | --- |
-| **Spana / DataBase** | Aqueous equilibrium diagrams (DUZP, α, log *C*, pe–pH). Implements HALTAFALL. | Java desktop | [ignasi-p/eq-diagr](https://github.com/ignasi-p/eq-diagr) |
+| **Spana / DataBase** | Aqueous equilibrium diagrams (predominance zone diagram, α, log *C*, pe–pH). Implements HALTAFALL. | Java desktop | [ignasi-p/eq-diagr](https://github.com/ignasi-p/eq-diagr) |
 | **ChemEQL** | Thermodynamic equilibrium, titrations, adsorption, pe–pH. Maintained by Eawag. | Java desktop | [eawag-surface-waters-research/ChemEQL](https://github.com/eawag-surface-waters-research/ChemEQL) |
 | **efta** | Python API: speciation, Ksp, liquid–liquid extraction, constant fitting, plots. | Python library | [arsyadmdz/efta](https://github.com/arsyadmdz/efta) |
 | **PourPy** | Custom Pourbaix diagrams, published in JOSS 2024. Web app via Mercury. | Python / web | [gitlab.com/cmbm-ethz/pourbaix-diagrams](https://gitlab.com/cmbm-ethz/pourbaix-diagrams) |

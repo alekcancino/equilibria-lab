@@ -13,7 +13,7 @@ Technical reference for the Equilibria Lab stack, calculation engines, shared co
 ```
 src/
   App.tsx              Navigation: 3 sections × N modules, tab state
-  App.css              All CSS (variables, layout, controls, DUZP, tabs)
+  App.css              All CSS (variables, layout, controls, predominance diagram, tabs)
   styles/
     tokens.css         Design tokens (palette, spacing, radius, shadows)
   components/
@@ -22,8 +22,8 @@ src/
                        DbPanel, ResultCard, InfoBox, LabelField, SelectControl,
                        PanelSection, Disclosure, ResultChips, SystemPresetPicker
     Editors.tsx        AcidSystemEditor, CoupleEditor, SideReactionEditor
-    DiagramTabs.tsx    DUZP / α / logC tab layout within a module
-    DUZP.tsx           Predominance Zone Diagram (SVG)
+    DiagramTabs.tsx    Predominance diagram / α / logC tab layout within a module
+    PredominanceDiagram.tsx  Predominance zone diagram (SVG)
   lib/                 Pure calculation engines (no React)
   modules/             One file per app module
 ```
@@ -49,8 +49,8 @@ New tokens: `--accent-grad`, `--bg-grad`, `--glass-*`, `--radius-xl/2xl`, `--sha
 
 | Module | Tab | Description |
 |---|---|---|
-| `AcidoBase.tsx` | Ácido-base | DUZP + α + logC. Polyprotic acids, amphoteric species. |
-| `Complejos.tsx` | Complejos | DUZP + α + Bjerrum n̄ + logC. Complexation database. |
+| `AcidoBase.tsx` | Ácido-base | Predominance diagram + α + logC. Polyprotic acids, amphoteric species. |
+| `Complejos.tsx` | Complejos | Predominance diagram + α + Bjerrum n̄ + logC. Complexation database. |
 | `Redox.tsx` | Redox | α vs pe, spontaneous-reaction prediction scale. |
 | `Solubilidad.tsx` | Solubilidad | Ksp, common-ion effect. |
 
@@ -98,9 +98,9 @@ New tokens: `--accent-grad`, `--bg-grad`, `--glass-*`, `--radius-xl/2xl`, `--sha
 
 Every equilibrium ladder is treated as `MLⱼ ⇌ MLᵢ + (j−i)L`, where the exchanged particle `L` is H⁺ (acid–base), e⁻ (redox), or a ligand (complexation). `ladder.ts` encapsulates this abstraction and is shared by the acid–base and complexation modules (`ascending` true/false depending on whether the scale increases or decreases).
 
-## Signature component: DUZP
+## Signature component: PredominanceDiagram
 
-`DUZP.tsx` draws predominance zones in SVG (viewBox 1000×240) using the Okabe-Ito palette (`SPECIES_COLORS`, colorblind-safe). It receives `zones`, `pMin/pMax`, `pLabel`, `marker?`, `caption?`.
+`PredominanceDiagram.tsx` draws predominance zones in SVG (viewBox 1000×240) using the Okabe-Ito palette (`SPECIES_COLORS`, colorblind-safe). It receives `zones`, `pMin/pMax`, `pLabel`, `marker?`, `caption?`.
 
 ## UI patterns
 
