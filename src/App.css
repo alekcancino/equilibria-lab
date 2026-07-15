@@ -1153,7 +1153,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- DiagramTabs (DUZP / α / logC) ---------- */
+/* ---------- DiagramTabs (predominance diagram / α / logC) ---------- */
 .diagram-tabs {
   display: flex;
   flex-direction: column;
@@ -1202,17 +1202,17 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   display: flex;
   flex-direction: column;
 }
-/* Band diagrams (DUZP / redox scale) grow to fill the card so whitespace lives
-   inside the card, not as an awkward void around it. */
-.diagram-tab-body > .duzp,
+/* Band diagrams (predominance zones / redox scale) grow to fill the card so
+   whitespace lives inside the card, not as an awkward void around it. */
+.diagram-tab-body > .predominance-diagram,
 .diagram-tab-body > .redox-scale,
 .diagram-tab-body > .predom2d,
 .diagram-tab-body > .chart-shell {
   flex: 1;
 }
 
-/* ---------- DUZP (zonas de predominio, SVG) ---------- */
-.duzp {
+/* ---------- Predominance zone diagram (SVG) ---------- */
+.predominance-diagram {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1225,7 +1225,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   padding: 28px 32px;
 }
 
-.duzp svg { display: block; width: 100%; height: auto; max-height: 240px; }
+.predominance-diagram svg { display: block; width: 100%; height: auto; max-height: 240px; }
 
 /* ---------- Mapa 2D de predominio (SVG + campo canvas) ---------- */
 .predom2d {
@@ -1633,7 +1633,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
     min-height: 0;
   }
 
-  .duzp svg {
+  .predominance-diagram svg {
     max-height: none;
     min-height: 140px;
   }

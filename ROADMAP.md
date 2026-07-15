@@ -10,7 +10,7 @@ Suggestions and contributions are welcome — open an [issue](https://github.com
 
 ### Core equilibria
 
-- Acid–base: α fractions, log *C*–pH diagram, predominance zone diagram (DUZP), pure solution pH, aqua-acid cations (Fe³⁺, Al³⁺)
+- Acid–base: α fractions, log *C*–pH diagram, predominance zone diagram, pure solution pH, aqua-acid cations (Fe³⁺, Al³⁺)
 - Complexation: multi-ligand systems, Bjerrum number, α distributions, log *C* vs pL, editable per-species labels; metal side reactions as a Ringbom pX′ shift or as a rigorously coupled X–M–L two-ligand equilibrium (both mass balances solved simultaneously)
 - Redox: α vs pe, spontaneous-reaction prediction, conditional pe°′
 - Solubility: log *s* vs pH with conditional Ksp, common-ion effect, molecular acid/base solid solubility (pH-dependent ionization), free MmXx stoichiometry; Debye–Hückel activity corrections applied to the solver

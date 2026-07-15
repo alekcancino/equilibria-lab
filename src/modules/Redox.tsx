@@ -4,7 +4,7 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import DUZP from '../components/DUZP';
+import PredominanceDiagram from '../components/PredominanceDiagram';
 import RedoxPredictionScale from '../components/RedoxPredictionScale';
 import { InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider } from '../components/Controls';
 import { CoupleEditor } from '../components/Editors';
@@ -17,7 +17,7 @@ import { useT } from '../hooks/useT';
 
 const PE_POINTS = 400;
 
-/** Redox diagrams: DUZP + α vs pe + prediction scale (Sillén pe convention). */
+/** Redox diagrams: predominance diagram + α vs pe + prediction scale (Sillén pe convention). */
 export default function Redox() {
   const t = useT();
   const [couple1, setCouple1] = useState<CoupleState>(coupleFromPreset('fe'));
@@ -87,8 +87,8 @@ export default function Redox() {
   const strong = pe01 > pe02 ? { ox: couple1, red: couple2 } : { ox: couple2, red: couple1 };
   const logK = strong.ox.n * strong.red.n * Math.abs(pe01 - pe02);
 
-  // DUZP: 3 zonas basadas en los dos pe°′ condicionales
-  const duzpZones = useMemo<Zone[]>(() => {
+  // Predominance diagram: 3 zonas basadas en los dos pe°′ condicionales
+  const predominanceBandZones = useMemo<Zone[]>(() => {
     const c1 = { pe0: pe01, ox: couple1.ox, red: couple1.red, color: SPECIES_COLORS[0] };
     const c2 = { pe0: pe02, ox: couple2.ox, red: couple2.red, color: SPECIES_COLORS[2] };
     const [lo, hi] = c1.pe0 <= c2.pe0 ? [c1, c2] : [c2, c1];
@@ -101,15 +101,15 @@ export default function Redox() {
 
   const diagrams = [
     {
-      id: 'duzp',
-      label: t('complejos.tabDUZP'),
+      id: 'predominance',
+      label: t('complejos.tabPredominance'),
       node: (
-        <DUZP
-          zones={duzpZones}
+        <PredominanceDiagram
+          zones={predominanceBandZones}
           pMin={peMin}
           pMax={peMax}
           pLabel="pe"
-          caption={t('redox.duzpCaption')}
+          caption={t('redox.predominanceCaption')}
         />
       ),
     },
@@ -168,7 +168,7 @@ export default function Redox() {
         </PanelSection>
         <InfoBox title={t('complejos.howToReadTitle')}>
           <p>
-            <strong>{t('complejos.tabDUZP')}</strong>{t('redox.duzpExplain')}
+            <strong>{t('complejos.tabPredominance')}</strong>{t('redox.predominanceExplain')}
           </p>
         </InfoBox>
         <InfoBox title={t('redox.scaleInfoTitle')}>

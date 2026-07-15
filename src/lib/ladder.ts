@@ -1,7 +1,7 @@
 // Unified equilibrium ladder: MLⱼ ⇌ MLᵢ + (j−i)L on a p-scale.
 // Species S₀…Sₙ connected by boundaries (constants) on the p-scale
 // (pH for acid-base, pL for complexation, pe for redox). The SAME engine
-// drives α distribution, the log-C diagram, and the DUZP for all three
+// drives α distribution, the log-C diagram, and the predominance diagram for all three
 // equilibrium types — that uniformity is what makes the app intuitive.
 
 import { SPECIES_COLORS } from './database';
@@ -87,7 +87,7 @@ function refineBoundary(
 }
 
 /**
- * Predominance zones for the DUZP, computed by SWEEPING α (which species
+ * Predominance zones for the predominance diagram, computed by SWEEPING α (which species
  * dominates at each point) and refined by bisection. Robust to degenerate/close
  * constants: a species that never dominates simply produces no zone
  * (avoids the inverted-zone bug from previous versions).

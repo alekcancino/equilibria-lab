@@ -2,7 +2,7 @@ import type { Zone } from '../lib/ladder';
 import { formatAxisLabel } from '../lib/format';
 import { MARKER_COLOR } from '../lib/database';
 
-interface DUZPProps {
+interface PredominanceDiagramProps {
   zones: Zone[];
   pMin: number;
   pMax: number;
@@ -22,15 +22,15 @@ const BAND_H = 96;
 const BAND_BOTTOM = BAND_TOP + BAND_H;
 
 /**
- * Predominance Zone Diagram (DUZP — Diagrama Unidimensional de Zonas de Predominio).
- * Horizontal bar over the p scale with each dominant species coloured and
- * boundaries (pKa / log Kᵢ / pe°′) labelled with their value. Sharp, exportable SVG.
+ * Predominance zone diagram: horizontal bar over the p scale with each
+ * dominant species coloured and boundaries (pKa / log Kᵢ / pe°′) labelled
+ * with their value. Sharp, exportable SVG.
  */
-export default function DUZP({ zones, pMin, pMax, pLabel, marker, caption }: DUZPProps) {
+export default function PredominanceDiagram({ zones, pMin, pMax, pLabel, marker, caption }: PredominanceDiagramProps) {
   const x = (p: number) => ((p - pMin) / (pMax - pMin)) * W;
 
   return (
-    <div className="duzp">
+    <div className="predominance-diagram">
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
         {caption && (
           <text x={W / 2} y={34} textAnchor="middle" fontSize={20} fill="var(--text-muted)">

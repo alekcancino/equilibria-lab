@@ -39,7 +39,7 @@ Equilibria Lab is a fully client-side React + TypeScript + Vite app — no backe
 | `src/App.tsx` | Navigation shell. Three sections (`simples`, `multiples`, `titulaciones`), each with tabs. All modules are `React.lazy`-loaded. Add a new module by appending to the `SECTIONS` constant. |
 | `src/modules/` | One file per chemistry module (14 total). Each module owns its local state and calls into `src/lib/` engines, then renders via shared components. |
 | `src/lib/` | Pure TypeScript calculation engines — no React. This is where all the chemistry math lives. |
-| `src/components/` | Shared UI primitives: `Chart.tsx` (Plotly wrapper), `Controls.tsx` (sliders, toggles, DbPanel), `Editors.tsx`, `DUZP.tsx` (SVG predominance zone diagram), `DiagramTabs.tsx`, `PanelShell.tsx`. |
+| `src/components/` | Shared UI primitives: `Chart.tsx` (Plotly wrapper), `Controls.tsx` (sliders, toggles, DbPanel), `Editors.tsx`, `PredominanceDiagram.tsx` (SVG predominance zone diagram), `DiagramTabs.tsx`, `PanelShell.tsx`. |
 | `src/styles/tokens.css` | All CSS custom properties (palette, spacing, typography, layout). |
 
 ### Calculation engines (`src/lib/`)

@@ -235,7 +235,7 @@ function hydrolysisFractions(pH: number, logBetasOH: number[]): number[] {
  * dominates depends only on pH, never on the y (log[M]) position — see
  * hydrolysisFractions. So the vertical axis only ever decides solid vs.
  * solution; species boundaries within "solution" are pH-only vertical bands,
- * exactly like the 1D M–OH DUZP.
+ * exactly like the 1D M–OH predominance diagram.
  */
 export function solubilityRegimeFractions(
   pH: number,
