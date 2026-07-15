@@ -296,6 +296,7 @@ html, body, #root {
 }
 
 .panel-collapse-btn {
+  font-family: inherit;
   position: absolute;
   right: -13px;
   top: 50%;
@@ -581,6 +582,7 @@ html, body, #root {
 }
 
 .help-tip-btn {
+  font-family: inherit;
   margin-left: 5px;
   padding: 0;
   border: none;
@@ -1053,6 +1055,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 }
 
 .mini-btn {
+  font-family: inherit;
   border: none;
   background: none;
   color: var(--text-muted);
@@ -1991,6 +1994,7 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
   border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--text-muted);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
