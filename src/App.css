@@ -2086,7 +2086,12 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
 }
 .home-card:hover { box-shadow: var(--shadow-float); transform: translateY(-2px); }
 .home-card-main {
-  display: block;
+  /* flex column (not block): a button taller than its content vertically
+     centers it, which let sketches/titles float at different heights across
+     cards in the same row. Top-pinned content keeps the grid aligned. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   border: none;
   background: none;
   cursor: pointer;
