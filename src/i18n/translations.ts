@@ -825,7 +825,7 @@ export const translations = {
   'solubilidad.solidModelLabel': { es: 'Modelo del sólido', en: 'Solid model' },
   'solubilidad.ionicSaltOption': { es: 'Sal iónica (Kps)', en: 'Ionic salt (Ksp)' },
   'solubilidad.molecularAcidBaseOption': { es: 'Ácido/base molecular (S₀)', en: 'Molecular acid/base (S₀)' },
-  'solubilidad.intrinsicSolubilityModel': { es: 'solubilidad intrínseca', en: 'intrinsic solubility' },
+  'solubilidad.pHIndependentKspModel': { es: 'Kps sin efecto del pH', en: 'pH-independent Ksp' },
   'solubilidad.pHConditionedModel': { es: 'solubilidad condicionada por pH', en: 'pH-conditioned solubility' },
   'solubilidad.additionCommonIon': { es: 'ion común', en: 'common ion' },
   'solubilidad.saltLabel': { es: 'Sal (nombre libre)', en: 'Salt (free name)' },

@@ -198,7 +198,7 @@ export default function Solubilidad() {
           {mode === 'ionic' ? (
             <>
               <ModelBadge
-                model={salt.anionPKas.length === 0 ? t('solubilidad.intrinsicSolubilityModel') : t('solubilidad.pHConditionedModel')}
+                model={salt.anionPKas.length === 0 ? t('solubilidad.pHIndependentKspModel') : t('solubilidad.pHConditionedModel')}
                 additions={[useCommon && t('solubilidad.additionCommonIon')]}
               />
               <LabelField label={t('solubilidad.saltLabel')} value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
