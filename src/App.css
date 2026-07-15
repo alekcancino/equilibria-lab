@@ -296,6 +296,7 @@ html, body, #root {
 }
 
 .panel-collapse-btn {
+  font-family: inherit;
   position: absolute;
   right: -13px;
   top: 50%;
@@ -581,6 +582,7 @@ html, body, #root {
 }
 
 .help-tip-btn {
+  font-family: inherit;
   margin-left: 5px;
   padding: 0;
   border: none;
@@ -895,7 +897,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 
 .tit-mode-summary::-webkit-details-marker { display: none; }
 
-.tit-mode-collapse .chart-tabs { border-bottom: none; }
+.tit-mode-collapse .chart-tabs { border-bottom: none; justify-content: center; }
 
 /* ---------- Editor de sistema (patrón primario) ---------- */
 .editor {
@@ -1053,6 +1055,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 }
 
 .mini-btn {
+  font-family: inherit;
   border: none;
   background: none;
   color: var(--text-muted);
@@ -1774,7 +1777,6 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--text-muted);
 }
 .psection-caret { margin-left: auto; color: var(--text-muted); font-size: 11px; }
@@ -1808,7 +1810,6 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--text-muted);
 }
 .disclosure-caret {
@@ -1991,6 +1992,7 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
   border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--text-muted);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -2086,7 +2088,12 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
 }
 .home-card:hover { box-shadow: var(--shadow-float); transform: translateY(-2px); }
 .home-card-main {
-  display: block;
+  /* flex column (not block): a button taller than its content vertically
+     centers it, which let sketches/titles float at different heights across
+     cards in the same row. Top-pinned content keeps the grid aligned. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   border: none;
   background: none;
   cursor: pointer;

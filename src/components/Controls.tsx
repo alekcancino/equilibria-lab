@@ -491,6 +491,14 @@ export function ResultCard({ items }: { items: { label: ReactNode; value: string
 }
 
 /**
+ * Header caps are applied in JS (not CSS text-transform) because uppercasing
+ * Greek destroys chemistry symbols: β → Β is indistinguishable from Latin B
+ * ("log β" rendered as "LOG B"). Greek codepoints are left as-is.
+ */
+const upperKeepGreek = (t: ReactNode): ReactNode =>
+  typeof t === 'string' ? t.replace(/[^Ͱ-Ͽ]+/g, (seg) => seg.toUpperCase()) : t;
+
+/**
  * Section card with header ("E" direction): groups related controls
  * on a rounded surface with a soft elevation. Replaces ad-hoc grouping
  * with bare <h3> elements.
@@ -509,7 +517,7 @@ export function PanelSection({
   const header = title && (
     <div className="psection-head">
       {icon && <span className="psection-ic" aria-hidden>{icon}</span>}
-      <span className="psection-title">{title}</span>
+      <span className="psection-title">{upperKeepGreek(title)}</span>
       {collapsible && <span className="psection-caret" aria-hidden>{open ? '▾' : '▸'}</span>}
     </div>
   );
@@ -552,7 +560,7 @@ export function Disclosure({
   return (
     <section className={open ? 'disclosure open' : 'disclosure'}>
       <button type="button" className="disclosure-head" aria-expanded={open} onClick={toggle}>
-        <span className="disclosure-title">{title}</span>
+        <span className="disclosure-title">{upperKeepGreek(title)}</span>
         <span className="disclosure-caret" aria-hidden>▾</span>
       </button>
       {open && <div className="disclosure-body">{children}</div>}

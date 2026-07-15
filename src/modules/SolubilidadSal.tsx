@@ -249,7 +249,7 @@ export default function SolubilidadSal() {
       <PanelShell title={t('solubilidadSal.title')} onReset={reset} moduleId="solsal">
         <PanelSection title={t('solubilidadSal.system1Section')} icon="①">
         <ModelBadge
-          model={sal1.pKas.length === 0 ? t('solubilidad.intrinsicSolubilityModel') : t('solubilidad.pHConditionedModel')}
+          model={sal1.pKas.length === 0 ? t('solubilidad.pHIndependentKspModel') : t('solubilidad.pHConditionedModel')}
           additions={[showP2 && t('solubilidadSal.additionSystemComparison')]}
         />
         <SalEditor sal={sal1} onChange={(p) => setSal1((s) => ({ ...s, ...p }))} />

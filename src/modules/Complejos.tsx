@@ -233,13 +233,13 @@ export default function Complejos() {
       return [
         {
           x: pls, y: coupledCurve.map((pt) => pt.nBarL), type: 'scatter', mode: 'lines',
-          name: `n̄ (${sys.ligandLabel || 'L'})`, line: { width: 3, color: '#0072B2' },
-          hovertemplate: 'pL = %{x:.2f}<br>n̄_L = %{y:.2f}<extra></extra>',
+          name: `n̅ (${sys.ligandLabel || 'L'})`, line: { width: 3, color: '#0072B2' },
+          hovertemplate: 'pL = %{x:.2f}<br>n̅_L = %{y:.2f}<extra></extra>',
         },
         {
           x: pls, y: coupledCurve.map((pt) => pt.nBarX), type: 'scatter', mode: 'lines',
-          name: `n̄ (${side.auxLabel || 'X'})`, line: { width: 3, color: '#D55E00', dash: 'dash' },
-          hovertemplate: 'pL = %{x:.2f}<br>n̄_X = %{y:.2f}<extra></extra>',
+          name: `n̅ (${side.auxLabel || 'X'})`, line: { width: 3, color: '#D55E00', dash: 'dash' },
+          hovertemplate: 'pL = %{x:.2f}<br>n̅_X = %{y:.2f}<extra></extra>',
         },
       ];
     }
@@ -252,8 +252,8 @@ export default function Complejos() {
     }
     const trace: Data[] = [{
       x: pls, y: nBar, type: 'scatter', mode: 'lines',
-      name: 'n̄', line: { width: 3, color: '#0072B2' },
-      hovertemplate: 'pL = %{x:.2f}<br>n̄ = %{y:.2f}<extra></extra>',
+      name: 'n̅', line: { width: 3, color: '#0072B2' },
+      hovertemplate: 'pL = %{x:.2f}<br>n̅ = %{y:.2f}<extra></extra>',
     }];
     // marcas en pL = log Kᵢ (escalonada) — donde n̄ tiene sus inflexiones
     stepwise.forEach((lk, i) => {
@@ -264,7 +264,7 @@ export default function Complejos() {
         marker: { size: 8, color: SPECIES_COLORS[i % SPECIES_COLORS.length] },
         name: `log K${i + 1} = ${lk.toFixed(2)}`,
         showlegend: false,
-        hovertemplate: `log K${i + 1} = ${lk.toFixed(2)}<br>n̄ = %{y:.2f}<extra></extra>`,
+        hovertemplate: `log K${i + 1} = ${lk.toFixed(2)}<br>n̅ = %{y:.2f}<extra></extra>`,
       });
     });
     return trace;

@@ -235,7 +235,10 @@ export default function AcidoBase() {
             accent: true,
           },
           {
-            label: t('acidoBase.pctDominantSpecies', { species: pHInvalid ? t('acidoBase.pctDominantSpeciesFallback') : labels[domIdx] }),
+            label: t('acidoBase.pctDominantSpecies', {
+              species: pHInvalid ? t('acidoBase.pctDominantSpeciesFallback') : labels[domIdx],
+              ph: pHInvalid ? '—' : pHSystem.toFixed(2),
+            }),
             value: pHInvalid ? '—' : `${pctDominante.toFixed(1)} %`,
           },
           {

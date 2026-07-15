@@ -198,7 +198,7 @@ export default function Solubilidad() {
           {mode === 'ionic' ? (
             <>
               <ModelBadge
-                model={salt.anionPKas.length === 0 ? t('solubilidad.intrinsicSolubilityModel') : t('solubilidad.pHConditionedModel')}
+                model={salt.anionPKas.length === 0 ? t('solubilidad.pHIndependentKspModel') : t('solubilidad.pHConditionedModel')}
                 additions={[useCommon && t('solubilidad.additionCommonIon')]}
               />
               <LabelField label={t('solubilidad.saltLabel')} value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
@@ -312,7 +312,7 @@ export default function Solubilidad() {
               label: t('solubilidad.solubilityAtPH', { ph: pHPoint.toFixed(1) }),
               value: sInvalid ? t('solubilidad.noRootKsp') : formatMolar(sAtPoint),
             },
-            { label: t('solubilidad.equilibriumLabel'), value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
+            { label: t('solubilidad.equilibriumLabel'), value: `${salt.m > 1 ? `${salt.m} ` : ''}${salt.cationLabel} + ${salt.x > 1 ? `${salt.x} ` : ''}${salt.anionLabel}` },
           ] : [
             {
               label: t('solubilidad.solubilityAtPH', { ph: pHPoint.toFixed(1) }),
@@ -352,7 +352,7 @@ export default function Solubilidad() {
             accent: true,
           },
           { label: t('titulacion.pKspShort'), value: salt.pKsp.toFixed(2), helpId: 'pKsp' },
-          { label: t('solubilidad.equilibriumLabel'), value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
+          { label: t('solubilidad.equilibriumLabel'), value: `${salt.m > 1 ? `${salt.m} ` : ''}${salt.cationLabel} + ${salt.x > 1 ? `${salt.x} ` : ''}${salt.anionLabel}` },
         ] : [
           {
             label: t('solubilidad.sAtPHLabel', { ph: pHPoint.toFixed(1) }),

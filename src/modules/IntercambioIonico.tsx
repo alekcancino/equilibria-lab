@@ -248,7 +248,7 @@ export default function IntercambioIonico() {
     },
     {
       id: 'column',
-      label: 'Breakthrough',
+      label: t('intercambioIonico.tabBreakthrough'),
       node: (
         <Chart
           data={[{
