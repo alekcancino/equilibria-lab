@@ -458,6 +458,7 @@ export default function ConstantesCondicionales() {
                 />
                 <Slider
                   label="log Kf"
+                  helpId="logKf"
                   value={rx.logKf}
                   min={1}
                   max={30}

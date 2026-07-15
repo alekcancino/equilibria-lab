@@ -46,17 +46,16 @@ interface ExtractionPreset {
   logCHL?: number;
 }
 
-// Data note: the dithizone logKd (id 'dithizone') differs ~100x between this base (4.00) and
-// another reported value (10^6, log=6) -- see docs/testing/BOOK-QA-LOG.md finding B-7. Without a
-// third source to break the tie, it's left without a `reference` (dithizone and pb_dithiz)
-// rather than asserting a citation that could be wrong.
+// Data note: dithizone logKd/pKa follow Harris (KL = 1.1e4, Ka = 3e-5 in CHCl3/H2O — Harris,
+// QCA 8th ed., problems 22-13/22-14), which settled a 100x discrepancy against another source
+// (see docs/testing/BOOK-QA-LOG.md finding B-7). pb_dithiz remains unreferenced.
 const PRESETS: ExtractionPreset[] = [
   { id: 'benzoico',  label: 'Ácido benzoico',         formula: 'C₆H₅COOH', type: 'acid',    logKd:  2.22, pKas: [4.20],         neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
   { id: 'salicilico',label: 'Ácido salicílico',       formula: 'HOC₆H₄COOH',type: 'acid',   logKd:  2.40, pKas: [3.00, 13.40], neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
   { id: 'aspirina',  label: 'Ácido acetilsalicílico', formula: 'HC₉H₇O₄',  type: 'acid',    logKd:  1.70, pKas: [3.50],         neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
   { id: 'acetico',   label: 'Ácido acético',           formula: 'CH₃COOH',  type: 'acid',    logKd: -0.23, pKas: [4.76],         neutralIdx: 0, system: 'Et₂O/H₂O',  reference: 'Harris, QCA' },
   { id: '8hq',       label: '8-Hidroxiquinolina',      formula: 'HQ',        type: 'acid',    logKd:  2.70, pKas: [5.13, 9.89],  neutralIdx: 1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },
-  { id: 'dithizone', label: 'Ditizona',                formula: 'H₂Dz',     type: 'acid',    logKd:  4.00, pKas: [4.47],         neutralIdx: 0, system: 'CHCl₃/H₂O' },
+  { id: 'dithizone', label: 'Ditizona',                formula: 'H₂Dz',     type: 'acid',    logKd:  4.04, pKas: [4.52],         neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
   { id: 'I2',        label: 'Yodo molecular',          formula: 'I₂',        type: 'acid',    logKd:  2.83, pKas: [],             neutralIdx: 0, system: 'CCl₄/H₂O',  reference: 'Harris, QCA' },
   // Metal chelates — D = K_ex · [HL]^n · 10^(n·pH)
   { id: 'cu_8hq',    label: 'Cu²⁺ + 8-HQ',            formula: 'Cu(Ox)₂',   type: 'chelate', logKd:  9.10, pKas: [], neutralIdx: 0, n: 2, logCHL: -1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },

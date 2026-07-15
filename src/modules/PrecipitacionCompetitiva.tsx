@@ -142,17 +142,17 @@ export default function PrecipitacionCompetitiva() {
   const pctTraces = useMemo<Data[]>(() => [
     {
       x: sweep.map((p) => p.pAg), y: sweep.map((p) => (p.p1 / s1.cX) * 100),
-      type: 'scatter', mode: 'lines', name: `% ${label1} precipitado`,
+      type: 'scatter', mode: 'lines', name: t('precipitacionCompetitiva.pctLabelPrecipitated', { label: label1 }),
       line: { width: 3, color: C1 },
       hovertemplate: `${pIon(cation)} = %{x:.2f}<br>%{y:.2f} %<extra>${label1}</extra>`,
     },
     {
       x: sweep.map((p) => p.pAg), y: sweep.map((p) => (p.p2 / s2.cX) * 100),
-      type: 'scatter', mode: 'lines', name: `% ${label2} precipitado`,
+      type: 'scatter', mode: 'lines', name: t('precipitacionCompetitiva.pctLabelPrecipitated', { label: label2 }),
       line: { width: 3, color: C2 },
       hovertemplate: `${pIon(cation)} = %{x:.2f}<br>%{y:.2f} %<extra>${label2}</extra>`,
     },
-  ], [sweep, s1.cX, s2.cX, label1, label2, cation]);
+  ], [sweep, s1.cX, s2.cX, label1, label2, cation, t]);
 
   const logXTraces = useMemo<Data[]>(() => [
     {
@@ -219,10 +219,10 @@ export default function PrecipitacionCompetitiva() {
           />
           <LabelField label={t('precipitacionCompetitiva.commonIonLabel')} value={cation} onChange={setCation} />
           <LabelField label={t('precipitacionCompetitiva.anion1Label')} value={label1} onChange={setLabel1} />
-          <Slider label={`pKps (${cation}/${label1})`} value={pKsp1} min={2} max={20} step={0.01} onChange={setPKsp1} decimals={2} />
+          <Slider label={`${t('titulacion.pKspShort')} (${cation}/${label1})`} helpId="pKsp" value={pKsp1} min={2} max={20} step={0.01} onChange={setPKsp1} decimals={2} />
           <ConcSlider label={t('precipitacionCompetitiva.concentrationOfLabel', { label: label1 })} value={cX1} onChange={setCX1} />
           <LabelField label={t('precipitacionCompetitiva.anion2Label')} value={label2} onChange={setLabel2} />
-          <Slider label={`pKps (${cation}/${label2})`} value={pKsp2} min={2} max={20} step={0.01} onChange={setPKsp2} decimals={2} />
+          <Slider label={`${t('titulacion.pKspShort')} (${cation}/${label2})`} helpId="pKsp" value={pKsp2} min={2} max={20} step={0.01} onChange={setPKsp2} decimals={2} />
           <ConcSlider label={t('precipitacionCompetitiva.concentrationOfLabel', { label: label2 })} value={cX2} onChange={setCX2} />
           <DbPanel
             title={t('complejos.dbExamples')}

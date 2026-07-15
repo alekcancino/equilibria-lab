@@ -441,7 +441,7 @@ export default function IntercambioIonico() {
             <Toggle label={t('intercambioIonico.edtaElutionToggle')} checked={showElution} onChange={setShowElution} />
             {showElution && (
               <>
-                <Slider label="log Kf NiY" value={logKfNiY} min={10} max={25} step={0.01} onChange={setLogKfNiY} decimals={2} />
+                <Slider label="log Kf NiY" helpId="logKf" value={logKfNiY} min={10} max={25} step={0.01} onChange={setLogKfNiY} decimals={2} />
                 <ConcSlider label="[EDTA] (M)" value={cEdta} onChange={setCEdta} min={-3} max={0} />
                 <Slider label="V EDTA (L)" value={vEdta} min={0.05} max={0.5} step={0.05} onChange={setVEdta} decimals={2} />
                 <Slider label={t('intercambioIonico.nNiInResinLabel')} value={nNiResin} min={0.0001} max={0.01} step={0.0001} onChange={setNNiResin} decimals={4} />

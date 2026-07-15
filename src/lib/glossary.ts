@@ -217,4 +217,11 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     },
     units: { es: 'V (vs ENH)', en: 'V (vs NHE)' },
   },
+  pe: {
+    meaning: {
+      es: 'Actividad electrónica en escala logarítmica: pe = −log(a_e⁻) = E/0.05916 (convención de Sillén). Juega el mismo papel para electrones que el pH para protones; pe°′ es su valor condicional al pH del medio.',
+      en: 'Electron activity on a log scale: pe = −log(a_e⁻) = E/0.05916 (Sillén convention). Plays the same role for electrons as pH does for protons; pe°′ is its pH-conditional value.',
+    },
+    units: { es: 'adimensional (E en V = 0.05916·pe)', en: 'dimensionless (E in V = 0.05916·pe)' },
+  },
 };

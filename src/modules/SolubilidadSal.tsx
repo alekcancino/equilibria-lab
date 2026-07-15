@@ -135,7 +135,7 @@ function SalEditor({ sal, onChange }: {
 
       <LabelField label={t('solubilidadSal.solidNameLabel')} value={sal.name} onChange={(name) => onChange({ name })} />
       <LabelField label={t('solubilidadSal.anionNameLabel')} value={sal.anionName} onChange={(anionName) => onChange({ anionName })} />
-      <Slider label="pKps" helpId="pKsp" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
+      <Slider label={t('titulacion.pKspShort')} helpId="pKsp" value={sal.pKsp} min={1} max={40} step={0.01} onChange={(pKsp) => onChange({ pKsp })} decimals={2} />
 
       <NumberSegmented label={t('solubilidadSal.stoichiometryP')} value={sal.p} options={[1, 2, 3]} onChange={(p) => onChange({ p })} />
       <NumberSegmented label={t('solubilidadSal.stoichiometryQ')} value={sal.q} options={[1, 2, 3]} onChange={(q) => onChange({ q })} />
