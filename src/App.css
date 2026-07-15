@@ -897,7 +897,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 
 .tit-mode-summary::-webkit-details-marker { display: none; }
 
-.tit-mode-collapse .chart-tabs { border-bottom: none; }
+.tit-mode-collapse .chart-tabs { border-bottom: none; justify-content: center; }
 
 /* ---------- Editor de sistema (patrón primario) ---------- */
 .editor {
