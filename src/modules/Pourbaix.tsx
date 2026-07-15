@@ -119,7 +119,8 @@ function SpeciesEditor({
                 </div>
               </div>
               <Slider
-                label={`pKsp = ${sp.pKsp.toFixed(1)}`}
+                label={`${t('titulacion.pKspShort')} = ${sp.pKsp.toFixed(1)}`}
+                helpId="pKsp"
                 value={sp.pKsp} min={2} max={50} step={0.1}
                 onChange={(pKsp) => update(i, { pKsp })}
                 decimals={1}
@@ -208,6 +209,7 @@ function CoupleEditorArb({
 
           <Slider
             label={`E° = ${c.E0.toFixed(3)} V`}
+            helpId="E0"
             value={c.E0} min={-2} max={2} step={0.001}
             onChange={(E0) => update(i, { E0 })}
             decimals={3}

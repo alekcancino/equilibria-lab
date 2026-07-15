@@ -406,29 +406,31 @@ export default function SolubilidadCondicional() {
       {
         x: pKspCurve1.pHs, y: pKspCurve1.pKsps,
         type: 'scatter', mode: 'lines',
-        name: `pKps′ (${s.m1.formula})`,
+        name: `${t('solubilidadCondicional.pKspPrimeShort')} (${s.m1.formula})`,
         line: { width: 3, color: C1 },
-        hovertemplate: `pKps′ = %{y:.2f}<extra>${s.m1.formula}</extra>`,
+        hovertemplate: `${t('solubilidadCondicional.pKspPrimeShort')} = %{y:.2f}<extra>${s.m1.formula}</extra>`,
       },
       {
         x: pKspCurve1.pHs, y: pKspCurve1.pHs.map(() => pKspCurve1.pKspBase),
         type: 'scatter', mode: 'lines',
-        name: `pKps${s.ionicStrength > 0 ? ' (corr. γ)' : ' termodinámico'} (${s.m1.formula})`,
+        name: s.ionicStrength > 0
+          ? t('solubilidadCondicional.pKspRefCorr', { formula: s.m1.formula })
+          : t('solubilidadCondicional.pKspRefThermo', { formula: s.m1.formula }),
         line: { width: 1.5, color: C1, dash: 'dot' },
-        hovertemplate: `pKsp = ${pKspCurve1.pKspBase.toFixed(2)}<extra>referencia</extra>`,
+        hovertemplate: `${t('titulacion.pKspShort')} = ${pKspCurve1.pKspBase.toFixed(2)}<extra>${t('solubilidadCondicional.referenceTag')}</extra>`,
       },
     ];
     if (pKspCurve2) {
       out.push({
         x: pKspCurve2.pHs, y: pKspCurve2.pKsps,
         type: 'scatter', mode: 'lines',
-        name: `pKps′ (${s.m2.formula})`,
+        name: `${t('solubilidadCondicional.pKspPrimeShort')} (${s.m2.formula})`,
         line: { width: 2.5, color: C2, dash: 'dot' },
-        hovertemplate: `pKps′ = %{y:.2f}<extra>${s.m2.formula}</extra>`,
+        hovertemplate: `${t('solubilidadCondicional.pKspPrimeShort')} = %{y:.2f}<extra>${s.m2.formula}</extra>`,
       });
     }
     return out;
-  }, [pKspCurve1, pKspCurve2, s.m1.formula, s.m2.formula, s.ionicStrength]);
+  }, [pKspCurve1, pKspCurve2, s.m1.formula, s.m2.formula, s.ionicStrength, t]);
 
   const pKspYMin = useMemo(() => {
     const all = [...pKspCurve1.pKsps, ...(pKspCurve2?.pKsps ?? [])].filter(Number.isFinite);

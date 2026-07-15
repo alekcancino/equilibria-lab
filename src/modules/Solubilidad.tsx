@@ -202,7 +202,7 @@ export default function Solubilidad() {
                 additions={[useCommon && t('solubilidad.additionCommonIon')]}
               />
               <LabelField label={t('solubilidad.saltLabel')} value={salt.label} onChange={(label) => setSalt({ ...salt, label })} />
-              <Slider label="pKps" helpId="pKsp" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
+              <Slider label={t('titulacion.pKspShort')} helpId="pKsp" value={salt.pKsp} min={2} max={40} step={0.01} onChange={(v) => edited({ pKsp: v })} />
               <NumberSegmented label={t('solubilidad.stoichiometryM')} value={salt.m} options={[1, 2, 3, 4]} onChange={(m) => edited({ m })} />
               <NumberSegmented label={t('solubilidad.stoichiometryX')} value={salt.x} options={[1, 2, 3, 4]} onChange={(x) => edited({ x })} />
               <p className="hint">M{salt.m > 1 ? toSub(salt.m) : ''}X{salt.x > 1 ? toSub(salt.x) : ''}{t('solubilidad.stoichiometryExampleHint')}</p>
@@ -351,7 +351,7 @@ export default function Solubilidad() {
             value: sInvalid ? '—' : formatMolar(sAtPoint),
             accent: true,
           },
-          { label: 'pKps', value: salt.pKsp.toFixed(2) },
+          { label: t('titulacion.pKspShort'), value: salt.pKsp.toFixed(2), helpId: 'pKsp' },
           { label: t('solubilidad.equilibriumLabel'), value: `${salt.m} ${salt.cationLabel} + ${salt.x} ${salt.anionLabel}` },
         ] : [
           {

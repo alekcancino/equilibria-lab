@@ -911,7 +911,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
         <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
             { label: t('titulacion.volEqLabel'), value: `${curve.vEq.toFixed(2)} mL` },
-            { label: t('titulacion.eAtEquivalenceLabel'), value: `${curve.EEq.toFixed(3)} V (pe ${curve.peEq.toFixed(2)})` },
+            { label: t('titulacion.eAtEquivalenceLabel'), value: `${curve.EEq.toFixed(3)} V (pe ${curve.peEq.toFixed(2)})`, helpId: 'pe' },
             { label: t('titulacion.logKReactionLabel'), value: curve.logK.toFixed(1) },
           ]} />
           <p className={quantitative ? 'badge ok' : 'badge warn'}>
