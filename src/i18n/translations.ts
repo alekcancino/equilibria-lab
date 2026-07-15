@@ -225,7 +225,7 @@ export const translations = {
   'acidoBase.predominanceCaption': { es: 'Zonas de predominio', en: 'Predominance zones' },
   'acidoBase.pureSolutionMarker': { es: 'disol. pura · pH {ph}', en: 'pure solution · pH {ph}' },
   'acidoBase.pureSolutionPH': { es: 'pH disolución pura', en: 'Pure-solution pH' },
-  'acidoBase.pctDominantSpecies': { es: '% de {species} a pH', en: '% of {species} at pH' },
+  'acidoBase.pctDominantSpecies': { es: '% de {species} a pH {ph}', en: '% of {species} at pH {ph}' },
   'acidoBase.pctDominantSpeciesFallback': { es: 'especie dom.', en: 'dominant species' },
   'acidoBase.transitionPH': { es: 'pH 50 % transición (pKa)', en: 'pH 50 % transition (pKa)' },
   'acidoBase.speciesFallback': { es: 'Especie {n}', en: 'Species {n}' },
