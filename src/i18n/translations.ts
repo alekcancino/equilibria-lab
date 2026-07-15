@@ -440,7 +440,7 @@ export const translations = {
     es: ': especie mononuclear (sin dímeros/polinucleares), sin fase sólida, actividades ≈ concentraciones.',
     en: ': mononuclear species (no dimers/polynuclear species), no solid phase, activities ≈ concentrations.',
   },
-  'especiacion.dominantAtReadPH': { es: 'Dominante a pH lectura', en: 'Dominant at read pH' },
+  'especiacion.dominantAtReadPH': { es: 'Dominante al pH de lectura', en: 'Dominant at read pH' },
   'especiacion.pctFreeM': { es: '% M libre', en: '% free M' },
   'especiacion.pctHydroxo': { es: '% hidroxo', en: '% hydroxo' },
   'especiacion.pctLComplexed': { es: '% L-complejado', en: '% L-complexed' },
