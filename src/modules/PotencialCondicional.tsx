@@ -380,7 +380,7 @@ export default function PotencialCondicional() {
     const all = [
     {
       id: 'eprime',
-      label: "E°' = f(pH)",
+      label: "E°′ = f(pH)",
       node: (
         <Chart
           data={Eprimetraces}
@@ -397,12 +397,12 @@ export default function PotencialCondicional() {
     },
     {
       id: 'epx',
-      label: "E°'=f(pX)",
+      label: "E°′ = f(pX)",
       node: (
         <Chart
           data={[{
             x: pXs.map(scalePX), y: EpxCurve, type: 'scatter', mode: 'lines',
-            name: `E°'(${st.pxOxLabel}/${st.pxRedLabel})`,
+            name: `E°′(${st.pxOxLabel}/${st.pxRedLabel})`,
             line: { width: 3, color: C3 },
             hovertemplate: `E°′ = %{y:.3f} V<extra>pX=%{x:.1f}</extra>`,
           }]}
