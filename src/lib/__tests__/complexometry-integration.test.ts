@@ -75,11 +75,11 @@ describe('Zn–EDTA — conditional log K′ vs pH', () => {
     expect(lkBare).toBeGreaterThan(lkAux);
   });
 
-  it('log K′ at pH 10 lower than at pH 6.5 with OH + NH₃ (no MY protonation)', () => {
+  it('ligand protonation dominates the corrected additive branches at pH 6.5', () => {
     const stack = znOhAuxStack();
     const lk65 = condLogKPrimary(logKf, 6.5, stack);
     const lk10 = condLogKPrimary(logKf, 10, stack);
-    expect(lk65).toBeGreaterThan(lk10);
+    expect(lk10).toBeGreaterThan(lk65);
   });
 
   it('complex protonation of MY increases α_MY at acidic pH', () => {
@@ -135,7 +135,7 @@ describe('EDTA complexometric titration (pY′ and pM′)', () => {
 });
 
 describe('Ion exchange — distribution coefficient D vs pH', () => {
-  it('D increases as pH drops (H⁺ competition)', () => {
+  it('D increases as bulk H+ falls relative to resin H+', () => {
     const stack = sideStackFromEditor({
       ...defaultSideEditorState(),
       showOH: true,
@@ -143,7 +143,7 @@ describe('Ion exchange — distribution coefficient D vs pH', () => {
     });
     const d4 = distributionCoefficient({ kSelSquared: 3, pH: 4, stack, hResin: 0.005 });
     const d8 = distributionCoefficient({ kSelSquared: 3, pH: 8, stack, hResin: 0.005 });
-    expect(d4).toBeGreaterThan(d8);
+    expect(d8).toBeGreaterThan(d4);
   });
 
   it('resin exchange fraction φ is between 0 and 1', () => {

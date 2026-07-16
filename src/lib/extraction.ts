@@ -20,6 +20,28 @@ export interface AnalyteState {
   n: number;
   /** Chelate: log[HL]_org, chelating agent concentration in the organic phase. */
   logCHL: number;
+  /** Global log beta values for aqueous M(OH)_i side reactions. */
+  logBetasMetalOH?: number[];
+  /** First value penalizes protonated chelator; second penalizes deprotonated chelator. */
+  chelatorPKas?: number[];
+  /** Organic/aqueous partition factor entering the protonated-chelator branch. */
+  chelatorPartitionRatio?: number;
+}
+
+export function chelateSideReactionAlphas(
+  a: AnalyteState,
+  pH: number,
+): { alphaMetal: number; alphaChelator: number } {
+  const alphaMetal = 1 + (a.logBetasMetalOH ?? []).reduce((sum, logBeta, index) => {
+    const stoich = index + 1;
+    return sum + Math.pow(10, logBeta + stoich * (pH - 14));
+  }, 0);
+  const [pKaAcid, pKaBase] = a.chelatorPKas ?? [];
+  const alphaAcid = Number.isFinite(pKaAcid)
+    ? Math.max(a.chelatorPartitionRatio ?? 1, 0) * Math.pow(10, pKaAcid - pH)
+    : 0;
+  const alphaBase = Number.isFinite(pKaBase) ? Math.pow(10, pH - pKaBase) : 0;
+  return { alphaMetal, alphaChelator: 1 + alphaAcid + alphaBase };
 }
 
 /**
@@ -35,7 +57,14 @@ export function distributionD(
   dimer?: { enabled: boolean; logK2: number },
 ): number {
   if (a.type === 'chelate') {
-    return Math.pow(10, a.logKd + a.n * a.logCHL + a.n * pH);
+    const { alphaMetal, alphaChelator } = chelateSideReactionAlphas(a, pH);
+    const logKConditional = conditionalChelateLogK({
+      logKEx: a.logKd,
+      alphaMetal,
+      alphaChelator,
+      stoichChelator: a.n,
+    });
+    return Math.pow(10, logKConditional + a.n * a.logCHL + a.n * pH);
   }
   const Kd = Math.pow(10, a.logKd);
   if (a.pKas.length === 0) return Kd;
@@ -69,4 +98,73 @@ export function nFor(D: number, r: number, target: number): number | null {
   if (base <= 0) return 1;
   const count = Math.ceil(Math.log(1 - target / 100) / Math.log(base));
   return count > 0 && count <= 100 ? count : null;
+}
+
+export interface ChelateConditionalParams {
+  logKEx: number;
+  alphaMetal: number;
+  alphaChelator: number;
+  stoichChelator: number;
+}
+
+/** Full conditional extraction constant for M + nL ⇌ ML_n. */
+export function conditionalChelateLogK(params: ChelateConditionalParams): number {
+  return params.logKEx
+    - Math.log10(Math.max(params.alphaMetal, 1e-300))
+    - params.stoichChelator * Math.log10(Math.max(params.alphaChelator, 1e-300));
+}
+
+export interface SequentialExtractionAnalyte {
+  label: string;
+  initialMoles: number;
+  state: AnalyteState;
+}
+
+export interface SequentialExtractionStage {
+  pH: number;
+  aqueousVolume: number;
+  organicVolume: number;
+  /** Phase retained as feed for the following stage. */
+  continuePhase: 'aqueous' | 'organic';
+}
+
+export interface SequentialExtractionResult {
+  currentPhase: 'aqueous' | 'organic';
+  currentMoles: number[];
+  collected: { phase: 'aqueous' | 'organic'; moles: number[] }[];
+  massError: number[];
+}
+
+/** Sequential extraction/back-extraction with explicit phase routing and mole conservation. */
+export function sequentialExtraction(
+  analytes: SequentialExtractionAnalyte[],
+  stages: SequentialExtractionStage[],
+): SequentialExtractionResult {
+  let currentPhase: 'aqueous' | 'organic' = 'aqueous';
+  let currentMoles = analytes.map((analyte) => Math.max(analyte.initialMoles, 0));
+  const collected: SequentialExtractionResult['collected'] = [];
+
+  for (const stage of stages) {
+    const aqueous: number[] = [];
+    const organic: number[] = [];
+    analytes.forEach((analyte, index) => {
+      const total = currentMoles[index];
+      const d = Math.max(distributionD(analyte.state, stage.pH), 0);
+      const denom = stage.aqueousVolume + d * stage.organicVolume;
+      const nOrganic = denom > 0 ? total * d * stage.organicVolume / denom : 0;
+      organic.push(nOrganic);
+      aqueous.push(total - nOrganic);
+    });
+    const removedPhase = stage.continuePhase === 'aqueous' ? 'organic' : 'aqueous';
+    collected.push({ phase: removedPhase, moles: removedPhase === 'organic' ? organic : aqueous });
+    currentPhase = stage.continuePhase;
+    currentMoles = currentPhase === 'organic' ? organic : aqueous;
+  }
+
+  const massError = analytes.map((analyte, index) => {
+    const recovered = currentMoles[index]
+      + collected.reduce((sum, phase) => sum + phase.moles[index], 0);
+    return recovered - Math.max(analyte.initialMoles, 0);
+  });
+  return { currentPhase, currentMoles, collected, massError };
 }

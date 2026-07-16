@@ -10,6 +10,7 @@ import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
 import { ladderFractions, ladderLogC, predominanceZones } from '../lib/ladder';
+import { glycineMacroConstants, glycineMicrostateFractions } from '../lib/acidBaseMicrostates';
 import { solvePH, saltCounterIons, defaultStartIndex } from '../lib/equilibrium';
 import type { GammaModel } from '../lib/activity';
 import { useActivityNote } from '../context/ActivityContext';
@@ -34,8 +35,10 @@ export default function AcidoBase() {
   const [showSystemPH, setShowSystemPH] = useState(false);
   const [ionicStrength, setIonicStrength] = useState(0);
   const [gammaModel, setGammaModel] = useState<GammaModel>('dh');
+  const [showMicrostates, setShowMicrostates] = useState(false);
+  const [microPKas, setMicroPKas] = useState([2.31, 9.62, 7.62, 4.31]);
 
-  useShareEffect('acidobase', { system, conc, showSystemPH, ionicStrength, gammaModel }, (s) => {
+  useShareEffect('acidobase', { system, conc, showSystemPH, ionicStrength, gammaModel, showMicrostates, microPKas }, (s) => {
     // A malformed/stale system (untrusted URL) NaN-poisons solvePH into a
     // silent bogus pH instead of an error — same class of bug fixed in
     // Mezclas.tsx, guarded here too since this module restores AcidSystem
@@ -45,11 +48,14 @@ export default function AcidoBase() {
     if (s.showSystemPH !== undefined) setShowSystemPH(s.showSystemPH);
     if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
     if (isValidGammaModel(s.gammaModel)) setGammaModel(s.gammaModel);
+    if (s.showMicrostates !== undefined) setShowMicrostates(s.showMicrostates);
+    if (Array.isArray(s.microPKas) && s.microPKas.length === 4 && s.microPKas.every(Number.isFinite)) setMicroPKas(s.microPKas);
   });
 
   function reset() {
     setSystem(defaultAcidSystem()); setConc(0.1); setShowSystemPH(false);
     setIonicStrength(0); setGammaModel('dh');
+    setShowMicrostates(false); setMicroPKas([2.31, 9.62, 7.62, 4.31]);
   }
 
   const labels = systemLabels(system);
@@ -142,6 +148,30 @@ export default function AcidoBase() {
       Math.abs(pk - pHSystem) < Math.abs(best - pHSystem) ? pk : best, system.pKas[0]);
   }, [system.pKas, pHSystem]);
 
+  const microConstants = useMemo(() => ({
+    pKaToZwitterion: microPKas[0],
+    pKaFromZwitterion: microPKas[1],
+    pKaToNeutral: microPKas[2],
+    pKaFromNeutral: microPKas[3],
+  }), [microPKas]);
+  const microMacro = useMemo(() => glycineMacroConstants(microConstants), [microConstants]);
+  const microTraces = useMemo<Data[]>(() => {
+    const phs = Array.from({ length: PH_POINTS + 1 }, (_, i) => 14 * i / PH_POINTS);
+    const values = phs.map((value) => glycineMicrostateFractions(microConstants, value));
+    return [
+      { key: 'protonated', label: 'H₂A⁺' },
+      { key: 'zwitterion', label: '⁺H₃N–CHR–COO⁻' },
+      { key: 'neutral', label: 'H₂N–CHR–COOH' },
+      { key: 'deprotonated', label: 'A⁻' },
+    ].map(({ key, label }, index) => ({
+      x: phs,
+      y: values.map((fractions) => fractions[key as keyof typeof fractions]),
+      type: 'scatter', mode: 'lines', name: label,
+      line: { width: 3, color: SPECIES_COLORS[index % SPECIES_COLORS.length] },
+      hovertemplate: `α = %{y:.4f}<extra>${label}</extra>`,
+    }));
+  }, [microConstants]);
+
   const diagrams = [
     {
       id: 'predominance',
@@ -174,6 +204,15 @@ export default function AcidoBase() {
           shapes={systemShape} exportName="equilibria-acidobase-logc" exportMetadata={exportMetadata} />
       ),
     },
+    ...(showMicrostates ? [{
+      id: 'microstates',
+      label: t('acidoBase.microstateTab'),
+      node: (
+        <Chart data={microTraces} xTitle="pH" yTitle={t('acidoBase.microstateFractionAxis')}
+          xRange={[0, 14]} yRange={[0, 1.02]}
+          exportName="equilibria-acidobase-microstates" exportMetadata={exportMetadata} />
+      ),
+    }] : []),
   ];
 
   return (
@@ -197,6 +236,21 @@ export default function AcidoBase() {
             </div>
             <p className="hint">{t('acidoBase.activityHint')}</p>
           </details>
+        </PanelSection>
+        <PanelSection title={t('acidoBase.microstateSection')} icon="⇌">
+          <Toggle label={t('acidoBase.showMicrostates')} checked={showMicrostates} onChange={setShowMicrostates} />
+          {showMicrostates && (
+            <>
+              {[
+                t('acidoBase.microPKaHZ'), t('acidoBase.microPKaZA'),
+                t('acidoBase.microPKaHN'), t('acidoBase.microPKaNA'),
+              ].map((label, index) => (
+                <Slider key={label} label={label} value={microPKas[index]} min={0} max={14} step={0.01}
+                  decimals={2} onChange={(value) => setMicroPKas((current) => current.map((item, i) => i === index ? value : item))} />
+              ))}
+              <p className="hint">{t('acidoBase.microstateHint')}</p>
+            </>
+          )}
         </PanelSection>
         {showActivityNote && (
           <InfoBox title={t('acidoBase.activityNoteTitle')}>
@@ -245,6 +299,12 @@ export default function AcidoBase() {
             label: t('acidoBase.transitionPH'),
             value: transitionPKa !== null ? transitionPKa.toFixed(2) : '—',
           },
+          ...(showMicrostates ? [
+            { label: t('acidoBase.macroPKa1'), value: microMacro.pKa1.toFixed(3) },
+            { label: t('acidoBase.macroPKa2'), value: microMacro.pKa2.toFixed(3) },
+            { label: t('acidoBase.isoelectricPoint'), value: microMacro.pI.toFixed(3), accent: true },
+            { label: t('acidoBase.tautomerizationK'), value: microMacro.tautomerizationK.toExponential(2) },
+          ] : []),
         ]} />
       </section>
     </div>

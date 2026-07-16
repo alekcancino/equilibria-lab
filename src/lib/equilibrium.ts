@@ -70,13 +70,14 @@ export function chargeBalance(
   extraAnions = 0,
   I = 0,
   model: GammaModel = 'dh',
+  pKw = 14,
 ): number {
   const gammaH  = gammaOf(model, 1, I);
   const gammaOH = gammaOf(model, 1, I);
   // [H+] concentration from activity pH: a_H = γH · [H+]
   const h = Math.pow(10, -pH) / gammaH;
   // [OH-] from apparent Kw: [H+][OH-] = Kw / (γH · γOH)
-  const kwApp = Math.pow(10, -apparentPKw(gammaH, gammaOH));
+  const kwApp = Math.pow(10, -apparentPKw(gammaH, gammaOH, pKw));
   const oh = kwApp / h;
   let net = h - oh + extraCations - extraAnions;
   for (const comp of components) {
@@ -105,17 +106,18 @@ export function solvePH(
   extraAnions = 0,
   I = 0,
   model: GammaModel = 'dh',
+  pKw = 14,
+  pHRange: [number, number] = [-2, pKw + 2],
 ): number {
-  let lo = -2;
-  let hi = 16;
-  const fLo = chargeBalance(lo, components, extraCations, extraAnions, I, model);
-  const fHi = chargeBalance(hi, components, extraCations, extraAnions, I, model);
+  let [lo, hi] = pHRange;
+  const fLo = chargeBalance(lo, components, extraCations, extraAnions, I, model, pKw);
+  const fHi = chargeBalance(hi, components, extraCations, extraAnions, I, model, pKw);
   if (fLo <= 0) return lo;
   if (fHi >= 0) return hi;
   if (fLo * fHi > 0) return NaN;
   for (let i = 0; i < 80; i++) {
     const mid = (lo + hi) / 2;
-    const f = chargeBalance(mid, components, extraCations, extraAnions, I, model);
+    const f = chargeBalance(mid, components, extraCations, extraAnions, I, model, pKw);
     if (f > 0) lo = mid;
     else hi = mid;
   }

@@ -8,7 +8,7 @@ import PredominanceDiagram from '../components/PredominanceDiagram';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, Disclosure, InfoBox, LabelField, LabelList,
-  ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider, SystemPresetPicker,
+  ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider, SystemPresetPicker, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import Predominance2D from '../components/Predominance2D';
@@ -20,6 +20,8 @@ import { predominanceGrid } from '../lib/predominance2D';
 import { SPECIATION_PRESETS, speciationPresetById } from '../lib/speciationDatabase';
 import { toSub } from '../lib/complexDatabase';
 import { useT } from '../hooks/useT';
+import { conditionalPhaseMap, conditionalPhasePoint, type ConditionalMapSpecies } from '../lib/conditionalPhaseMap';
+import { evaluateFeasibility } from '../lib/multisystemFeasibility';
 
 const PH_RANGE: [number, number] = [0, 14];
 const PH_POINTS = 300;
@@ -130,6 +132,11 @@ export default function EspeciacionMetal() {
   const { carryOver, setCarryOver } = useComplejosCarryOver();
   const [sys, setSys] = useState<SpeciationState>(() => seedFromCarryOver(carryOver));
   const [pHRead, setPHRead] = useState(7);
+  const [showConditionalMap, setShowConditionalMap] = useState(false);
+  const [mapPKsp, setMapPKsp] = useState(15);
+  const [showFeasibility, setShowFeasibility] = useState(false);
+  const [secondLogBeta, setSecondLogBeta] = useState(6);
+  const [targetPct, setTargetPct] = useState(99);
 
   useEffect(() => {
     // Gate on actual data (array length), not just the Disclosure's open
@@ -148,16 +155,23 @@ export default function EspeciacionMetal() {
     }));
   }, [sys.metalLabel, sys.logBetasOH, sys.showAux, sys.ligandLabel, sys.logBetasL, setCarryOver]);
 
-  useShareEffect('especiacion', { sys, pHRead }, (s) => {
+  useShareEffect('especiacion', { sys, pHRead, showConditionalMap, mapPKsp, showFeasibility, secondLogBeta, targetPct }, (s) => {
     // Merge over defaults: saved links from before the X branch existed lack
     // showX/side and would otherwise crash on s.side.* reads.
     if (s.sys) setSys({ ...defaultState(), ...s.sys });
     if (s.pHRead !== undefined) setPHRead(s.pHRead);
+    if (s.showConditionalMap !== undefined) setShowConditionalMap(s.showConditionalMap);
+    if (s.mapPKsp !== undefined) setMapPKsp(s.mapPKsp);
+    if (s.showFeasibility !== undefined) setShowFeasibility(s.showFeasibility);
+    if (s.secondLogBeta !== undefined) setSecondLogBeta(s.secondLogBeta);
+    if (s.targetPct !== undefined) setTargetPct(s.targetPct);
   });
 
   function reset() {
     setSys(defaultState());
     setPHRead(7);
+    setShowConditionalMap(false); setMapPKsp(15); setShowFeasibility(false);
+    setSecondLogBeta(6); setTargetPct(99);
   }
 
   // Only the fields that feed the math are in the dep list — metalLabel edits
@@ -256,16 +270,48 @@ export default function EspeciacionMetal() {
     () => Math.max((sys.showAux ? Math.max(0, ...sys.logBetasL) : 0) + 4, 8),
     [sys.showAux, sys.logBetasL],
   );
+  const conditionalSpecies = useMemo<ConditionalMapSpecies[]>(() => [
+    { label: sys.metalLabel || 'M', logBeta: 0 },
+    ...sys.logBetasOH.map((logBeta, index) => ({ label: `${sys.metalLabel || 'M'}(OH)${index + 1}`, logBeta, hydroxideStoich: index + 1 })),
+    ...system.logBetasL.map((logBeta, index) => ({ label: `${sys.metalLabel || 'M'}(${sys.ligandLabel || 'L'})${index + 1}`, logBeta, ligandStoich: index + 1 })),
+    ...(system.logBetasL.length > 0 && sys.logBetasOH.length > 0 ? [{
+      label: `${sys.metalLabel || 'M'}OH(${sys.ligandLabel || 'L'})`,
+      logBeta: sys.logBetasOH[0] + system.logBetasL[0], hydroxideStoich: 1, ligandStoich: 1,
+    }] : []),
+  ], [sys.metalLabel, sys.ligandLabel, sys.logBetasOH, system.logBetasL]);
+  const conditionalMapSystem = useMemo(() => ({
+    cMetal: sys.cM, ligandPKas: sys.pKasL, ligandAxis: 'conditional' as const,
+    species: conditionalSpecies,
+    solid: { label: `${sys.metalLabel || 'M'}(OH)${Math.max(nOH, 1)}(s)`, pKsp: mapPKsp, metalStoich: 1, hydroxideStoich: Math.max(nOH, 1) },
+  }), [sys.cM, sys.pKasL, sys.metalLabel, nOH, conditionalSpecies, mapPKsp]);
   const grid2D = useMemo(
     () => (has2D
-      ? predominanceGrid(
+      ? (showConditionalMap ? conditionalPhaseMap(conditionalMapSystem, PH_RANGE, [0, pLmax2D]) : predominanceGrid(
         (pH, pL) => speciationFractions(pH, pL, sys.logBetasOH, sys.logBetasL),
         PH_RANGE, [0, pLmax2D],
-      )
+      ))
       : null),
-    [has2D, sys.logBetasOH, sys.logBetasL, pLmax2D],
+    [has2D, showConditionalMap, conditionalMapSystem, sys.logBetasOH, sys.logBetasL, pLmax2D],
   );
-  const labels2D = useMemo(() => labels.slice(0, 1 + nOH + nL), [labels, nOH, nL]);
+  const labels2D = useMemo(() => showConditionalMap
+    ? [...conditionalSpecies.map((species) => species.label), conditionalMapSystem.solid.label]
+    : labels.slice(0, 1 + nOH + nL), [showConditionalMap, conditionalSpecies, conditionalMapSystem.solid.label, labels, nOH, nL]);
+  const conditionalRead = conditionalPhasePoint(conditionalMapSystem, pHRead, Number.isFinite(readPoint.pL) ? readPoint.pL : 0);
+  const feasibility = evaluateFeasibility([
+    {
+      label: sys.metalLabel || 'M', axisSignature: 'pH|pLprime', target: targetPct / 100,
+      evaluate: (pH, pL = 0) => conditionalPhasePoint(conditionalMapSystem, pH, pL).fractions
+        .filter((_, index) => (conditionalSpecies[index].ligandStoich ?? 0) > 0).reduce((sum, value) => sum + value, 0),
+    },
+    {
+      label: 'M₂', axisSignature: 'pH|pLprime', relation: 'lte' as const, target: 1 - targetPct / 100,
+      evaluate: (pH, pL = 0) => {
+        const logL = -(pL + Math.log10(Math.max(1, 1)));
+        const weight = Math.pow(10, secondLogBeta + logL);
+        return weight / (1 + weight + Math.pow(10, pH - 14));
+      },
+    },
+  ], pHRead, Number.isFinite(readPoint.pL) ? readPoint.pL : 0);
 
   const diagrams = [
     {
@@ -411,6 +457,19 @@ export default function EspeciacionMetal() {
           <p className="hint">
             {t('especiacion.auxLigandHint', { ligand: sys.ligandLabel || 'L' })}
           </p>
+          <Toggle label={t('especiacion.conditionalMapToggle')} checked={showConditionalMap} onChange={setShowConditionalMap} />
+          {showConditionalMap && (
+            <>
+              <Slider label={t('especiacion.mapPKspLabel')} value={mapPKsp} min={2} max={40} step={0.1} decimals={1} onChange={setMapPKsp} />
+              <Toggle label={t('especiacion.feasibilityToggle')} checked={showFeasibility} onChange={setShowFeasibility} />
+              {showFeasibility && (
+                <>
+                  <Slider label={t('especiacion.secondSystemLogBeta')} value={secondLogBeta} min={0} max={40} step={0.1} decimals={1} onChange={setSecondLogBeta} />
+                  <Slider label={t('especiacion.targetPctLabel')} value={targetPct} min={50} max={99.9} step={0.1} decimals={1} unit="%" onChange={setTargetPct} />
+                </>
+              )}
+            </>
+          )}
         </Disclosure>
 
         <Disclosure
@@ -462,6 +521,8 @@ export default function EspeciacionMetal() {
               { label: t('especiacion.pLFree'), value: Number.isFinite(readPoint.pL) ? readPoint.pL.toFixed(3) : t('especiacion.pLFreeNoLigand') },
               ...(nX > 0 ? [{ label: t('especiacion.pXFree'), value: Number.isFinite(readPoint.pX) ? readPoint.pX.toFixed(3) : '∞' }] : []),
               { label: t('especiacion.nBarLabel'), value: readPoint.nBar.toFixed(2) },
+              ...(showConditionalMap ? [{ label: t('especiacion.saturationIndex'), value: conditionalRead.saturationIndex.toFixed(2) }] : []),
+              ...(showConditionalMap && showFeasibility ? [{ label: t('especiacion.feasibilityResult'), value: feasibility.feasible ? t('especiacion.feasible') : t('especiacion.notFeasible') }] : []),
               {
                 label: nX > 0 ? t('especiacion.pctBreakdownX') : t('especiacion.pctBreakdownNoX'),
                 value: nX > 0

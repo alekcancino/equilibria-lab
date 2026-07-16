@@ -7,7 +7,7 @@ import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Slider, Toggle } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import {
-  batchIonExchange, breakthroughCurve, craigBreakthrough, isothermCurve, selectivityFromKd,
+  batchIonExchange, breakthroughCurve, competitiveIonExchange, craigBreakthrough, isothermCurve, selectivityFromKd,
   exchangeDistributionCurve, optimalElutionPH3C, defaultSideEditorState,
   type SideReactionEditorState,
 } from '../lib/ionExchange';
@@ -153,16 +153,16 @@ export default function IntercambioIonico() {
   const stack = useMemo(() => sideStackFromEditor(side), [side]);
   const distCurve = useMemo(
     () => exchangeDistributionCurve(
-      kHSquared, stack, hResin, ciMeq, massResinG, volumeL, [1, 14], 200,
+      kHSquared, stack, hResin, ciMeq, massResinG, volumeL, [1, 14], 200, zA,
     ),
-    [kHSquared, stack, hResin, ciMeq, massResinG, volumeL],
+    [kHSquared, stack, hResin, ciMeq, massResinG, volumeL, zA],
   );
   const elution = useMemo(
     () => optimalElutionPH3C({
       nNiResin, vEdta, cEdta, logKfNiY, stack,
-      kSelSquared: kHSquared, hResin,
+      kSelSquared: kHSquared, hResin, charge: zA,
     }),
-    [nNiResin, vEdta, cEdta, logKfNiY, stack, kHSquared, hResin],
+    [nNiResin, vEdta, cEdta, logKfNiY, stack, kHSquared, hResin, zA],
   );
   const phiAtBulk = useMemo(() => {
     const idx = distCurve.pHs.reduce((best, pH, i) =>
@@ -183,6 +183,17 @@ export default function IntercambioIonico() {
     }),
     [labelA, cA0, selectivity, labelC, cC0, kCB, showIonD, labelD, cD0, kDB, resinCapacity, resinVolume, nPlates],
   );
+  const exactCompetitive = useMemo(() => competitiveIonExchange({
+    ions: [
+      { label: labelA, c0: cA0, charge: zA, kSelectivity: selectivity },
+      { label: labelC, c0: cC0, charge: zA, kSelectivity: kCB },
+      ...(showIonD ? [{ label: labelD, c0: cD0, charge: zA, kSelectivity: kDB }] : []),
+    ],
+    counterIonConcentration: cB0,
+    counterIonCharge: zB,
+    capacityEq: resinCapacity * resinVolume,
+    solutionVolume: volume,
+  }), [labelA, cA0, zA, selectivity, labelC, cC0, kCB, showIonD, labelD, cD0, kDB, cB0, zB, resinCapacity, resinVolume, volume]);
 
   const kselCurve = useMemo(() => {
     const ks: number[] = [];
@@ -370,7 +381,7 @@ export default function IntercambioIonico() {
         <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
         <ModelBadge
           model={t('intercambioIonico.model')}
-          additions={[zA !== zB ? t('intercambioIonico.chargesAddition', { a: zA, b: zB }) : null]}
+          additions={[zA !== zB ? t('intercambioIonico.chargesAddition', { a: zA, b: zB }) : null, showCraig && t('intercambioIonico.addExactCompetition')]}
         />
         <p className="hint">{t('intercambioIonico.resinsHint')}</p>
         <div className="preset-chip-row" style={{ marginBottom: 8 }}>
@@ -516,6 +527,11 @@ export default function IntercambioIonico() {
                 { label: t('intercambioIonico.optimalElutionPHLabel'), value: elution.pH.toFixed(1) },
                 { label: t('intercambioIonico.elutedFractionLabel'), value: `${(elution.fractionEluted * 100).toFixed(0)} %` },
               ] : []),
+            ] : []),
+            ...(showCraig ? [
+              { label: t('intercambioIonico.exactAqueousLabel', { label: labelA }), value: formatMolar(exactCompetitive.aqueous[0]) },
+              { label: t('intercambioIonico.exactAqueousLabel', { label: labelC }), value: formatMolar(exactCompetitive.aqueous[1]) },
+              { label: t('intercambioIonico.exactCounterIonLabel', { label: labelB }), value: formatMolar(exactCompetitive.counterIonAqueous) },
             ] : []),
           ]} />
         </PanelSection>

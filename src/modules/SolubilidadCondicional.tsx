@@ -26,9 +26,11 @@ import {
   type SideReactionEditorState,
 } from '../lib/sideReactions';
 import { solubilityPXCurve } from '../lib/solubility';
+import { conditionalPKsp, orderPrecipitationStages, sharedPrecipitationEquilibrium } from '../lib/conditionalSolubility';
 import { SPECIES_COLORS } from '../lib/database';
 import { toSub } from '../lib/complexDatabase';
 import { useT } from '../hooks/useT';
+import { hasRegularSolutionMiscibilityGap, idealSolidSolutionAtComposition, regularSolutionGammas } from '../lib/solidSolution';
 
 // ── Metal hydroxide database ──────────────────────────────────────────────────
 
@@ -94,6 +96,14 @@ interface State {
   useCThreshold: boolean;
   cAnalytic: number;
   hydroxoOpen: boolean;
+  showBilateral: boolean;
+  logAlphaCounterIon: number;
+  showStagePlanner: boolean;
+  m3: MetalState;
+  cPrecipitant: number;
+  showSolidSolution: boolean;
+  solidXA: number;
+  solidInteraction: number;
 }
 
 // ── Amphoteric presets ────────────────────────────────────────────────────────
@@ -124,6 +134,14 @@ function defaultState(): State {
     useCThreshold: false,
     cAnalytic: 0.01,
     hydroxoOpen: false,
+    showBilateral: false,
+    logAlphaCounterIon: 0,
+    showStagePlanner: false,
+    m3: fromPreset('mn2oh'),
+    cPrecipitant: 0.01,
+    showSolidSolution: false,
+    solidXA: 0.5,
+    solidInteraction: 0,
   };
 }
 
@@ -145,6 +163,8 @@ export default function SolubilidadCondicional() {
     setS((prev) => ({ ...prev, m1: { ...prev.m1, ...patch } }));
   const setM2 = (patch: Partial<MetalState>) =>
     setS((prev) => ({ ...prev, m2: { ...prev.m2, ...patch } }));
+  const setM3 = (patch: Partial<MetalState>) =>
+    setS((prev) => ({ ...prev, m3: { ...prev.m3, ...patch } }));
 
   function reset() { setS(defaultState()); }
 
@@ -160,6 +180,14 @@ export default function SolubilidadCondicional() {
     'pKsp 1': s.m1.pKsp.toFixed(2),
     ...(s.showM2 ? { 'Hidróxido 2': s.m2.formula, 'pKsp 2': s.m2.pKsp.toFixed(2) } : {}),
   }), [s.m1.formula, s.m1.pKsp, s.showM2, s.m2.formula, s.m2.pKsp]);
+  const solidSolution = useMemo(() => {
+    const gammas = regularSolutionGammas(s.solidXA, s.solidInteraction);
+    return idealSolidSolutionAtComposition({
+      kspA: Math.pow(10, -s.m1.pKsp), kspB: Math.pow(10, -s.m2.pKsp),
+      xA: s.solidXA, commonIonActivity: Math.pow(10, s.operatingPH - 14),
+      gammaSolidA: gammas.gammaA, gammaSolidB: gammas.gammaB,
+    });
+  }, [s.solidXA, s.solidInteraction, s.m1.pKsp, s.m2.pKsp, s.operatingPH]);
 
   // ── Solubility curves ─────────────────────────────────────────────────────
 
@@ -195,6 +223,48 @@ export default function SolubilidadCondicional() {
     () => s.showM2 ? precipitationPH(s.m2.pKsp, s.m2.n, s.m2.logBetasOH, logSThreshold, [0, 14], 'falling', s.ionicStrength) : null,
     [s.m2, logSThreshold, s.showM2, s.ionicStrength],
   );
+  const pH3precip = useMemo(
+    () => s.showStagePlanner
+      ? precipitationPH(s.m3.pKsp, s.m3.n, s.m3.logBetasOH, logSThreshold, [0, 14], 'falling', s.ionicStrength)
+      : null,
+    [s.showStagePlanner, s.m3, logSThreshold, s.ionicStrength],
+  );
+
+  const precipitationStages = useMemo(() => orderPrecipitationStages([
+    ...(pH1precip === null ? [] : [{
+      label: s.m1.formula,
+      freePrecipitantOnset: pH1precip,
+      conditionalPKsp: s.m1.pKsp,
+    }]),
+    ...(s.showM2 && pH2precip !== null ? [{
+      label: s.m2.formula,
+      freePrecipitantOnset: pH2precip,
+      conditionalPKsp: s.m2.pKsp,
+    }] : []),
+    ...(s.showStagePlanner && pH3precip !== null ? [{
+      label: s.m3.formula,
+      freePrecipitantOnset: pH3precip,
+      conditionalPKsp: s.m3.pKsp,
+    }] : []),
+  ]), [pH1precip, pH2precip, pH3precip, s.m1, s.m2, s.m3, s.showM2, s.showStagePlanner]);
+
+  const sharedPool = useMemo(() => {
+    if (!s.showStagePlanner) return null;
+    const metals = [s.m1, ...(s.showM2 ? [s.m2] : []), s.m3];
+    return sharedPrecipitationEquilibrium({
+      salts: metals.map((metal) => ({
+        label: metal.formula,
+        pKsp: metal.pKsp,
+        m: 1,
+        x: metal.n,
+        totalFormulaMoles: s.cAnalytic,
+        alphaM: alphaOH(metal.logBetasOH, s.operatingPH),
+      })),
+      totalPrecipitantMoles: s.cPrecipitant,
+      volume: 1,
+      alphaX: s.showBilateral ? Math.pow(10, s.logAlphaCounterIon) : 1,
+    });
+  }, [s.showStagePlanner, s.m1, s.showM2, s.m2, s.m3, s.cAnalytic, s.operatingPH, s.cPrecipitant, s.showBilateral, s.logAlphaCounterIon]);
 
   // Selective window: [pH where M1 precipitates, pH where M2 starts to precipitate]
   const selectiveWindow: [number, number] | null = useMemo(() => {
@@ -379,10 +449,17 @@ export default function SolubilidadCondicional() {
       const pH = 14 * i / N;
       const logA = Math.log10(alphaOH(s.m1.logBetasOH, pH));
       pHs.push(pH);
-      pKsps.push(pKspApp - logA);
+      pKsps.push(conditionalPKsp({
+        label: s.m1.formula,
+        pKsp: pKspApp,
+        m: 1,
+        x: s.m1.n,
+        alphaM: Math.pow(10, logA),
+        alphaX: s.showBilateral ? Math.pow(10, s.logAlphaCounterIon) : 1,
+      }));
     }
     return { pHs, pKsps, pKspBase: pKspApp };
-  }, [s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.ionicStrength]);
+  }, [s.m1.formula, s.m1.pKsp, s.m1.n, s.m1.logBetasOH, s.ionicStrength, s.showBilateral, s.logAlphaCounterIon]);
 
   const pKspCurve2 = useMemo(() => {
     if (!s.showM2) return null;
@@ -396,10 +473,17 @@ export default function SolubilidadCondicional() {
       const pH = 14 * i / N;
       const logA = Math.log10(alphaOH(s.m2.logBetasOH, pH));
       pHs.push(pH);
-      pKsps.push(pKspApp - logA);
+      pKsps.push(conditionalPKsp({
+        label: s.m2.formula,
+        pKsp: pKspApp,
+        m: 1,
+        x: s.m2.n,
+        alphaM: Math.pow(10, logA),
+        alphaX: s.showBilateral ? Math.pow(10, s.logAlphaCounterIon) : 1,
+      }));
     }
     return { pHs, pKsps, pKspBase: pKspApp };
-  }, [s.showM2, s.m2.pKsp, s.m2.n, s.m2.logBetasOH, s.ionicStrength]);
+  }, [s.showM2, s.m2.formula, s.m2.pKsp, s.m2.n, s.m2.logBetasOH, s.ionicStrength, s.showBilateral, s.logAlphaCounterIon]);
 
   const pKspTraces = useMemo(() => {
     const out: import('plotly.js').Data[] = [
@@ -645,6 +729,31 @@ export default function SolubilidadCondicional() {
               </div>
             </div>
           )}
+          {s.showM2 && (
+            <>
+              <Toggle label={t('solubilidadCondicional.solidSolutionToggle')} checked={s.showSolidSolution} onChange={(showSolidSolution) => setS((prev) => ({ ...prev, showSolidSolution }))} />
+              {s.showSolidSolution && (
+                <>
+                  <Slider label={t('solubilidadCondicional.solidMoleFraction')} value={s.solidXA} min={0} max={1} step={0.01} decimals={2} onChange={(solidXA) => setS((prev) => ({ ...prev, solidXA }))} />
+                  <Slider label={t('solubilidadCondicional.solidInteraction')} value={s.solidInteraction} min={0} max={6} step={0.1} decimals={1} onChange={(solidInteraction) => setS((prev) => ({ ...prev, solidInteraction }))} />
+                </>
+              )}
+            </>
+          )}
+          <Toggle
+            label={t('solubilidadCondicional.stagePlannerToggle')}
+            checked={s.showStagePlanner}
+            onChange={(v) => setS((p) => ({ ...p, showStagePlanner: v }))}
+          />
+          {s.showStagePlanner && (
+            <Disclosure title={t('solubilidadCondicional.thirdCandidateTitle')} defaultOpen>
+              <ConcSlider label={t('solubilidadCondicional.totalPrecipitantLabel')} value={s.cPrecipitant} onChange={(v) => setS((p) => ({ ...p, cPrecipitant: v }))} min={-5} max={0} />
+              <DbPanel items={dbItems} onSelect={(id) => setM3({ ...fromPreset(id) })} title={t('solubilidadCondicional.presetsM3')} />
+              <LabelField label={t('solubilidadCondicional.thirdMetalLabel')} value={s.m3.label} onChange={(v) => setM3({ label: v })} />
+              <LabelField label={t('pourbaix.formulaLabel')} value={s.m3.formula} onChange={(v) => setM3({ formula: v })} />
+              <Slider label="pKps" helpId="pKsp" value={s.m3.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM3({ pKsp: v })} decimals={1} />
+            </Disclosure>
+          )}
         </PanelSection>
 
         <PanelSection title={t('solubilidadCondicional.thresholdOperationSection')} icon="⚗">
@@ -656,6 +765,25 @@ export default function SolubilidadCondicional() {
             onChange={(v) => setS((p) => ({ ...p, ionicStrength: v }))}
             decimals={2}
           />
+          <Toggle
+            label={t('solubilidadCondicional.bilateralConditionalToggle')}
+            checked={s.showBilateral}
+            onChange={(v) => setS((p) => ({ ...p, showBilateral: v }))}
+          />
+          {s.showBilateral && (
+            <div className="mask-section">
+              <Slider
+                label={t('solubilidadCondicional.logAlphaCounterIonLabel')}
+                value={s.logAlphaCounterIon}
+                min={0}
+                max={8}
+                step={0.1}
+                onChange={(v) => setS((p) => ({ ...p, logAlphaCounterIon: v }))}
+                decimals={1}
+              />
+              <p className="hint">{t('solubilidadCondicional.bilateralConditionalHint')}</p>
+            </div>
+          )}
           <Toggle
             label={t('solubilidadCondicional.thresholdFromConcToggle')}
             checked={s.useCThreshold}
@@ -715,6 +843,21 @@ export default function SolubilidadCondicional() {
             label: t('solubilidadCondicional.redissolutionOf', { formula: s.m1.formula }),
             value: t('solubilidadCondicional.redissolutionValueTemplate', { v: redissolutionPH.toFixed(1) }),
           }] : []),
+          ...(s.showStagePlanner && precipitationStages.length > 0 ? [{
+            label: t('solubilidadCondicional.precipitationOrderLabel'),
+            value: precipitationStages
+              .map((stage, index) => `${index + 1}. ${stage.label} (pH ${stage.freePrecipitantOnset.toFixed(1)})`)
+              .join(' → '),
+          }] : []),
+          ...(sharedPool ? [{
+            label: t('solubilidadCondicional.sharedPoolRecoveryLabel'),
+            value: [s.m1, ...(s.showM2 ? [s.m2] : []), s.m3]
+              .map((metal, index) => `${metal.formula}: ${(100 * sharedPool.precipitatedFormulaMoles[index] / s.cAnalytic).toFixed(1)}%`)
+              .join(' · '),
+          }, {
+            label: t('solubilidadCondicional.freePrecipitantLabel'),
+            value: sharedPool.freePrecipitant.toExponential(3),
+          }] : []),
           ...(coprecipAtOp ? [
             {
               label: t('solubilidadCondicional.logS1AtPH', { ph: s.operatingPH.toFixed(1) }),
@@ -729,6 +872,13 @@ export default function SolubilidadCondicional() {
               value: t('solubilidadCondicional.purityOperatingValueTemplate', { v: coprecipAtOp.purityM1.toFixed(1), v2: coprecipAtOp.fracM2.toFixed(2) }),
             },
           ] : []),
+          ...(s.showM2 && s.showSolidSolution ? [{
+            label: t('solubilidadCondicional.solidSolutionDissolvedRatio'),
+            value: (solidSolution.aqueousB / Math.max(solidSolution.aqueousA, 1e-300)).toExponential(3),
+          }, {
+            label: t('solubilidadCondicional.miscibilityGap'),
+            value: hasRegularSolutionMiscibilityGap(s.solidInteraction) ? t('solubilidadCondicional.possible') : t('solubilidadCondicional.noIdealGap'),
+          }] : []),
         ]} />
         </PanelSection>
 

@@ -138,7 +138,7 @@ export default function Complejos() {
   const logAlphaM = useMemo(() => {
     if (sideMode !== 'ringbom') return 0;
     const br = composeAlphas(pHScale, sideStackFromEditor(side));
-    return Math.log10(Math.max(br.alphaOH * br.alphaL, 1e-30));
+    return Math.log10(Math.max(br.alphaM, 1e-30));
   }, [sideMode, pHScale, side]);
 
   const scaleX = useCallback((pL: number) => pL + logAlphaM, [logAlphaM]);

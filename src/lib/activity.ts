@@ -136,6 +136,6 @@ export function hydrogenActivity(pH: number, gammaH = 1): number {
  * constant, so the concentration product [H⁺][OH⁻] = Kw/(γ_H·γ_OH) grows as
  * γ < 1 (higher ionic strength) → pKw′ = pKw + log(γ_H·γ_OH) (pKw′ < pKw).
  */
-export function apparentPKw(gammaH: number, gammaOH: number): number {
-  return PKW + Math.log10(gammaH * gammaOH);
+export function apparentPKw(gammaH: number, gammaOH: number, pKw = PKW): number {
+  return pKw + Math.log10(gammaH * gammaOH);
 }

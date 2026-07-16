@@ -32,6 +32,89 @@ export interface IonExchangeResult {
   percentAOnResin: number;
 }
 
+export interface CompetitiveExchangeIon {
+  label: string;
+  c0: number;
+  charge: number;
+  kSelectivity: number;
+  alpha?: number;
+}
+
+export interface CompetitiveExchangeResult {
+  aqueous: number[];
+  counterIonAqueous: number;
+  resinFractions: number[];
+  counterIonResinFraction: number;
+  massErrors: number[];
+  equivalentError: number;
+}
+
+/**
+ * Competitive Gaines–Thomas equilibrium for N ions on one initially
+ * counter-ion-form resin. Charge magnitudes work for cationic or anionic resin modes.
+ */
+export function competitiveIonExchange(params: {
+  ions: CompetitiveExchangeIon[];
+  counterIonConcentration: number;
+  counterIonCharge?: number;
+  capacityEq: number;
+  solutionVolume: number;
+}): CompetitiveExchangeResult {
+  const { ions, counterIonConcentration, capacityEq, solutionVolume } = params;
+  const zCounter = params.counterIonCharge ?? 1;
+  const Q = Math.max(capacityEq, 0);
+  const V = Math.max(solutionVolume, 1e-30);
+
+  const fractionsAt = (yCounter: number): number[] => {
+    const occupied = 1 - yCounter;
+    const cCounter = counterIonConcentration + Q * occupied / (zCounter * V);
+    return ions.map((ion) => {
+      const z = Math.max(ion.charge, 1);
+      const alpha = Math.max(ion.alpha ?? 1, 1);
+      const effectiveC = Math.max(ion.c0, 0) / alpha;
+      // Unequal-charge Gaines–Thomas constants use resin equivalents as the
+      // standard state, so converting them to site fractions introduces this factor.
+      const standardState = Q > 0
+        ? Math.pow(V / Q, z / zCounter - 1)
+        : 1;
+      const A = Math.max(ion.kSelectivity, 0)
+        * standardState
+        * Math.pow(yCounter, z / zCounter)
+        / Math.pow(Math.max(cCounter, 1e-300), z / zCounter);
+      return A * effectiveC / (1 + A * Q / (z * V));
+    });
+  };
+
+  let lo = 0;
+  let hi = 1;
+  for (let i = 0; i < 120; i++) {
+    const mid = (lo + hi) / 2;
+    const sum = fractionsAt(mid).reduce((a, b) => a + b, 0);
+    if (sum > 1 - mid) hi = mid;
+    else lo = mid;
+  }
+  const yCounter = (lo + hi) / 2;
+  const resinFractions = fractionsAt(yCounter);
+  const aqueous = ions.map((ion, index) => Math.max(
+    ion.c0 - Q * resinFractions[index] / (Math.max(ion.charge, 1) * V),
+    0,
+  ));
+  const occupied = resinFractions.reduce((a, b) => a + b, 0);
+  const counterIonAqueous = counterIonConcentration + Q * occupied / (zCounter * V);
+  const massErrors = ions.map((ion, index) => aqueous[index] * V
+    + Q * resinFractions[index] / Math.max(ion.charge, 1)
+    - ion.c0 * V);
+  const equivalentError = occupied + yCounter - 1;
+  return {
+    aqueous,
+    counterIonAqueous,
+    resinFractions,
+    counterIonResinFraction: yCounter,
+    massErrors,
+    equivalentError,
+  };
+}
+
 /**
  * Batch equilibrium: resin initially in form B exchanges with A in solution,
  * zB·A^zA + zA·B̄^zB ⇌ zB·Ā^zA + zA·B^zB. The exchange variable ζ tracks

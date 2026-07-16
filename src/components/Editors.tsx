@@ -62,7 +62,7 @@ export function AcidSystemEditor({
         helpId="pKa"
         values={system.pKas}
         min={-2}
-        max={16}
+        max={35}
         // An aqua-acid cation (z0≥3) with zero pKas is chemically ill-defined
         // (no charge/anion convention applies) and downstream analyteKind
         // classification (Titulacion.tsx) special-cases only z0=1 as "strong
@@ -177,7 +177,7 @@ export function SideReactionEditor({
    * coefficient. */
   auxLigandTitle?: string;
   /** Hide "Protonación / hidrólisis del complejo MY" — that section only
-   * affects α_Y (via alphaComplex), which is meaningless where there's no
+   * affects the product coefficient α_MY (via alphaComplex), which is meaningless where there's no
    * primary M–Y complex (e.g. a bare redox Ox/Red side-reaction stack). */
   showComplexSection?: boolean;
   /** Hide "Hidrólisis del metal α_M(OH)" — the coupled X-M-L engine only

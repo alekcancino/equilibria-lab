@@ -73,6 +73,7 @@ export function alphaComplex(pH: number, complex?: ComplexSideReaction): number 
 export interface AlphaBreakdown {
   alphaM: number;
   alphaY: number;
+  alphaProduct: number;
   alphaH: number;
   alphaOH: number;
   alphaL: number;
@@ -80,7 +81,12 @@ export interface AlphaBreakdown {
   cLFree: number;
 }
 
-/** Total α_M and α_Y from the stack. */
+/** Combines mutually exclusive branches that share the same reference species. */
+export function combineSideReactionBranches(alphas: number[]): number {
+  return 1 + alphas.reduce((sum, alpha) => sum + Math.max(alpha - 1, 0), 0);
+}
+
+/** Total reactant and product coefficients from the stack. */
 export function composeAlphas(pH: number, stack: SideReactionStack): AlphaBreakdown {
   const aH = alphaH(stack.ligandPKas, pH);
   const aOH = stack.hydrolysis
@@ -94,8 +100,9 @@ export function composeAlphas(pH: number, stack: SideReactionStack): AlphaBreakd
   }
   const aCx = alphaComplex(pH, stack.complex);
   return {
-    alphaM: aOH * aL,
-    alphaY: aH * aCx,
+    alphaM: combineSideReactionBranches([aOH, aL]),
+    alphaY: aH,
+    alphaProduct: aCx,
     alphaH: aH,
     alphaOH: aOH,
     alphaL: aL,
@@ -106,8 +113,8 @@ export function composeAlphas(pH: number, stack: SideReactionStack): AlphaBreakd
 
 /** log K′ of a primary reaction at a given pH. */
 export function condLogKPrimary(logKf: number, pH: number, stack: SideReactionStack): number {
-  const { alphaM, alphaY } = composeAlphas(pH, stack);
-  return condLogK(logKf, { alphaM, alphaY });
+  const { alphaM, alphaY, alphaProduct } = composeAlphas(pH, stack);
+  return condLogK(logKf, { alphaM, alphaY, alphaProduct });
 }
 
 export interface CondLogKCurveResult {
@@ -138,7 +145,11 @@ export function condLogKCurveFromStack(
     const pH = pHmin + ((pHmax - pHmin) * i) / points;
     const br = composeAlphas(pH, stack);
     pHs.push(pH);
-    logKs.push(condLogK(logKf, { alphaM: br.alphaM, alphaY: br.alphaY }));
+    logKs.push(condLogK(logKf, {
+      alphaM: br.alphaM,
+      alphaY: br.alphaY,
+      alphaProduct: br.alphaProduct,
+    }));
     logAlphaH.push(Math.log10(br.alphaH));
     logAlphaOH.push(Math.log10(br.alphaOH));
     logAlphaL.push(Math.log10(br.alphaL));
@@ -185,7 +196,7 @@ export function hydroxideSolCurveMasked(
     const logFreeMetal = -pKspApp + n * (PKW - pH);
     const br = composeAlphas(pH, stack);
     // α_M for solubility: hydroxo + auxiliary (NH₃, glycinate), without Y-ligand protonation
-    const alphaM = br.alphaOH * br.alphaL;
+    const alphaM = br.alphaM;
     pHs.push(pH);
     logS.push(logFreeMetal + Math.log10(alphaM));
   }
@@ -247,7 +258,7 @@ export function solubilityRegimeFractionsMasked(
     : pKsp;
   const logFreeMetal = -pKspApp + n * (PKW - pH);
   const br = composeAlphas(pH, stack);
-  const logSat = logFreeMetal + Math.log10(br.alphaOH * br.alphaL);
+  const logSat = logFreeMetal + Math.log10(br.alphaM);
 
   const logBetasOH = stack.hydrolysis?.logBetasOH ?? [];
   const logBetasL = stack.auxLigand?.logBetasL ?? [];
@@ -266,12 +277,14 @@ export function concentrationFromPX(pX: number): number {
 /** Global α_M for exchange (hydrolysis + auxiliary at a given pH). */
 export function alphaMetalGlobal(pH: number, stack: SideReactionStack): number {
   const br = composeAlphas(pH, stack);
-  return br.alphaOH * br.alphaL;
+  return br.alphaM;
 }
 
 export interface DistributionParams {
-  /** Selectivity constant K²_H/M (exam: K²_H/Ni = 3) */
+  /** Selectivity constant K^z_H/M. */
   kSelSquared: number;
+  /** Charge magnitude of the exchanging metal. */
+  charge?: number;
   pH: number;
   stack: SideReactionStack;
   /** [H⁺] in the resin (≈ CI during the experiment) */
@@ -280,15 +293,15 @@ export interface DistributionParams {
 
 /**
  * Distribution coefficient D = [M]_resin / [M′]_sol.
- * D = K² · (α_M)^−1 · [H⁺]_bulk² / [H⁺]_resin²
+ * D = K^z · (α_M)^−1 · ([H⁺]_resin/[H⁺]_bulk)^z
  */
 export function distributionCoefficient(params: DistributionParams): number {
-  const { kSelSquared, pH, stack, hResin } = params;
+  const { kSelSquared, pH, stack, hResin, charge = 2 } = params;
   const hBulk = Math.pow(10, -pH);
   const alphaM = alphaMetalGlobal(pH, stack);
   const safeAlpha = Math.max(alphaM, 1e-30);
   const safeHResin = Math.max(hResin, 1e-30);
-  return kSelSquared * (hBulk * hBulk) / (safeAlpha * safeHResin * safeHResin);
+  return kSelSquared * Math.pow(safeHResin / Math.max(hBulk, 1e-30), Math.max(charge, 0)) / safeAlpha;
 }
 
 export interface ExchangeFractionParams {
@@ -390,6 +403,8 @@ export interface Elution3CParams extends ElutionParams {
   kSelSquared: number;
   /** [H⁺] in the resin (M). */
   hResin: number;
+  /** Charge magnitude of the retained ion. */
+  charge?: number;
 }
 
 export interface Elution3CPoint {
@@ -421,7 +436,13 @@ export function elutionAtPH3C(p: Elution3CParams, pH: number): Elution3CPoint {
   const cY = Math.max(p.cEdta, 0);
   const logKp = condLogKPrimary(p.logKfNiY, pH, p.stack);
   const kf = Math.pow(10, logKp);
-  const D = distributionCoefficient({ kSelSquared: p.kSelSquared, pH, stack: p.stack, hResin: p.hResin });
+  const D = distributionCoefficient({
+    kSelSquared: p.kSelSquared,
+    pH,
+    stack: p.stack,
+    hResin: p.hResin,
+    charge: p.charge,
+  });
 
   if (cNi <= 0) {
     return { fractionEluted: 0, logKprime: logKp, logD: Math.log10(Math.max(D, 1e-30)), mFree: 0, chelate: 0, resinHeld: 0 };
@@ -556,6 +577,7 @@ export function exchangeDistributionCurve(
   volumeL: number,
   pHRange: [number, number] = [1, 14],
   points = 200,
+  charge = 2,
 ): { pHs: number[]; logD: number[]; phi: number[] } {
   const r = massResinG / volumeL;
   const capacity = (ciMeqPerG * massResinG) / volumeL;
@@ -564,7 +586,7 @@ export function exchangeDistributionCurve(
   const phi: number[] = [];
   for (let i = 0; i <= points; i++) {
     const pH = pHRange[0] + ((pHRange[1] - pHRange[0]) * i) / points;
-    const d = distributionCoefficient({ kSelSquared, pH, stack, hResin });
+    const d = distributionCoefficient({ kSelSquared, pH, stack, hResin, charge });
     pHs.push(pH);
     logD.push(Math.log10(Math.max(d, 1e-30)));
     phi.push(resinExchangeFraction({ d, r, capacityFactorMeqPerL: capacity }));

@@ -1,6 +1,5 @@
 // Conditional constants engine (Ringbom).
-// K' = K / (α_M · α_Y)    log K' = log K − log α_M − log α_Y
-// All α ≥ 1; equals 1 when no side reaction is present.
+// Side-reaction coefficients on reactants lower K′; coefficients on products raise it.
 
 import { PKW } from './constants';
 import { alphaFractions } from './equilibrium';
@@ -63,17 +62,59 @@ export function alphaL(logBetasL: number[], cL: number): number {
  * Conditional constant (log K').
  * log K' = logKf − log(α_M) − log(α_Y)
  *
- * α_M = αM_OH · αM_L  (multiplicative combination of metal side-reaction coefficients)
- *
  * @param logKf   formation log K in ideal medium
- * @param alphaM  total metal coefficient (αOH · αL; pass 1 if not applicable)
+ * @param alphaM  total metal coefficient (pass 1 if not applicable)
  * @param alphaY  total ligand coefficient (αH; pass 1 if not applicable)
  */
+export interface ConditionalTerm {
+  alpha: number;
+  stoich?: number;
+}
+
+export interface ConditionalReaction {
+  reactants?: ConditionalTerm[];
+  products?: ConditionalTerm[];
+}
+
+/**
+ * Applies side-reaction coefficients to an arbitrary stoichiometric reaction.
+ * For aA + bB ⇌ cP:
+ * log K′ = log K + c log αP − a log αA − b log αB.
+ */
+export function conditionalLogK(logK: number, reaction: ConditionalReaction): number {
+  const contribution = (terms: ConditionalTerm[] | undefined) => (terms ?? []).reduce((sum, term) => {
+    const alpha = Math.max(term.alpha, 1e-300);
+    return sum + (term.stoich ?? 1) * Math.log10(alpha);
+  }, 0);
+  return logK + contribution(reaction.products) - contribution(reaction.reactants);
+}
+
+/** Compatibility helper for the common 1:1 reaction M + Y ⇌ MY. */
 export function condLogK(
   logKf: number,
-  { alphaM, alphaY }: { alphaM: number; alphaY: number }
+  {
+    alphaM,
+    alphaY,
+    alphaProduct = 1,
+    stoichM = 1,
+    stoichY = 1,
+    stoichProduct = 1,
+  }: {
+    alphaM: number;
+    alphaY: number;
+    alphaProduct?: number;
+    stoichM?: number;
+    stoichY?: number;
+    stoichProduct?: number;
+  },
 ): number {
-  return logKf - Math.log10(alphaM) - Math.log10(alphaY);
+  return conditionalLogK(logKf, {
+    reactants: [
+      { alpha: alphaM, stoich: stoichM },
+      { alpha: alphaY, stoich: stoichY },
+    ],
+    products: [{ alpha: alphaProduct, stoich: stoichProduct }],
+  });
 }
 
 /**
