@@ -100,10 +100,10 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   },
   alphaY: {
     meaning: {
-      es: 'Fracción del ligando en su forma libre reactiva (coeficiente α de Ringbom).',
-      en: 'Fraction of the ligand in its free reactive form (Ringbom α coefficient).',
+      es: 'Coeficiente de reacción lateral del ligando: αY = [Y′]/[Y reactivo]. Su recíproco fY es la fracción reactiva.',
+      en: 'Ligand side-reaction coefficient: αY = [Y′]/[reactive Y]. Its reciprocal fY is the reactive fraction.',
     },
-    units: { es: 'adimensional, 0–1', en: 'dimensionless, 0–1' },
+    units: { es: 'adimensional, ≥ 1', en: 'dimensionless, ≥ 1' },
   },
   Kd: {
     meaning: {

@@ -8,11 +8,12 @@ import {
   SelectControl, Slider, Toggle,
 } from '../components/Controls';
 import {
-  availableSystems, buildSystem, buildArbitraryDiagram, getSystemDef, presetToArbitrary, waterLines,
+  availableSystems, buildSystem, buildArbitraryDiagram, getSystemDef, presetToArbitrary, waterLines, S_NERNST,
   type ArbSpecies, type ArbCouple,
 } from '../lib/pourbaix';
 import { formatMolar } from '../lib/format';
 import { useT } from '../hooks/useT';
+import { generalizedRedoxGrid, redoxGraphPotentials, type RedoxGraph } from '../lib/generalizedRedoxDiagram';
 
 // ── Arbitrary custom system types ─────────────────────────────────────────────
 
@@ -269,6 +270,9 @@ export default function Pourbaix() {
   const [cursorE, setCursorE] = useState(0);
   const [arb, setArb] = useState<ArbitraryCustom>(DEFAULT_ARB);
   const [editWarnings, setEditWarnings] = useState<string[]>([]);
+  const [showGeneralizedGraph, setShowGeneralizedGraph] = useState(false);
+  const [graphPX, setGraphPX] = useState(0);
+  const [ligandShift, setLigandShift] = useState(0);
 
   function editCurrentSystem() {
     const def = getSystemDef(systemId);
@@ -285,7 +289,7 @@ export default function Pourbaix() {
     'log C': logC.toFixed(1),
   }), [useCustom, arb.species, systemId, logC]);
 
-  useShareEffect('pourbaix', { systemId, useCustom, logC, showWater, cursorPH, cursorE, arb }, (s) => {
+  useShareEffect('pourbaix', { systemId, useCustom, logC, showWater, cursorPH, cursorE, arb, showGeneralizedGraph, graphPX, ligandShift }, (s) => {
     if (s.systemId) setSystemId(s.systemId);
     if (s.useCustom !== undefined) setUseCustom(s.useCustom);
     if (s.logC !== undefined) setLogC(s.logC);
@@ -293,6 +297,9 @@ export default function Pourbaix() {
     if (s.cursorPH !== undefined) setCursorPH(s.cursorPH);
     if (s.cursorE !== undefined) setCursorE(s.cursorE);
     if (s.arb) setArb(s.arb);
+    if (s.showGeneralizedGraph !== undefined) setShowGeneralizedGraph(s.showGeneralizedGraph);
+    if (s.graphPX !== undefined) setGraphPX(s.graphPX);
+    if (s.ligandShift !== undefined) setLigandShift(s.ligandShift);
   });
 
   function reset() {
@@ -304,6 +311,7 @@ export default function Pourbaix() {
     setCursorE(0);
     setArb(DEFAULT_ARB);
     setEditWarnings([]);
+    setShowGeneralizedGraph(false); setGraphPX(0); setLigandShift(0);
   }
 
   const diagram = useMemo(
@@ -315,10 +323,48 @@ export default function Pourbaix() {
     () => (useCustom ? buildArbitraryDiagram(arb.species, arb.couples, logC) : null),
     [arb, logC, useCustom],
   );
+  const redoxGraph = useMemo<RedoxGraph>(() => ({
+    nodes: arb.species.map((species) => ({
+      id: species.formula, label: species.formula,
+      phase: species.kind === 'ion' ? 'aqueous' as const : 'solid' as const,
+      logActivity: species.kind === 'ion' ? logC : 0,
+    })),
+    edges: [
+      ...arb.couples.map((couple) => ({
+        from: couple.ox, to: couple.red,
+        logK0: couple.n * couple.E0 / S_NERNST,
+        pHCoefficient: -(couple.mH ?? 0), pXCoefficient: ligandShift,
+        peCoefficient: -couple.n,
+      })),
+      ...arb.species.filter((species) => species.kind === 'hydroxide').map((species) => ({
+        from: species.ionRef, to: species.formula,
+        logK0: species.pKsp - 14 * species.z,
+        pHCoefficient: species.z,
+      })),
+    ],
+  }), [arb, logC, ligandShift]);
+  const graphGrid = useMemo(() => showGeneralizedGraph && useCustom
+    ? generalizedRedoxGrid(redoxGraph, [0, 14], [-1.6 / S_NERNST, 2.2 / S_NERNST], graphPX, 100, 100)
+    : null, [showGeneralizedGraph, useCustom, redoxGraph, graphPX]);
+  const graphPoint = useMemo(() => showGeneralizedGraph && useCustom
+    ? redoxGraphPotentials(redoxGraph, cursorPH, graphPX, cursorE / S_NERNST)
+    : null, [showGeneralizedGraph, useCustom, redoxGraph, cursorPH, graphPX, cursorE]);
+  const graphDominant = graphPoint
+    ? redoxGraph.nodes[graphPoint.scores.indexOf(Math.max(...graphPoint.scores))]?.label ?? '—'
+    : null;
 
   const { traces, annotations } = useMemo(() => {
     const data: Data[] = [];
     const ann: Partial<Annotations>[] = [];
+
+    if (graphGrid) {
+      data.push({
+        x: Array.from({ length: graphGrid.nx }, (_, i) => 14 * i / (graphGrid.nx - 1)),
+        y: Array.from({ length: graphGrid.ny }, (_, i) => -1.6 + 3.8 * i / (graphGrid.ny - 1)),
+        z: graphGrid.dominant, type: 'heatmap', showscale: false, opacity: 0.22,
+        hovertemplate: 'pH %{x:.2f}<br>E %{y:.3f} V<extra></extra>',
+      });
+    }
 
     const src = diagram ?? arbDiagram;
     if (src) {
@@ -344,7 +390,7 @@ export default function Pourbaix() {
     }
 
     return { traces: data, annotations: ann };
-  }, [diagram, arbDiagram, showWater, t]);
+  }, [diagram, arbDiagram, graphGrid, showWater, t]);
 
   const predominant = useMemo(() => {
     const src = diagram ?? arbDiagram;
@@ -421,6 +467,17 @@ export default function Pourbaix() {
             decimals={1}
           />
           <Toggle label={t('pourbaix.waterStabilityLinesToggle')} checked={showWater} onChange={setShowWater} />
+          {useCustom && (
+            <>
+              <Toggle label={t('pourbaix.generalizedGraphToggle')} checked={showGeneralizedGraph} onChange={setShowGeneralizedGraph} />
+              {showGeneralizedGraph && (
+                <>
+                  <Slider label="pX" value={graphPX} min={-5} max={30} step={0.1} decimals={1} onChange={setGraphPX} />
+                  <Slider label={t('pourbaix.ligandEdgeCoefficient')} value={ligandShift} min={-6} max={6} step={1} decimals={0} onChange={setLigandShift} />
+                </>
+              )}
+            </>
+          )}
         </PanelSection>
 
         <PanelSection title={t('pourbaix.cursorSection')} icon="✦">
@@ -432,6 +489,10 @@ export default function Pourbaix() {
           <ResultCard items={[
             { label: t('pourbaix.conditionsResultLabel'), value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
             { label: t('pourbaix.predominantApproxLabel'), value: predominant },
+            ...(graphDominant ? [
+              { label: t('pourbaix.graphPredominant'), value: graphDominant },
+              { label: t('pourbaix.hessCycleError'), value: graphPoint!.maxCycleError.toExponential(1) },
+            ] : []),
           ]} />
         </PanelSection>
 

@@ -555,10 +555,105 @@ Remaining: translate the other modules one at a time (own PR per module or small
 following the pattern documented in `AGENTS.md` — see the Complejos entry above for the next
 one shipped.
 
+### Selected-scope deep validation pass (2026-07-16) — complete
+
+The second exhaustive textbook pass is closed for its selected six-work scope: 1,175 substantive
+sections, 458 worked examples/cases and six end-of-chapter problems were reconciled against the
+current engines. The final work contributed independent acid–base, buffer-capacity, activity,
+solubility, complexation, complexometric-titration and redox checks without opening a new product
+finding. The deduplicated backlog therefore remains 43 items (`R2-ENGINE-01`…`41`, one testability
+item and one terminology item). Internal source inconsistencies were isolated from app defects;
+no scientific engine or UI code was changed during the audit.
+
+### R2 correctness foundations (2026-07-16) — complete
+
+Implemented the first dependency block from the textbook audit: additive side-reaction
+polynomials, stoichiometric conditional constants with distinct reactant/product coefficients,
+explicit prepared/final acid-base titration forms, direction-aware Gran extrapolation and
+quantitativity, the corrected proton ratio and charge exponent for ion exchange, and a pure
+shared buffer-capacity engine. The acid-base titration UI now exposes the prepared and final
+ladder forms; EDTA output and glossary text distinguish the free fraction `fY` from reciprocal
+`αY`. Direct regressions cover every audit golden for this block, and the full 288-test suite
+passes.
+
+### R2 multianalyte titration layer (2026-07-16) — complete
+
+Added shared-ligand competitive EDTA titration for multiple metals, global-electron-balance redox
+titration for multiple analytes, continuous pre-neutralized acid-base starting compositions, and
+potentiometric signals driven by the exact EDTA free-species curve. Acid-base states can now carry
+independent side-reaction coefficients, feed their shifted pKa′ values into the exact balance and
+display a pKa′ sweep versus the buffered complexant variable. The implementation includes
+bilingual controls and seven new audit goldens;
+all 295 tests, lint, TypeScript and the production build pass. Interactive browser QA could not run
+because this session exposed no browser backend.
+
+### R2 separation and conditional-solubility layer (2026-07-16) — in progress
+
+Added bilateral conditional Ksp for general stoichiometry, a finite shared-precipitant balance
+for multiple solids, sequential liquid-liquid extraction with explicit phase routing, full
+pH-dependent side reactions for metal-chelate extraction, and exact competitive ion exchange on
+one counter-ion/capacity pool. Their bilingual controls expose three-solid planning, collected
+extraction branches and the exact multion resin equilibrium. R2-12 and R2-13 are complete;
+R2-11 and R2-15 retain only their later coupled-stage/resin-acid-base work, tracked under R2-20
+and R2-27 respectively. The audit regression file now contains 20 direct tests; lint, TypeScript
+and the production build pass.
+
+### R2 conditional-redox and phase-coupling layer (2026-07-16) — in progress
+
+Added complete Ox/Red state polynomials shared by static and titration views, additive independent
+ligand branches, conservative multistate redox-network titration, and multi-pair E°′–pX diagrams
+with crossing detection and an editable −5…30 domain. R2-16 through R2-19 are complete. A new
+acid-base/precipitation solver conserves aqueous plus solid analyte, charge and Ksp for 1:1 solids
+and exposes the phase fraction in the solubility UI; R2-20 remains open only for general p:q and
+finite-metal coupling, which is being completed together with R2-21. The focused audit suite now
+contains 27 regressions; lint, TypeScript and production build pass.
+
+### R2 coupled-phase titration layer (2026-07-16) — complete
+
+Completed the general finite M_mA_x acid-base/precipitation balance and propagated it to volumetric
+titration, precipitation-specific Gran fitting and solid-phase buffer capacity. Molecular solids
+now support arbitrary protonation ladders, self-consistent saturation pH and competing molecular/
+ionic phases. The acid-base titration UI can switch among aqueous, precipitating, biphasic and
+finite-resin media without changing the formal equivalence definition. Shared engines conserve
+mass, charge, phase inventories and resin capacity; all R2-20 through R2-27 acceptance goldens pass.
+The focused audit file contains 38 regressions and the complete suite contains 318 tests; lint,
+TypeScript and the production build pass.
+
+### R2 thermodynamics, generalized diagrams and analytical signals (2026-07-16) — complete
+
+Closed the remaining R2-28 through R2-41 findings in both calculation engines and visible UI:
+
+- Solvent-aware acid–base state now shares autoprotolysis, neutrality, acidity domain, lionium/
+  lyate labels and temperature-dependent Nernst slope. Water at 25 °C remains the exact legacy
+  preset; DMF and ethanol demonstrate leveling/differentiation without forcing aqueous limits.
+- Explicit ionization/ion-pair dissociation, standard-transfer free energies and microscopic
+  acid–base state networks are available in Activity and Acid–base, including glycine macroconstant,
+  tautomerization and isoelectric-point outputs.
+- The metal-speciation map now supports conditional pL′, analytical metal concentration, mixed
+  hydroxo–ligand species, a solid phase and joint feasibility constraints. The custom Pourbaix view
+  adds a phase-aware N-state reaction-graph classifier with pX and Hess cycle-closure diagnostics.
+- Conditional precipitation titration now derives Ksp′, free-ion activities and the electrode signal
+  from one state. Solid-solution coprecipitation supports ideal/regular lattice activities, finite
+  mass conservation and miscibility-gap detection.
+- Titration UI now exposes conserved back-titration inventories, quantitative endpoint volume,
+  Fabs/Frel, absorbance, conductivity, exact stoichiometric conversion targets and polynuclear redox
+  corrections instead of leaving these as disconnected formulas or heuristic badges.
+
+New pure engines: `thermodynamicState.ts`, `ionPairing.ts`, `acidBaseMicrostates.ts`,
+`conditionalPhaseMap.ts`, `multisystemFeasibility.ts`, `generalizedRedoxDiagram.ts`,
+`conditionalPrecipSensor.ts`, `solidSolution.ts`, `titrationProtocols.ts`, `endpointError.ts`,
+`titrationObservables.ts`, `stoichiometricQuantitativity.ts` and `polynuclearRedox.ts`.
+The focused audit suite contains 53 direct regressions; the complete gate passes 332 tests across
+18 files plus ESLint, TypeScript and the production build. This section supersedes the older
+“in progress” notes above: all 41 engine findings plus R2-TEST-01 and R2-UI-01 are closed.
+
 ### Near-term
 
 | Feature | Notes |
 | --- | --- |
+| **Conditional side-reaction coefficient corrections (R2 audit)** | ✅ Done — mutually exclusive branches add, product coefficients enter the numerator, and arbitrary stoichiometric exponents are supported by the shared conditional-constant engine. |
+| **Acid–base titration direction and starting-composition corrections (R2 audit)** | ✅ Done — explicit pure/continuous starting compositions, formal equivalences outside pH 0–14, direction-aware Gran and q% are shipped. |
+| **Ion-exchange proton-competition direction correction (R2 audit)** | ✅ Done — corrected resin/bulk proton ratio, explicit charge exponent, D/φ and three-compartment elution revalidated. |
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
 | **Bilingual UI (Spanish / English)** | ✅ Done — all 16 modules across all 7 hubs fully bilingual (see resolved sections above). |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
@@ -567,10 +662,50 @@ one shipped.
 
 ### Medium-term
 
+Status note (2026-07-16): the R2-derived rows from competitive multi-metal complexometry through
+solid-solution coprecipitation are implemented and retained below as design specifications. The
+worked-example gallery, constants migration and Pitzer support remain future work.
+
 | Feature | Notes |
 | --- | --- |
 | **Step-by-step titration animation** | Visual playback of the titration curve point by point, with species fractions updated in sync. |
-| **Non-aqueous solvents** | Leveling effect, acidity scales in amphiprotic solvents (MeOH, AN, DMSO). |
+| **Competitive multi-metal complexometric titration** | Extend the single-metal EDTA curve to conserve one balance per metal plus the shared ligand balance, resolve displacement between complexes, and expose successive equivalence points. Preserve the current one-metal curve as the exact reduced case and add two-metal selectivity goldens before wiring the UI. |
+| **Sequential redox titration of analyte mixtures** | Extend the single-analyte redox curve to combine multiple oxidants or reductants against one titrant, conserve the global electron balance, and expose successive equivalence points in formal-potential order. Preserve the current one-analyte result as the exact reduced case. |
+| **Conditional acid-base constants under state-specific complexation** | Support independent side-reaction coefficients for each member of an acid-base conjugate pair, derive the shifted pKa and predominance boundaries versus the buffered complexant variable, and optionally feed those conditional constants into pH balances. Preserve all current curves exactly when both coefficients are one. |
+| **Multi-state redox speciation** | Normalize three-or-more-state Ox/intermediate/Red systems over one conserved pool, with an electron count per step, automatic omission of intermediates that never predominate, and optional activity-one solid phases. This extends the current two-independent-couple view without changing its prediction workflow. |
+| **Potentiometric response for complexometric titrations** | Couple the existing EDTA mass-balance curve to selectable metal-responsive or redox-indicator electrodes, deriving the Nernst signal from the same free-species activities and state-specific conditional constants. Preserve the current chemical curve when the sensor overlay is disabled. |
+| **Two-sided conditional solubility and multi-salt precipitation** | Combine cation hydrolysis/complexation and anion protonation in one stoichiometric M_mX_x balance, allow an analytical common-ion contribution on either side, and use independent side-reaction stacks per competing solid with one shared concentration when the common ion is also a ligand. Conserve total precipitant, ligand, and residual solids across two-or-more-salt precipitation or selective-redissolution stages at changing pH/pL, preserving the current anion-only, hydroxide-only, and one-metal pX curves as exact reduced cases. |
+| **Sequential liquid–liquid separation planner** | Track any number of analytes through extraction and back-extraction stages, with explicit phase routing plus per-stage pH and phase-volume ratio. Conserve each analyte across branches and reduce every isolated stage to the existing single-equilibrium partition result. |
+| **Conditional chelate extraction with aqueous side reactions** | Extend chelate extraction beyond the current linear pH model by adding per-metal hydrolysis/complexation stacks and ligand protonation, deprotonation, and phase partitioning. Support non-monotonic extraction windows and selective comparisons while preserving the current line when all side-reaction coefficients are one. |
+| **Speciation-aware competitive ion exchange** | Solve multiple analytes against one resin capacity and explicit counter-ion while giving each analyte its own fixed charge or acid–base ladder and conditional complexation stack under shared pH/pL conditions. Conserve solution/resin mass, charge, and equivalents through loading and selective desorption. Support both cation- and anion-exchange resins with explicit charge signs; preserve the existing binary cation batch and fixed-selectivity multi-zone views as reduced cases. |
+| **State-specific conditional redox equilibria and titrations** | Feed independent oxidized/reduced-state binding polynomials into both static formal-potential views and the redox titration balance so multi-protonation and complexation follow the selected pH. Preserve the current fixed-potential and single-slope results exactly when both side-reaction coefficients are one, and include a diprotic reduced-state regression whose slope transitions smoothly across both pKa values. |
+| **Multi-state redox reaction-network titrations** | Conserve shared inventories and electron balance across three-or-more-state reagent networks whose controlling couple can change with composition or across equivalence. Preserve binary and multi-analyte titrations as reduced cases, with explicit mass/electron conservation tests. |
+| **Adaptive multi-couple formal-potential diagrams** | Extend the single-couple E°′ versus pX view to compare multiple couples, identify crossings and stable regions, and use an editable or data-driven axis instead of a fixed 0–14 domain. Preserve each current curve exactly; include regression domains with negative pL and pX above 20. |
+| **Multiple auxiliary-ligand side-reaction stacks** | Allow each reference species to bind any number of independent auxiliary ligands, each with free, total, or fixed-pX conditions. Sum mutually exclusive binding-polynomial terms without inventing mixed complexes, while preserving the corrected one-ligand stack as an exact reduced case. |
+| **Coupled acid–base/precipitation equilibrium** | Conserve a protonation ladder, total/free precipitant, charge, and one-or-more solid-phase amounts in one state so conditional acidity, saturation boundaries, consumption between phases, and pH–pM regions come from the same balance. Preserve the current aqueous pH and fixed-pH solubility engines as exact limits. |
+| **Acid–base titration with a precipitating conjugate form** | Extend the unified titration engine so neutralization and precipitation/dissolution share mass, charge, and volume balances throughout the curve. Preserve the existing acid–base and precipitation modes as reduced cases and validate phase onset, equivalence, quantitativity, and indicator ranges together. |
+| **Multiprotic molecular-solid solubility and saturation pH** | Generalize intrinsic-solubility curves to arbitrary protonation ladders and charges, then solve the saturated solution's pH from electroneutrality when requested. Preserve the current monoprotic acid/base formulas exactly and add diprotic acid, diprotic base, and ampholyte regressions. |
+| **Competing molecular and salt solid phases** | Let one acid–base pool equilibrate with multiple candidate solids, including a neutral molecular phase and salts of conjugate forms with explicit counter-ions. Select stable phases from the shared mass/charge balance while preserving each current one-solid model as an exact limit. |
+| **Stoichiometry-aware Gran analysis for precipitation titrations** | Derive the linearizing function from the monitored equilibrium and reaction stoichiometry, then fit it against the same volume/concentration state used by the precipitation curve. Preserve the current acid–base Gran result and add a 2:1 hydroxide-precipitation regression whose extrapolated intercept recovers the formal equivalence volume. |
+| **Buffer capacity with active solid phases** | Compute buffer capacity from the derivative of the full mass/charge/phase balance so precipitation onset, two-phase coexistence, and solid exhaustion contribute correctly. Reduce exactly to the current homogeneous-solution capacity when no solid is active and verify continuity across phase boundaries. |
+| **Biphasic acid–base equilibrium and titration** | Couple aqueous protonation ladders to partitioning of selected neutral or charged forms across an immiscible phase, conserving mass, aqueous charge, phase volumes, and titrant equivalents. Support phase-ratio-dependent conditional pKa values and titration curves, while reducing exactly to the current aqueous pH/titration solver with no organic phase and to the current extraction result when pH is imposed. |
+| **Acid–base titration with ion exchange** | Couple one or more protonation ladders and titrant equivalents to a finite-capacity cation- or anion-exchange resin with explicit counter-ion, selectivity, loading, and phase ratio. Preserve formal equivalence volumes while predicting resin-induced pH shifts, separated endpoints, and a Gran transform derived from the same conserved state; reduce exactly to the aqueous titration when resin loading is zero. |
+| **Solvent-parameterized acid–base equilibria and titrations** | Replace water-only constants and species with a selectable amphiprotic-solvent model: solvent ion pair, autoprotolysis constant, solvent-specific pKa values, acidity domain, and native titrant. Preserve the aqueous engine exactly as the water preset; support leveling/differentiation and mixtures whose reaction order changes between solvents. |
+| **Ion pairing and solvent-transfer thermodynamics** | Add explicit molecular solvation, ion-pair formation, free-ion dissociation, and counter-ion-specific equilibria for low-permittivity media. Optionally relate partition data, standard transfer free energies, and solvent-to-solvent constant shifts through a documented thermodynamic convention; reduce to the dissociating-solvent model when ion pairing is negligible. |
+| **Phase-aware conditional pL–pH predominance maps** | Extend the existing dissolved-species grid with analytical metal concentration, solid-phase saturation, ligand protonation on a conditional pL axis, and explicitly declared mixed hydroxo–ligand species. Preserve the current free-ligand/no-solid map exactly as the reduced case and verify concentration-dependent phase boundaries. |
+| **Multi-system feasibility overlays for 1D/2D domains** | Evaluate multiple compatible chemical systems on one shared domain, let each define a target phase/species, conversion target, or interference limit, and display their intersection as an operating window with point classification. Reuse the single-system result unchanged and reject comparisons whose axes or activity conventions differ. |
+| **Phase-aware generalized redox predominance diagrams** | Build redox predominance regions from one reaction graph spanning multiple oxidation states, state-specific protonation/complexation, analytical pools, general solid phases, and editable pH or ligand domains. Reuse Hess-law cycle closure, suppress states with no stable region, and preserve the current arbitrary Pourbaix diagram and soluble binary conditional-potential curve as exact reduced cases. |
+| **Conditional potentiometric precipitation sensors and titrations** | Couple general precipitation stoichiometry, side reactions of both ions, pH, dilution, and indicator/reference electrodes in one conserved state. Derive the Nernst signal and any calibration or Gran transform from free activities in that state; preserve the current unconditioned precipitation curve and static metal-electrode result as exact limits. |
+| **Multi-step titration protocols** | Support direct/inverse reagent placement, back titration with a known excess and secondary titrant, substitution, and indirect workflows as a sequence of conserved reaction states. Reuse the corresponding equilibrium engine at every step, preserve moles/charge/volume between steps, and reduce exactly to each current direct curve. |
+| **Quantitative indicator endpoints and errors** | Derive the endpoint volume, systematic bias, relative error, and indicator-width contribution to volume uncertainty from the same chemical curve and transition equilibrium. Cover acid–base, metallochromic, precipitation, and redox indicators; retain current bands and suitability badges as summaries computed from those results. |
+| **Stoichiometric reaction quantitativity targets** | Compute reaction extent, residual reactants, and percent conversion from balanced coefficients and arbitrary initial inventories, with an editable target and the required conditional constant or operating condition. Cover non-1:1 reactions as well as equimolar complexation, distinguish exact conversion from the existing excess-reagent approximation, and replace fixed log-K feasibility badges with target- and concentration-aware results while preserving them as optional summaries. |
+| **Polynuclear redox species and titrations** | Generalize redox speciation and titration balances so oxidized and reduced species may contain different numbers of the conserved element and use explicit activity exponents. Preserve the current mononuclear binary result exactly, while supporting systems such as dihalogen/halide and dichromate/chromium(III), whose mass balances and equivalence potentials depend on analytical concentration. |
+| **Optical and conductometric titration observables** | Add Beer–Lambert absorbance and ionic-conductivity signals on top of the shared titration composition, including dilution and multiple contributing species. Keep chemistry and equivalence volumes unchanged, recover linear branch intersections when only one species absorbs, and reproduce strong-acid/strong-base V-shaped conductometric curves. |
+| **Shared thermodynamic conditions** | Introduce a shared temperature state so pKw/neutrality, Nernst slopes, and condition-specific equilibrium constants remain internally consistent across modules; accept explicit constants when no ΔH° model is available rather than inventing temperature dependence. Keep 25 °C as a bit-for-bit-compatible preset, with pressure-dependent pKw as an advanced extension. |
+| **Microscopic acid–base state networks** | Extend one-species-per-proton ladders to optional networks with multiple microstates at the same proton count, derived macroscopic constants, and tautomer/zwitterion populations. Preserve the current ladder as the exact collapsed case and validate the mapping with glycine-like ampholytes. |
+| **Homogeneous buffer-capacity regression coverage** | Move the buffer-capacity expression currently embedded in the mixtures view into a pure tested engine function, retaining water and general charge-variance terms for polyprotic mixtures. Preserve the current graph exactly and add direct analytical goldens before extending capacity to active solid phases. |
+| **Side-reaction coefficient convention clarity** | Use distinct names and help text for the free-species fraction (0–1) and its reciprocal side-reaction coefficient (≥1). Keep the current conditional-constant mathematics unchanged, but ensure tooltips, traces, and result cards state which convention is displayed and satisfy `K′=K·fM·fY=K/(αM·αY)`. |
+| **Solid-solution coprecipitation phases** | Represent thermodynamic coprecipitation through mixed solid phases with explicit component fractions, solid-phase activities, optional non-ideality, and miscibility gaps. Preserve pure independent precipitates as exact endpoint cases, conserve every analytical pool, and keep surface adsorption and kinetic occlusion as separate mechanisms rather than folding them into a solid-solution coefficient. |
 | **Pitzer model** | Activity corrections valid at high ionic strength (I > 0.5 M), extending Debye–Hückel. |
 
 ### Long-term / exploratory

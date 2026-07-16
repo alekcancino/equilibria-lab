@@ -6,7 +6,7 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Segmented, Slider,
+  ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Segmented, Slider, Toggle,
 } from '../components/Controls';
 import {
   ionicStrength,
@@ -18,6 +18,7 @@ import {
   logGammaOf as libLogGammaOf,
 } from '../lib/activity';
 import { formatMolar, formatSci } from '../lib/format';
+import { ionPairFractions, overallIonizationConstant } from '../lib/ionPairing';
 
 const I_POINTS = 200;
 
@@ -62,8 +63,11 @@ export default function Actividad() {
   const [iDirect, setIDirect] = useState(0.2);
   const [model, setModel] = useState<GammaModel>('dh');
   const [ionIdx, setIonIdx] = useState(0);
+  const [showIonPairing, setShowIonPairing] = useState(false);
+  const [pKi, setPKi] = useState(0.30103);
+  const [pKd, setPKd] = useState(4.56864);
 
-  useShareEffect('actividad', { cIon, z, pH, iMode, iDirect, model, ionIdx }, (s) => {
+  useShareEffect('actividad', { cIon, z, pH, iMode, iDirect, model, ionIdx, showIonPairing, pKi, pKd }, (s) => {
     if (s.cIon !== undefined) setCIon(s.cIon);
     if (s.z !== undefined) setZ(s.z);
     if (s.pH !== undefined) setPH(s.pH);
@@ -72,6 +76,9 @@ export default function Actividad() {
     if (isValidModel(s.model)) setModel(s.model);
     if (typeof s.ionIdx === 'number' && Number.isInteger(s.ionIdx)
       && s.ionIdx >= 0 && s.ionIdx < ION_SIZES.length) setIonIdx(s.ionIdx);
+    if (s.showIonPairing !== undefined) setShowIonPairing(s.showIonPairing);
+    if (s.pKi !== undefined) setPKi(s.pKi);
+    if (s.pKd !== undefined) setPKd(s.pKd);
   });
 
   function reset() {
@@ -82,6 +89,9 @@ export default function Actividad() {
     setIDirect(0.2);
     setModel('dh');
     setIonIdx(0);
+    setShowIonPairing(false);
+    setPKi(0.30103);
+    setPKd(4.56864);
   }
 
   const ion = ION_SIZES[ionIdx];
@@ -105,6 +115,9 @@ export default function Actividad() {
   const gammaH = model === 'kielland' ? activityCoefficient(1, I, 9) : gamma1;
   const gammaOH = model === 'kielland' ? activityCoefficient(1, I, 3.5) : gamma1;
   const pKwApp = apparentPKw(gammaH, gammaOH);
+  const pairConstants = { ionization: Math.pow(10, -pKi), dissociation: Math.pow(10, -pKd) };
+  const pairFractions = ionPairFractions(pairConstants);
+  const overallK = overallIonizationConstant(pairConstants);
 
   const gammaTraces = useMemo<Data[]>(() => {
     const Is: number[] = [];
@@ -171,6 +184,22 @@ export default function Actividad() {
         />
       ),
     },
+    ...(showIonPairing ? [{
+      id: 'ion-pairing',
+      label: t('actividad.ionPairTab'),
+      node: (
+        <Chart
+          data={[{
+            x: [t('actividad.molecularSpecies'), t('actividad.ionPairSpecies'), t('actividad.freeIonsSpecies')],
+            y: [pairFractions.molecular, pairFractions.ionPair, pairFractions.freeIons],
+            type: 'bar', marker: { color: ['#0072B2', '#CC79A7', '#009E73'] },
+            hovertemplate: 'α = %{y:.5f}<extra></extra>',
+          }]}
+          xTitle={t('actividad.chemicalStateAxis')} yTitle={t('actividad.fractionAxis')}
+          yRange={[0, 1]} exportName="equilibria-actividad-ion-pairing" exportMetadata={exportMetadata}
+        />
+      ),
+    }] : []),
   ];
 
   return (
@@ -271,6 +300,16 @@ export default function Actividad() {
             { label: 'a_H ≈ γ·[H⁺]', value: formatSci(gammaH * Math.pow(10, -pH)) },
           ]} />
         </PanelSection>
+        <PanelSection title={t('actividad.ionPairSection')} icon="⇌">
+          <Toggle label={t('actividad.showIonPairing')} checked={showIonPairing} onChange={setShowIonPairing} />
+          {showIonPairing && (
+            <>
+              <Slider label={t('actividad.pKiLabel')} value={pKi} min={-2} max={12} step={0.01} decimals={2} onChange={setPKi} />
+              <Slider label={t('actividad.pKdLabel')} value={pKd} min={-2} max={12} step={0.01} decimals={2} onChange={setPKd} />
+              <p className="hint">{t('actividad.ionPairHint')}</p>
+            </>
+          )}
+        </PanelSection>
         <InfoBox title={t('actividad.activityCoeffModelsTitle')}>
           <p>
             <strong>{t('actividad.dhExtendedBold')}</strong>: <code>log γ = −0.51 z² √I / (1 + 0.33·a·√I)</code>{t('actividad.dhExtendedBody')}
@@ -298,6 +337,11 @@ export default function Actividad() {
           { label: 'γ (z = 2)', value: Number.isFinite(gamma2) ? gamma2.toFixed(2) : '—' },
           { label: 'γ (z = 3)', value: Number.isFinite(gamma3) ? gamma3.toFixed(2) : '—' },
           { label: t('actividad.apparentPKw'), value: Number.isFinite(pKwApp) ? pKwApp.toFixed(2) : '—', helpId: 'pKwApp' },
+          ...(showIonPairing ? [
+            { label: t('actividad.overallPKa'), value: (-Math.log10(overallK)).toFixed(3), accent: true },
+            { label: t('actividad.ionPairFraction'), value: `${(100 * pairFractions.ionPair).toFixed(2)} %` },
+            { label: t('actividad.freeIonFraction'), value: `${(100 * pairFractions.freeIons).toFixed(4)} %` },
+          ] : []),
         ]} />
       </section>
     </div>

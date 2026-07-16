@@ -1,29 +1,60 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import { useShareEffect } from '../hooks/useShareableState';
 import { useT } from '../hooks/useT';
 import {
-  ConcSlider, DbPanel, Disclosure, InfoBox, LabelField, NumberSegmented, PanelSection, ResultCard, ResultCardRow,
+  ConcSlider, ConstantList, DbPanel, Disclosure, InfoBox, LabelField, NumberSegmented, PanelSection, ResultCard, ResultCardRow,
   Segmented, ModelBadge, SelectControl, Slider, SystemPresetPicker, Toggle,
 } from '../components/Controls';
 import {
   AcidSystemEditor, CoupleEditor, SideReactionEditor,
 } from '../components/Editors';
-import { coupleFromPreset, isValidAcidSystem, strongAcidSystem, type AcidSystem, type CoupleState } from '../lib/editorModels';
+import { coupleFromPreset, isValidAcidSystem, strongAcidSystem, systemLabels, type AcidSystem, type CoupleState } from '../lib/editorModels';
 import DiagramTabs from '../components/DiagramTabs';
 import { INDICATORS } from '../lib/database';
 import { formatSci } from '../lib/format';
-import { firstDerivative, granPlot, granVeq, quantitativity, secondDerivative, titrationCurve, titratableProtons } from '../lib/titration';
+import { equivalenceResidual, firstDerivative, granPlot, granVeq, quantitativity, secondDerivative, titratableProtons, titrationCurve } from '../lib/titration';
 import type { GammaModel } from '../lib/activity';
-import { alphaY4, edtaAtFraction, edtaTitrationCurve, EDTA_PKAS } from '../lib/edta';
+import {
+  alphaY4,
+  competitiveEdtaTitrationCurve,
+  complexometricSensorCurve,
+  edtaAtFraction,
+  edtaTitrationCurve,
+  EDTA_PKAS,
+} from '../lib/edta';
 import { defaultSideEditorState, type SideReactionEditorState } from '../lib/sideReactions';
-import { redoxTitrationCurve } from '../lib/redox';
+import {
+  conditionalEprimeFromStates,
+  NERNST_S,
+  peConditional,
+  redoxMixtureTitrationCurve,
+  redoxTitrationCurve,
+  type ConditionalRedoxState,
+} from '../lib/redox';
+import { redoxNetworkTitrationCurve } from '../lib/redoxNetworks';
 import { precipTitrationCurve, mohrEndpointPAg, PRECIP_PRESETS } from '../lib/precipTitration';
 import { condLogKCurve, alphaH, alphaOH } from '../lib/conditional';
 import { METAL_INDICATORS, EDTA_METAL_PRESETS, type MetalIndicator } from '../lib/indicatorDatabase';
 import { SYSTEM_PRESETS, sideFromPreset, systemPresetById } from '../lib/systemPresets';
+import { conditionalPKas } from '../lib/acidBaseConditional';
+import {
+  precipitatingAcidTitrationCurve,
+  fitPrecipitationGran,
+  precipitationGranTransform,
+  solidBufferCapacityAtPH,
+} from '../lib/acidBasePrecipitation';
+import { biphasicAcidBaseTitrationCurve } from '../lib/biphasicAcidBase';
+import { acidBaseResinTitrationCurve } from '../lib/acidBaseResin';
+import { SOLVENT_PRESETS, waterThermodynamicState } from '../lib/thermodynamicState';
+import { conditionalPrecipSensorCurve } from '../lib/conditionalPrecipSensor';
+import { backTitration } from '../lib/titrationProtocols';
+import { acidBaseEndpointError } from '../lib/endpointError';
+import { absorbanceFromComposition, strongAcidConductometricCurve } from '../lib/titrationObservables';
+import { equimolarAssociationLogKForTarget, solveReactionExtent } from '../lib/stoichiometricQuantitativity';
+import { polynuclearEquivalencePotential } from '../lib/polynuclearRedox';
 
 const GAMMA_MODELS: { value: GammaModel; label: string }[] = [
   { value: 'dh', label: 'D-H extendida' },
@@ -212,12 +243,46 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
   const [showDerivative, setShowDerivative] = useState(false);
   const [ionicStrength, setIonicStrength] = useState(0);
   const [gammaModel, setGammaModel] = useState<GammaModel>('dh');
+  const [startIndex, setStartIndex] = useState(0);
+  const [endIndex, setEndIndex] = useState(0);
+  const [useConditionalAcidBase, setUseConditionalAcidBase] = useState(false);
+  const [logStateAlphas, setLogStateAlphas] = useState<number[]>([0]);
+  const [showConditionalSweep, setShowConditionalSweep] = useState(false);
+  const [stateLogBetas, setStateLogBetas] = useState<number[]>([0]);
+  const [conditionalPX, setConditionalPX] = useState(4);
+  const [useInitialMixture, setUseInitialMixture] = useState(false);
+  const [initialEquivalents, setInitialEquivalents] = useState(0);
+  const [showPrecipCoupling, setShowPrecipCoupling] = useState(false);
+  const [coupledPKsp, setCoupledPKsp] = useState(10);
+  const [coupledPM, setCoupledPM] = useState(0);
+  const [granHydroxideStoich, setGranHydroxideStoich] = useState(1);
+  const [showBiphasic, setShowBiphasic] = useState(false);
+  const [organicKD, setOrganicKD] = useState(100);
+  const [organicVolume, setOrganicVolume] = useState(25);
+  const [showResinCoupling, setShowResinCoupling] = useState(false);
+  const [resinCapacity, setResinCapacity] = useState(0.001);
+  const [resinKBinding, setResinKBinding] = useState(1e3);
+  const [solventId, setSolventId] = useState<'water' | 'dmf' | 'ethanol'>('water');
+  const [temperatureC, setTemperatureC] = useState(25);
+  const [showBackProtocol, setShowBackProtocol] = useState(false);
+  const [primaryReagentVolume, setPrimaryReagentVolume] = useState(40);
+  const [showAlternativeSignals, setShowAlternativeSignals] = useState(false);
+  const [productEpsilon, setProductEpsilon] = useState(100);
 
   useShareEffect('titulacion', {
     mode, system, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, indicatorId, showIndicator, showDerivative,
-    ionicStrength, gammaModel,
+    ionicStrength, gammaModel, startIndex, endIndex, useConditionalAcidBase, logStateAlphas,
+    useInitialMixture, initialEquivalents, showConditionalSweep, stateLogBetas, conditionalPX,
+    showPrecipCoupling, coupledPKsp, coupledPM, granHydroxideStoich,
+    showBiphasic, organicKD, organicVolume, showResinCoupling, resinCapacity, resinKBinding,
+    solventId, temperatureC, showBackProtocol, primaryReagentVolume, showAlternativeSignals, productEpsilon,
   }, (s) => {
-    if (isValidAcidSystem(s.system)) setSystem(s.system);
+    if (isValidAcidSystem(s.system)) {
+      setSystem(s.system);
+      const restoredIsAcid = s.titrantIsAcid === true;
+      if (s.startIndex === undefined) setStartIndex(restoredIsAcid ? s.system.pKas.length : 0);
+      if (s.endIndex === undefined) setEndIndex(restoredIsAcid ? 0 : s.system.pKas.length);
+    }
     if (s.titrantIsAcid !== undefined) setTitrantIsAcid(s.titrantIsAcid);
     if (s.cAnalyte !== undefined) setCAnalyte(s.cAnalyte);
     if (s.vAnalyte !== undefined) setVAnalyte(s.vAnalyte);
@@ -227,6 +292,31 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
     if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
     if (isValidGammaModel(s.gammaModel)) setGammaModel(s.gammaModel);
+    if (typeof s.startIndex === 'number') setStartIndex(s.startIndex);
+    if (typeof s.endIndex === 'number') setEndIndex(s.endIndex);
+    if (s.useConditionalAcidBase !== undefined) setUseConditionalAcidBase(s.useConditionalAcidBase);
+    if (Array.isArray(s.logStateAlphas)) setLogStateAlphas(s.logStateAlphas);
+    if (s.useInitialMixture !== undefined) setUseInitialMixture(s.useInitialMixture);
+    if (typeof s.initialEquivalents === 'number') setInitialEquivalents(s.initialEquivalents);
+    if (s.showConditionalSweep !== undefined) setShowConditionalSweep(s.showConditionalSweep);
+    if (Array.isArray(s.stateLogBetas)) setStateLogBetas(s.stateLogBetas);
+    if (typeof s.conditionalPX === 'number') setConditionalPX(s.conditionalPX);
+    if (s.showPrecipCoupling !== undefined) setShowPrecipCoupling(Boolean(s.showPrecipCoupling));
+    if (typeof s.coupledPKsp === 'number') setCoupledPKsp(s.coupledPKsp);
+    if (typeof s.coupledPM === 'number') setCoupledPM(s.coupledPM);
+    if (typeof s.granHydroxideStoich === 'number') setGranHydroxideStoich(s.granHydroxideStoich);
+    if (s.showBiphasic !== undefined) setShowBiphasic(Boolean(s.showBiphasic));
+    if (typeof s.organicKD === 'number') setOrganicKD(s.organicKD);
+    if (typeof s.organicVolume === 'number') setOrganicVolume(s.organicVolume);
+    if (s.showResinCoupling !== undefined) setShowResinCoupling(Boolean(s.showResinCoupling));
+    if (typeof s.resinCapacity === 'number') setResinCapacity(s.resinCapacity);
+    if (typeof s.resinKBinding === 'number') setResinKBinding(s.resinKBinding);
+    if (s.solventId === 'water' || s.solventId === 'dmf' || s.solventId === 'ethanol') setSolventId(s.solventId);
+    if (typeof s.temperatureC === 'number') setTemperatureC(s.temperatureC);
+    if (s.showBackProtocol !== undefined) setShowBackProtocol(s.showBackProtocol);
+    if (typeof s.primaryReagentVolume === 'number') setPrimaryReagentVolume(s.primaryReagentVolume);
+    if (s.showAlternativeSignals !== undefined) setShowAlternativeSignals(s.showAlternativeSignals);
+    if (typeof s.productEpsilon === 'number') setProductEpsilon(s.productEpsilon);
   });
 
   function reset() {
@@ -234,6 +324,16 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
     setIndicatorId('phenolphthalein'); setShowIndicator(false); setShowDerivative(false);
     setIonicStrength(0); setGammaModel('dh');
+    setStartIndex(0); setEndIndex(0);
+    setUseConditionalAcidBase(false); setLogStateAlphas([0]);
+    setUseInitialMixture(false); setInitialEquivalents(0);
+    setShowConditionalSweep(false); setStateLogBetas([0]); setConditionalPX(4);
+    setShowPrecipCoupling(false); setCoupledPKsp(10); setCoupledPM(0); setGranHydroxideStoich(1);
+    setShowBiphasic(false); setOrganicKD(100); setOrganicVolume(25);
+    setShowResinCoupling(false); setResinCapacity(0.001); setResinKBinding(1e3);
+    setSolventId('water'); setTemperatureC(25);
+    setShowBackProtocol(false); setPrimaryReagentVolume(40);
+    setShowAlternativeSignals(false); setProductEpsilon(100);
   }
 
   const indicator = INDICATORS.find((i) => i.id === indicatorId)!;
@@ -241,29 +341,147 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
   const analyteKind = system.pKas.length > 0
     ? 'equilibrium' as const
     : system.z0 > 0 ? 'strong-base' as const : 'strong-acid' as const;
-  const nProtons = analyteKind === 'equilibrium' ? titratableProtons(system.pKas) : 1;
+  const validStart = Math.min(Math.max(startIndex, 0), system.pKas.length);
+  const validEnd = Math.min(Math.max(endIndex, 0), system.pKas.length);
+  const validInitialEquivalents = Math.min(Math.max(initialEquivalents, 0), system.pKas.length);
+  const initialFractions = useMemo(() => {
+    if (!useInitialMixture || analyteKind !== 'equilibrium') return undefined;
+    const lower = Math.floor(validInitialEquivalents);
+    const upper = Math.ceil(validInitialEquivalents);
+    const fractions = new Array(system.pKas.length + 1).fill(0);
+    if (lower === upper) fractions[lower] = 1;
+    else {
+      fractions[lower] = upper - validInitialEquivalents;
+      fractions[upper] = validInitialEquivalents - lower;
+    }
+    return fractions;
+  }, [useInitialMixture, analyteKind, validInitialEquivalents, system.pKas.length]);
+  const normalizedLogAlphas = logStateAlphas.length === system.pKas.length + 1
+    ? logStateAlphas
+    : new Array(system.pKas.length + 1).fill(0);
+  const normalizedLogBetas = stateLogBetas.length === system.pKas.length + 1
+    ? stateLogBetas
+    : new Array(system.pKas.length + 1).fill(0);
+  const stateAlphas = showConditionalSweep
+    ? normalizedLogBetas.map((logBeta) => 1 + Math.pow(10, logBeta - conditionalPX))
+    : normalizedLogAlphas.map((value) => Math.pow(10, value));
+  const effectivePKas = useConditionalAcidBase && analyteKind === 'equilibrium'
+    ? conditionalPKas(system.pKas, stateAlphas)
+    : system.pKas;
+  const startingEquivalent = initialFractions ? validInitialEquivalents : validStart;
+  const nProtons = analyteKind === 'equilibrium' ? Math.abs(validEnd - startingEquivalent) : 1;
   const vEqLast = (nProtons * cAnalyte * vAnalyte) / cTitrant;
-  const vMax = vEqLast * 1.6;
+  const singleEquivalentVolume = (cAnalyte * vAnalyte) / cTitrant;
+  const vMax = Math.max(vEqLast * 1.6, singleEquivalentVolume * 1.6);
+  const thermoState = useMemo(() => solventId === 'water'
+    ? (temperatureC === 25
+      ? { ...SOLVENT_PRESETS.water, pKw: 14, acidityRange: [-2, 16] as [number, number] }
+      : waterThermodynamicState(temperatureC))
+    : SOLVENT_PRESETS[solventId], [solventId, temperatureC]);
 
   const curve = useMemo(
     () => titrationCurve({
-      analyte: { z0: system.z0, pKas: system.pKas, kind: analyteKind },
+      analyte: {
+        z0: system.z0,
+        pKas: effectivePKas,
+        kind: analyteKind,
+        startIndex: validStart,
+        endIndex: validEnd,
+        initialFractions,
+      },
       titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, I: ionicStrength, model: gammaModel,
+      pKw: thermoState.pKw, pHRange: thermoState.acidityRange,
     }),
-    [system, analyteKind, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, ionicStrength, gammaModel],
+    [system.z0, effectivePKas, analyteKind, validStart, validEnd, initialFractions, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, ionicStrength, gammaModel, thermoState.pKw, thermoState.acidityRange],
   );
+  const couplingEligible = analyteKind === 'equilibrium' && system.pKas.length === 1 && !titrantIsAcid;
+  const precipCurve = useMemo(() => showPrecipCoupling && couplingEligible
+    ? precipitatingAcidTitrationCurve({
+        pKa: effectivePKas[0],
+        pKsp: coupledPKsp,
+        cAnalyte,
+        vAnalyte,
+        cMetal: Math.pow(10, -coupledPM),
+        cTitrant,
+        maxFraction: vMax / Math.max(vEqLast, 1e-300),
+        points: 500,
+        pKw: thermoState.pKw,
+      })
+    : null,
+  [showPrecipCoupling, couplingEligible, effectivePKas, coupledPKsp, cAnalyte, vAnalyte, coupledPM, cTitrant, vMax, vEqLast, thermoState.pKw]);
+  const biphasicCurve = useMemo(() => showBiphasic && couplingEligible
+    ? biphasicAcidBaseTitrationCurve({
+        pKas: effectivePKas,
+        z0: system.z0,
+        cAnalyte,
+        vAnalyte,
+        cTitrant,
+        organicVolume,
+        stateKDs: effectivePKas.map((_, index) => index).concat(effectivePKas.length)
+          .map((index) => index === validStart ? organicKD : 0),
+        vMax,
+        points: 500,
+        pKw: thermoState.pKw,
+      })
+    : null,
+  [showBiphasic, couplingEligible, effectivePKas, system.z0, cAnalyte, vAnalyte, cTitrant, organicVolume, validStart, organicKD, vMax, thermoState.pKw]);
+  const resinCurve = useMemo(() => showResinCoupling && couplingEligible
+    ? acidBaseResinTitrationCurve({
+        analytes: [{
+          label: system.label,
+          c: cAnalyte,
+          pKas: effectivePKas,
+          z0: system.z0,
+          bindingIndex: validEnd,
+          kBinding: resinKBinding,
+        }],
+        vAnalyte,
+        cTitrant,
+        vMax,
+        resinCapacityMoles: resinCapacity,
+        counterIonConcentration: cTitrant,
+        counterIonCharge: system.z0 - validEnd,
+        points: 500,
+        pKw: thermoState.pKw,
+      })
+    : null,
+  [showResinCoupling, couplingEligible, system.label, system.z0, cAnalyte, effectivePKas, validEnd, resinKBinding, vAnalyte, cTitrant, vMax, resinCapacity, thermoState.pKw]);
+  const displayCurve = useMemo(() => ({
+    volumes: precipCurve?.map((point) => point.volume) ?? biphasicCurve?.volumes ?? resinCurve?.volumes ?? curve.volumes,
+    pHs: precipCurve?.map((point) => point.pH) ?? biphasicCurve?.pHs ?? resinCurve?.pHs ?? curve.pHs,
+    equivalenceVolumes: precipCurve || biphasicCurve || resinCurve ? [vEqLast] : curve.equivalenceVolumes,
+  }), [precipCurve, biphasicCurve, resinCurve, curve, vEqLast]);
+  const precipitationGran = useMemo(() => showPrecipCoupling
+    ? precipitationGranTransform(displayCurve.volumes, displayCurve.pHs, vAnalyte, granHydroxideStoich)
+    : null,
+  [showPrecipCoupling, displayCurve, vAnalyte, granHydroxideStoich]);
+  const precipitationGranFit = useMemo(
+    () => precipitationGran ? fitPrecipitationGran(precipitationGran, vEqLast * 0.9) : null,
+    [precipitationGran, vEqLast],
+  );
+  const solidBetaAtEq = useMemo(() => showPrecipCoupling && couplingEligible
+    ? solidBufferCapacityAtPH({
+        pKas: effectivePKas,
+        z0: system.z0,
+        totalAnalyte: cAnalyte,
+        pKsp: coupledPKsp,
+        freeMetal: Math.pow(10, -coupledPM),
+        pKw: thermoState.pKw,
+      }, 0.5 * (effectivePKas[0] - coupledPKsp + coupledPM + 14))
+    : null,
+  [showPrecipCoupling, couplingEligible, effectivePKas, system.z0, cAnalyte, coupledPKsp, coupledPM, thermoState.pKw]);
 
   const { traces, shapes, annotations, eqInfo } = useMemo(() => {
     const data: Data[] = [{
-      x: curve.volumes, y: curve.pHs, type: 'scatter', mode: 'lines', name: 'pH',
+      x: displayCurve.volumes, y: displayCurve.pHs, type: 'scatter', mode: 'lines', name: 'pH',
       line: { width: 3, color: '#0072B2' },
       hovertemplate: 'V = %{x:.2f} mL<br>pH = %{y:.2f}<extra></extra>',
     }];
     if (showDerivative) {
-      const der = firstDerivative(curve.volumes, curve.pHs);
+      const der = firstDerivative(displayCurve.volumes, displayCurve.pHs);
       const maxD = Math.max(...der.d.map(Math.abs), 1e-9);
       data.push({
-        x: der.v, y: der.d.map((d) => (Math.abs(d) / maxD) * 14),
+        x: der.v, y: der.d.map((d) => thermoState.acidityRange[0] + (Math.abs(d) / maxD) * (thermoState.acidityRange[1] - thermoState.acidityRange[0])),
         type: 'scatter', mode: 'lines', name: t('mezclas.derivativeTraceName'),
         line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
       });
@@ -277,53 +495,83 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     }
     const annList: Partial<Annotations>[] = [];
     const info: { label: string; value: string }[] = [];
-    curve.equivalenceVolumes.forEach((veq, k) => {
+    displayCurve.equivalenceVolumes.forEach((veq, k) => {
       shapeList.push({
-        type: 'line', x0: veq, x1: veq, y0: 0, y1: 14,
+        type: 'line', x0: veq, x1: veq, y0: thermoState.acidityRange[0], y1: thermoState.acidityRange[1],
         line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
       });
-      const idx = curve.volumes.findIndex((v) => v >= veq);
-      const pHeq = idx > 0 ? curve.pHs[idx] : NaN;
+      const idx = displayCurve.volumes.findIndex((v) => v >= veq);
+      const pHeq = idx > 0 ? displayCurve.pHs[idx] : NaN;
       annList.push({
-        x: veq, y: 13.5,
-        text: `${t('titulacion.pE')}${curve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
+        x: veq, y: thermoState.acidityRange[1] - 0.5,
+        text: `${t('titulacion.pE')}${displayCurve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
         showarrow: false, font: { color: '#2C3E50', size: 12 },
       });
       info.push({
-        label: `${t('titulacion.equivalenceLabel')}${curve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
+        label: `${t('titulacion.equivalenceLabel')}${displayCurve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
         value: `${veq.toFixed(2)} mL · pH ${pHeq.toFixed(2)}`,
       });
     });
     return { traces: data, shapes: shapeList, annotations: annList, eqInfo: info };
-  }, [curve, showIndicator, showDerivative, indicator, vMax, t]);
+  }, [displayCurve, showIndicator, showDerivative, indicator, vMax, thermoState.acidityRange, t]);
 
-  const lastEq = curve.equivalenceVolumes[curve.equivalenceVolumes.length - 1];
-  const lastIdx = lastEq !== undefined ? curve.volumes.findIndex((v) => v >= lastEq) : -1;
-  const pHLastEq = lastIdx > 0 ? curve.pHs[lastIdx] : NaN;
+  const lastEq = displayCurve.equivalenceVolumes[displayCurve.equivalenceVolumes.length - 1];
+  const lastIdx = lastEq !== undefined ? displayCurve.volumes.findIndex((v) => v >= lastEq) : -1;
+  const pHLastEq = lastIdx > 0 ? displayCurve.pHs[lastIdx] : NaN;
   const indicatorOk = pHLastEq >= indicator.range[0] - 1 && pHLastEq <= indicator.range[1] + 1;
+  const endpointPH = 0.5 * (indicator.range[0] + indicator.range[1]);
+  const endpointMetric = acidBaseEndpointError({
+    kind: analyteKind === 'equilibrium' ? (titrantIsAcid ? 'weak-base' : 'weak-acid') : 'strong-acid',
+    endpointPH: analyteKind === 'equilibrium' || !titrantIsAcid ? endpointPH : thermoState.pKw - endpointPH,
+    analyteConcentration: cAnalyte, analyteVolumeML: vAnalyte, titrantConcentration: cTitrant,
+    pKa: effectivePKas[0], pKw: thermoState.pKw,
+  });
+  const backProtocol = backTitration({
+    analyteMoles: cAnalyte * vAnalyte / 1000,
+    primaryAddedMoles: cTitrant * primaryReagentVolume / 1000,
+    backTitrantConcentration: cTitrant,
+  });
+  const opticalTrace = useMemo<Data>(() => {
+    const y = displayCurve.volumes.map((volume) => {
+      const reactedMoles = Math.min(cTitrant * volume / 1000, cAnalyte * vAnalyte / 1000);
+      return absorbanceFromComposition([reactedMoles / ((vAnalyte + volume) / 1000)], [productEpsilon]);
+    });
+    return { x: displayCurve.volumes, y, type: 'scatter', mode: 'lines', name: 'A', line: { width: 3, color: '#CC79A7' } };
+  }, [displayCurve.volumes, cTitrant, cAnalyte, vAnalyte, productEpsilon]);
+  const conductometricCurve = useMemo(() => strongAcidConductometricCurve({
+    cAcid: cAnalyte, vAcidML: vAnalyte, cBase: cTitrant, vMaxML: vMax,
+    lambdaH: 350, lambdaOH: 200, lambdaSpectator: 50, points: 500,
+  }), [cAnalyte, vAnalyte, cTitrant, vMax]);
 
   // ── Gran plot + quantitativity ───────────────────────────────────────────────
   const gran = useMemo(
-    () => granPlot(curve.volumes, curve.pHs, vAnalyte),
-    [curve.volumes, curve.pHs, vAnalyte],
+    () => granPlot(displayCurve.volumes, displayCurve.pHs, vAnalyte, titrantIsAcid, thermoState.pKw, analyteKind === 'equilibrium'),
+    [displayCurve.volumes, displayCurve.pHs, vAnalyte, titrantIsAcid, thermoState.pKw, analyteKind],
   );
   const granVeqDetected = useMemo(
-    () => granVeq(curve.volumes, curve.pHs, vAnalyte),
-    [curve.volumes, curve.pHs, vAnalyte],
+    () => granVeq(displayCurve.volumes, displayCurve.pHs, vAnalyte, titrantIsAcid, thermoState.pKw, analyteKind === 'equilibrium'),
+    [displayCurve.volumes, displayCurve.pHs, vAnalyte, titrantIsAcid, thermoState.pKw, analyteKind],
   );
-  // q% = (1 − ε/Co)·100. ε = especie limitante residual en el P.E. (H⁺ si se
-  // titula un ácido con base; OH⁻ si se titula una base con ácido); Co = conc.
-  // analítica diluida en Veq.
+  // q% = (1 − ε/Co)·100. The residual analyte-side species follows the
+  // titration direction: H⁺ for acid titrant, OH⁻ for base titrant.
   const cAtEq = (cAnalyte * vAnalyte) / (vAnalyte + vEqLast);
   const epsLimiting = Number.isFinite(pHLastEq)
-    ? (titrantIsAcid ? Math.pow(10, pHLastEq - 14) : Math.pow(10, -pHLastEq))
+    ? equivalenceResidual(pHLastEq, titrantIsAcid, thermoState.pKw)
     : NaN;
   const qPercent = quantitativity(epsLimiting, cAtEq);
   const granErrorPct = Number.isFinite(granVeqDetected) && vEqLast > 0
     ? ((granVeqDetected - vEqLast) / vEqLast) * 100
     : NaN;
+  const granHintKey = analyteKind === 'equilibrium'
+    ? titrantIsAcid ? 'titulacion.granHintPrefixWeakAcidTitrant' : 'titulacion.granHintPrefixWeakBaseTitrant'
+    : titrantIsAcid ? 'titulacion.granHintPrefixStrongAcidTitrant' : 'titulacion.granHintPrefixStrongBaseTitrant';
 
-  const granTraces = useMemo<Data[]>(() => [
+  const granTraces = useMemo<Data[]>(() => precipitationGran ? [{
+    x: precipitationGran.map((point) => point.volume),
+    y: precipitationGran.map((point) => point.transformed),
+    type: 'scatter', mode: 'lines', name: t('titulacion.precipitationGranTrace'),
+    line: { width: 3, color: '#0072B2' },
+  }] : [
     {
       x: gran.v1, y: gran.F1, type: 'scatter', mode: 'lines', name: t('titulacion.granBeforePE'),
       line: { width: 2.5, color: '#0072B2' },
@@ -334,10 +582,26 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
       line: { width: 2.5, color: '#D55E00', dash: 'dash' },
       hovertemplate: `V = %{x:.2f} mL<br>F₂ = %{y:.2e}<extra>${t('titulacion.granAfterPEShort')}</extra>`,
     },
-  ], [gran, t]);
+  ], [gran, precipitationGran, t]);
+
+  const conditionalSweepTraces = useMemo<Data[]>(() => {
+    if (!useConditionalAcidBase || !showConditionalSweep || system.pKas.length === 0) return [];
+    const pXs = Array.from({ length: 281 }, (_, i) => (14 * i) / 280);
+    return system.pKas.map((_, step) => ({
+      x: pXs,
+      y: pXs.map((pX) => conditionalPKas(
+        system.pKas,
+        normalizedLogBetas.map((logBeta) => 1 + Math.pow(10, logBeta - pX)),
+      )[step]),
+      type: 'scatter',
+      mode: 'lines',
+      name: `pKa′${system.pKas.length > 1 ? step + 1 : ''}`,
+      line: { width: 3, color: ['#0072B2', '#D55E00', '#009E73', '#CC79A7'][step % 4] },
+    }));
+  }, [useConditionalAcidBase, showConditionalSweep, system.pKas, normalizedLogBetas]);
 
   const granShapes = useMemo<Partial<Shape>[]>(() => {
-    const list: Partial<Shape>[] = curve.equivalenceVolumes.map((veq) => ({
+    const list: Partial<Shape>[] = displayCurve.equivalenceVolumes.map((veq) => ({
       type: 'line', x0: veq, x1: veq, y0: 0, y1: 1, yref: 'paper', xref: 'x',
       line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
     }));
@@ -348,7 +612,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
       });
     }
     return list;
-  }, [curve.equivalenceVolumes, granVeqDetected]);
+  }, [displayCurve.equivalenceVolumes, granVeqDetected]);
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Titulación ácido-base',
@@ -384,7 +648,12 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             onChange={(v) => {
               const nextIsAcid = v === 'acid';
               setTitrantIsAcid(nextIsAcid);
-              if (system.pKas.length === 0) setSystem(strongAcidSystem(nextIsAcid));
+              if (system.pKas.length === 0) {
+                setSystem(strongAcidSystem(nextIsAcid));
+              } else {
+                setStartIndex(nextIsAcid ? system.pKas.length : 0);
+                setEndIndex(nextIsAcid ? 0 : system.pKas.length);
+              }
             }}
           />
           <ModelBadge
@@ -392,14 +661,147 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
               titrant: titrantIsAcid ? t('titulacion.titrantAcidWord') : t('titulacion.titrantBaseWord'),
               kind: systemKind,
             })}
-            additions={[showIndicator && t('titulacion.addVisualIndicator'), showDerivative && t('mezclas.additionDerivative')]}
+            additions={[showIndicator && t('titulacion.addVisualIndicator'), showDerivative && t('mezclas.additionDerivative'), showPrecipCoupling && t('titulacion.addPrecipCoupling'), showBiphasic && t('titulacion.addBiphasic'), showResinCoupling && t('titulacion.addResinCoupling')]}
           />
-          <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} allowAquaCations />
+          <AcidSystemEditor
+            system={system}
+            onChange={(next) => {
+              const shapeChanged = next.z0 !== system.z0 || next.pKas.length !== system.pKas.length;
+              setSystem(next);
+              if (shapeChanged) {
+                setStartIndex(titrantIsAcid ? next.pKas.length : 0);
+                setEndIndex(titrantIsAcid ? 0 : next.pKas.length);
+                setLogStateAlphas(new Array(next.pKas.length + 1).fill(0));
+                setStateLogBetas(new Array(next.pKas.length + 1).fill(0));
+                setInitialEquivalents(titrantIsAcid ? next.pKas.length : 0);
+              }
+            }}
+            includeStrong
+            allowNoConstants
+            showModel={false}
+            allowAquaCations
+          />
+          {analyteKind === 'equilibrium' && (
+            <div className="control-grid-2">
+              <SelectControl
+                label={t('titulacion.startingFormLabel')}
+                value={String(validStart)}
+                options={systemLabels(system).map((label, index) => ({ value: String(index), label }))}
+                onChange={(value) => setStartIndex(Number(value))}
+              />
+              <SelectControl
+                label={t('titulacion.targetFormLabel')}
+                value={String(validEnd)}
+                options={systemLabels(system).map((label, index) => ({ value: String(index), label }))}
+                onChange={(value) => setEndIndex(Number(value))}
+              />
+            </div>
+          )}
+          {analyteKind === 'equilibrium' && nProtons === 0 && (
+            <p className="badge warn">{t('titulacion.noFormalReaction')}</p>
+          )}
+          {analyteKind === 'equilibrium' && (
+            <Disclosure title={t('titulacion.initialCompositionDisclosure')}>
+              <Toggle
+                label={t('titulacion.useInitialMixture')}
+                checked={useInitialMixture}
+                onChange={(checked) => {
+                  setUseInitialMixture(checked);
+                  if (checked) setInitialEquivalents(validStart);
+                }}
+              />
+              {useInitialMixture && (
+                <Slider
+                  label={t('titulacion.initialEquivalentsLabel')}
+                  value={validInitialEquivalents}
+                  min={0}
+                  max={system.pKas.length}
+                  step={0.01}
+                  onChange={setInitialEquivalents}
+                  decimals={2}
+                />
+              )}
+              <Toggle
+                label={t('titulacion.useConditionalPKas')}
+                checked={useConditionalAcidBase}
+                onChange={setUseConditionalAcidBase}
+              />
+              {useConditionalAcidBase && (
+                <Toggle label={t('titulacion.sweepConditionalPKas')} checked={showConditionalSweep} onChange={setShowConditionalSweep} />
+              )}
+              {useConditionalAcidBase && showConditionalSweep && (
+                <Slider label="pX" value={conditionalPX} min={0} max={14} step={0.1} onChange={setConditionalPX} decimals={1} />
+              )}
+              {useConditionalAcidBase && systemLabels(system).map((species, index) => (
+                <Slider
+                  key={`${species}-${index}`}
+                  label={t(showConditionalSweep ? 'titulacion.logBetaStateLabel' : 'titulacion.logAlphaStateLabel', { species })}
+                  value={showConditionalSweep ? normalizedLogBetas[index] : normalizedLogAlphas[index]}
+                  min={0}
+                  max={20}
+                  step={0.1}
+                  onChange={(value) => showConditionalSweep
+                    ? setStateLogBetas(normalizedLogBetas.map((current, i) => i === index ? value : current))
+                    : setLogStateAlphas(normalizedLogAlphas.map((current, i) => i === index ? value : current))}
+                  decimals={1}
+                />
+              ))}
+              {useConditionalAcidBase && (
+                <p className="hint">pKa′: {effectivePKas.map((value) => value.toFixed(2)).join(' · ')}</p>
+              )}
+            </Disclosure>
+          )}
         </PanelSection>
         <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+          <SelectControl
+            label={t('titulacion.solventLabel')}
+            value={solventId}
+            options={[
+              { value: 'water', label: t('titulacion.solventWater') },
+              { value: 'dmf', label: 'DMF' },
+              { value: 'ethanol', label: t('titulacion.solventEthanol') },
+            ]}
+            onChange={(value) => setSolventId(value as 'water' | 'dmf' | 'ethanol')}
+          />
+          {solventId === 'water' && <Slider label={t('titulacion.temperatureLabel')} value={temperatureC} min={10} max={100} step={5} onChange={setTemperatureC} unit="°C" decimals={0} />}
+          <p className="hint">{t('titulacion.solventStateHint', { pkw: thermoState.pKw.toFixed(3), lionium: thermoState.lioniumLabel, lyate: thermoState.lyateLabel })}</p>
           <ConcSlider label={t('titulacion.analyteConcLabel')} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
           <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
           <ConcSlider label={t('titulacion.concOfLabel', { name: titrantName })} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
+          <Disclosure title={t('titulacion.coupledMediaTitle')}>
+            <Toggle label={t('titulacion.precipCouplingToggle')} checked={showPrecipCoupling} onChange={(value) => {
+              setShowPrecipCoupling(value);
+              if (value) { setShowBiphasic(false); setShowResinCoupling(false); }
+            }} />
+            {showPrecipCoupling && (
+              <div className="mask-section">
+                <Slider label={t('titulacion.pKspShort')} value={coupledPKsp} min={0} max={40} step={0.1} onChange={setCoupledPKsp} decimals={1} />
+                <Slider label="pM" value={coupledPM} min={-2} max={20} step={0.1} onChange={setCoupledPM} decimals={1} />
+                <Slider label={t('titulacion.hydroxideStoichLabel')} value={granHydroxideStoich} min={1} max={6} step={1} onChange={setGranHydroxideStoich} decimals={0} />
+              </div>
+            )}
+            <Toggle label={t('titulacion.biphasicToggle')} checked={showBiphasic} onChange={(value) => {
+              setShowBiphasic(value);
+              if (value) { setShowPrecipCoupling(false); setShowResinCoupling(false); }
+            }} />
+            {showBiphasic && (
+              <div className="mask-section">
+                <Slider label="log KD" value={Math.log10(organicKD)} min={-2} max={8} step={0.1} onChange={(value) => setOrganicKD(Math.pow(10, value))} decimals={1} />
+                <Slider label="Vorg" value={organicVolume} min={0} max={100} step={1} onChange={setOrganicVolume} unit="mL" decimals={0} />
+              </div>
+            )}
+            <Toggle label={t('titulacion.resinCouplingToggle')} checked={showResinCoupling} onChange={(value) => {
+              setShowResinCoupling(value);
+              if (value) { setShowPrecipCoupling(false); setShowBiphasic(false); }
+            }} />
+            {showResinCoupling && (
+              <div className="mask-section">
+                <ConcSlider label={t('titulacion.resinCapacityLabel')} value={resinCapacity} onChange={setResinCapacity} min={-6} max={-1} />
+                <Slider label="log Kres" value={Math.log10(resinKBinding)} min={-2} max={12} step={0.1} onChange={(value) => setResinKBinding(Math.pow(10, value))} decimals={1} />
+              </div>
+            )}
+            {!couplingEligible && (showPrecipCoupling || showBiphasic || showResinCoupling) && <p className="hint">{t('titulacion.couplingEligibilityHint')}</p>}
+          </Disclosure>
         </PanelSection>
         <PanelSection title={t('titulacion.detectionSection')} icon="✦">
           <SelectControl
@@ -410,6 +812,10 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
           />
           <Toggle label={t('titulacion.showTransitionRangeToggle')} checked={showIndicator} onChange={setShowIndicator} />
           <Toggle label={t('titulacion.showDerivativeDpHToggle')} checked={showDerivative} onChange={setShowDerivative} />
+          <Toggle label={t('titulacion.alternativeSignalsToggle')} checked={showAlternativeSignals} onChange={setShowAlternativeSignals} />
+          {showAlternativeSignals && <Slider label={t('titulacion.productEpsilon')} value={productEpsilon} min={0} max={1000} step={10} decimals={0} onChange={setProductEpsilon} />}
+          <Toggle label={t('titulacion.backProtocolToggle')} checked={showBackProtocol} onChange={setShowBackProtocol} />
+          {showBackProtocol && <Slider label={t('titulacion.primaryReagentVolume')} value={primaryReagentVolume} min={0} max={100} step={0.5} decimals={1} unit="mL" onChange={setPrimaryReagentVolume} />}
           <details className="section-collapse">
             <summary>{t('acidoBase.activityCorrection')}</summary>
             <Slider label={t('acidoBase.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
@@ -432,6 +838,23 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
                 : t('titulacion.indicatorFarMsg', { name: indicator.name, ph: pHLastEq.toFixed(1) })}
             </p>
           )}
+          {showIndicator && <ResultCard items={[
+            { label: t('titulacion.endpointVolume'), value: `${endpointMetric.volumeTP.toFixed(3)} mL` },
+            { label: t('titulacion.absoluteIndicatorError'), value: endpointMetric.absoluteErrorMoles.toExponential(3) + ' mol' },
+            { label: t('titulacion.relativeIndicatorError'), value: `${endpointMetric.relativeErrorPercent.toFixed(5)} %` },
+          ]} />}
+          {showBackProtocol && <ResultCard items={[
+            { label: t('titulacion.primaryExcess'), value: `${(1000 * backProtocol.primaryExcessMoles).toFixed(3)} mmol` },
+            { label: t('titulacion.backTitrantVolume'), value: `${backProtocol.backVolumeML.toFixed(3)} mL` },
+            { label: t('titulacion.recoveredAnalyte'), value: `${(1000 * backProtocol.recoveredAnalyteMoles).toFixed(3)} mmol` },
+          ]} />}
+          {solidBetaAtEq !== null && <ResultCard items={[{
+            label: t('titulacion.solidBufferCapacityLabel'),
+            value: solidBetaAtEq.toExponential(3),
+          }, ...(precipitationGranFit ? [{
+            label: t('titulacion.precipitationGranInterceptLabel'),
+            value: `${precipitationGranFit.xIntercept.toFixed(3)} mL · R² ${precipitationGranFit.r2.toFixed(5)}`,
+          }] : [])]} />}
         </PanelSection>
         <InfoBox title={t('titulacion.calcMethodTitle')}>
           <p>{t('titulacion.acidBaseInfoBody')}</p>
@@ -450,7 +873,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
                   xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })}
                   yTitle="pH"
                   xRange={[0, vMax]}
-                  yRange={[0, 14]}
+                  yRange={thermoState.acidityRange}
                   shapes={shapes}
                   annotations={annotations}
                   exportName="equilibria-titulacion-acidobase"
@@ -475,12 +898,37 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
                     />
                   </div>
                   <p className="hint" style={{ margin: '4px 8px 2px' }}>
-                    {t('titulacion.granHintPrefix')}<em>{t('titulacion.granHintBeforeEm')}</em>{t('titulacion.granHintMid')}
+                    {t(granHintKey)}<em>{t('titulacion.granHintBeforeEm')}</em>{t('titulacion.granHintMid')}
                     <sub>eq</sub> = {Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—'}.
                   </p>
                 </div>
               ),
             },
+            ...(conditionalSweepTraces.length > 0 ? [{
+              id: 'pka-conditional',
+              label: t('titulacion.conditionalPKaTab'),
+              node: (
+                <Chart
+                  data={conditionalSweepTraces}
+                  xTitle="pX"
+                  yTitle="pKa′"
+                  xRange={[0, 14]}
+                  shapes={[{
+                    type: 'line', x0: conditionalPX, x1: conditionalPX, y0: 0, y1: 1,
+                    yref: 'paper', line: { color: '#7F8C8D', width: 1.5, dash: 'dash' },
+                  }]}
+                  exportName="equilibria-titulacion-pka-condicional"
+                  exportMetadata={exportMetadata}
+                />
+              ),
+            }] : []),
+            ...(showAlternativeSignals ? [{
+              id: 'optical', label: t('titulacion.absorbanceTab'),
+              node: <Chart data={[opticalTrace]} xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })} yTitle="A" xRange={[0, vMax]} exportName="equilibria-titulacion-absorbancia" exportMetadata={exportMetadata} />,
+            }, {
+              id: 'conductivity', label: t('titulacion.conductivityTab'),
+              node: <Chart data={[{ x: conductometricCurve.volumes, y: conductometricCurve.conductivity, type: 'scatter', mode: 'lines', name: 'κ', line: { width: 3, color: '#009E73' } }]} xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })} yTitle="κ" xRange={[0, vMax]} exportName="equilibria-titulacion-conductividad" exportMetadata={exportMetadata} />,
+            }] : []),
           ]}
         />
         <ResultCardRow items={[
@@ -490,6 +938,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
           ...(Number.isFinite(granErrorPct)
             ? [{ label: t('titulacion.pctErrorPE'), value: `${granErrorPct.toFixed(2)} %` }]
             : []),
+          ...(showIndicator ? [{ label: t('titulacion.relativeIndicatorError'), value: `${endpointMetric.relativeErrorPercent.toFixed(4)} %` }] : []),
         ]} />
       </section>
     </>
@@ -518,8 +967,22 @@ function EdtaTitration({ mode }: { mode: Mode }) {
   const [cBuret, setCBuret] = useState(0.01);
   const [axis, setAxis] = useState<'volume' | 'x'>('volume');
   const [traceY, setTraceY] = useState<'pM' | 'pY' | 'both'>('pM');
+  const [showSecondMetal, setShowSecondMetal] = useState(false);
+  const [secondLabel, setSecondLabel] = useState('Mg²⁺');
+  const [secondConc, setSecondConc] = useState(0.01);
+  const [secondLogKCond, setSecondLogKCond] = useState(8.2);
+  const [showSensor, setShowSensor] = useState(false);
+  const [sensorKind, setSensorKind] = useState<'metal' | 'redox-indicator'>('metal');
+  const [sensorE0, setSensorE0] = useState(0.3);
+  const [sensorN, setSensorN] = useState(2);
+  const [sensorLogKOx, setSensorLogKOx] = useState(8);
+  const [sensorLogKRed, setSensorLogKRed] = useState(2);
 
-  useShareEffect('titulacion', { mode, metalId, label, logKf, logBetasOH, side, edtaInFlask, pH, cFlask, vFlask, cBuret, axis, traceY }, (s) => {
+  useShareEffect('titulacion', {
+    mode, metalId, label, logKf, logBetasOH, side, edtaInFlask, pH, cFlask, vFlask, cBuret, axis, traceY,
+    showSecondMetal, secondLabel, secondConc, secondLogKCond, showSensor, sensorKind, sensorE0, sensorN,
+    sensorLogKOx, sensorLogKRed,
+  }, (s) => {
     if (s.metalId) setMetalId(s.metalId);
     if (s.label) setLabel(s.label);
     if (s.logKf !== undefined) setLogKf(s.logKf);
@@ -532,6 +995,16 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     if (s.cBuret !== undefined) setCBuret(s.cBuret);
     if (s.axis === 'volume' || s.axis === 'x') setAxis(s.axis);
     if (s.traceY === 'pM' || s.traceY === 'pY' || s.traceY === 'both') setTraceY(s.traceY);
+    if (s.showSecondMetal !== undefined) setShowSecondMetal(s.showSecondMetal);
+    if (typeof s.secondLabel === 'string') setSecondLabel(s.secondLabel);
+    if (typeof s.secondConc === 'number') setSecondConc(s.secondConc);
+    if (typeof s.secondLogKCond === 'number') setSecondLogKCond(s.secondLogKCond);
+    if (s.showSensor !== undefined) setShowSensor(s.showSensor);
+    if (s.sensorKind === 'metal' || s.sensorKind === 'redox-indicator') setSensorKind(s.sensorKind);
+    if (typeof s.sensorE0 === 'number') setSensorE0(s.sensorE0);
+    if (typeof s.sensorN === 'number') setSensorN(s.sensorN);
+    if (typeof s.sensorLogKOx === 'number') setSensorLogKOx(s.sensorLogKOx);
+    if (typeof s.sensorLogKRed === 'number') setSensorLogKRed(s.sensorLogKRed);
   });
 
   function reset() {
@@ -545,6 +1018,9 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     });
     setEdtaInFlask(false); setPH(10); setCFlask(0.01); setVFlask(50); setCBuret(0.01);
     setAxis('volume'); setTraceY('pM');
+    setShowSecondMetal(false); setSecondLabel('Mg²⁺'); setSecondConc(0.01); setSecondLogKCond(8.2);
+    setShowSensor(false); setSensorKind('metal'); setSensorE0(0.3); setSensorN(2);
+    setSensorLogKOx(8); setSensorLogKRed(2);
   }
 
   function applyPreset(id: string) {
@@ -573,7 +1049,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     setEdtaInFlask(false);
   }
 
-  const vMax = ((cFlask * vFlask) / cBuret) * 1.8;
+  const vMax = (((cFlask + (showSecondMetal ? secondConc : 0)) * vFlask) / cBuret) * 1.8;
   const curve = useMemo(
     () => edtaTitrationCurve({
       logKf, pH, cMetal: cFlask, vMetal: vFlask, cEdta: cBuret, vMax, edtaInFlask,
@@ -583,6 +1059,18 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     }),
     [logKf, pH, logBetasOH, side, cFlask, vFlask, cBuret, vMax, edtaInFlask, axis],
   );
+  const competitiveCurve = useMemo(() => showSecondMetal
+    ? competitiveEdtaTitrationCurve({
+        metals: [
+          { label, c: cFlask, logKfCond: curve.logKfCond },
+          { label: secondLabel, c: secondConc, logKfCond: secondLogKCond },
+        ],
+        vSample: vFlask,
+        cEdta: cBuret,
+        vMax,
+      })
+    : null,
+  [showSecondMetal, label, cFlask, curve.logKfCond, secondLabel, secondConc, secondLogKCond, vFlask, cBuret, vMax]);
 
   const at50 = useMemo(
     () => edtaAtFraction({
@@ -607,11 +1095,35 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     return idx >= 0 ? kCurve.pHs[idx] : null;
   }, [logKf, logBetasOH]);
 
-  const xData = axis === 'x' ? curve.xs : curve.volumes;
-  const xTitle = axis === 'x' ? 'x = n_Y / n_M⁰' : t('mezclas.volumeAddedLabel', { titrant: edtaInFlask ? label : 'EDTA' });
-  const eqX = axis === 'x' ? curve.xEq : curve.vEq;
+  const activeAxis = showSecondMetal ? 'volume' : axis;
+  const xData = competitiveCurve?.volumes ?? (activeAxis === 'x' ? curve.xs : curve.volumes);
+  const xTitle = activeAxis === 'x' ? 'x = n_Y / n_M⁰' : t('mezclas.volumeAddedLabel', { titrant: edtaInFlask ? label : 'EDTA' });
+  const eqXs = useMemo(
+    () => competitiveCurve?.equivalenceVolumes ?? [activeAxis === 'x' ? curve.xEq : curve.vEq],
+    [competitiveCurve, activeAxis, curve.xEq, curve.vEq],
+  );
 
   const titTraces = useMemo<Data[]>(() => {
+    if (competitiveCurve) {
+      const data: Data[] = competitiveCurve.pMetals.map((values, index) => ({
+        x: competitiveCurve.volumes,
+        y: values,
+        type: 'scatter',
+        mode: 'lines',
+        name: `p${index === 0 ? label : secondLabel}′`,
+        line: { width: index === 0 ? 3.5 : 3, color: index === 0 ? '#0072B2' : '#D55E00' },
+        hovertemplate: `V = %{x:.2f} mL<br>pM′ = %{y:.2f}<extra></extra>`,
+      }));
+      data.push({
+        x: competitiveCurve.volumes,
+        y: competitiveCurve.pY,
+        type: 'scatter',
+        mode: 'lines',
+        name: "pY′",
+        line: { width: 2, color: '#009E73', dash: 'dot' },
+      });
+      return data;
+    }
     const traces: Data[] = [];
     if (traceY === 'pM' || traceY === 'both') {
       traces.push({
@@ -630,15 +1142,32 @@ function EdtaTitration({ mode }: { mode: Mode }) {
       });
     }
     return traces;
-  }, [xData, curve, traceY, axis]);
+  }, [competitiveCurve, xData, curve, traceY, axis, label, secondLabel]);
 
-  const titShapes = useMemo<Partial<Shape>[]>(() => [{
-    type: 'line', x0: eqX, x1: eqX, y0: 0, y1: Math.max(...curve.pMs, ...curve.pYs) + 1,
+  const titShapes = useMemo<Partial<Shape>[]>(() => eqXs.map((eqX) => ({
+    type: 'line', x0: eqX, x1: eqX, y0: 0,
+    y1: competitiveCurve
+      ? Math.max(...competitiveCurve.pMetals.flat(), ...competitiveCurve.pY) + 1
+      : Math.max(...curve.pMs, ...curve.pYs) + 1,
     line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
-  }], [curve, eqX]);
+  })), [curve, eqXs, competitiveCurve]);
+
+  const sensorSignal = useMemo(() => complexometricSensorCurve(
+    competitiveCurve?.pMetals[0] ?? curve.pMs,
+    competitiveCurve?.pY ?? curve.pYs,
+    sensorKind === 'metal'
+      ? { kind: 'metal', E0: sensorE0, n: sensorN }
+      : { kind: 'redox-indicator', E0: sensorE0, n: sensorN, logKfOx: sensorLogKOx, logKfRed: sensorLogKRed },
+  ), [competitiveCurve, curve.pMs, curve.pYs, sensorKind, sensorE0, sensorN, sensorLogKOx, sensorLogKRed]);
 
   const aY = alphaY4(pH);
   const feasible = curve.logKfCond >= 8;
+  const exactAssociation = useMemo(() => solveReactionExtent({
+    logK: curve.logKfCond,
+    reactants: [{ initial: cFlask, stoich: 1 }, { initial: cFlask, stoich: 1 }],
+    products: [{ initial: 0, stoich: 1 }],
+  }), [curve.logKfCond, cFlask]);
+  const target99LogK = equimolarAssociationLogKForTarget(cFlask, 0.99);
   const buretName = edtaInFlask ? label : 'EDTA';
   const flaskName = edtaInFlask ? 'EDTA' : label;
 
@@ -659,8 +1188,8 @@ function EdtaTitration({ mode }: { mode: Mode }) {
         <Chart
           data={titTraces}
           xTitle={xTitle}
-          yTitle={traceY === 'pY' ? "pY′ (−log[Y′])" : traceY === 'both' ? 'pM′ / pY′' : 'pM′ (−log[M′])'}
-          xRange={[0, axis === 'x' ? 2 : vMax]}
+          yTitle={showSecondMetal ? 'pM′ / pY′' : traceY === 'pY' ? "pY′ (−log[Y′])" : traceY === 'both' ? 'pM′ / pY′' : 'pM′ (−log[M′])'}
+          xRange={[0, activeAxis === 'x' ? 2 : vMax]}
           shapes={titShapes}
           exportName="equilibria-titulacion-edta"
           exportMetadata={exportMetadata}
@@ -679,7 +1208,32 @@ function EdtaTitration({ mode }: { mode: Mode }) {
         />
       ),
     },
-  ], [titTraces, titShapes, xTitle, vMax, axis, traceY, metalId, logKf, logBetasOH, pH, exportMetadata, t]);
+    ...(showSensor ? [{
+      id: 'sensor',
+      label: t('titulacion.sensorSignalTab'),
+      node: (
+        <Chart
+          data={[{
+            x: competitiveCurve?.volumes ?? curve.volumes,
+            y: sensorSignal,
+            type: 'scatter',
+            mode: 'lines',
+            name: 'E',
+            line: { width: 3, color: '#CC79A7' },
+          }]}
+          xTitle={t('mezclas.volumeAddedLabel', { titrant: 'EDTA' })}
+          yTitle="E (V)"
+          xRange={[0, vMax]}
+          shapes={eqXs.map((value) => ({
+            type: 'line', x0: value, x1: value, y0: Math.min(...sensorSignal), y1: Math.max(...sensorSignal),
+            line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
+          }))}
+          exportName="equilibria-titulacion-edta-sensor"
+          exportMetadata={exportMetadata}
+        />
+      ),
+    }] : []),
+  ], [titTraces, titShapes, xTitle, vMax, activeAxis, traceY, showSecondMetal, metalId, logKf, logBetasOH, pH, exportMetadata, t, showSensor, competitiveCurve, curve.volumes, sensorSignal, eqXs]);
 
   return (
     <>
@@ -699,7 +1253,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
           />
           <ModelBadge
             model={edtaInFlask ? t('titulacion.edtaModelBack') : t('titulacion.edtaModelDirect')}
-            additions={[logBetasOH.length > 0 && t('titulacion.addHydrolysisIndicatorSelection')]}
+            additions={[logBetasOH.length > 0 && t('titulacion.addHydrolysisIndicatorSelection'), showSecondMetal && t('titulacion.addCompetitiveMetal'), showSensor && t('titulacion.addPotentiometricSignal')]}
           />
           <LabelField label={t('titulacion.metalIonFreeNameLabel')} value={label} onChange={setLabel} />
           <Slider
@@ -718,6 +1272,21 @@ function EdtaTitration({ mode }: { mode: Mode }) {
             }))}
             onSelect={applyPreset}
           />
+          <Toggle
+            label={t('titulacion.competitiveMetalToggle')}
+            checked={showSecondMetal}
+            onChange={(checked) => {
+              setShowSecondMetal(checked);
+              if (checked) { setEdtaInFlask(false); setAxis('volume'); }
+            }}
+          />
+          {showSecondMetal && (
+            <Disclosure title={t('titulacion.secondMetalDisclosure')} defaultOpen>
+              <LabelField label={t('titulacion.secondMetalLabel')} value={secondLabel} onChange={setSecondLabel} />
+              <ConcSlider label={t('titulacion.secondMetalConc')} value={secondConc} onChange={setSecondConc} min={-4} max={-1} />
+              <Slider label={t('titulacion.secondMetalLogKCond')} value={secondLogKCond} min={1} max={28} step={0.1} onChange={setSecondLogKCond} decimals={1} />
+            </Disclosure>
+          )}
         </PanelSection>
         <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
           <Slider label={t('titulacion.bufferPHLabel')} value={pH} min={1} max={13} step={0.1} onChange={setPH} decimals={1} />
@@ -747,14 +1316,39 @@ function EdtaTitration({ mode }: { mode: Mode }) {
         <Disclosure title={t('titulacion.sideReactionsDisclosure')}>
           <SideReactionEditor state={side} onChange={setSide} showLigandPKas={false} />
         </Disclosure>
+        <Disclosure title={t('titulacion.potentiometricSensorDisclosure')}>
+          <Toggle label={t('titulacion.showSensorSignal')} checked={showSensor} onChange={setShowSensor} />
+          {showSensor && (
+            <>
+              <Segmented
+                options={[
+                  { value: 'metal', label: t('titulacion.metalElectrodeOption') },
+                  { value: 'redox-indicator', label: t('titulacion.redoxIndicatorOption') },
+                ]}
+                value={sensorKind}
+                onChange={(value) => setSensorKind(value as 'metal' | 'redox-indicator')}
+              />
+              <Slider label="E°" value={sensorE0} min={-1} max={2} step={0.01} onChange={setSensorE0} unit="V" decimals={2} />
+              <NumberSegmented label="n" value={sensorN} options={[1, 2, 3, 4]} onChange={setSensorN} />
+              {sensorKind === 'redox-indicator' && (
+                <>
+                  <Slider label={t('titulacion.logKfOxLabel')} value={sensorLogKOx} min={0} max={20} step={0.1} onChange={setSensorLogKOx} decimals={1} />
+                  <Slider label={t('titulacion.logKfRedLabel')} value={sensorLogKRed} min={0} max={20} step={0.1} onChange={setSensorLogKRed} decimals={1} />
+                </>
+              )}
+            </>
+          )}
+        </Disclosure>
         <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
             { label: t('titulacion.alphaYAtPHLabel'), value: formatSci(1 / aY, 3) },
             { label: t('titulacion.condLogKfLabel'), value: curve.logKfCond.toFixed(2) },
-            { label: axis === 'x' ? t('titulacion.xEqLabel') : t('titulacion.volEqLabel'), value: axis === 'x' ? `${curve.xEq.toFixed(2)}` : `${curve.vEq.toFixed(2)} mL` },
+            { label: showSecondMetal ? t('titulacion.successiveEquivalences') : axis === 'x' ? t('titulacion.xEqLabel') : t('titulacion.volEqLabel'), value: showSecondMetal ? eqXs.map((value) => value.toFixed(2)).join(' / ') + ' mL' : axis === 'x' ? `${curve.xEq.toFixed(2)}` : `${curve.vEq.toFixed(2)} mL` },
             { label: t('titulacion.pMAt50'), value: at50.pM.toFixed(2) },
             { label: t('titulacion.pYAt50'), value: at50.pY.toFixed(2) },
             { label: t('titulacion.pMAt150'), value: at150.pM.toFixed(2) },
+            { label: t('titulacion.exactStoichQ'), value: `${(100 * exactAssociation.limitingConversion).toFixed(4)} %` },
+            { label: t('titulacion.logKFor99'), value: target99LogK.toFixed(4) },
           ]} />
           <p className={feasible ? 'badge ok' : 'badge warn'}>
             {feasible ? t('titulacion.edtaFeasibleMsg') : t('titulacion.edtaNotFeasibleMsg')}
@@ -805,8 +1399,28 @@ function RedoxTitration({ mode }: { mode: Mode }) {
   const [cTitrant, setCTitrant] = useState(0.05);
   const [usePe, setUsePe] = useState(false);
   const [showDerivative, setShowDerivative] = useState(false);
+  const [showSecondAnalyte, setShowSecondAnalyte] = useState(false);
+  const [secondAnalyte, setSecondAnalyte] = useState<CoupleState>(coupleFromPreset('sn'));
+  const [secondAnalyteConc, setSecondAnalyteConc] = useState(0.05);
+  const [showConditionalStates, setShowConditionalStates] = useState(false);
+  const [oxPolyLogs, setOxPolyLogs] = useState<number[]>([]);
+  const [oxPolySlopes, setOxPolySlopes] = useState<number[]>([]);
+  const [redPolyLogs, setRedPolyLogs] = useState([11, 15]);
+  const [redPolySlopes, setRedPolySlopes] = useState([-1, -2]);
+  const [showStateNetwork, setShowStateNetwork] = useState(false);
+  const [networkFinalLabel, setNetworkFinalLabel] = useState('A(ox II)');
+  const [networkE02, setNetworkE02] = useState(1.0);
+  const [networkN2, setNetworkN2] = useState(1);
+  const [showPolynuclear, setShowPolynuclear] = useState(false);
+  const [analyteUnits, setAnalyteUnits] = useState(1);
+  const [polynuclearXeq, setPolynuclearXeq] = useState(0.01);
 
-  useShareEffect('titulacion', { mode, analyte, titrant, direction, pH, cAnalyte, vAnalyte, cTitrant, usePe, showDerivative }, (s) => {
+  useShareEffect('titulacion', {
+    mode, analyte, titrant, direction, pH, cAnalyte, vAnalyte, cTitrant, usePe, showDerivative,
+    showSecondAnalyte, secondAnalyte, secondAnalyteConc, showConditionalStates,
+    oxPolyLogs, oxPolySlopes, redPolyLogs, redPolySlopes,
+    showStateNetwork, networkFinalLabel, networkE02, networkN2, showPolynuclear, analyteUnits, polynuclearXeq,
+  }, (s) => {
     if (s.analyte) setAnalyte(s.analyte);
     if (s.titrant) setTitrant(s.titrant);
     if (s.direction === 'oxidante' || s.direction === 'reductor') setDirection(s.direction);
@@ -816,6 +1430,21 @@ function RedoxTitration({ mode }: { mode: Mode }) {
     if (s.cTitrant !== undefined) setCTitrant(s.cTitrant);
     if (s.usePe !== undefined) setUsePe(s.usePe);
     if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
+    if (s.showSecondAnalyte !== undefined) setShowSecondAnalyte(s.showSecondAnalyte);
+    if (s.secondAnalyte) setSecondAnalyte(s.secondAnalyte);
+    if (typeof s.secondAnalyteConc === 'number') setSecondAnalyteConc(s.secondAnalyteConc);
+    if (s.showConditionalStates !== undefined) setShowConditionalStates(Boolean(s.showConditionalStates));
+    if (Array.isArray(s.oxPolyLogs)) setOxPolyLogs(s.oxPolyLogs as number[]);
+    if (Array.isArray(s.oxPolySlopes)) setOxPolySlopes(s.oxPolySlopes as number[]);
+    if (Array.isArray(s.redPolyLogs)) setRedPolyLogs(s.redPolyLogs as number[]);
+    if (Array.isArray(s.redPolySlopes)) setRedPolySlopes(s.redPolySlopes as number[]);
+    if (s.showStateNetwork !== undefined) setShowStateNetwork(Boolean(s.showStateNetwork));
+    if (typeof s.networkFinalLabel === 'string') setNetworkFinalLabel(s.networkFinalLabel);
+    if (typeof s.networkE02 === 'number') setNetworkE02(s.networkE02);
+    if (typeof s.networkN2 === 'number') setNetworkN2(s.networkN2);
+    if (s.showPolynuclear !== undefined) setShowPolynuclear(s.showPolynuclear);
+    if (typeof s.analyteUnits === 'number') setAnalyteUnits(s.analyteUnits);
+    if (typeof s.polynuclearXeq === 'number') setPolynuclearXeq(s.polynuclearXeq);
   });
 
   function reset() {
@@ -823,24 +1452,92 @@ function RedoxTitration({ mode }: { mode: Mode }) {
     setDirection('oxidante'); setPH(0);
     setCAnalyte(0.05); setVAnalyte(50); setCTitrant(0.05);
     setUsePe(false); setShowDerivative(false);
+    setShowSecondAnalyte(false); setSecondAnalyte(coupleFromPreset('sn')); setSecondAnalyteConc(0.05);
+    setShowConditionalStates(false); setOxPolyLogs([]); setOxPolySlopes([]);
+    setRedPolyLogs([11, 15]); setRedPolySlopes([-1, -2]);
+    setShowStateNetwork(false); setNetworkFinalLabel('A(ox II)'); setNetworkE02(1); setNetworkN2(1);
+    setShowPolynuclear(false); setAnalyteUnits(1); setPolynuclearXeq(0.01);
   }
 
-  const vMax = ((analyte.n * cAnalyte * vAnalyte) / (titrant.n * cTitrant)) * 1.8;
+  const polynomialState = useCallback((logs: number[], slopes: number[]): ConditionalRedoxState | undefined => (
+    showConditionalStates && logs.length > 0
+      ? { intrinsicTerms: logs.map((logCoefficient, index) => ({
+          logCoefficient,
+          pHSlope: slopes[index] ?? -(index + 1),
+        })) }
+      : undefined
+  ), [showConditionalStates]);
+  const analyteOxState = useMemo(
+    () => polynomialState(oxPolyLogs, oxPolySlopes),
+    [polynomialState, oxPolyLogs, oxPolySlopes],
+  );
+  const analyteRedState = useMemo(
+    () => polynomialState(redPolyLogs, redPolySlopes),
+    [polynomialState, redPolyLogs, redPolySlopes],
+  );
+
+  const totalElectronMoles = (analyte.n + (showStateNetwork ? networkN2 : 0)) * cAnalyte * vAnalyte
+    + (showSecondAnalyte && !showStateNetwork ? secondAnalyte.n * secondAnalyteConc * vAnalyte : 0);
+  const vMax = (totalElectronMoles / (titrant.n * cTitrant)) * 1.8;
   const curve = useMemo(
-    () => redoxTitrationCurve({ analyte, titrant, direction, pH, cAnalyte, vAnalyte, cTitrant, vMax }),
-    [analyte, titrant, direction, pH, cAnalyte, vAnalyte, cTitrant, vMax],
+    () => redoxTitrationCurve({
+      analyte, titrant, direction, pH, cAnalyte, vAnalyte, cTitrant, vMax,
+      analyteOxState, analyteRedState,
+    }),
+    [analyte, titrant, direction, pH, cAnalyte, vAnalyte, cTitrant, vMax, analyteOxState, analyteRedState],
+  );
+  const mixtureCurve = useMemo(() => showSecondAnalyte
+    ? redoxMixtureTitrationCurve({
+        analytes: [
+          { couple: analyte, c: cAnalyte, oxState: analyteOxState, redState: analyteRedState },
+          { couple: secondAnalyte, c: secondAnalyteConc },
+        ],
+        titrant,
+        direction,
+        pH,
+        vAnalyte,
+        cTitrant,
+        vMax,
+      })
+    : null,
+  [showSecondAnalyte, analyte, analyteOxState, analyteRedState, cAnalyte, secondAnalyte, secondAnalyteConc, titrant, direction, pH, vAnalyte, cTitrant, vMax]);
+  const networkCurve = useMemo(() => showStateNetwork && direction === 'oxidante'
+    ? redoxNetworkTitrationCurve({
+        analyte: {
+          labels: [analyte.red, analyte.ox, networkFinalLabel],
+          transitions: [
+            { n: analyte.n, pe0: conditionalEprimeFromStates(analyte, pH, analyteOxState, analyteRedState) / NERNST_S },
+            { n: networkN2, pe0: networkE02 / NERNST_S },
+          ],
+        },
+        titrant: {
+          labels: [titrant.red, titrant.ox],
+          transitions: [{ n: titrant.n, pe0: peConditional(titrant, pH) }],
+        },
+        analyteMoles: cAnalyte * vAnalyte,
+        titrantConcentration: cTitrant,
+        vMax,
+      })
+    : null,
+  [showStateNetwork, direction, analyte, networkFinalLabel, pH, analyteOxState, analyteRedState, networkN2, networkE02, titrant, cAnalyte, vAnalyte, cTitrant, vMax]);
+  const activeVolumes = networkCurve?.volumes ?? mixtureCurve?.volumes ?? curve.volumes;
+  const activePes = networkCurve?.pes ?? mixtureCurve?.pes ?? curve.pes;
+  const activeEs = networkCurve?.Es ?? mixtureCurve?.Es ?? curve.Es;
+  const activeEquivalences = useMemo(
+    () => networkCurve?.equivalenceVolumes ?? mixtureCurve?.equivalenceVolumes ?? [curve.vEq],
+    [networkCurve, mixtureCurve, curve.vEq],
   );
 
   const { traces, shapes, annotations } = useMemo(() => {
-    const y = usePe ? curve.pes : curve.Es;
+    const y = usePe ? activePes : activeEs;
     const data: Data[] = [{
-      x: curve.volumes, y, type: 'scatter', mode: 'lines',
+      x: activeVolumes, y, type: 'scatter', mode: 'lines',
       name: usePe ? 'pe' : 'E (V)',
       line: { width: 3, color: '#D55E00' },
       hovertemplate: `V = %{x:.2f} mL<br>${usePe ? 'pe' : 'E'} = %{y:.3f}<extra></extra>`,
     }];
     if (showDerivative) {
-      const der = firstDerivative(curve.volumes, y);
+      const der = firstDerivative(activeVolumes, y);
       const maxD = Math.max(...der.d.map(Math.abs), 1e-9);
       const span = Math.max(...y) - Math.min(...y);
       data.push({
@@ -849,20 +1546,37 @@ function RedoxTitration({ mode }: { mode: Mode }) {
         line: { width: 2, color: '#7F8C8D' }, hoverinfo: 'skip',
       });
     }
-    const shapeList: Partial<Shape>[] = [{
-      type: 'line', x0: curve.vEq, x1: curve.vEq, y0: Math.min(...y), y1: Math.max(...y),
+    const shapeList: Partial<Shape>[] = activeEquivalences.map((value) => ({
+      type: 'line', x0: value, x1: value, y0: Math.min(...y), y1: Math.max(...y),
       line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
-    }];
-    const annList: Partial<Annotations>[] = [{
-      x: curve.vEq, y: Math.max(...y), text: t('titulacion.pE'), showarrow: false,
+    }));
+    const annList: Partial<Annotations>[] = activeEquivalences.map((value, index) => ({
+      x: value, y: Math.max(...y), text: `${t('titulacion.pE')}${activeEquivalences.length > 1 ? ` ${index + 1}` : ''}`, showarrow: false,
       font: { color: '#2C3E50', size: 12 },
-    }];
+    }));
     return { traces: data, shapes: shapeList, annotations: annList };
-  }, [curve, usePe, showDerivative, t]);
+  }, [activeVolumes, activePes, activeEs, activeEquivalences, usePe, showDerivative, t]);
 
-  const quantitative = curve.logK >= 6;
-  const pHDependent = analyte.mH > 0 || titrant.mH > 0;
+  const analytePe0 = conditionalEprimeFromStates(analyte, pH, analyteOxState, analyteRedState) / NERNST_S;
+  const reactionLogKs = [
+    { couple: analyte, pe0: analytePe0 },
+    ...(showSecondAnalyte && !showStateNetwork ? [{ couple: secondAnalyte, pe0: peConditional(secondAnalyte, pH) }] : []),
+  ].map(({ couple, pe0 }) => direction === 'oxidante'
+    ? couple.n * titrant.n * (peConditional(titrant, pH) - pe0)
+    : couple.n * titrant.n * (pe0 - peConditional(titrant, pH)));
+  const limitingLogK = Math.min(...reactionLogKs);
+  const quantitative = limitingLogK >= 6;
+  const pHDependent = showConditionalStates || analyte.mH > 0 || titrant.mH > 0 || (showSecondAnalyte && secondAnalyte.mH > 0);
   const buretSpecies = direction === 'oxidante' ? titrant.ox : titrant.red;
+  const lastEq = activeEquivalences[activeEquivalences.length - 1];
+  const lastEqIndex = activeVolumes.findIndex((value) => value >= lastEq);
+  const peAtLastEq = activePes[Math.max(lastEqIndex, 0)];
+  const eAtLastEq = activeEs[Math.max(lastEqIndex, 0)];
+  const polynuclearEeq = polynuclearEquivalencePotential({
+    potentials: [conditionalEprimeFromStates(analyte, pH, analyteOxState, analyteRedState), peConditional(titrant, pH) * NERNST_S],
+    electrons: [analyte.n, titrant.n],
+    activityCorrection: analyteUnits * polynuclearXeq,
+  });
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Titulación redox',
@@ -887,7 +1601,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
           />
           <ModelBadge
             model={direction === 'oxidante' ? t('titulacion.redoxModelOxidation') : t('titulacion.redoxModelReduction')}
-            additions={[pHDependent && t('redox.additionPHConditioned'), usePe && t('titulacion.addPeAxis'), showDerivative && t('mezclas.additionDerivative')]}
+            additions={[pHDependent && t('redox.additionPHConditioned'), showSecondAnalyte && !showStateNetwork && t('titulacion.addRedoxMixture'), showStateNetwork && t('titulacion.addRedoxNetwork'), usePe && t('titulacion.addPeAxis'), showDerivative && t('mezclas.additionDerivative')]}
           />
           <p className="hint">
             {direction === 'oxidante'
@@ -895,10 +1609,45 @@ function RedoxTitration({ mode }: { mode: Mode }) {
               : t('titulacion.analyteStartsAsOx', { analyte: analyte.ox, titrant: titrant.red })}
           </p>
           <CoupleEditor title={t('titulacion.analytePairTitle')} couple={analyte} onChange={setAnalyte} />
+          <Toggle label={t('titulacion.conditionalRedoxStatesToggle')} checked={showConditionalStates} onChange={setShowConditionalStates} />
+          {showConditionalStates && (
+            <Disclosure title={t('titulacion.conditionalRedoxStatesTitle')} defaultOpen>
+              <p className="hint">{t('titulacion.conditionalRedoxStatesHint')}</p>
+              <ConstantList prefix="log c(Ox)" values={oxPolyLogs} onChange={setOxPolyLogs} min={-30} max={40} maxItems={5} minItems={0} initialValue={4} />
+              <ConstantList prefix="pendiente pH (Ox)" values={oxPolySlopes} onChange={setOxPolySlopes} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
+              <ConstantList prefix="log c(Red)" values={redPolyLogs} onChange={setRedPolyLogs} min={-30} max={40} maxItems={5} minItems={0} initialValue={11} />
+              <ConstantList prefix="pendiente pH (Red)" values={redPolySlopes} onChange={setRedPolySlopes} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
+            </Disclosure>
+          )}
+          <Toggle label={t('titulacion.redoxNetworkToggle')} checked={showStateNetwork} onChange={(value) => {
+            setShowStateNetwork(value);
+            if (value) setShowSecondAnalyte(false);
+          }} />
+          {showStateNetwork && (
+            <Disclosure title={t('titulacion.redoxNetworkTitle')} defaultOpen>
+              <LabelField label={t('titulacion.finalRedoxStateLabel')} value={networkFinalLabel} onChange={setNetworkFinalLabel} />
+              <Slider label="E°′₂ (V)" value={networkE02} min={-1.5} max={2.5} step={0.01} onChange={setNetworkE02} decimals={2} />
+              <Slider label="n₂" value={networkN2} min={1} max={6} step={1} onChange={setNetworkN2} decimals={0} />
+            </Disclosure>
+          )}
+          <Toggle label={t('titulacion.addSecondRedoxAnalyte')} checked={showSecondAnalyte} onChange={setShowSecondAnalyte} />
+          {showSecondAnalyte && (
+            <Disclosure title={t('titulacion.secondAnalytePairTitle')} defaultOpen>
+              <CoupleEditor title={t('titulacion.secondAnalytePairTitle')} couple={secondAnalyte} onChange={setSecondAnalyte} />
+              <ConcSlider label={t('titulacion.secondAnalyteConcLabel')} value={secondAnalyteConc} onChange={setSecondAnalyteConc} min={-4} max={-1} />
+            </Disclosure>
+          )}
+          <Toggle label={t('titulacion.polynuclearToggle')} checked={showPolynuclear} onChange={setShowPolynuclear} />
+          {showPolynuclear && (
+            <Disclosure title={t('titulacion.polynuclearTitle')} defaultOpen>
+              <NumberSegmented label={t('titulacion.conservedUnitsPerSpecies')} value={analyteUnits} options={[1, 2, 3, 4, 6]} onChange={setAnalyteUnits} />
+              <ConcSlider label="Xeq" value={polynuclearXeq} onChange={setPolynuclearXeq} min={-6} max={-0.3} />
+            </Disclosure>
+          )}
           <CoupleEditor title={t('titulacion.titrantPairTitle')} couple={titrant} onChange={setTitrant} />
         </PanelSection>
         <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
-          <Slider label={t('titulacion.bufferedMediumPHLabel')} value={pH} min={0} max={8} step={0.1} onChange={setPH} decimals={1} />
+          <Slider label={t('titulacion.bufferedMediumPHLabel')} value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
           {pHDependent && (
             <p className="hint">{t('titulacion.hInHalfReactionHint')}</p>
           )}
@@ -910,14 +1659,15 @@ function RedoxTitration({ mode }: { mode: Mode }) {
         </PanelSection>
         <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
-            { label: t('titulacion.volEqLabel'), value: `${curve.vEq.toFixed(2)} mL` },
-            { label: t('titulacion.eAtEquivalenceLabel'), value: `${curve.EEq.toFixed(3)} V (pe ${curve.peEq.toFixed(2)})`, helpId: 'pe' },
-            { label: t('titulacion.logKReactionLabel'), value: curve.logK.toFixed(1) },
+            { label: showSecondAnalyte ? t('titulacion.successiveEquivalences') : t('titulacion.volEqLabel'), value: `${activeEquivalences.map((value) => value.toFixed(2)).join(' / ')} mL` },
+            { label: t('titulacion.eAtEquivalenceLabel'), value: `${eAtLastEq.toFixed(3)} V (pe ${peAtLastEq.toFixed(2)})`, helpId: 'pe' },
+            { label: t('titulacion.logKReactionLabel'), value: limitingLogK.toFixed(1) },
+            ...(showPolynuclear ? [{ label: t('titulacion.polynuclearEeq'), value: `${polynuclearEeq.toFixed(4)} V` }] : []),
           ]} />
           <p className={quantitative ? 'badge ok' : 'badge warn'}>
             {quantitative
-              ? t('titulacion.redoxQuantitativeMsg', { k: curve.logK.toFixed(0) })
-              : t('titulacion.redoxNotQuantitativeMsg', { k: curve.logK.toFixed(1) })}
+              ? t('titulacion.redoxQuantitativeMsg', { k: limitingLogK.toFixed(0) })
+              : t('titulacion.redoxNotQuantitativeMsg', { k: limitingLogK.toFixed(1) })}
           </p>
         </PanelSection>
         <InfoBox title={t('titulacion.calcMethodTitle')}>
@@ -936,9 +1686,10 @@ function RedoxTitration({ mode }: { mode: Mode }) {
           exportMetadata={exportMetadata}
         />
         <ResultCardRow items={[
-          { label: t('titulacion.vOfEquivalenceShort'), value: `${curve.vEq.toFixed(2)} mL`, accent: true },
-          { label: usePe ? t('titulacion.peAtEquivalenceShort') : t('titulacion.eAtEquivalenceLabel'), value: usePe ? curve.peEq.toFixed(2) : `${curve.EEq.toFixed(3)} V` },
-          { label: t('titulacion.logKReactionShort'), value: curve.logK.toFixed(1) },
+          { label: t('titulacion.vOfEquivalenceShort'), value: `${activeEquivalences.map((value) => value.toFixed(2)).join(' / ')} mL`, accent: true },
+          { label: usePe ? t('titulacion.peAtEquivalenceShort') : t('titulacion.eAtEquivalenceLabel'), value: usePe ? peAtLastEq.toFixed(2) : `${eAtLastEq.toFixed(3)} V` },
+          { label: t('titulacion.logKReactionShort'), value: limitingLogK.toFixed(1) },
+          ...(showPolynuclear ? [{ label: t('titulacion.polynuclearEeq'), value: `${polynuclearEeq.toFixed(4)} V` }] : []),
         ]} />
       </section>
     </>
@@ -964,8 +1715,13 @@ function PrecipTitration({ mode }: { mode: Mode }) {
   const [showMohr, setShowMohr] = useState(false);
   const [cChromate, setCChromate] = useState(0.005);
   const [showDerivative, setShowDerivative] = useState(false);
+  const [showConditionalSensor, setShowConditionalSensor] = useState(false);
+  const [logAlphaCation, setLogAlphaCation] = useState(0);
+  const [logAlphaAnion, setLogAlphaAnion] = useState(0);
+  const [sensorE0, setSensorE0] = useState(0.8);
+  const [sensorTemperature, setSensorTemperature] = useState(25);
 
-  useShareEffect('titulacion', { mode, presetId, pKsp, cationName, anionName, saltFormula, isAgSystem, cAnalyte, vAnalyte, cTitrant, m, x, showPCation, showMohr, cChromate, showDerivative }, (s) => {
+  useShareEffect('titulacion', { mode, presetId, pKsp, cationName, anionName, saltFormula, isAgSystem, cAnalyte, vAnalyte, cTitrant, m, x, showPCation, showMohr, cChromate, showDerivative, showConditionalSensor, logAlphaCation, logAlphaAnion, sensorE0, sensorTemperature }, (s) => {
     if (s.presetId) setPresetId(s.presetId);
     if (s.pKsp !== undefined) setPKsp(s.pKsp);
     if (s.cationName) setCationName(s.cationName);
@@ -984,6 +1740,11 @@ function PrecipTitration({ mode }: { mode: Mode }) {
     if (s.showMohr !== undefined) setShowMohr(s.showMohr);
     if (typeof s.cChromate === 'number' && s.cChromate > 0) setCChromate(s.cChromate);
     if (s.showDerivative !== undefined) setShowDerivative(s.showDerivative);
+    if (s.showConditionalSensor !== undefined) setShowConditionalSensor(s.showConditionalSensor);
+    if (s.logAlphaCation !== undefined) setLogAlphaCation(s.logAlphaCation);
+    if (s.logAlphaAnion !== undefined) setLogAlphaAnion(s.logAlphaAnion);
+    if (s.sensorE0 !== undefined) setSensorE0(s.sensorE0);
+    if (s.sensorTemperature !== undefined) setSensorTemperature(s.sensorTemperature);
   });
 
   function loadPreset(id: string) {
@@ -998,6 +1759,8 @@ function PrecipTitration({ mode }: { mode: Mode }) {
   function reset() {
     loadPreset('cl'); setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
     setShowMohr(false); setShowPCation(false); setCChromate(0.005); setShowDerivative(false);
+    setShowConditionalSensor(false); setLogAlphaCation(0); setLogAlphaAnion(0);
+    setSensorE0(0.8); setSensorTemperature(25);
   }
 
   const vEq0 = (m / x) * ((cAnalyte * vAnalyte) / cTitrant);
@@ -1007,23 +1770,30 @@ function PrecipTitration({ mode }: { mode: Mode }) {
     () => precipTitrationCurve({ pKsp, cAnalyte, vAnalyte, cTitrant, vMax, m, x }),
     [pKsp, cAnalyte, vAnalyte, cTitrant, vMax, m, x],
   );
+  const sensorCurve = useMemo(() => conditionalPrecipSensorCurve({
+    pKsp, cAnalyte, vAnalyte, cTitrant, vMax, m, x,
+    alphaMetal: Math.pow(10, logAlphaCation), alphaAnalyte: Math.pow(10, logAlphaAnion),
+    electrodeE0: sensorE0, electrons: Math.max(1, m), temperatureC: sensorTemperature,
+  }), [pKsp, cAnalyte, vAnalyte, cTitrant, vMax, m, x, logAlphaCation, logAlphaAnion, sensorE0, sensorTemperature]);
 
   const mohrPAg = mohrEndpointPAg(cChromate);
 
   // showPCation: true → y-axis is p(cation)=pAg, false → p(anion)=pX
-  const yVals = showPCation ? curve.pAgs : curve.pXs;
+  const yVals = showConditionalSensor ? sensorCurve.potentials : showPCation ? curve.pAgs : curve.pXs;
   const pCatLabel = `p${cationName.replace(/[⁺²³⁴⁻]/g, '')}`;
   const pAniLabel = `p${anionName.replace(/[⁺²³⁴⁻]/g, '')}`;
-  const yLabel = showPCation
+  const yLabel = showConditionalSensor ? 'E (V)' : showPCation
     ? `${pCatLabel} (−log[${cationName}])`
     : `${pAniLabel} (−log[${anionName}])`;
-  const yMax = Math.ceil(Math.max(...yVals.filter(Number.isFinite), curve.pAgEq * 1.2));
+  const finiteY = yVals.filter(Number.isFinite);
+  const yMin = showConditionalSensor ? Math.min(...finiteY) - 0.05 : 0;
+  const yMax = showConditionalSensor ? Math.max(...finiteY) + 0.05 : Math.ceil(Math.max(...finiteY, curve.pAgEq * 1.2));
 
   const traces = useMemo<Data[]>(() => {
-    const y = showPCation ? curve.pAgs : curve.pXs;
+    const y = showConditionalSensor ? sensorCurve.potentials : showPCation ? curve.pAgs : curve.pXs;
     const data: Data[] = [{
       x: curve.volumes, y, type: 'scatter', mode: 'lines',
-      name: showPCation ? pCatLabel : pAniLabel,
+      name: showConditionalSensor ? 'E' : showPCation ? pCatLabel : pAniLabel,
       line: { width: 3, color: '#D55E00' },
       hovertemplate: `V = %{x:.2f} mL<br>p = %{y:.2f}<extra></extra>`,
     }];
@@ -1038,11 +1808,11 @@ function PrecipTitration({ mode }: { mode: Mode }) {
       });
     }
     return data;
-  }, [curve, showPCation, showDerivative, pCatLabel, pAniLabel, t]);
+  }, [curve, sensorCurve.potentials, showConditionalSensor, showPCation, showDerivative, pCatLabel, pAniLabel, t]);
 
   const shapes = useMemo<Partial<Shape>[]>(() => {
     const list: Partial<Shape>[] = [{
-      type: 'line', x0: curve.vEq, x1: curve.vEq, y0: 0, y1: yMax,
+      type: 'line', x0: curve.vEq, x1: curve.vEq, y0: yMin, y1: yMax,
       line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
     }];
     if (showMohr && showPCation && isAgSystem) {
@@ -1052,7 +1822,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
       });
     }
     return list;
-  }, [curve.vEq, showMohr, showPCation, isAgSystem, mohrPAg, vMax, yMax]);
+  }, [curve.vEq, showMohr, showPCation, isAgSystem, mohrPAg, vMax, yMin, yMax]);
 
   const annotations = useMemo<Partial<Annotations>[]>(() => {
     const list: Partial<Annotations>[] = [{
@@ -1123,12 +1893,22 @@ function PrecipTitration({ mode }: { mode: Mode }) {
             </>
           )}
           <Toggle label={t('titulacion.showDerivativeDpToggle')} checked={showDerivative} onChange={setShowDerivative} />
+          <Toggle label={t('titulacion.conditionalSensorToggle')} checked={showConditionalSensor} onChange={setShowConditionalSensor} />
+          {showConditionalSensor && (
+            <>
+              <Slider label={t('titulacion.logAlphaCation')} value={logAlphaCation} min={0} max={20} step={0.1} decimals={1} onChange={setLogAlphaCation} />
+              <Slider label={t('titulacion.logAlphaAnion')} value={logAlphaAnion} min={0} max={20} step={0.1} decimals={1} onChange={setLogAlphaAnion} />
+              <Slider label="E° (V)" value={sensorE0} min={-1.5} max={2.5} step={0.01} decimals={2} onChange={setSensorE0} />
+              <Slider label={t('titulacion.temperatureLabel')} value={sensorTemperature} min={0} max={100} step={1} decimals={0} unit="°C" onChange={setSensorTemperature} />
+            </>
+          )}
         </PanelSection>
 
         <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
             { label: t('titulacion.volEqLabel'), value: `${curve.vEq.toFixed(2)} mL` },
             { label: m === 1 && x === 1 ? t('titulacion.pAtEquivalenceHalfPKsp') : t('titulacion.pAtEquivalence'), value: curve.pAgEq.toFixed(2) },
+            ...(showConditionalSensor ? [{ label: t('titulacion.conditionalPKsp'), value: sensorCurve.pKspConditional.toFixed(3) }] : []),
             ...(isAgSystem && showPCation ? [{
               label: t('titulacion.mohrIndicatorLabel'),
               value: `pAg = ${mohrPAg.toFixed(2)} (Δ = ${(mohrPAg - curve.pAgEq).toFixed(2)})`,
@@ -1155,7 +1935,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           xTitle={t('mezclas.volumeAddedLabel', { titrant: cationName })}
           yTitle={yLabel}
           xRange={[0, vMax]}
-          yRange={[0, yMax]}
+          yRange={[yMin, yMax]}
           shapes={shapes}
           annotations={annotations}
           exportName="equilibria-titulacion-precip"
@@ -1172,6 +1952,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
         <ResultCardRow items={[
           { label: t('titulacion.vOfEquivalenceShort'), value: `${curve.vEq.toFixed(2)} mL`, accent: true },
           { label: t('titulacion.pAtEquivalence'), value: curve.pAgEq.toFixed(2) },
+          ...(showConditionalSensor ? [{ label: t('titulacion.conditionalPKsp'), value: sensorCurve.pKspConditional.toFixed(3) }] : []),
           ...(isAgSystem && showPCation
             ? [{ label: `${t('titulacion.mohrIndicatorLabel')} (pAg)`, value: mohrPAg.toFixed(2) }]
             : [{ label: t('titulacion.pKspShort'), value: pKsp.toFixed(2) }]),

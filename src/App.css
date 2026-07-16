@@ -978,6 +978,16 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 
 .db-panel summary:hover { color: var(--accent); }
 
+.control-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+@media (max-width: 800px) {
+  .control-grid-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
 .db-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

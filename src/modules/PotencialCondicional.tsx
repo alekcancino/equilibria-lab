@@ -17,7 +17,7 @@ import DiagramTabs from '../components/DiagramTabs';
 import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, LabelField, PanelSection, ResultCardRow, Disclosure } from '../components/Controls';
 import { CoupleEditor, SideReactionEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
-import { NERNST_S, conditionalEprime } from '../lib/redox';
+import { NERNST_S, conditionalEprime, redoxStateAlpha } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
 import { alphaH, alphaL } from '../lib/conditional';
 import {
@@ -97,6 +97,11 @@ function defaultState() {
     showComplexPH1: false,
     oxSide1: defaultSideEditorState(),
     redSide1: defaultSideEditorState(),
+    showIntrinsicPH1: false,
+    intrinsicOxLogs: [] as number[],
+    intrinsicOxSlopes: [] as number[],
+    intrinsicRedLogs: [11.4, 21.2],
+    intrinsicRedSlopes: [-1, -2],
     // E°' = f(pX): effect of ligand X on the couple's potential
     pxE0: 0.771,          // E° Fe³⁺/Fe²⁺ por defecto
     pxN: 1,
@@ -106,6 +111,20 @@ function defaultState() {
     pxLogBetasOx: [5.28, 9.30, 12.06],   // FeF²⁺, FeF₂⁺, FeF₃
     pxLogBetasRed: [1.0],                  // FeF⁺ (weak)
     showPX: false,
+    pxMin: 0,
+    pxMax: 14,
+    showPX2: false,
+    px2E0: 0.34,
+    px2N: 1,
+    px2OxLabel: 'Par 2 Ox',
+    px2RedLabel: 'Par 2 Red',
+    px2LogBetasOx: [8],
+    px2LogBetasRed: [2],
+    showSecondLigand: false,
+    pxSecondLigandLabel: 'Y',
+    pxSecondLigandPX: 1,
+    pxSecondLogBetasOx: [2.4, 2.2],
+    pxSecondLogBetasRed: [0.4],
     // pX′ condicional: X itself protonates (e.g. NH₃/NH₄⁺) — the axis shifts
     // from free [X] to total analytical X at a fixed pH.
     showPXPrime: false,
@@ -154,11 +173,29 @@ export default function PotencialCondicional() {
     () => (st.showComplexPH1 ? sideStackFromEditor(st.redSide1) : undefined),
     [st.showComplexPH1, st.redSide1],
   );
+  const intrinsicOx1 = useMemo(() => ({
+    intrinsicTerms: st.showIntrinsicPH1 ? st.intrinsicOxLogs.map((logCoefficient, index) => ({
+      logCoefficient,
+      pHSlope: st.intrinsicOxSlopes[index] ?? -(index + 1),
+    })) : [],
+  }), [st.showIntrinsicPH1, st.intrinsicOxLogs, st.intrinsicOxSlopes]);
+  const intrinsicRed1 = useMemo(() => ({
+    intrinsicTerms: st.showIntrinsicPH1 ? st.intrinsicRedLogs.map((logCoefficient, index) => ({
+      logCoefficient,
+      pHSlope: st.intrinsicRedSlopes[index] ?? -(index + 1),
+    })) : [],
+  }), [st.showIntrinsicPH1, st.intrinsicRedLogs, st.intrinsicRedSlopes]);
+  const E1AtPH = useCallback((pH: number) => (
+    conditionalEprime(st.couple1, pH, oxStack1, redStack1)
+    + (S / st.couple1.n) * Math.log10(
+      redoxStateAlpha(intrinsicRed1, pH) / redoxStateAlpha(intrinsicOx1, pH),
+    )
+  ), [st.couple1, oxStack1, redStack1, intrinsicRed1, intrinsicOx1]);
   // conditionalEprime(couple, pH, undefined, undefined) === Eprime(couple, pH)
   // exactly (tested), so par 1 always goes through it — no branching needed.
   const E1s = useMemo(
-    () => pHs.map((pH) => conditionalEprime(st.couple1, pH, oxStack1, redStack1)),
-    [pHs, st.couple1, oxStack1, redStack1],
+    () => pHs.map(E1AtPH),
+    [pHs, E1AtPH],
   );
   const E2s = useMemo(() => pHs.map((pH) => Eprime(st.couple2, pH)), [pHs, st.couple2]);
   const E3s = useMemo(
@@ -172,14 +209,14 @@ export default function PotencialCondicional() {
   // intersection — cross23 (par 2 vs par 3) is never affected by par 1.
 
   const cross12 = useMemo(
-    () => (st.showComplexPH1 ? numericCrossover(pHs, E1s, E2s) : crossoverPH(st.couple1, st.couple2)),
-    [st.showComplexPH1, pHs, E1s, E2s, st.couple1, st.couple2],
+    () => (st.showComplexPH1 || st.showIntrinsicPH1 ? numericCrossover(pHs, E1s, E2s) : crossoverPH(st.couple1, st.couple2)),
+    [st.showComplexPH1, st.showIntrinsicPH1, pHs, E1s, E2s, st.couple1, st.couple2],
   );
   const cross13 = useMemo(() => {
     if (!st.showCouple3) return null;
-    if (st.showComplexPH1) return E3s ? numericCrossover(pHs, E1s, E3s) : null;
+    if (st.showComplexPH1 || st.showIntrinsicPH1) return E3s ? numericCrossover(pHs, E1s, E3s) : null;
     return crossoverPH(st.couple1, st.couple3);
-  }, [st.showCouple3, st.showComplexPH1, pHs, E1s, E3s, st.couple1, st.couple3]);
+  }, [st.showCouple3, st.showComplexPH1, st.showIntrinsicPH1, pHs, E1s, E3s, st.couple1, st.couple3]);
   const cross23 = useMemo(
     () => st.showCouple3 ? crossoverPH(st.couple2, st.couple3) : null,
     [st.couple2, st.couple3, st.showCouple3],
@@ -187,17 +224,17 @@ export default function PotencialCondicional() {
   // Only the numeric (complexation-active) path can cross more than once —
   // surface it so "the crossover" doesn't silently understate the curve.
   const cross12HasMore = useMemo(
-    () => (st.showComplexPH1 ? numericCrossings(pHs, E1s, E2s).length > 1 : false),
-    [st.showComplexPH1, pHs, E1s, E2s],
+    () => (st.showComplexPH1 || st.showIntrinsicPH1 ? numericCrossings(pHs, E1s, E2s).length > 1 : false),
+    [st.showComplexPH1, st.showIntrinsicPH1, pHs, E1s, E2s],
   );
   const cross13HasMore = useMemo(
-    () => (st.showComplexPH1 && st.showCouple3 && E3s ? numericCrossings(pHs, E1s, E3s).length > 1 : false),
-    [st.showComplexPH1, st.showCouple3, pHs, E1s, E3s],
+    () => ((st.showComplexPH1 || st.showIntrinsicPH1) && st.showCouple3 && E3s ? numericCrossings(pHs, E1s, E3s).length > 1 : false),
+    [st.showComplexPH1, st.showIntrinsicPH1, st.showCouple3, pHs, E1s, E3s],
   );
 
   // ── E°' at the cursor pH ──────────────────────────────────────────────────
 
-  const E1cur = conditionalEprime(st.couple1, st.pH, oxStack1, redStack1);
+  const E1cur = E1AtPH(st.pH);
   const E2cur = Eprime(st.couple2, st.pH);
   const E3cur = st.showCouple3 ? Eprime(st.couple3, st.pH) : null;
 
@@ -246,12 +283,12 @@ export default function PotencialCondicional() {
     if (cross12 !== null) {
       out.push({
         type: 'line', x0: cross12, x1: cross12, y0: eMin - 10,
-        y1: conditionalEprime(st.couple1, cross12, oxStack1, redStack1) + 0.05,
+        y1: E1AtPH(cross12) + 0.05,
         line: { color: '#aaaaaa', width: 1, dash: 'dot' },
       });
     }
     return out;
-  }, [st.pH, cross12, eMin, eMax, st.couple1, oxStack1, redStack1]);
+  }, [st.pH, cross12, eMin, eMax, E1AtPH]);
 
   const logKAnnotations = useMemo<Partial<Annotations>[]>(() => {
     const out: Partial<Annotations>[] = [
@@ -343,15 +380,41 @@ export default function PotencialCondicional() {
   // ── E°' = f(pX) ───────────────────────────────────────────────────────────
 
   const PX_POINTS = 400;
-  const pXs = useMemo(() => Array.from({ length: PX_POINTS + 1 }, (_, i) => 14 * i / PX_POINTS), []);
+  const pXs = useMemo(() => Array.from(
+    { length: PX_POINTS + 1 },
+    (_, i) => st.pxMin + (st.pxMax - st.pxMin) * i / PX_POINTS,
+  ), [st.pxMin, st.pxMax]);
 
   const EpxCurve = useMemo(() => pXs.map((pX) => {
-    const X = Math.pow(10, -pX);
-    const aOx = alphaL(st.pxLogBetasOx, X);
-    const aRed = alphaL(st.pxLogBetasRed, X);
+    const extraOx = st.showSecondLigand ? [{
+      logBetas: st.pxSecondLogBetasOx,
+      spec: { mode: 'fixedPX' as const, pX: st.pxSecondLigandPX },
+    }] : [];
+    const extraRed = st.showSecondLigand ? [{
+      logBetas: st.pxSecondLogBetasRed,
+      spec: { mode: 'fixedPX' as const, pX: st.pxSecondLigandPX },
+    }] : [];
+    const aOx = redoxStateAlpha({ ligandBranches: [
+      { logBetas: st.pxLogBetasOx, spec: { mode: 'fixedPX', pX } },
+      ...extraOx,
+    ] }, st.pxPHFixed);
+    const aRed = redoxStateAlpha({ ligandBranches: [
+      { logBetas: st.pxLogBetasRed, spec: { mode: 'fixedPX', pX } },
+      ...extraRed,
+    ] }, st.pxPHFixed);
     // E°' = E° + (S/n) · log(α_Red / α_Ox)
     return st.pxE0 + (S / st.pxN) * Math.log10(aRed / aOx);
-  }), [pXs, st.pxE0, st.pxN, st.pxLogBetasOx, st.pxLogBetasRed]);
+  }), [pXs, st.pxE0, st.pxN, st.pxLogBetasOx, st.pxLogBetasRed, st.showSecondLigand, st.pxSecondLogBetasOx, st.pxSecondLogBetasRed, st.pxSecondLigandPX, st.pxPHFixed]);
+
+  const EpxCurve2 = useMemo(() => st.showPX2 ? pXs.map((pX) => {
+    const aOx = alphaL(st.px2LogBetasOx, Math.pow(10, -pX));
+    const aRed = alphaL(st.px2LogBetasRed, Math.pow(10, -pX));
+    return st.px2E0 + (S / st.px2N) * Math.log10(aRed / aOx);
+  }) : null, [st.showPX2, pXs, st.px2LogBetasOx, st.px2LogBetasRed, st.px2E0, st.px2N]);
+  const pxCrossings = useMemo(
+    () => EpxCurve2 ? numericCrossings(pXs, EpxCurve, EpxCurve2) : [],
+    [pXs, EpxCurve, EpxCurve2],
+  );
 
   // Conditional pX′: X itself protonates (e.g. NH₃/NH₄⁺), so
   // the analytical (total) concentration needed for a given FREE [X] is
@@ -366,13 +429,16 @@ export default function PotencialCondicional() {
     ? t('complejos.conditionalPXLabel', { ph: st.pxPHFixed.toFixed(1) })
     : `p[${st.pxLigandLabel}]`;
 
-  const EpxMin = Math.min(...EpxCurve) - 0.1;
-  const EpxMax = st.pxE0 + 0.05;
+  const EpxMin = Math.min(...EpxCurve, ...(EpxCurve2 ?? [])) - 0.1;
+  const EpxMax = Math.max(...EpxCurve, ...(EpxCurve2 ?? []), st.pxE0, st.px2E0) + 0.05;
 
   const pxShapes = useMemo<Partial<import('plotly.js').Shape>[]>(() => [{
-    type: 'line', x0: scalePX(0), x1: scalePX(14), y0: st.pxE0, y1: st.pxE0,
+    type: 'line', x0: scalePX(st.pxMin), x1: scalePX(st.pxMax), y0: st.pxE0, y1: st.pxE0,
     line: { color: '#aaaaaa', width: 1.5, dash: 'dot' },
-  }], [st.pxE0, scalePX]);
+  }, ...pxCrossings.map((crossing) => ({
+    type: 'line' as const, x0: scalePX(crossing), x1: scalePX(crossing), y0: EpxMin, y1: EpxMax,
+    line: { color: '#7F8C8D', width: 1, dash: 'dash' as const },
+  }))], [st.pxE0, st.pxMin, st.pxMax, scalePX, pxCrossings, EpxMin, EpxMax]);
 
   // ── Diagram tabs ──────────────────────────────────────────────────────────
 
@@ -400,19 +466,27 @@ export default function PotencialCondicional() {
       label: "E°′ = f(pX)",
       node: (
         <Chart
-          data={[{
-            x: pXs.map(scalePX), y: EpxCurve, type: 'scatter', mode: 'lines',
-            name: `E°′(${st.pxOxLabel}/${st.pxRedLabel})`,
-            line: { width: 3, color: C3 },
-            hovertemplate: `E°′ = %{y:.3f} V<extra>pX=%{x:.1f}</extra>`,
-          }]}
+          data={[
+            {
+              x: pXs.map(scalePX), y: EpxCurve, type: 'scatter', mode: 'lines',
+              name: `E°′(${st.pxOxLabel}/${st.pxRedLabel})`,
+              line: { width: 3, color: C3 },
+              hovertemplate: `E°′ = %{y:.3f} V<extra>pX=%{x:.1f}</extra>`,
+            },
+            ...(EpxCurve2 ? [{
+              x: pXs.map(scalePX), y: EpxCurve2, type: 'scatter' as const, mode: 'lines' as const,
+              name: `E°′(${st.px2OxLabel}/${st.px2RedLabel})`,
+              line: { width: 2.5, color: C2, dash: 'dash' as const },
+              hovertemplate: `E°′ = %{y:.3f} V<extra>pX=%{x:.1f}</extra>`,
+            }] : []),
+          ]}
           xTitle={pxAxisLabel}
           yTitle={t('potencialcond.eprimeAxisLabel')}
-          xRange={[scalePX(0), scalePX(14)]}
+          xRange={[scalePX(st.pxMin), scalePX(st.pxMax)]}
           yRange={[EpxMin, EpxMax]}
           shapes={pxShapes}
           annotations={[{
-            x: scalePX(13), y: st.pxE0 + 0.02,
+            x: scalePX(st.pxMax - 0.07 * (st.pxMax - st.pxMin)), y: st.pxE0 + 0.02,
             text: `E° = ${st.pxE0.toFixed(3)} V`,
             showarrow: false, font: { size: 11, color: '#888' },
           }]}
@@ -441,7 +515,7 @@ export default function PotencialCondicional() {
     },
   ];
     return st.showPX ? all : all.filter((d) => d.id !== 'epx');
-  }, [Eprimetraces, eMin, eMax, logKShapes, logKAnnotations, st.showPX, pXs, scalePX, pxAxisLabel, EpxCurve, st.pxOxLabel, st.pxRedLabel, EpxMin, EpxMax, pxShapes, st.pxE0, escalaTraces, escalaPeMin, escalaPeMax, escalaShapes, escalaAnnotations, st.pH, escalaN, exportMetadata, t]);
+  }, [Eprimetraces, eMin, eMax, logKShapes, logKAnnotations, st.showPX, st.pxMin, st.pxMax, pXs, scalePX, pxAxisLabel, EpxCurve, EpxCurve2, st.pxOxLabel, st.pxRedLabel, st.px2OxLabel, st.px2RedLabel, EpxMin, EpxMax, pxShapes, st.pxE0, escalaTraces, escalaPeMin, escalaPeMax, escalaShapes, escalaAnnotations, st.pH, escalaN, exportMetadata, t]);
 
   return (
     <div className="module">
@@ -485,6 +559,20 @@ export default function PotencialCondicional() {
                 {t('potencialcond.complexationHint')}
               </p>
             </div>
+          )}
+          <Toggle
+            label={t('potencialcond.intrinsicPolynomialToggle')}
+            checked={st.showIntrinsicPH1}
+            onChange={(v) => set('showIntrinsicPH1', v)}
+          />
+          {st.showIntrinsicPH1 && (
+            <Disclosure title={t('potencialcond.intrinsicPolynomialTitle')} defaultOpen>
+              <p className="hint">{t('titulacion.conditionalRedoxStatesHint')}</p>
+              <ConstantList prefix="log c(Ox)" values={st.intrinsicOxLogs} onChange={(v) => set('intrinsicOxLogs', v)} min={-30} max={40} maxItems={5} minItems={0} initialValue={4} />
+              <ConstantList prefix="pendiente pH (Ox)" values={st.intrinsicOxSlopes} onChange={(v) => set('intrinsicOxSlopes', v)} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
+              <ConstantList prefix="log c(Red)" values={st.intrinsicRedLogs} onChange={(v) => set('intrinsicRedLogs', v)} min={-30} max={40} maxItems={5} minItems={0} initialValue={11.4} />
+              <ConstantList prefix="pendiente pH (Red)" values={st.intrinsicRedSlopes} onChange={(v) => set('intrinsicRedSlopes', v)} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
+            </Disclosure>
           )}
         </PanelSection>
 
@@ -559,6 +647,10 @@ export default function PotencialCondicional() {
               <LabelField label={t('potencialcond.oxidizedFormLabel')} value={st.pxOxLabel} onChange={(v) => set('pxOxLabel', v)} />
               <LabelField label={t('potencialcond.reducedFormLabel')} value={st.pxRedLabel} onChange={(v) => set('pxRedLabel', v)} />
               <LabelField label={t('potencialcond.ligandXLabel')} value={st.pxLigandLabel} onChange={(v) => set('pxLigandLabel', v)} />
+              <div className="control-grid-2">
+                <Slider label={t('potencialcond.pxMinLabel')} value={st.pxMin} min={-5} max={20} step={1} onChange={(v) => set('pxMin', Math.min(v, st.pxMax - 1))} decimals={0} />
+                <Slider label={t('potencialcond.pxMaxLabel')} value={st.pxMax} min={1} max={30} step={1} onChange={(v) => set('pxMax', Math.max(v, st.pxMin + 1))} decimals={0} />
+              </div>
               <Slider label={t('potencialcond.coupleE0Label')} helpId="E0" value={st.pxE0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('pxE0', v)} decimals={3} />
               <div className="control">
                 <div className="control-header">
@@ -577,6 +669,27 @@ export default function PotencialCondicional() {
               <Disclosure title={t('potencialcond.logBetaRedTitle')}>
                 <ConstantList prefix="log β(Red)" helpId="logBeta" values={st.pxLogBetasRed} onChange={(v) => set('pxLogBetasRed', v)} min={0} max={35} maxItems={6} />
               </Disclosure>
+              <Toggle label={t('potencialcond.comparePXCoupleToggle')} checked={st.showPX2} onChange={(v) => set('showPX2', v)} />
+              {st.showPX2 && (
+                <Disclosure title={t('potencialcond.secondPXCoupleTitle')} defaultOpen>
+                  <LabelField label={t('potencialcond.oxidizedFormLabel')} value={st.px2OxLabel} onChange={(v) => set('px2OxLabel', v)} />
+                  <LabelField label={t('potencialcond.reducedFormLabel')} value={st.px2RedLabel} onChange={(v) => set('px2RedLabel', v)} />
+                  <Slider label={t('potencialcond.coupleE0Label')} value={st.px2E0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('px2E0', v)} decimals={3} />
+                  <Slider label={t('coupleEditor.nLabel')} value={st.px2N} min={1} max={6} step={1} onChange={(v) => set('px2N', v)} decimals={0} />
+                  <ConstantList prefix="log β₂(Ox)" values={st.px2LogBetasOx} onChange={(v) => set('px2LogBetasOx', v)} min={0} max={60} maxItems={6} />
+                  <ConstantList prefix="log β₂(Red)" values={st.px2LogBetasRed} onChange={(v) => set('px2LogBetasRed', v)} min={0} max={60} maxItems={6} />
+                  {pxCrossings.length > 0 && <p className="hint">{t('potencialcond.pxCrossingsHint', { values: pxCrossings.map((value) => value.toFixed(2)).join(', ') })}</p>}
+                </Disclosure>
+              )}
+              <Toggle label={t('potencialcond.secondLigandToggle')} checked={st.showSecondLigand} onChange={(v) => set('showSecondLigand', v)} />
+              {st.showSecondLigand && (
+                <Disclosure title={t('potencialcond.secondLigandTitle')} defaultOpen>
+                  <LabelField label={t('potencialcond.ligandXLabel')} value={st.pxSecondLigandLabel} onChange={(v) => set('pxSecondLigandLabel', v)} />
+                  <Slider label={`p[${st.pxSecondLigandLabel}]`} value={st.pxSecondLigandPX} min={-5} max={30} step={0.1} onChange={(v) => set('pxSecondLigandPX', v)} decimals={1} />
+                  <ConstantList prefix="log βY(Ox)" values={st.pxSecondLogBetasOx} onChange={(v) => set('pxSecondLogBetasOx', v)} min={-10} max={60} maxItems={6} />
+                  <ConstantList prefix="log βY(Red)" values={st.pxSecondLogBetasRed} onChange={(v) => set('pxSecondLogBetasRed', v)} min={-10} max={60} maxItems={6} />
+                </Disclosure>
+              )}
               <p className="hint">
                 {t('potencialcond.presetHint')}
               </p>

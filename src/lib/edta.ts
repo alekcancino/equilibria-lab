@@ -46,6 +46,107 @@ export interface EdtaCurve {
   logKfCond: number;
 }
 
+export interface CompetitiveMetal {
+  label: string;
+  c: number;
+  logKfCond: number;
+}
+
+export interface CompetitiveEdtaPoint {
+  pY: number;
+  pMetals: number[];
+  complexes: number[];
+  freeLigand: number;
+}
+
+/** Shared-ligand balance for any number of 1:1 metal complexes. */
+export function competitiveEdtaPoint(metals: CompetitiveMetal[], cLigand: number): CompetitiveEdtaPoint {
+  const ligandTotal = Math.max(cLigand, 0);
+  const balance = (y: number) => y + metals.reduce((sum, metal) => {
+    const ky = Math.pow(10, metal.logKfCond) * y;
+    return sum + Math.max(metal.c, 0) * ky / (1 + ky);
+  }, 0) - ligandTotal;
+
+  let lo = 0;
+  let hi = Math.max(ligandTotal, 1e-30);
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) / 2;
+    if (balance(mid) > 0) hi = mid;
+    else lo = mid;
+  }
+  const y = Math.max((lo + hi) / 2, 1e-30);
+  const pMetals: number[] = [];
+  const complexes: number[] = [];
+  for (const metal of metals) {
+    const k = Math.pow(10, metal.logKfCond);
+    const free = Math.max(metal.c, 0) / (1 + k * y);
+    pMetals.push(-Math.log10(Math.max(free, 1e-30)));
+    complexes.push(Math.max(metal.c - free, 0));
+  }
+  return { pY: -Math.log10(y), pMetals, complexes, freeLigand: y };
+}
+
+export interface CompetitiveEdtaCurve {
+  volumes: number[];
+  pY: number[];
+  pMetals: number[][];
+  equivalenceVolumes: number[];
+  order: number[];
+}
+
+export function competitiveEdtaTitrationCurve(params: {
+  metals: CompetitiveMetal[];
+  vSample: number;
+  cEdta: number;
+  vMax: number;
+  points?: number;
+}): CompetitiveEdtaCurve {
+  const { metals, vSample, cEdta, vMax } = params;
+  const points = params.points ?? 500;
+  const order = metals.map((_, i) => i).sort((a, b) => metals[b].logKfCond - metals[a].logKfCond);
+  const equivalenceVolumes: number[] = [];
+  let cumulativeMoles = 0;
+  for (const index of order) {
+    cumulativeMoles += Math.max(metals[index].c, 0) * vSample;
+    equivalenceVolumes.push(cumulativeMoles / Math.max(cEdta, 1e-30));
+  }
+
+  const volumes: number[] = [];
+  const pY: number[] = [];
+  const pMetals = metals.map(() => [] as number[]);
+  for (let i = 0; i <= points; i++) {
+    const v = (vMax * i) / points;
+    const vTotal = vSample + v;
+    const diluted = metals.map((metal) => ({ ...metal, c: metal.c * vSample / vTotal }));
+    const point = competitiveEdtaPoint(diluted, cEdta * v / vTotal);
+    volumes.push(v);
+    pY.push(point.pY);
+    point.pMetals.forEach((value, index) => pMetals[index].push(value));
+  }
+  return { volumes, pY, pMetals, equivalenceVolumes, order };
+}
+
+export type ComplexometricSensor =
+  | { kind: 'metal'; E0: number; n: number }
+  | { kind: 'redox-indicator'; E0: number; n: number; logKfOx: number; logKfRed: number };
+
+/** Potentiometric signal derived from the same free-species curve as the EDTA balance. */
+export function complexometricSensorCurve(
+  pMetals: number[],
+  pYs: number[],
+  sensor: ComplexometricSensor,
+): number[] {
+  if (sensor.kind === 'metal') {
+    return pMetals.map((pM) => sensor.E0 - (0.05916 / Math.max(sensor.n, 1)) * pM);
+  }
+  return pYs.map((pY) => {
+    const y = Math.pow(10, -pY);
+    const alphaOx = 1 + Math.pow(10, sensor.logKfOx) * y;
+    const alphaRed = 1 + Math.pow(10, sensor.logKfRed) * y;
+    return sensor.E0 + (0.05916 / Math.max(sensor.n, 1)) * Math.log10(alphaRed / alphaOx);
+  });
+}
+
 function resolveStack(params: Pick<EdtaTitrationParams, 'sideStack' | 'sideEditor' | 'logBetasOH'>): SideReactionStack {
   if (params.sideStack) return params.sideStack;
   if (params.sideEditor) return sideStackFromEditor(params.sideEditor);

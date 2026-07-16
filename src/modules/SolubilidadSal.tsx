@@ -5,13 +5,14 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConstantList, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard,
+  ConcSlider, ConstantList, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard,
   ResultCardRow, Slider, Toggle,
 } from '../components/Controls';
 import { alphaFractions } from '../lib/equilibrium';
 import { logActivityCoefficient } from '../lib/activity';
 import { formatMolar } from '../lib/format';
 import { useT } from '../hooks/useT';
+import { finiteAcidBasePrecipitationAtPH } from '../lib/acidBasePrecipitation';
 
 // ── Database ───────────────────────────────────────────────────────────────────
 
@@ -179,12 +180,20 @@ export default function SolubilidadSal() {
   const [showP2, setShowP2] = useState(false);
   const [sal2, setSal2] = useState<SalState>(fromPreset(DEFAULT2));
   const [ionicStrength, setIonicStrength] = useState(0);
+  const [showCoupledBalance, setShowCoupledBalance] = useState(false);
+  const [coupledPH, setCoupledPH] = useState(8);
+  const [coupledTotal, setCoupledTotal] = useState(0.01);
+  const [coupledPM, setCoupledPM] = useState(2);
 
-  useShareEffect('solsal', { sal1, showP2, sal2, ionicStrength }, (s) => {
+  useShareEffect('solsal', { sal1, showP2, sal2, ionicStrength, showCoupledBalance, coupledPH, coupledTotal, coupledPM }, (s) => {
     if (s.sal1) setSal1(s.sal1 as SalState);
     if (s.showP2 !== undefined) setShowP2(s.showP2 as boolean);
     if (s.sal2) setSal2(s.sal2 as SalState);
     if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength as number);
+    if (s.showCoupledBalance !== undefined) setShowCoupledBalance(Boolean(s.showCoupledBalance));
+    if (typeof s.coupledPH === 'number') setCoupledPH(s.coupledPH);
+    if (typeof s.coupledTotal === 'number') setCoupledTotal(s.coupledTotal);
+    if (typeof s.coupledPM === 'number') setCoupledPM(s.coupledPM);
   });
 
   function reset() {
@@ -192,6 +201,10 @@ export default function SolubilidadSal() {
     setSal2(fromPreset(DEFAULT2));
     setShowP2(false);
     setIonicStrength(0);
+    setShowCoupledBalance(false);
+    setCoupledPH(8);
+    setCoupledTotal(0.01);
+    setCoupledPM(2);
   }
 
   const exportMetadata = useMemo(() => ({
@@ -214,6 +227,35 @@ export default function SolubilidadSal() {
     const idx = curve1.logS.indexOf(Math.min(...curve1.logS));
     return { logS: curve1.logS[idx], pH: curve1.pHs[idx] };
   }, [curve1]);
+
+  const coupledState = useMemo(() => showCoupledBalance
+    ? finiteAcidBasePrecipitationAtPH({
+        pKas: sal1.pKas,
+        z0: sal1.pKas.length - sal1.zM,
+        totalAnalyteMoles: coupledTotal,
+        totalMetalMoles: Math.pow(10, -coupledPM),
+        volume: 1,
+        pKsp: sal1.pKsp,
+        m: sal1.p,
+        x: sal1.q,
+        metalCharge: sal1.zM,
+      }, coupledPH)
+    : null,
+  [showCoupledBalance, sal1, coupledTotal, coupledPM, coupledPH]);
+  const coupledCurve = useMemo(() => showCoupledBalance
+    ? curve1.pHs.map((pH) => finiteAcidBasePrecipitationAtPH({
+        pKas: sal1.pKas,
+        z0: sal1.pKas.length - sal1.zM,
+        totalAnalyteMoles: coupledTotal,
+        totalMetalMoles: Math.pow(10, -coupledPM),
+        volume: 1,
+        pKsp: sal1.pKsp,
+        m: sal1.p,
+        x: sal1.q,
+        metalCharge: sal1.zM,
+      }, pH).solidFormulaMoles * sal1.q / Math.max(coupledTotal, 1e-300))
+    : null,
+  [showCoupledBalance, sal1, coupledTotal, coupledPM, curve1.pHs]);
 
   const solTraces = useMemo<Data[]>(() => {
     const out: Data[] = [{
@@ -275,10 +317,28 @@ export default function SolubilidadSal() {
           />
         </PanelSection>
 
+        <PanelSection title={t('solubilidadSal.coupledBalanceSection')} icon="⇌">
+          <Toggle label={t('solubilidadSal.coupledBalanceToggle')} checked={showCoupledBalance} onChange={setShowCoupledBalance} />
+          {showCoupledBalance && (
+            <div className="mask-section">
+              <Slider label="pH" value={coupledPH} min={0} max={14} step={0.1} onChange={setCoupledPH} decimals={1} />
+              <ConcSlider label={t('solubilidadSal.totalAnalyteLabel')} value={coupledTotal} onChange={setCoupledTotal} min={-6} max={0} />
+              <Slider label="pM" value={coupledPM} min={-2} max={20} step={0.1} onChange={setCoupledPM} decimals={1} />
+            </div>
+          )}
+        </PanelSection>
+
         <PanelSection title={t('complejos.resultSection')} icon="∑">
         <ResultCard items={[
           { label: t('solubilidadSal.minSDash', { name: sal1.name }), value: `log S = ${minS1.logS.toFixed(2)}  (pH ${minS1.pH.toFixed(1)})` },
           { label: t('solubilidadSal.formulaPQLabel'), value: `M_${sal1.p} A_${sal1.q}  →  S = (Kps / ${sal1.p ** sal1.p}·${sal1.q ** sal1.q}·αₙ^${sal1.q})^{1/${sal1.p + sal1.q}}` },
+          ...(coupledState ? [{
+            label: t('solubilidadSal.solidFractionLabel'),
+            value: `${(100 * coupledState.solidFormulaMoles * sal1.q / coupledTotal).toFixed(2)} %`,
+          }, {
+            label: t('solubilidadSal.aqueousTotalLabel'),
+            value: formatMolar(coupledState.aqueousAnalyteMoles),
+          }] : []),
         ]} />
         </PanelSection>
 
@@ -329,6 +389,28 @@ export default function SolubilidadSal() {
               />
             ),
           },
+          ...(coupledCurve ? [{
+            id: 'coupled',
+            label: t('solubilidadSal.coupledTabLabel'),
+            node: (
+              <Chart
+                data={[{
+                  x: curve1.pHs,
+                  y: coupledCurve.map((fraction) => 100 * fraction),
+                  type: 'scatter',
+                  mode: 'lines',
+                  name: t('solubilidadSal.solidFractionLabel'),
+                  line: { width: 3, color: sal1.color },
+                }]}
+                xTitle="pH"
+                yTitle={t('solubilidadSal.solidPercentAxis')}
+                xRange={[0, 14]}
+                yRange={[0, 100]}
+                exportName="equilibria-acid-base-precipitation"
+                exportMetadata={exportMetadata}
+              />
+            ),
+          }] : []),
         ]} />
         <ResultCardRow items={[
           { label: t('solubilidadSal.minSLabel', { name: sal1.name }), value: Number.isFinite(minS1.logS) ? formatMolar(Math.pow(10, minS1.logS)) : '—', accent: true },

@@ -20,9 +20,9 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow } from '../components/Controls';
+import { Disclosure, InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow } from '../components/Controls';
 import {
-  distributionD, percentE1, percentEn, nFor, type AnalyteState,
+  conditionalChelateLogK, distributionD, percentE1, percentEn, nFor, sequentialExtraction, type AnalyteState,
 } from '../lib/extraction';
 import { SPECIES_COLORS } from '../lib/database';
 import { formatSci } from '../lib/format';
@@ -84,6 +84,9 @@ function presetState(id: string): AnalyteState {
     neutralIdx: p.neutralIdx,
     n: p.n ?? 2,
     logCHL: p.logCHL ?? -1,
+    logBetasMetalOH: [],
+    chelatorPKas: [],
+    chelatorPartitionRatio: 1,
   };
 }
 
@@ -99,6 +102,12 @@ function defaultState() {
     nMax: 1,        // number of successive extractions shown in the 3rd tab
     preconNMax: 10,
     pH: 5,          // cursor
+    logAlphaMetal: 0,
+    logAlphaChelator: 0,
+    showPlanner: false,
+    stagePHs: [5, 2, 8],
+    stageRatios: [1, 1, 1],
+    stageRoutes: ['organic', 'aqueous', 'organic'] as Array<'aqueous' | 'organic'>,
   };
 }
 
@@ -166,6 +175,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
               label: p.label, type: p.type, logKd: p.logKd,
               pKas: [...p.pKas], neutralIdx: p.neutralIdx,
               n: p.n ?? 2, logCHL: p.logCHL ?? -1,
+              logBetasMetalOH: [], chelatorPKas: [], chelatorPartitionRatio: 1,
             })}
           >
             {p.formula}
@@ -215,6 +225,26 @@ function AnalyteEditor({ a, color, additions, onChange }: {
             </div>
           </div>
           <Slider label="log[HL]_org" value={a.logCHL} min={-4} max={0} step={0.1} onChange={(v) => onChange({ logCHL: v })} decimals={1} />
+          <ConstantList
+            prefix="log βM(OH)"
+            values={a.logBetasMetalOH ?? []}
+            onChange={(v) => onChange({ logBetasMetalOH: v })}
+            min={0}
+            max={40}
+            maxItems={4}
+            minItems={0}
+            initialValue={6}
+          />
+          <ConstantList
+            prefix="pKa(HL)"
+            values={a.chelatorPKas ?? []}
+            onChange={(v) => onChange({ chelatorPKas: v.slice(0, 2) })}
+            min={0}
+            max={14}
+            maxItems={2}
+            minItems={0}
+            initialValue={9}
+          />
           <p className="hint">{t('extraccionLiquido.chelateDFormulaHint')}</p>
         </>
       )}
@@ -247,13 +277,27 @@ export default function ExtraccionLiquido() {
     () => ({ enabled: st.showDimer, logK2: st.logK2 }),
     [st.showDimer, st.logK2],
   );
+  const conditionedState = (analyte: AnalyteState): AnalyteState => analyte.type === 'chelate'
+    ? {
+        ...analyte,
+        logKd: conditionalChelateLogK({
+          logKEx: analyte.logKd,
+          alphaMetal: Math.pow(10, st.logAlphaMetal ?? 0),
+          alphaChelator: Math.pow(10, st.logAlphaChelator ?? 0),
+          stoichChelator: analyte.n,
+        }),
+        chelatorPartitionRatio: r,
+      }
+    : analyte;
+  const a1Conditioned = conditionedState(st.a1);
+  const a2Conditioned = conditionedState(st.a2);
 
   // ── Curvas ─────────────────────────────────────────────────────────────────
 
   const pHs = useMemo(() => Array.from({ length: PH_N + 1 }, (_, i) => 14 * i / PH_N), []);
 
-  const D1s = useMemo(() => pHs.map((pH) => distributionD(st.a1, pH, dimerOpts)), [pHs, st.a1, dimerOpts]);
-  const D2s = useMemo(() => pHs.map((pH) => distributionD(st.a2, pH)), [pHs, st.a2]);
+  const D1s = useMemo(() => pHs.map((pH) => distributionD(a1Conditioned, pH, dimerOpts)), [pHs, a1Conditioned, dimerOpts]);
+  const D2s = useMemo(() => pHs.map((pH) => distributionD(a2Conditioned, pH)), [pHs, a2Conditioned]);
 
   const logD1s = useMemo(() => D1s.map((d) => d > 1e-10 ? Math.log10(d) : -10), [D1s]);
   const logD2s = useMemo(() => D2s.map((d) => d > 1e-10 ? Math.log10(d) : -10), [D2s]);
@@ -263,8 +307,8 @@ export default function ExtraccionLiquido() {
 
   // ── Valores en el cursor ────────────────────────────────────────────────────
 
-  const D1cur = distributionD(st.a1, st.pH, dimerOpts);
-  const D2cur = distributionD(st.a2, st.pH);
+  const D1cur = distributionD(a1Conditioned, st.pH, dimerOpts);
+  const D2cur = distributionD(a2Conditioned, st.pH);
   const pE1cur = percentE1(D1cur, r);
   const pE2cur = percentE1(D2cur, r);
   const n99_1 = nFor(D1cur, r, 99);
@@ -305,7 +349,7 @@ export default function ExtraccionLiquido() {
   }, [pHs, D1s, r, st.nMax]);
 
   const preconTrace = useMemo<Data[]>(() => {
-    const D = distributionD(st.a1, st.pH, dimerOpts);
+    const D = distributionD(a1Conditioned, st.pH, dimerOpts);
     const ns = Array.from({ length: st.preconNMax }, (_, i) => i + 1);
     return [{
       x: ns,
@@ -317,7 +361,30 @@ export default function ExtraccionLiquido() {
       marker: { size: 6 },
       hovertemplate: 'n = %{x}<br>%E = %{y:.1f}%<extra></extra>',
     }];
-  }, [st.a1, st.pH, dimerOpts, st.preconNMax, r]);
+  }, [a1Conditioned, st.pH, dimerOpts, st.preconNMax, r]);
+
+  const planner = useMemo(() => sequentialExtraction(
+    [
+      { label: st.a1.label, initialMoles: 1, state: a1Conditioned },
+      ...(st.showA2 ? [{ label: st.a2.label, initialMoles: 1, state: a2Conditioned }] : []),
+    ],
+    (st.stagePHs ?? [5, 2, 8]).map((pH, index) => ({
+      pH,
+      aqueousVolume: 1,
+      organicVolume: (st.stageRatios ?? [1, 1, 1])[index] ?? 1,
+      continuePhase: (st.stageRoutes ?? ['organic', 'aqueous', 'organic'])[index] ?? 'organic',
+    })),
+  ), [st.a1.label, st.a2.label, st.showA2, st.stagePHs, st.stageRatios, st.stageRoutes, a1Conditioned, a2Conditioned]);
+
+  const plannerTraces = useMemo<Data[]>(() => {
+    const labels = [st.a1.label, ...(st.showA2 ? [st.a2.label] : [])];
+    return labels.map((label, analyteIndex) => ({
+      x: [...planner.collected.map((phase, index) => `${index + 1} · ${phase.phase}`), t('extraccionLiquido.continuingPhase')],
+      y: [...planner.collected.map((phase) => phase.moles[analyteIndex] * 100), planner.currentMoles[analyteIndex] * 100],
+      type: 'bar',
+      name: label,
+    }));
+  }, [planner, st.a1.label, st.a2.label, st.showA2, t]);
 
   // ── log D traces ──────────────────────────────────────────────────────────
 
@@ -428,6 +495,20 @@ export default function ExtraccionLiquido() {
         />
       ),
     },
+    ...(st.showPlanner ? [{
+      id: 'planner',
+      label: t('extraccionLiquido.sequentialPlannerTab'),
+      node: (
+        <Chart
+          data={plannerTraces}
+          xTitle={t('extraccionLiquido.stageOrPhaseLabel')}
+          yTitle={t('extraccionLiquido.inventoryPctLabel')}
+          yRange={[0, 100]}
+          exportName="equilibria-extraccion-secuencial"
+          exportMetadata={exportMetadata}
+        />
+      ),
+    }] : []),
   ];
 
   return (
@@ -465,11 +546,29 @@ export default function ExtraccionLiquido() {
           {st.showDimer && st.a1.type === 'acid' && (
             <Slider label="log K₂ (dímero)" helpId="logK2" value={st.logK2} min={-1} max={4} step={0.1} onChange={(v) => set('logK2', v)} decimals={1} />
           )}
+          {st.a1.type === 'chelate' && (
+            <Disclosure title={t('extraccionLiquido.conditionalChelateDisclosure')}>
+              <Slider label={t('extraccionLiquido.logAlphaMetalLabel')} value={st.logAlphaMetal ?? 0} min={0} max={20} step={0.1} onChange={(v) => set('logAlphaMetal', v)} decimals={1} />
+              <Slider label={t('extraccionLiquido.logAlphaChelatorLabel')} value={st.logAlphaChelator ?? 0} min={0} max={20} step={0.1} onChange={(v) => set('logAlphaChelator', v)} decimals={1} />
+            </Disclosure>
+          )}
           <Slider label={t('potencialcond.cursorPHLabel')} value={st.pH} min={0} max={14} step={0.1} onChange={(v) => set('pH', v)} decimals={1} />
           <Slider label="Vaq (mL)" value={st.Vaq} min={1} max={50} step={1} onChange={(v) => set('Vaq', v)} decimals={0} />
           <Slider label="Vorg (mL)" value={st.Vorg} min={1} max={50} step={1} onChange={(v) => set('Vorg', v)} decimals={0} />
           <Slider label={t('extraccionLiquido.extractionsToPlotLabel')} value={st.nMax} min={1} max={5} step={1} onChange={(v) => set('nMax', v)} decimals={0} />
           <Slider label={t('extraccionLiquido.preconcentrationStagesLabel')} value={st.preconNMax} min={3} max={20} step={1} onChange={(v) => set('preconNMax', v)} decimals={0} />
+          <Toggle label={t('extraccionLiquido.sequentialPlannerToggle')} checked={st.showPlanner ?? false} onChange={(v) => set('showPlanner', v)} />
+          {st.showPlanner && (st.stagePHs ?? [5, 2, 8]).map((stagePH, index) => (
+            <Disclosure key={index} title={t('extraccionLiquido.stageN', { n: index + 1 })} defaultOpen={index === 0}>
+              <Slider label="pH" value={stagePH} min={0} max={14} step={0.1} onChange={(value) => set('stagePHs', (st.stagePHs ?? [5, 2, 8]).map((current, i) => i === index ? value : current))} decimals={1} />
+              <Slider label="Vorg/Vaq" value={(st.stageRatios ?? [1, 1, 1])[index]} min={0.1} max={10} step={0.1} onChange={(value) => set('stageRatios', (st.stageRatios ?? [1, 1, 1]).map((current, i) => i === index ? value : current))} decimals={1} />
+              <Toggle
+                label={t('extraccionLiquido.continueOrganicToggle')}
+                checked={(st.stageRoutes ?? ['organic', 'aqueous', 'organic'])[index] === 'organic'}
+                onChange={(checked) => set('stageRoutes', (st.stageRoutes ?? ['organic', 'aqueous', 'organic']).map((current, i) => i === index ? (checked ? 'organic' : 'aqueous') : current))}
+              />
+            </Disclosure>
+          ))}
         </PanelSection>
 
         <PanelSection title={t('complejos.resultSection')} icon="∑">

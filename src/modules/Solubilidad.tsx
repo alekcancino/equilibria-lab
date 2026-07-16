@@ -13,6 +13,11 @@ import { solubility, acidSolidSolubility, baseSolidSolubility } from '../lib/sol
 import type { GammaModel } from '../lib/activity';
 import { toSub } from '../lib/complexDatabase';
 import { useT } from '../hooks/useT';
+import {
+  competingAcidBaseSolidsAtPH,
+  molecularSolidSaturationPH,
+  molecularSolidSolubility as multiproticMolecularSolubility,
+} from '../lib/molecularSolids';
 
 const PH_POINTS = 300;
 function isValidGammaModel(v: unknown): v is GammaModel {
@@ -53,16 +58,23 @@ interface MolecularState {
   pKa: number;
   kind: 'acid' | 'base';
   reference: string | null;
+  pKas: number[];
+  solidFormIndex: number;
 }
 
 function defaultMolecular(): MolecularState {
-  return { name: 'Ácido benzoico', S0: 0.0278, pKa: 4.2, kind: 'acid', reference: 'Martin, Physical Pharmacy' };
+  return { name: 'Ácido benzoico', S0: 0.0278, pKa: 4.2, kind: 'acid', reference: 'Martin, Physical Pharmacy', pKas: [4.2], solidFormIndex: 0 };
 }
 
 function molecularSolubility(m: MolecularState, pH: number): number {
-  return m.kind === 'acid'
-    ? acidSolidSolubility(m.S0, m.pKa, pH)
-    : baseSolidSolubility(m.S0, m.pKa, pH);
+  if (m.pKas?.length) return multiproticMolecularSolubility({
+    label: m.name,
+    S0: m.S0,
+    pKas: m.pKas,
+    z0: m.kind === 'acid' ? 0 : m.pKas.length,
+    solidFormIndex: Math.min(m.solidFormIndex ?? 0, m.pKas.length),
+  }, pH);
+  return m.kind === 'acid' ? acidSolidSolubility(m.S0, m.pKa, pH) : baseSolidSolubility(m.S0, m.pKa, pH);
 }
 
 /** Solubility of sparingly soluble salts: pH effect and common-ion effect. */
@@ -81,8 +93,11 @@ export default function Solubilidad() {
   const [pHPoint, setPHPoint] = useState(7);
   const [ionicStrength, setIonicStrength] = useState(0);
   const [gammaModel, setGammaModel] = useState<GammaModel>('dh');
+  const [showCompetingPhase, setShowCompetingPhase] = useState(false);
+  const [competingPKsp, setCompetingPKsp] = useState(8.8);
+  const [competingCounterIon, setCompetingCounterIon] = useState(0.01);
 
-  useShareEffect('solubilidad', { mode, salt, molecular, useCommon, cCommon, pHPoint, ionicStrength, gammaModel }, (s) => {
+  useShareEffect('solubilidad', { mode, salt, molecular, useCommon, cCommon, pHPoint, ionicStrength, gammaModel, showCompetingPhase, competingPKsp, competingCounterIon }, (s) => {
     // A ?s= link is untrusted/unvalidated JSON — guard the union and merge
     // nested objects onto their defaults so a partial/corrupted payload
     // can't leave a required field (e.g. molecular.S0) undefined and crash
@@ -95,6 +110,9 @@ export default function Solubilidad() {
     if (s.pHPoint !== undefined) setPHPoint(s.pHPoint);
     if (s.ionicStrength !== undefined) setIonicStrength(s.ionicStrength);
     if (isValidGammaModel(s.gammaModel)) setGammaModel(s.gammaModel);
+    if (s.showCompetingPhase !== undefined) setShowCompetingPhase(Boolean(s.showCompetingPhase));
+    if (typeof s.competingPKsp === 'number') setCompetingPKsp(s.competingPKsp);
+    if (typeof s.competingCounterIon === 'number') setCompetingCounterIon(s.competingCounterIon);
   });
 
   function reset() {
@@ -106,6 +124,9 @@ export default function Solubilidad() {
     setPHPoint(7);
     setIonicStrength(0);
     setGammaModel('dh');
+    setShowCompetingPhase(false);
+    setCompetingPKsp(8.8);
+    setCompetingCounterIon(0.01);
   }
 
   const common = useCommon ? cCommon : 0;
@@ -161,6 +182,29 @@ export default function Solubilidad() {
     ? solubility(saltDef, pHPoint, common, ionicStrength, gammaModel)
     : molecularSolubility(molecular, pHPoint);
   const sInvalid = !Number.isFinite(sAtPoint) || sAtPoint <= 0;
+  const molecularSystem = useMemo(() => ({
+    label: molecular.name,
+    S0: molecular.S0,
+    pKas: molecular.pKas?.length ? molecular.pKas : [molecular.pKa],
+    z0: molecular.kind === 'acid' ? 0 : (molecular.pKas?.length ?? 1),
+    solidFormIndex: Math.min(molecular.solidFormIndex ?? 0, molecular.pKas?.length ?? 1),
+  }), [molecular]);
+  const saturationState = useMemo(
+    () => mode === 'molecular' ? molecularSolidSaturationPH(molecularSystem) : null,
+    [mode, molecularSystem],
+  );
+  const competingState = useMemo(() => mode === 'molecular' && showCompetingPhase
+    ? competingAcidBaseSolidsAtPH({
+        pKas: molecularSystem.pKas,
+        z0: molecularSystem.z0,
+        pH: pHPoint,
+        phases: [
+          { kind: 'molecular', label: molecular.name, solidFormIndex: molecularSystem.solidFormIndex, S0: molecular.S0 },
+          { kind: 'ionic', label: `M-${molecular.name}`, solidFormIndex: molecularSystem.pKas.length, pKsp: competingPKsp, freeCounterIon: competingCounterIon },
+        ],
+      })
+    : null,
+  [mode, showCompetingPhase, molecularSystem, pHPoint, molecular.name, molecular.S0, competingPKsp, competingCounterIon]);
 
   const pHMarker = useMemo<Partial<Shape>[]>(() => {
     if (sInvalid) return [];
@@ -272,8 +316,30 @@ export default function Solubilidad() {
                 label={molecular.kind === 'acid' ? 'pKa' : t('sideReactionEditor.conjugateAcidPrefix')}
                 helpId="pKa"
                 value={molecular.pKa} min={0} max={14} step={0.01}
-                onChange={(pKa) => setMolecular({ ...molecular, pKa, reference: null })}
+                onChange={(pKa) => setMolecular({ ...molecular, pKa, pKas: [pKa], solidFormIndex: molecular.kind === 'acid' ? 0 : 1, reference: null })}
                 decimals={2}
+              />
+              <ConstantList
+                prefix="pKa"
+                values={molecular.pKas ?? [molecular.pKa]}
+                onChange={(pKas) => setMolecular({
+                  ...molecular,
+                  pKas,
+                  pKa: pKas[0] ?? molecular.pKa,
+                  solidFormIndex: Math.min(molecular.solidFormIndex ?? 0, pKas.length),
+                  reference: null,
+                })}
+                min={-2}
+                max={30}
+                maxItems={4}
+                minItems={1}
+                initialValue={4.2}
+              />
+              <NumberSegmented
+                label={t('solubilidad.solidFormIndexLabel')}
+                value={molecular.solidFormIndex ?? 0}
+                options={Array.from({ length: (molecular.pKas?.length ?? 1) + 1 }, (_, index) => index)}
+                onChange={(solidFormIndex) => setMolecular({ ...molecular, solidFormIndex, reference: null })}
               />
               <button className="add-btn" onClick={() => setMolecular(defaultMolecular())}>
                 {t('solubilidad.loadBenzoicAcidButton')}
@@ -287,6 +353,17 @@ export default function Solubilidad() {
               <Toggle label={t('solubilidad.commonIonToggle', { anion: salt.anionLabel })} checked={useCommon} onChange={setUseCommon} />
               {useCommon && (
                 <ConcSlider label={t('solubilidad.commonIonConcLabel')} value={cCommon} onChange={setCCommon} min={-5} max={-0.5} />
+              )}
+            </>
+          )}
+          {mode === 'molecular' && (
+            <>
+              <Toggle label={t('solubilidad.competingPhaseToggle')} checked={showCompetingPhase} onChange={setShowCompetingPhase} />
+              {showCompetingPhase && (
+                <div className="mask-section">
+                  <Slider label={t('titulacion.pKspShort')} value={competingPKsp} min={0} max={40} step={0.1} onChange={setCompetingPKsp} decimals={1} />
+                  <ConcSlider label={t('solubilidad.competingCounterIonLabel')} value={competingCounterIon} onChange={setCompetingCounterIon} min={-8} max={1} />
+                </div>
               )}
             </>
           )}
@@ -319,6 +396,11 @@ export default function Solubilidad() {
               value: sInvalid ? '—' : formatMolar(sAtPoint),
             },
             { label: t('solubilidad.intrinsicSolubilityResultLabel'), value: formatMolar(molecular.S0) },
+            ...(saturationState ? [{ label: t('solubilidad.saturationPHLabel'), value: saturationState.pH.toFixed(3) }] : []),
+            ...(competingState ? [{
+              label: t('solubilidad.activeSolidPhaseLabel'),
+              value: competingState.activePhaseIndices.map((index) => index === 0 ? molecular.name : `M-${molecular.name}`).join(' + '),
+            }] : []),
           ]} />
         </PanelSection>
         <InfoBox title={t('solubilidad.infoBoxTitle')}>
@@ -360,7 +442,7 @@ export default function Solubilidad() {
             accent: true,
           },
           { label: 'S₀', value: formatMolar(molecular.S0) },
-          { label: 'pKa', value: molecular.pKa.toFixed(2) },
+          { label: 'pKa', value: (molecular.pKas ?? [molecular.pKa]).map((value) => value.toFixed(2)).join(' / ') },
         ]} />
       </section>
     </div>

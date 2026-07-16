@@ -2,7 +2,14 @@
 // pe° = E°/0.05916 always — n is absorbed into pe°, not repeated in the formula.
 
 import { NERNST_S } from './constants';
-import { composeAlphas, type SideReactionStack } from './sideReactions';
+import {
+  combineSideReactionBranches,
+  composeAlphas,
+  freeLigandConcentration,
+  type LigandSpec,
+  type SideReactionStack,
+} from './sideReactions';
+import { alphaL } from './conditional';
 
 export { NERNST_S };
 
@@ -22,6 +29,102 @@ export interface RedoxCouple {
   reference: string;
   /** Model caveat, if applicable (e.g. polynuclear species) */
   caveat?: string;
+}
+
+export interface ConditionalAlphaTerm {
+  /** log10 coefficient in a term 10^(logCoefficient + pHSlope*pH). */
+  logCoefficient: number;
+  pHSlope: number;
+}
+
+export interface ConditionalLigandBranch {
+  logBetas: number[];
+  spec: LigandSpec;
+}
+
+export interface ConditionalRedoxState {
+  intrinsicTerms?: ConditionalAlphaTerm[];
+  hydrolysisLogBetas?: number[];
+  ligandBranches?: ConditionalLigandBranch[];
+}
+
+/** Analytical/free coefficient for one redox state with additive exclusive branches. */
+export function redoxStateAlpha(state: ConditionalRedoxState | undefined, pH: number): number {
+  if (!state) return 1;
+  const intrinsic = 1 + (state.intrinsicTerms ?? []).reduce((sum, term) => (
+    sum + Math.pow(10, term.logCoefficient + term.pHSlope * pH)
+  ), 0);
+  const hydrolysis = 1 + (state.hydrolysisLogBetas ?? []).reduce((sum, logBeta, index) => (
+    sum + Math.pow(10, logBeta + (index + 1) * (pH - 14))
+  ), 0);
+  const ligands = (state.ligandBranches ?? []).map((branch) => alphaL(
+    branch.logBetas,
+    freeLigandConcentration(branch.spec, pH),
+  ));
+  return combineSideReactionBranches([intrinsic, hydrolysis, ...ligands]);
+}
+
+/** Formal potential using complete, independent polynomials for Ox and Red. */
+export function conditionalEprimeFromStates(
+  couple: Pick<RedoxCouple, 'E0' | 'n' | 'mH'>,
+  pH: number,
+  oxState?: ConditionalRedoxState,
+  redState?: ConditionalRedoxState,
+): number {
+  const base = couple.E0 - NERNST_S * (couple.mH / couple.n) * pH;
+  return base + (NERNST_S / couple.n) * Math.log10(
+    redoxStateAlpha(redState, pH) / redoxStateAlpha(oxState, pH),
+  );
+}
+
+export interface ConditionalPXPair {
+  label: string;
+  E0: number;
+  n: number;
+  oxLogBetas: number[];
+  redLogBetas: number[];
+}
+
+export interface ConditionalPXDiagram {
+  pXs: number[];
+  curves: { label: string; potentials: number[] }[];
+  crossings: { pairA: number; pairB: number; pX: number }[];
+}
+
+/** Multiple formal-potential curves on one editable pX domain. */
+export function conditionalPotentialPXDiagram(
+  pairs: ConditionalPXPair[],
+  range: [number, number] = [0, 14],
+  points = 400,
+): ConditionalPXDiagram {
+  const pXs = Array.from({ length: points + 1 }, (_, index) => (
+    range[0] + (range[1] - range[0]) * index / points
+  ));
+  const curves = pairs.map((pair) => ({
+    label: pair.label,
+    potentials: pXs.map((pX) => pair.E0 + (NERNST_S / pair.n) * Math.log10(
+      alphaL(pair.redLogBetas, Math.pow(10, -pX))
+      / alphaL(pair.oxLogBetas, Math.pow(10, -pX)),
+    )),
+  }));
+  const crossings: ConditionalPXDiagram['crossings'] = [];
+  for (let a = 0; a < curves.length; a++) {
+    for (let b = a + 1; b < curves.length; b++) {
+      for (let i = 1; i < pXs.length; i++) {
+        const d0 = curves[a].potentials[i - 1] - curves[b].potentials[i - 1];
+        const d1 = curves[a].potentials[i] - curves[b].potentials[i];
+        if (d0 === 0 || (d0 > 0) !== (d1 > 0)) {
+          const fraction = d0 === d1 ? 0 : d0 / (d0 - d1);
+          crossings.push({
+            pairA: a,
+            pairB: b,
+            pX: pXs[i - 1] + fraction * (pXs[i] - pXs[i - 1]),
+          });
+        }
+      }
+    }
+  }
+  return { pXs, curves, crossings };
 }
 
 /** pe° = E°/S — Sillén convention: n is absorbed into pe°, not repeated. */
@@ -90,6 +193,10 @@ export interface RedoxTitrationParams {
   cTitrant: number;
   vMax: number;
   points?: number;
+  analyteOxState?: ConditionalRedoxState;
+  analyteRedState?: ConditionalRedoxState;
+  titrantOxState?: ConditionalRedoxState;
+  titrantRedState?: ConditionalRedoxState;
 }
 
 export interface RedoxCurve {
@@ -105,6 +212,90 @@ export interface RedoxCurve {
   pe0cTitrant: number;
 }
 
+export interface RedoxMixtureAnalyte {
+  couple: RedoxCouple;
+  c: number;
+  oxState?: ConditionalRedoxState;
+  redState?: ConditionalRedoxState;
+}
+
+export interface RedoxMixtureCurve {
+  volumes: number[];
+  pes: number[];
+  Es: number[];
+  equivalenceVolumes: number[];
+  order: number[];
+}
+
+/** Exact global electron balance for N analyte pools sharing one titrant. */
+export function redoxMixtureTitrationCurve(params: {
+  analytes: RedoxMixtureAnalyte[];
+  titrant: RedoxCouple;
+  direction?: 'oxidante' | 'reductor';
+  pH: number;
+  vAnalyte: number;
+  cTitrant: number;
+  vMax: number;
+  points?: number;
+  titrantOxState?: ConditionalRedoxState;
+  titrantRedState?: ConditionalRedoxState;
+}): RedoxMixtureCurve {
+  const { analytes, titrant, pH, vAnalyte, cTitrant, vMax, direction = 'oxidante' } = params;
+  const points = params.points ?? 500;
+  const peAnalytes = analytes.map((item) => conditionalEprimeFromStates(
+    item.couple, pH, item.oxState, item.redState,
+  ) / NERNST_S);
+  const peTitrant = conditionalEprimeFromStates(
+    titrant, pH, params.titrantOxState, params.titrantRedState,
+  ) / NERNST_S;
+  const order = analytes.map((_, i) => i).sort((a, b) => direction === 'oxidante'
+    ? peAnalytes[a] - peAnalytes[b]
+    : peAnalytes[b] - peAnalytes[a]);
+
+  const equivalenceVolumes: number[] = [];
+  let electronMoles = 0;
+  for (const index of order) {
+    electronMoles += analytes[index].couple.n * analytes[index].c * vAnalyte;
+    equivalenceVolumes.push(electronMoles / (titrant.n * Math.max(cTitrant, 1e-30)));
+  }
+
+  const solvePe = (titrantMoles: number): number => {
+    const f = (pe: number) => {
+      const analyteElectrons = analytes.reduce((sum, item, index) => {
+        const fraction = alphaRedox(pe, peAnalytes[index], item.couple.n);
+        const changed = direction === 'oxidante' ? fraction.ox : fraction.red;
+        return sum + item.couple.n * item.c * vAnalyte * changed;
+      }, 0);
+      const titrantFraction = alphaRedox(pe, peTitrant, titrant.n);
+      const changedTitrant = direction === 'oxidante' ? titrantFraction.red : titrantFraction.ox;
+      const titrantElectrons = titrant.n * titrantMoles * changedTitrant;
+      return direction === 'oxidante'
+        ? analyteElectrons - titrantElectrons
+        : titrantElectrons - analyteElectrons;
+    };
+    let lo = -40;
+    let hi = 45;
+    for (let i = 0; i < 100; i++) {
+      const mid = (lo + hi) / 2;
+      if (f(mid) < 0) lo = mid;
+      else hi = mid;
+    }
+    return (lo + hi) / 2;
+  };
+
+  const volumes: number[] = [];
+  const pes: number[] = [];
+  const Es: number[] = [];
+  for (let i = 0; i <= points; i++) {
+    const v = (vMax * i) / points;
+    const pe = solvePe(cTitrant * v);
+    volumes.push(v);
+    pes.push(pe);
+    Es.push(pe * NERNST_S);
+  }
+  return { volumes, pes, Es, equivalenceVolumes, order };
+}
+
 /**
  * Redox titration curve solved by exact ELECTRON BALANCE:
  * electrons released by the oxidized species equal those accepted
@@ -116,8 +307,12 @@ export interface RedoxCurve {
 export function redoxTitrationCurve(params: RedoxTitrationParams): RedoxCurve {
   const { analyte, titrant, pH, cAnalyte, vAnalyte, cTitrant, vMax, direction = 'oxidante' } = params;
   const points = params.points ?? 500;
-  const pe0a = peConditional(analyte, pH);
-  const pe0t = peConditional(titrant, pH);
+  const pe0a = conditionalEprimeFromStates(
+    analyte, pH, params.analyteOxState, params.analyteRedState,
+  ) / NERNST_S;
+  const pe0t = conditionalEprimeFromStates(
+    titrant, pH, params.titrantOxState, params.titrantRedState,
+  ) / NERNST_S;
 
   const solvePe = (nA: number, nT: number): number => {
     // nA, nT in moles; bisection on the electron balance.

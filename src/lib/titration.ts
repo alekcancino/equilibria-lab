@@ -13,6 +13,12 @@ export interface TitrationParams {
     z0: number;
     pKas: number[];
     kind?: 'equilibrium' | 'strong-acid' | 'strong-base';
+    /** Prepared ladder species; 0 is fully protonated. */
+    startIndex?: number;
+    /** Ladder species reached at the final formal equivalence. */
+    endIndex?: number;
+    /** Initial formal composition over the ladder; normalized internally. */
+    initialFractions?: number[];
   };
   /** true: strong titrant is HCl; false: NaOH */
   titrantIsAcid: boolean;
@@ -30,6 +36,9 @@ export interface TitrationParams {
   I?: number;
   /** Activity model at I > 0 (default extended D-H, unchanged from before this param existed) */
   model?: GammaModel;
+  /** Solvent autoionization constant and acidity domain (water defaults preserved). */
+  pKw?: number;
+  pHRange?: [number, number];
 }
 
 export interface TitrationCurve {
@@ -39,9 +48,24 @@ export interface TitrationCurve {
   equivalenceVolumes: number[];
 }
 
-/** Titratable protons with a basic or acidic titrant (pKa in the useful window). */
+/** Number of formal acid-base steps represented by the ladder. */
 export function titratableProtons(pKas: number[]): number {
-  return Math.max(pKas.filter((pk) => pk > 0 && pk < 14).length, 1);
+  return Math.max(pKas.length, 1);
+}
+
+function validLadderIndex(value: number | undefined, fallback: number, length: number): number {
+  return Number.isInteger(value) && value! >= 0 && value! <= length ? value! : fallback;
+}
+
+/** Formal equivalents between two explicitly selected ladder species. */
+export function formalEquivalents(startIndex: number, endIndex: number): number {
+  return Math.abs(endIndex - startIndex);
+}
+
+function normalizedInitialFractions(values: number[] | undefined, length: number): number[] | null {
+  if (!values || values.length !== length || values.some((v) => !Number.isFinite(v) || v < 0)) return null;
+  const sum = values.reduce((a, b) => a + b, 0);
+  return sum > 0 ? values.map((v) => v / sum) : null;
 }
 
 /**
@@ -50,7 +74,7 @@ export function titratableProtons(pKas: number[]): number {
  * dilution included at every point.
  */
 export function titrationCurve(params: TitrationParams): TitrationCurve {
-  const { analyte, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, I = 0, model = 'dh' } = params;
+  const { analyte, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, I = 0, model = 'dh', pKw = 14, pHRange = [-2, pKw + 2] } = params;
   const points = params.points ?? 600;
   const volumes: number[] = [];
   const pHs: number[] = [];
@@ -58,7 +82,19 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
   // Same counter-ion accounting as AcidoBase.tsx's "pH disolución pura" —
   // see saltCounterIons/defaultStartIndex in equilibrium.ts. z0/pKas are
   // fixed for the whole curve, so the ratio is computed once outside the loop.
-  const analyteIons = saltCounterIons(analyte.z0, defaultStartIndex(analyte.z0, analyte.pKas.length));
+  const defaultStart = defaultStartIndex(analyte.z0, analyte.pKas.length);
+  const startIndex = validLadderIndex(analyte.startIndex, defaultStart, analyte.pKas.length);
+  const defaultEnd = titrantIsAcid ? 0 : analyte.pKas.length;
+  const endIndex = validLadderIndex(analyte.endIndex, defaultEnd, analyte.pKas.length);
+  const initialFractions = normalizedInitialFractions(analyte.initialFractions, analyte.pKas.length + 1);
+  const analyteIons = initialFractions
+    ? initialFractions.reduce((ions, fraction, index) => {
+        const salt = saltCounterIons(analyte.z0, index);
+        ions.cations += fraction * salt.cations;
+        ions.anions += fraction * salt.anions;
+        return ions;
+      }, { cations: 0, anions: 0 })
+    : saltCounterIons(analyte.z0, startIndex);
 
   for (let i = 0; i <= points; i++) {
     const vb = (vMax * i) / points;
@@ -79,17 +115,25 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
     const titrantConc = (cTitrant * vb) / vTotal;
     if (titrantIsAcid) extraAnions += titrantConc;
     else extraCations += titrantConc;
-    const pH = solvePH(components, extraCations, extraAnions, I, model);
+    const pH = solvePH(components, extraCations, extraAnions, I, model, pKw, pHRange);
     volumes.push(vb);
     pHs.push(pH);
   }
 
+  const initialMeanIndex = initialFractions
+    ? initialFractions.reduce((mean, fraction, index) => mean + fraction * index, 0)
+    : startIndex;
   const nProtons = analyte.kind === 'strong-acid' || analyte.kind === 'strong-base'
     ? 1
-    : titratableProtons(analyte.pKas);
+    : Math.abs(endIndex - initialMeanIndex);
   const equivalenceVolumes: number[] = [];
-  for (let k = 1; k <= nProtons; k++) {
-    const veq = (k * cAnalyte * vAnalyte) / cTitrant;
+  const wholeSteps = Math.floor(nProtons + 1e-12);
+  const firstFraction = nProtons - wholeSteps;
+  const offsets = firstFraction > 1e-12
+    ? [firstFraction, ...Array.from({ length: wholeSteps }, (_, i) => firstFraction + i + 1)]
+    : Array.from({ length: wholeSteps }, (_, i) => i + 1);
+  for (const equivalents of offsets) {
+    const veq = (equivalents * cAnalyte * vAnalyte) / cTitrant;
     if (veq <= vMax) equivalenceVolumes.push(veq);
   }
 
@@ -117,14 +161,18 @@ export function secondDerivative(volumes: number[], ys: number[]): { v: number[]
 
 /**
  * Linearised Gran function for higher-precision V_eq detection.
- * Before EP:  F₁ = (V₀ + V) · 10^−pH  (proportional to total [H⁺])
- * After EP:   F₂ = (V₀ + V) · 10^(pH − 14)  (proportional to excess [OH⁻])
+ * The pre-equivalence signal follows the analyte side: H⁺ with base titrant,
+ * OH⁻ with acid titrant. Weak systems use V·signal; strong systems use
+ * (V₀+V)·signal. F₂ uses the opposite excess-ion signal after equivalence.
  * Each segment is linear; its x-intercept extrapolation gives V_eq.
  */
 export function granPlot(
   volumes: number[],
   pHs: number[],
   vAnalyte: number,
+  titrantIsAcid = false,
+  pKw = 14,
+  weakAnalyte = false,
 ): { v1: number[]; F1: number[]; v2: number[]; F2: number[] } {
   const v1: number[] = [], F1: number[] = [];
   const v2: number[] = [], F2: number[] = [];
@@ -132,12 +180,15 @@ export function granPlot(
     const pH = pHs[i];
     const V = volumes[i];
     if (!Number.isFinite(pH)) continue;
-    const pHc = Math.min(14, Math.max(0, pH)); // numerical clamp
+    const pHc = Math.min(pKw, Math.max(0, pH));
     const Vtot = vAnalyte + V;
+    const hSignal = Math.pow(10, -pHc);
+    const ohSignal = Math.pow(10, pHc - pKw);
+    const preMultiplier = weakAnalyte ? V : Vtot;
     v1.push(V);
-    F1.push(Vtot * Math.pow(10, -pHc));
+    F1.push(preMultiplier * (titrantIsAcid ? ohSignal : hSignal));
     v2.push(V);
-    F2.push(Vtot * Math.pow(10, pHc - 14));
+    F2.push(Vtot * (titrantIsAcid ? hSignal : ohSignal));
   }
   return { v1, F1, v2, F2 };
 }
@@ -158,7 +209,7 @@ function linearFit(xs: number[], ys: number[]): { m: number; b: number } | null 
 }
 
 /**
- * V_eq from linear extrapolation of the Gran F₁ function (acid branch, before EP).
+ * V_eq from linear extrapolation of the direction-specific Gran F₁ function.
  * Fits the linear descending segment near equivalence (F₁ between 0.5 % and 60 %
  * of its maximum) and extrapolates to F₁ = 0. Returns NaN if the usable arm is
  * too short.
@@ -167,13 +218,17 @@ export function granVeq(
   volumes: number[],
   pHs: number[],
   vAnalyte: number,
+  titrantIsAcid = false,
+  pKw = 14,
+  weakAnalyte = false,
 ): number {
-  const { v1, F1 } = granPlot(volumes, pHs, vAnalyte);
+  const { v1, F1 } = granPlot(volumes, pHs, vAnalyte, titrantIsAcid, pKw, weakAnalyte);
   const Fmax = Math.max(...F1, 0);
   if (Fmax <= 0) return NaN;
+  const peakIndex = F1.indexOf(Fmax);
   const xs: number[] = [];
   const ys: number[] = [];
-  for (let i = 0; i < v1.length; i++) {
+  for (let i = Math.max(peakIndex, 0); i < v1.length; i++) {
     if (F1[i] <= 0.6 * Fmax && F1[i] >= 0.005 * Fmax) {
       xs.push(v1[i]);
       ys.push(F1[i]);
@@ -192,4 +247,9 @@ export function granVeq(
 export function quantitativity(epsLimiting: number, cAtEquivalence: number): number {
   if (cAtEquivalence <= 0) return NaN;
   return (1 - epsLimiting / cAtEquivalence) * 100;
+}
+
+/** Residual analyte-side species at equivalence from the titration direction. */
+export function equivalenceResidual(pH: number, titrantIsAcid: boolean, pKw = 14): number {
+  return titrantIsAcid ? Math.pow(10, -pH) : Math.pow(10, pH - pKw);
 }

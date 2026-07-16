@@ -11,6 +11,7 @@ import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex, type AcidB
 import { firstDerivative } from '../lib/titration';
 import type { GammaModel } from '../lib/activity';
 import { useT } from '../hooks/useT';
+import { bufferCapacityCurve } from '../lib/bufferCapacity';
 
 function isValidGammaModel(v: unknown): v is GammaModel {
   return v === 'dh' || v === 'davies' || v === 'guntelberg';
@@ -207,28 +208,7 @@ export default function Mezclas() {
   }, [curve, showDerivative, t]);
 
   const bufferCurve = useMemo(() => {
-    const PH_POINTS = 400;
-    const Kw = 1e-14;
-    const pHs: number[] = [];
-    const betas: number[] = [];
-    for (let i = 0; i <= PH_POINTS; i++) {
-      const pH = (14 * i) / PH_POINTS;
-      const h = Math.pow(10, -pH);
-      let beta = 2.303 * (Kw / h + h);
-      for (const r of rows) {
-        const alphas = alphaFractions(h, r.system.pKas);
-        let variance = 0;
-        for (let ii = 0; ii < alphas.length; ii++) {
-          for (let jj = ii + 1; jj < alphas.length; jj++) {
-            variance += (jj - ii) ** 2 * alphas[ii] * alphas[jj];
-          }
-        }
-        beta += 2.303 * r.conc * variance;
-      }
-      pHs.push(pH);
-      betas.push(beta);
-    }
-    return { pHs, betas };
+    return bufferCapacityCurve(rows.map((r) => ({ c: r.conc, pKas: r.system.pKas })));
   }, [rows]);
 
   const titrantName = titrantIsAcid ? 'HCl' : 'NaOH';
