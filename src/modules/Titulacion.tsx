@@ -52,7 +52,7 @@ import { SOLVENT_PRESETS, waterThermodynamicState } from '../lib/thermodynamicSt
 import { conditionalPrecipSensorCurve } from '../lib/conditionalPrecipSensor';
 import { backTitration } from '../lib/titrationProtocols';
 import { acidBaseEndpointError } from '../lib/endpointError';
-import { absorbanceFromComposition, strongAcidConductometricCurve } from '../lib/titrationObservables';
+import { acidBaseConductometricFromCurve, acidBaseOpticalFromCurve } from '../lib/titrationObservables';
 import { equimolarAssociationLogKForTarget, solveReactionExtent } from '../lib/stoichiometricQuantitativity';
 import { polynuclearEquivalencePotential } from '../lib/polynuclearRedox';
 
@@ -383,7 +383,6 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
   const vAnalyteL = vAnalyte / 1000;
   const vMaxL = vMax / 1000;
   const organicVolumeL = organicVolume / 1000;
-  const supportsConductometry = analyteKind === 'strong-acid' && !titrantIsAcid;
   const thermoState = useMemo(() => solventId === 'water'
     ? (temperatureC === 25
       ? { ...SOLVENT_PRESETS.water, pKw: 14, acidityRange: [-2, 16] as [number, number] }
@@ -545,17 +544,35 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     primaryAddedMoles: cTitrant * primaryReagentVolume / 1000,
     backTitrantConcentration: cTitrant,
   });
+  const observableParams = useMemo(() => ({
+    volumesML: displayCurve.volumes,
+    pHs: displayCurve.pHs,
+    cAnalyte,
+    vAnalyteML: vAnalyte,
+    cTitrant,
+    titrantIsAcid,
+    analyteKind,
+    z0: system.z0,
+    pKas: effectivePKas,
+    startIndex: validStart,
+    productIndex: effectiveEndIndex,
+    pKw: thermoState.pKw,
+    productEpsilon,
+  }), [
+    displayCurve.volumes, displayCurve.pHs, cAnalyte, vAnalyte, cTitrant, titrantIsAcid,
+    analyteKind, system.z0, effectivePKas, validStart, effectiveEndIndex, thermoState.pKw, productEpsilon,
+  ]);
   const opticalTrace = useMemo<Data>(() => {
-    const y = displayCurve.volumes.map((volume) => {
-      const reactedMoles = Math.min(cTitrant * volume / 1000, cAnalyte * vAnalyte / 1000);
-      return absorbanceFromComposition([reactedMoles / ((vAnalyte + volume) / 1000)], [productEpsilon]);
-    });
-    return { x: displayCurve.volumes, y, type: 'scatter', mode: 'lines', name: 'A', line: { width: 3, color: '#CC79A7' } };
-  }, [displayCurve.volumes, cTitrant, cAnalyte, vAnalyte, productEpsilon]);
-  const conductometricCurve = useMemo(() => strongAcidConductometricCurve({
-    cAcid: cAnalyte, vAcidML: vAnalyte, cBase: cTitrant, vMaxML: vMax,
-    lambdaH: 350, lambdaOH: 200, lambdaSpectator: 50, points: 500,
-  }), [cAnalyte, vAnalyte, cTitrant, vMax]);
+    const optical = acidBaseOpticalFromCurve(observableParams);
+    return {
+      x: optical.volumes, y: optical.absorbance, type: 'scatter', mode: 'lines', name: 'A',
+      line: { width: 3, color: '#CC79A7' },
+    };
+  }, [observableParams]);
+  const conductometricCurve = useMemo(
+    () => acidBaseConductometricFromCurve(observableParams),
+    [observableParams],
+  );
 
   // ── Gran plot + quantitativity ───────────────────────────────────────────────
   const gran = useMemo(
@@ -945,10 +962,10 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
                 id: 'optical', label: t('titulacion.absorbanceTab'),
                 node: <Chart data={[opticalTrace]} xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })} yTitle="A" xRange={[0, vMax]} exportName="equilibria-titulacion-absorbancia" exportMetadata={exportMetadata} />,
               },
-              ...(supportsConductometry ? [{
+              {
                 id: 'conductivity', label: t('titulacion.conductivityTab'),
                 node: <Chart data={[{ x: conductometricCurve.volumes, y: conductometricCurve.conductivity, type: 'scatter', mode: 'lines', name: 'κ', line: { width: 3, color: '#009E73' } }]} xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })} yTitle="κ" xRange={[0, vMax]} exportName="equilibria-titulacion-conductividad" exportMetadata={exportMetadata} />,
-              }] : []),
+              },
             ] : []),
           ]}
         />

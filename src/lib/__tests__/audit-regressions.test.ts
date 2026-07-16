@@ -84,7 +84,7 @@ import { precipTitrationCurve } from '../precipTitration';
 import { finiteIdealSolidSolution, hasRegularSolutionMiscibilityGap, idealSolidSolutionAtComposition, regularSolutionGammas } from '../solidSolution';
 import { backTitration, runTitrationProtocol } from '../titrationProtocols';
 import { acidBaseEndpointError, endpointFromCurve } from '../endpointError';
-import { absorbanceFromComposition, strongAcidConductometricCurve } from '../titrationObservables';
+import { acidBaseConductometricFromCurve, acidBaseOpticalFromCurve, absorbanceFromComposition, strongAcidConductometricCurve } from '../titrationObservables';
 import { equimolarAssociationLogKForTarget, solveReactionExtent } from '../stoichiometricQuantitativity';
 import { polynuclearEquivalencePotential, polynuclearNernstPotential, polynuclearPoolFractions } from '../polynuclearRedox';
 
@@ -812,6 +812,37 @@ describe('R2 advanced solids, protocols, endpoints and observables', () => {
     });
     const minimum = curve.volumes[curve.conductivity.indexOf(Math.min(...curve.conductivity))];
     expect(minimum).toBeCloseTo(curve.vEq, 0);
+    const shared = titrationCurve({
+      analyte: { z0: 0, pKas: [], kind: 'strong-acid', startIndex: 0, endIndex: 0 },
+      titrantIsAcid: false, cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 50, points: 100,
+    });
+    const fromCurve = acidBaseConductometricFromCurve({
+      volumesML: shared.volumes,
+      pHs: shared.pHs,
+      cAnalyte: 0.1,
+      vAnalyteML: 25,
+      cTitrant: 0.1,
+      titrantIsAcid: false,
+      analyteKind: 'strong-acid',
+      startIndex: 0,
+    });
+    const minShared = fromCurve.volumes[fromCurve.conductivity.indexOf(Math.min(...fromCurve.conductivity))];
+    expect(minShared).toBeCloseTo(25, 0);
+    const optical = acidBaseOpticalFromCurve({
+      volumesML: [0, 12.5, 25],
+      pHs: [1, 7, 12],
+      cAnalyte: 0.1,
+      vAnalyteML: 25,
+      cTitrant: 0.1,
+      titrantIsAcid: false,
+      analyteKind: 'equilibrium',
+      z0: 0,
+      pKas: [4.75],
+      startIndex: 0,
+      productIndex: 1,
+      productEpsilon: 100,
+    });
+    expect(optical.absorbance[2]).toBeGreaterThan(optical.absorbance[0]);
   });
 });
 
