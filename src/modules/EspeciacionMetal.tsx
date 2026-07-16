@@ -20,6 +20,7 @@ import { predominanceGrid } from '../lib/predominance2D';
 import { SPECIATION_PRESETS, speciationPresetById } from '../lib/speciationDatabase';
 import { toSub } from '../lib/complexDatabase';
 import { useT } from '../hooks/useT';
+import { alphaH } from '../lib/conditional';
 import { conditionalPhaseMap, conditionalPhasePoint, type ConditionalMapSpecies } from '../lib/conditionalPhaseMap';
 import { evaluateFeasibility } from '../lib/multisystemFeasibility';
 
@@ -306,7 +307,8 @@ export default function EspeciacionMetal() {
     {
       label: 'M₂', axisSignature: 'pH|pLprime', relation: 'lte' as const, target: 1 - targetPct / 100,
       evaluate: (pH, pL = 0) => {
-        const logL = -(pL + Math.log10(Math.max(1, 1)));
+        const logAlphaL = Math.log10(alphaH(conditionalMapSystem.ligandPKas ?? [], pH));
+        const logL = -(pL + logAlphaL);
         const weight = Math.pow(10, secondLogBeta + logL);
         return weight / (1 + weight + Math.pow(10, pH - 14));
       },

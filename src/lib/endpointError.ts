@@ -39,6 +39,19 @@ export function endpointFromCurve(params: {
   };
 }
 
+function dilutionAwareEndpointVolume(params: {
+  analyteConcentration: number;
+  analyteVolumeML: number;
+  titrantConcentration: number;
+  stoichiometricFactor: number;
+  netIonExcess: number;
+}): number {
+  const { analyteConcentration: c0, analyteVolumeML: v0, titrantConcentration: ct, stoichiometricFactor: f, netIonExcess: d } = params;
+  const denom = ct - d;
+  if (Math.abs(denom) < 1e-300) return NaN;
+  return v0 * (c0 * f + d) / denom;
+}
+
 export function acidBaseEndpointError(params: {
   kind: 'strong-acid' | 'weak-acid' | 'weak-base';
   endpointPH: number;
@@ -51,22 +64,31 @@ export function acidBaseEndpointError(params: {
   const c0 = params.analyteConcentration;
   const v0 = params.analyteVolumeML ?? 1;
   const ct = params.titrantConcentration ?? c0;
+  const pKw = params.pKw ?? 14;
   const h = Math.pow(10, -params.endpointPH);
-  const oh = Math.pow(10, params.endpointPH - (params.pKw ?? 14));
-  let equivalenceFraction: number;
+  const oh = Math.pow(10, params.endpointPH - pKw);
+  let stoichiometricFactor: number;
+  let netIonExcess: number;
   if (params.kind === 'strong-acid') {
-    equivalenceFraction = 1 + (oh - h) / c0;
+    stoichiometricFactor = 1;
+    netIonExcess = oh - h;
   } else if (params.kind === 'weak-acid') {
     const ka = Math.pow(10, -(params.pKa ?? 7));
-    const fractionBase = ka / (ka + h);
-    equivalenceFraction = fractionBase + (oh - h) / c0;
+    stoichiometricFactor = ka / (ka + h);
+    netIonExcess = oh - h;
   } else {
     const ka = Math.pow(10, -(params.pKa ?? 7));
-    const fractionAcid = h / (h + ka);
-    equivalenceFraction = fractionAcid + (h - oh) / c0;
+    stoichiometricFactor = h / (h + ka);
+    netIonExcess = h - oh;
   }
   const equivalenceVolume = c0 * v0 / ct;
-  const volumeTP = equivalenceFraction * equivalenceVolume;
+  const volumeTP = dilutionAwareEndpointVolume({
+    analyteConcentration: c0,
+    analyteVolumeML: v0,
+    titrantConcentration: ct,
+    stoichiometricFactor,
+    netIonExcess,
+  });
   const volumeError = volumeTP - equivalenceVolume;
   const analyteMoles = c0 * v0 / 1000;
   const absoluteErrorMoles = volumeError * ct / 1000;

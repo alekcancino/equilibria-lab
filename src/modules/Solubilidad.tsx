@@ -104,7 +104,15 @@ export default function Solubilidad() {
     // the render (exportMetadata calls .toFixed()/.toExponential() on them).
     if (s.mode === 'ionic' || s.mode === 'molecular') setMode(s.mode);
     if (s.salt) setSalt((prev) => ({ ...prev, ...s.salt }));
-    if (s.molecular) setMolecular((prev) => ({ ...prev, ...s.molecular }));
+    if (s.molecular) setMolecular((prev) => {
+      const merged = { ...prev, ...s.molecular };
+      if ((!merged.pKas || merged.pKas.length === 0) && typeof merged.pKa === 'number') {
+        merged.pKas = [merged.pKa];
+      }
+      if (merged.kind === 'acid') merged.solidFormIndex = Math.min(merged.solidFormIndex ?? 0, (merged.pKas?.length ?? 1));
+      else merged.solidFormIndex = Math.min(merged.solidFormIndex ?? merged.pKas?.length ?? 1, merged.pKas?.length ?? 1);
+      return merged;
+    });
     if (s.useCommon !== undefined) setUseCommon(s.useCommon);
     if (s.cCommon !== undefined) setCCommon(s.cCommon);
     if (s.pHPoint !== undefined) setPHPoint(s.pHPoint);
@@ -303,7 +311,12 @@ export default function Solubilidad() {
                       { value: 'base', label: t('solubilidad.weakBaseOption') },
                     ]}
                     value={molecular.kind}
-                    onChange={(v) => setMolecular({ ...molecular, kind: v === 'base' ? 'base' : 'acid', reference: null })}
+                    onChange={(v) => setMolecular({
+                      ...molecular,
+                      kind: v === 'base' ? 'base' : 'acid',
+                      solidFormIndex: v === 'base' ? (molecular.pKas?.length ?? 1) : 0,
+                      reference: null,
+                    })}
                   />
                 </div>
               </div>
@@ -316,7 +329,17 @@ export default function Solubilidad() {
                 label={molecular.kind === 'acid' ? 'pKa' : t('sideReactionEditor.conjugateAcidPrefix')}
                 helpId="pKa"
                 value={molecular.pKa} min={0} max={14} step={0.01}
-                onChange={(pKa) => setMolecular({ ...molecular, pKa, pKas: [pKa], solidFormIndex: molecular.kind === 'acid' ? 0 : 1, reference: null })}
+                onChange={(pKa) => setMolecular({
+                  ...molecular,
+                  pKa,
+                  pKas: (molecular.pKas?.length ?? 1) > 1
+                    ? [pKa, ...(molecular.pKas?.slice(1) ?? [])]
+                    : [pKa],
+                  solidFormIndex: molecular.kind === 'acid'
+                    ? 0
+                    : Math.min(molecular.solidFormIndex ?? molecular.pKas?.length ?? 1, (molecular.pKas?.length ?? 1)),
+                  reference: null,
+                })}
                 decimals={2}
               />
               <ConstantList

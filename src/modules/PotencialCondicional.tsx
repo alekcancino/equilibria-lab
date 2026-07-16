@@ -569,9 +569,9 @@ export default function PotencialCondicional() {
             <Disclosure title={t('potencialcond.intrinsicPolynomialTitle')} defaultOpen>
               <p className="hint">{t('titulacion.conditionalRedoxStatesHint')}</p>
               <ConstantList prefix="log c(Ox)" values={st.intrinsicOxLogs} onChange={(v) => set('intrinsicOxLogs', v)} min={-30} max={40} maxItems={5} minItems={0} initialValue={4} />
-              <ConstantList prefix="pendiente pH (Ox)" values={st.intrinsicOxSlopes} onChange={(v) => set('intrinsicOxSlopes', v)} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
+              <ConstantList prefix={t('titulacion.phSlopeOxPrefix')} values={st.intrinsicOxSlopes} onChange={(v) => set('intrinsicOxSlopes', v)} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
               <ConstantList prefix="log c(Red)" values={st.intrinsicRedLogs} onChange={(v) => set('intrinsicRedLogs', v)} min={-30} max={40} maxItems={5} minItems={0} initialValue={11.4} />
-              <ConstantList prefix="pendiente pH (Red)" values={st.intrinsicRedSlopes} onChange={(v) => set('intrinsicRedSlopes', v)} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
+              <ConstantList prefix={t('titulacion.phSlopeRedPrefix')} values={st.intrinsicRedSlopes} onChange={(v) => set('intrinsicRedSlopes', v)} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
             </Disclosure>
           )}
         </PanelSection>

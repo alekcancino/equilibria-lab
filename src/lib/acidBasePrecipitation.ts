@@ -1,6 +1,7 @@
 import { PKW } from './constants';
 import { alphaFractions } from './equilibrium';
 import { bufferCapacityAtPH } from './bufferCapacity';
+import { bracketedBisection } from './rootSolver';
 
 export interface AcidBasePrecipitationParams {
   pKas: number[];
@@ -57,15 +58,15 @@ export function acidBasePrecipitationAtPH(
 export function solveAcidBasePrecipitationPH(
   params: AcidBasePrecipitationParams,
 ): AcidBasePrecipitationState {
-  let lo = -2;
-  let hi = (params.pKw ?? PKW) + 2;
-  for (let i = 0; i < 140; i++) {
-    const mid = (lo + hi) / 2;
-    const residual = acidBasePrecipitationAtPH(params, mid).chargeResidual;
-    if (residual > 0) lo = mid;
-    else hi = mid;
-  }
-  return acidBasePrecipitationAtPH(params, (lo + hi) / 2);
+  const lo = -2;
+  const hi = (params.pKw ?? PKW) + 2;
+  const { root, converged } = bracketedBisection(
+    (pH) => acidBasePrecipitationAtPH(params, pH).chargeResidual,
+    lo,
+    hi,
+  );
+  const pH = converged && Number.isFinite(root) ? root : (lo + hi) / 2;
+  return acidBasePrecipitationAtPH(params, pH);
 }
 
 export function monoproticPrecipitationBoundary(pKa: number, pKsp: number, pM: number): number {
@@ -107,33 +108,36 @@ export function precipitatingAcidTitrationPoint(params: {
   const vTitrant = params.fraction * nAnalyte / Math.max(params.cTitrant, 1e-300);
   const volume = params.vAnalyte + vTitrant;
   const nTitrant = params.cTitrant * vTitrant;
-  const ksp = Math.pow(10, -params.pKsp);
+  const nMetal = params.cMetal * volume;
 
   const stateAt = (pH: number) => {
-    const h = Math.pow(10, -pH);
-    const fractions = alphaFractions(Math.pow(10, -pH), [params.pKa]);
-    const fractionA = fractions[1];
-    const freeMetal = Math.max(params.cMetal, 1e-300);
-    const freeAAtSaturation = ksp / freeMetal;
-    const haAtSaturation = h * freeAAtSaturation / Math.pow(10, -params.pKa);
-    const saturatedAqueousMoles = (freeAAtSaturation + haAtSaturation) * volume;
-    const solidActive = saturatedAqueousMoles < nAnalyte;
-    const aqueousAnalyteMoles = solidActive ? saturatedAqueousMoles : nAnalyte;
-    const solidMoles = Math.max(nAnalyte - aqueousAnalyteMoles, 0);
-    const chargeResidual = solidActive
-      ? h - Math.pow(10, -pKw) / h - haAtSaturation - (nAnalyte - nTitrant) / volume
-      : h - Math.pow(10, -pKw) / h + nTitrant / volume - nAnalyte * fractionA / volume;
-    return { solidMoles, aqueousAnalyteMoles, freeMetal, chargeResidual };
+    const finite = finiteAcidBasePrecipitationAtPH({
+      pKas: [params.pKa],
+      z0: 0,
+      precipitatingIndex: 1,
+      totalAnalyteMoles: nAnalyte,
+      totalMetalMoles: nMetal,
+      volume,
+      pKsp: params.pKsp,
+      m: 1,
+      x: 1,
+      metalCharge: 1,
+      backgroundChargeMoles: 0,
+      addedStrongCationMoles: nTitrant,
+      pKw,
+    }, pH);
+    return {
+      solidMoles: finite.solidFormulaMoles,
+      aqueousAnalyteMoles: finite.aqueousAnalyteMoles,
+      freeMetal: finite.freeMetalMoles / volume,
+      chargeResidual: finite.chargeResidual,
+    };
   };
 
-  let lo = -2;
-  let hi = pKw + 2;
-  for (let i = 0; i < 140; i++) {
-    const mid = (lo + hi) / 2;
-    if (stateAt(mid).chargeResidual > 0) lo = mid;
-    else hi = mid;
-  }
-  const pH = (lo + hi) / 2;
+  const lo = -2;
+  const hi = pKw + 2;
+  const { root, converged } = bracketedBisection((pH) => stateAt(pH).chargeResidual, lo, hi);
+  const pH = converged && Number.isFinite(root) ? root : (lo + hi) / 2;
   return { volume: vTitrant, fraction: params.fraction, pH, ...stateAt(pH) };
 }
 
@@ -233,6 +237,8 @@ export function finiteAcidBasePrecipitationAtPH(params: {
   x: number;
   metalCharge: number;
   backgroundChargeMoles?: number;
+  addedStrongCationMoles?: number;
+  addedStrongAnionMoles?: number;
   pKw?: number;
 }, pH: number): FiniteAcidBasePrecipitationState {
   const volume = Math.max(params.volume, 1e-300);
@@ -266,7 +272,8 @@ export function finiteAcidBasePrecipitationAtPH(params: {
   ), 0);
   const metalSpectatorCharge = params.metalCharge * (freeMetalMoles - params.totalMetalMoles);
   const chargeResidual = h - Math.pow(10, -(params.pKw ?? PKW)) / h
-    + (aqueousChargeMoles + metalSpectatorCharge + (params.backgroundChargeMoles ?? 0)) / volume;
+    + (aqueousChargeMoles + metalSpectatorCharge + (params.backgroundChargeMoles ?? 0)
+      + (params.addedStrongCationMoles ?? 0) - (params.addedStrongAnionMoles ?? 0)) / volume;
   return {
     pH,
     solidFormulaMoles,

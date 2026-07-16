@@ -13,7 +13,7 @@ import {
 } from '../lib/pourbaix';
 import { formatMolar } from '../lib/format';
 import { useT } from '../hooks/useT';
-import { generalizedRedoxGrid, redoxGraphPotentials, type RedoxGraph } from '../lib/generalizedRedoxDiagram';
+import { generalizedRedoxGrid, isRedoxGraphConnected, redoxGraphPotentials, type RedoxGraph } from '../lib/generalizedRedoxDiagram';
 
 // ── Arbitrary custom system types ─────────────────────────────────────────────
 
@@ -343,12 +343,22 @@ export default function Pourbaix() {
       })),
     ],
   }), [arb, logC, ligandShift]);
-  const graphGrid = useMemo(() => showGeneralizedGraph && useCustom
-    ? generalizedRedoxGrid(redoxGraph, [0, 14], [-1.6 / S_NERNST, 2.2 / S_NERNST], graphPX, 100, 100)
-    : null, [showGeneralizedGraph, useCustom, redoxGraph, graphPX]);
-  const graphPoint = useMemo(() => showGeneralizedGraph && useCustom
-    ? redoxGraphPotentials(redoxGraph, cursorPH, graphPX, cursorE / S_NERNST)
-    : null, [showGeneralizedGraph, useCustom, redoxGraph, cursorPH, graphPX, cursorE]);
+  const redoxGraphConnected = useMemo(
+    () => isRedoxGraphConnected(redoxGraph),
+    [redoxGraph],
+  );
+  const graphGrid = useMemo(() => {
+    if (!showGeneralizedGraph || !useCustom || !redoxGraphConnected) return null;
+    return generalizedRedoxGrid(redoxGraph, [0, 14], [-1.6 / S_NERNST, 2.2 / S_NERNST], graphPX, 100, 100);
+  }, [showGeneralizedGraph, useCustom, redoxGraphConnected, redoxGraph, graphPX]);
+  const graphPoint = useMemo(() => {
+    if (!showGeneralizedGraph || !useCustom || !redoxGraphConnected) return null;
+    try {
+      return redoxGraphPotentials(redoxGraph, cursorPH, graphPX, cursorE / S_NERNST);
+    } catch {
+      return null;
+    }
+  }, [showGeneralizedGraph, useCustom, redoxGraphConnected, redoxGraph, cursorPH, graphPX, cursorE]);
   const graphDominant = graphPoint
     ? redoxGraph.nodes[graphPoint.scores.indexOf(Math.max(...graphPoint.scores))]?.label ?? '—'
     : null;
@@ -474,6 +484,9 @@ export default function Pourbaix() {
                 <>
                   <Slider label="pX" value={graphPX} min={-5} max={30} step={0.1} decimals={1} onChange={setGraphPX} />
                   <Slider label={t('pourbaix.ligandEdgeCoefficient')} value={ligandShift} min={-6} max={6} step={1} decimals={0} onChange={setLigandShift} />
+                  {!redoxGraphConnected && (
+                    <p className="badge warn">{t('pourbaix.disconnectedGraphHint')}</p>
+                  )}
                 </>
               )}
             </>

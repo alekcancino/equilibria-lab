@@ -286,7 +286,6 @@ export default function ExtraccionLiquido() {
           alphaChelator: Math.pow(10, st.logAlphaChelator ?? 0),
           stoichChelator: analyte.n,
         }),
-        chelatorPartitionRatio: r,
       }
     : analyte;
   const a1Conditioned = conditionedState(st.a1);

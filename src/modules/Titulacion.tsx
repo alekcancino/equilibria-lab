@@ -343,6 +343,11 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     : system.z0 > 0 ? 'strong-base' as const : 'strong-acid' as const;
   const validStart = Math.min(Math.max(startIndex, 0), system.pKas.length);
   const validEnd = Math.min(Math.max(endIndex, 0), system.pKas.length);
+  const equilibriumDirectionValid = analyteKind !== 'equilibrium'
+    || (titrantIsAcid ? validEnd < validStart : validEnd > validStart);
+  const effectiveEndIndex = equilibriumDirectionValid
+    ? validEnd
+    : validStart;
   const validInitialEquivalents = Math.min(Math.max(initialEquivalents, 0), system.pKas.length);
   const initialFractions = useMemo(() => {
     if (!useInitialMixture || analyteKind !== 'equilibrium') return undefined;
@@ -369,10 +374,16 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     ? conditionalPKas(system.pKas, stateAlphas)
     : system.pKas;
   const startingEquivalent = initialFractions ? validInitialEquivalents : validStart;
-  const nProtons = analyteKind === 'equilibrium' ? Math.abs(validEnd - startingEquivalent) : 1;
+  const nProtons = analyteKind === 'equilibrium'
+    ? (equilibriumDirectionValid ? Math.abs(effectiveEndIndex - startingEquivalent) : 0)
+    : 1;
   const vEqLast = (nProtons * cAnalyte * vAnalyte) / cTitrant;
   const singleEquivalentVolume = (cAnalyte * vAnalyte) / cTitrant;
   const vMax = Math.max(vEqLast * 1.6, singleEquivalentVolume * 1.6);
+  const vAnalyteL = vAnalyte / 1000;
+  const vMaxL = vMax / 1000;
+  const organicVolumeL = organicVolume / 1000;
+  const supportsConductometry = analyteKind === 'strong-acid' && !titrantIsAcid;
   const thermoState = useMemo(() => solventId === 'water'
     ? (temperatureC === 25
       ? { ...SOLVENT_PRESETS.water, pKw: 14, acidityRange: [-2, 16] as [number, number] }
@@ -386,13 +397,13 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
         pKas: effectivePKas,
         kind: analyteKind,
         startIndex: validStart,
-        endIndex: validEnd,
+        endIndex: effectiveEndIndex,
         initialFractions,
       },
       titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, I: ionicStrength, model: gammaModel,
       pKw: thermoState.pKw, pHRange: thermoState.acidityRange,
     }),
-    [system.z0, effectivePKas, analyteKind, validStart, validEnd, initialFractions, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, ionicStrength, gammaModel, thermoState.pKw, thermoState.acidityRange],
+    [system.z0, effectivePKas, analyteKind, validStart, effectiveEndIndex, initialFractions, titrantIsAcid, cAnalyte, vAnalyte, cTitrant, vMax, ionicStrength, gammaModel, thermoState.pKw, thermoState.acidityRange],
   );
   const couplingEligible = analyteKind === 'equilibrium' && system.pKas.length === 1 && !titrantIsAcid;
   const precipCurve = useMemo(() => showPrecipCoupling && couplingEligible
@@ -400,31 +411,31 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
         pKa: effectivePKas[0],
         pKsp: coupledPKsp,
         cAnalyte,
-        vAnalyte,
+        vAnalyte: vAnalyteL,
         cMetal: Math.pow(10, -coupledPM),
         cTitrant,
-        maxFraction: vMax / Math.max(vEqLast, 1e-300),
+        maxFraction: vMaxL / Math.max(vEqLast / 1000, 1e-300),
         points: 500,
         pKw: thermoState.pKw,
       })
     : null,
-  [showPrecipCoupling, couplingEligible, effectivePKas, coupledPKsp, cAnalyte, vAnalyte, coupledPM, cTitrant, vMax, vEqLast, thermoState.pKw]);
+  [showPrecipCoupling, couplingEligible, effectivePKas, coupledPKsp, cAnalyte, vAnalyteL, coupledPM, cTitrant, vMaxL, vEqLast, thermoState.pKw]);
   const biphasicCurve = useMemo(() => showBiphasic && couplingEligible
     ? biphasicAcidBaseTitrationCurve({
         pKas: effectivePKas,
         z0: system.z0,
         cAnalyte,
-        vAnalyte,
+        vAnalyte: vAnalyteL,
         cTitrant,
-        organicVolume,
+        organicVolume: organicVolumeL,
         stateKDs: effectivePKas.map((_, index) => index).concat(effectivePKas.length)
           .map((index) => index === validStart ? organicKD : 0),
-        vMax,
+        vMax: vMaxL,
         points: 500,
         pKw: thermoState.pKw,
       })
     : null,
-  [showBiphasic, couplingEligible, effectivePKas, system.z0, cAnalyte, vAnalyte, cTitrant, organicVolume, validStart, organicKD, vMax, thermoState.pKw]);
+  [showBiphasic, couplingEligible, effectivePKas, system.z0, cAnalyte, vAnalyteL, cTitrant, organicVolumeL, validStart, organicKD, vMaxL, thermoState.pKw]);
   const resinCurve = useMemo(() => showResinCoupling && couplingEligible
     ? acidBaseResinTitrationCurve({
         analytes: [{
@@ -432,22 +443,25 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
           c: cAnalyte,
           pKas: effectivePKas,
           z0: system.z0,
-          bindingIndex: validEnd,
+          bindingIndex: effectiveEndIndex,
           kBinding: resinKBinding,
         }],
-        vAnalyte,
+        vAnalyte: vAnalyteL,
         cTitrant,
-        vMax,
+        vMax: vMaxL,
         resinCapacityMoles: resinCapacity,
         counterIonConcentration: cTitrant,
-        counterIonCharge: system.z0 - validEnd,
+        counterIonCharge: system.z0 - effectiveEndIndex,
         points: 500,
         pKw: thermoState.pKw,
       })
     : null,
-  [showResinCoupling, couplingEligible, system.label, system.z0, cAnalyte, effectivePKas, validEnd, resinKBinding, vAnalyte, cTitrant, vMax, resinCapacity, thermoState.pKw]);
+  [showResinCoupling, couplingEligible, system.label, system.z0, cAnalyte, effectivePKas, effectiveEndIndex, resinKBinding, vAnalyteL, cTitrant, vMaxL, resinCapacity, thermoState.pKw]);
   const displayCurve = useMemo(() => ({
-    volumes: precipCurve?.map((point) => point.volume) ?? biphasicCurve?.volumes ?? resinCurve?.volumes ?? curve.volumes,
+    volumes: precipCurve?.map((point) => point.volume * 1000)
+      ?? biphasicCurve?.volumes.map((volume) => volume * 1000)
+      ?? resinCurve?.volumes.map((volume) => volume * 1000)
+      ?? curve.volumes,
     pHs: precipCurve?.map((point) => point.pH) ?? biphasicCurve?.pHs ?? resinCurve?.pHs ?? curve.pHs,
     equivalenceVolumes: precipCurve || biphasicCurve || resinCurve ? [vEqLast] : curve.equivalenceVolumes,
   }), [precipCurve, biphasicCurve, resinCurve, curve, vEqLast]);
@@ -692,12 +706,16 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
               <SelectControl
                 label={t('titulacion.targetFormLabel')}
                 value={String(validEnd)}
-                options={systemLabels(system).map((label, index) => ({ value: String(index), label }))}
+                options={systemLabels(system).map((label, index) => ({ value: String(index), label }))
+                  .filter((option) => (titrantIsAcid ? Number(option.value) < validStart : Number(option.value) > validStart))}
                 onChange={(value) => setEndIndex(Number(value))}
               />
             </div>
           )}
-          {analyteKind === 'equilibrium' && nProtons === 0 && (
+          {analyteKind === 'equilibrium' && !equilibriumDirectionValid && (
+            <p className="badge warn">{t('titulacion.impossibleTitrationDirection')}</p>
+          )}
+          {analyteKind === 'equilibrium' && equilibriumDirectionValid && nProtons === 0 && (
             <p className="badge warn">{t('titulacion.noFormalReaction')}</p>
           )}
           {analyteKind === 'equilibrium' && (
@@ -922,13 +940,16 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
                 />
               ),
             }] : []),
-            ...(showAlternativeSignals ? [{
-              id: 'optical', label: t('titulacion.absorbanceTab'),
-              node: <Chart data={[opticalTrace]} xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })} yTitle="A" xRange={[0, vMax]} exportName="equilibria-titulacion-absorbancia" exportMetadata={exportMetadata} />,
-            }, {
-              id: 'conductivity', label: t('titulacion.conductivityTab'),
-              node: <Chart data={[{ x: conductometricCurve.volumes, y: conductometricCurve.conductivity, type: 'scatter', mode: 'lines', name: 'κ', line: { width: 3, color: '#009E73' } }]} xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })} yTitle="κ" xRange={[0, vMax]} exportName="equilibria-titulacion-conductividad" exportMetadata={exportMetadata} />,
-            }] : []),
+            ...(showAlternativeSignals ? [
+              {
+                id: 'optical', label: t('titulacion.absorbanceTab'),
+                node: <Chart data={[opticalTrace]} xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })} yTitle="A" xRange={[0, vMax]} exportName="equilibria-titulacion-absorbancia" exportMetadata={exportMetadata} />,
+              },
+              ...(supportsConductometry ? [{
+                id: 'conductivity', label: t('titulacion.conductivityTab'),
+                node: <Chart data={[{ x: conductometricCurve.volumes, y: conductometricCurve.conductivity, type: 'scatter', mode: 'lines', name: 'κ', line: { width: 3, color: '#009E73' } }]} xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })} yTitle="κ" xRange={[0, vMax]} exportName="equilibria-titulacion-conductividad" exportMetadata={exportMetadata} />,
+              }] : []),
+            ] : []),
           ]}
         />
         <ResultCardRow items={[
@@ -1501,7 +1522,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
       })
     : null,
   [showSecondAnalyte, analyte, analyteOxState, analyteRedState, cAnalyte, secondAnalyte, secondAnalyteConc, titrant, direction, pH, vAnalyte, cTitrant, vMax]);
-  const networkCurve = useMemo(() => showStateNetwork && direction === 'oxidante'
+  const networkCurve = useMemo(() => showStateNetwork && direction === 'oxidante' && !showSecondAnalyte
     ? redoxNetworkTitrationCurve({
         analyte: {
           labels: [analyte.red, analyte.ox, networkFinalLabel],
@@ -1519,7 +1540,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
         vMax,
       })
     : null,
-  [showStateNetwork, direction, analyte, networkFinalLabel, pH, analyteOxState, analyteRedState, networkN2, networkE02, titrant, cAnalyte, vAnalyte, cTitrant, vMax]);
+  [showStateNetwork, direction, showSecondAnalyte, analyte, networkFinalLabel, pH, analyteOxState, analyteRedState, networkN2, networkE02, titrant, cAnalyte, vAnalyte, cTitrant, vMax]);
   const activeVolumes = networkCurve?.volumes ?? mixtureCurve?.volumes ?? curve.volumes;
   const activePes = networkCurve?.pes ?? mixtureCurve?.pes ?? curve.pes;
   const activeEs = networkCurve?.Es ?? mixtureCurve?.Es ?? curve.Es;
@@ -1597,7 +1618,11 @@ function RedoxTitration({ mode }: { mode: Mode }) {
               { value: 'reductor', label: t('titulacion.reductionOption') },
             ]}
             value={direction}
-            onChange={(v) => setDirection(v as 'oxidante' | 'reductor')}
+            onChange={(v) => {
+              const next = v as 'oxidante' | 'reductor';
+              setDirection(next);
+              if (next === 'reductor') setShowStateNetwork(false);
+            }}
           />
           <ModelBadge
             model={direction === 'oxidante' ? t('titulacion.redoxModelOxidation') : t('titulacion.redoxModelReduction')}
@@ -1614,15 +1639,24 @@ function RedoxTitration({ mode }: { mode: Mode }) {
             <Disclosure title={t('titulacion.conditionalRedoxStatesTitle')} defaultOpen>
               <p className="hint">{t('titulacion.conditionalRedoxStatesHint')}</p>
               <ConstantList prefix="log c(Ox)" values={oxPolyLogs} onChange={setOxPolyLogs} min={-30} max={40} maxItems={5} minItems={0} initialValue={4} />
-              <ConstantList prefix="pendiente pH (Ox)" values={oxPolySlopes} onChange={setOxPolySlopes} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
+              <ConstantList prefix={t('titulacion.phSlopeOxPrefix')} values={oxPolySlopes} onChange={setOxPolySlopes} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
               <ConstantList prefix="log c(Red)" values={redPolyLogs} onChange={setRedPolyLogs} min={-30} max={40} maxItems={5} minItems={0} initialValue={11} />
-              <ConstantList prefix="pendiente pH (Red)" values={redPolySlopes} onChange={setRedPolySlopes} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
+              <ConstantList prefix={t('titulacion.phSlopeRedPrefix')} values={redPolySlopes} onChange={setRedPolySlopes} min={-6} max={6} maxItems={5} minItems={0} initialValue={-1} />
             </Disclosure>
           )}
-          <Toggle label={t('titulacion.redoxNetworkToggle')} checked={showStateNetwork} onChange={(value) => {
-            setShowStateNetwork(value);
-            if (value) setShowSecondAnalyte(false);
-          }} />
+          {direction === 'oxidante' && !showSecondAnalyte && (
+            <Toggle
+              label={t('titulacion.redoxNetworkToggle')}
+              checked={showStateNetwork}
+              onChange={(value) => {
+                setShowStateNetwork(value);
+                if (value) setShowSecondAnalyte(false);
+              }}
+            />
+          )}
+          {(direction !== 'oxidante' || showSecondAnalyte) && (
+            <p className="hint">{t('titulacion.redoxNetworkUnavailableHint')}</p>
+          )}
           {showStateNetwork && (
             <Disclosure title={t('titulacion.redoxNetworkTitle')} defaultOpen>
               <LabelField label={t('titulacion.finalRedoxStateLabel')} value={networkFinalLabel} onChange={setNetworkFinalLabel} />
@@ -1630,7 +1664,10 @@ function RedoxTitration({ mode }: { mode: Mode }) {
               <Slider label="n₂" value={networkN2} min={1} max={6} step={1} onChange={setNetworkN2} decimals={0} />
             </Disclosure>
           )}
-          <Toggle label={t('titulacion.addSecondRedoxAnalyte')} checked={showSecondAnalyte} onChange={setShowSecondAnalyte} />
+          <Toggle label={t('titulacion.addSecondRedoxAnalyte')} checked={showSecondAnalyte} onChange={(checked) => {
+            setShowSecondAnalyte(checked);
+            if (checked) setShowStateNetwork(false);
+          }} />
           {showSecondAnalyte && (
             <Disclosure title={t('titulacion.secondAnalytePairTitle')} defaultOpen>
               <CoupleEditor title={t('titulacion.secondAnalytePairTitle')} couple={secondAnalyte} onChange={setSecondAnalyte} />

@@ -10,19 +10,44 @@ export function overallIonizationConstant(constants: IonPairConstants): number {
   return constants.ionization * constants.dissociation;
 }
 
-export function ionPairFractions(constants: IonPairConstants): {
+/**
+ * M + Ki AB; AB + Kd A + B with mass balance C = [M] + [AB] + [A].
+ * Ki = [AB]/[M], Kd = [A][B]/[AB], [A] = [B].
+ */
+export function ionPairFractions(
+  constants: IonPairConstants,
+  totalConcentration = 1,
+): {
   molecular: number;
   ionPair: number;
   freeIons: number;
 } {
-  const molecularWeight = 1;
-  const pairWeight = Math.max(constants.ionization, 0);
-  const freeWeight = pairWeight * Math.max(constants.dissociation, 0);
-  const total = molecularWeight + pairWeight + freeWeight;
+  const C = Math.max(totalConcentration, 0);
+  if (C === 0) return { molecular: 0, ionPair: 0, freeIons: 0 };
+  const ki = Math.max(constants.ionization, 0);
+  const kd = Math.max(constants.dissociation, 0);
+  if (ki === 0 && kd === 0) return { molecular: 1, ionPair: 0, freeIons: 0 };
+
+  const balance = (m: number) => {
+    const pair = ki * m;
+    const free = Math.sqrt(Math.max(kd * pair, 0));
+    return m + pair + free - C;
+  };
+
+  let lo = 0;
+  let hi = C;
+  for (let i = 0; i < 120; i++) {
+    const mid = (lo + hi) / 2;
+    if (balance(mid) > 0) hi = mid;
+    else lo = mid;
+  }
+  const molecularConc = (lo + hi) / 2;
+  const ionPairConc = ki * molecularConc;
+  const freeConc = Math.sqrt(Math.max(kd * ionPairConc, 0));
   return {
-    molecular: molecularWeight / total,
-    ionPair: pairWeight / total,
-    freeIons: freeWeight / total,
+    molecular: molecularConc / C,
+    ionPair: ionPairConc / C,
+    freeIons: freeConc / C,
   };
 }
 
@@ -47,4 +72,3 @@ export function transferCycle(params: {
     - standardFreeEnergyFromK(targetK);
   return { targetK, cycleDeltaG };
 }
-
