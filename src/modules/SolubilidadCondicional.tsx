@@ -654,7 +654,7 @@ export default function SolubilidadCondicional() {
           </div>
           <LabelField label={t('solubilidadCondicional.metalLabel')} value={s.m1.label} onChange={(v) => setM1({ label: v })} />
           <LabelField label={t('pourbaix.formulaLabel')} value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
-          <Slider label="pKps" helpId="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
+          <Slider label={t('titulacion.pKspShort')} helpId="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
           <div className="control">
             <div className="control-header">
               <span className="control-label">{t('solubilidadCondicional.stoichiometryN')}</span>
@@ -709,7 +709,7 @@ export default function SolubilidadCondicional() {
               <DbPanel items={dbItems} onSelect={(id) => setM2({ ...fromPreset(id) })} title={t('solubilidadCondicional.presetsM2')} />
               <LabelField label={t('condicionales.secondMetalLabel')} value={s.m2.label} onChange={(v) => setM2({ label: v })} />
               <LabelField label={t('pourbaix.formulaLabel')} value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
-              <Slider label="pKps" helpId="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
+              <Slider label={t('titulacion.pKspShort')} helpId="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
               <div className="control">
                 <div className="control-header">
                   <span className="control-label">{t('solubilidadCondicional.stoichiometryNShort')}</span>
@@ -751,7 +751,7 @@ export default function SolubilidadCondicional() {
               <DbPanel items={dbItems} onSelect={(id) => setM3({ ...fromPreset(id) })} title={t('solubilidadCondicional.presetsM3')} />
               <LabelField label={t('solubilidadCondicional.thirdMetalLabel')} value={s.m3.label} onChange={(v) => setM3({ label: v })} />
               <LabelField label={t('pourbaix.formulaLabel')} value={s.m3.formula} onChange={(v) => setM3({ formula: v })} />
-              <Slider label="pKps" helpId="pKsp" value={s.m3.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM3({ pKsp: v })} decimals={1} />
+              <Slider label={t('titulacion.pKspShort')} helpId="pKsp" value={s.m3.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM3({ pKsp: v })} decimals={1} />
             </Disclosure>
           )}
         </PanelSection>

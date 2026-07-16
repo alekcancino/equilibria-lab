@@ -6,7 +6,7 @@ product
 
 ## Users
 
-Chemistry students, instructors, and practicing scientists who need to explore aqueous-equilibrium
+Chemistry students, instructors, and practicing scientists who need to explore equilibrium
 models quickly, compare assumptions, and explain the resulting diagrams in individual study,
 classroom projection, or technical review. Users range from learners who need plain-language guidance
 to experts who expect editable constants, explicit conventions, and numerically reproducible output.
@@ -43,4 +43,5 @@ becoming austere, and approachable without simplifying away the chemistry.
 
 Target WCAG 2.1 AA for contrast, keyboard operation, focus visibility, and semantic controls. Preserve
 the complete Spanish/English interface, color-blind-safe plot distinctions, 44 px touch targets,
-responsive layouts, and reduced-motion behavior. Meaning must never depend on color alone.
+responsive layouts, and reduced-motion behavior. Meaning must never depend on color alone. These are
+design targets — no formal accessibility audit has been run yet.

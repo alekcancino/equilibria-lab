@@ -27,6 +27,45 @@ function edgeDelta(edge: RedoxGraphEdge, pH: number, pX: number, pe: number): nu
     + (edge.pXCoefficient ?? 0) * pX + (edge.peCoefficient ?? 0) * pe;
 }
 
+function nodeReferenceLogActivity(node: RedoxGraphNode): number {
+  if (node.phase === 'solid') return 0;
+  return node.logActivity ?? 0;
+}
+
+function poolAdjustedScore(score: number, node: RedoxGraphNode): number {
+  const pool = Math.max(node.poolStoich ?? 1, 1);
+  return score - Math.log10(pool);
+}
+
+/** Returns false when any node cannot be reached from the anchor. */
+export function isRedoxGraphConnected(graph: RedoxGraph): boolean {
+  if (graph.nodes.length === 0) return true;
+  const index = new Map(graph.nodes.map((node, i) => [node.id, i]));
+  const scores = new Array<number>(graph.nodes.length).fill(NaN);
+  scores[0] = nodeReferenceLogActivity(graph.nodes[0]);
+  let changed = true;
+  for (let pass = 0; pass < graph.nodes.length && changed; pass++) {
+    changed = false;
+    for (const edge of graph.edges) {
+      const from = index.get(edge.from);
+      const to = index.get(edge.to);
+      if (from === undefined || to === undefined) return false;
+      if (Number.isFinite(scores[from]) && !Number.isFinite(scores[to])) {
+        scores[to] = scores[from] + edgeDelta(edge, 7, 0, 4)
+          + nodeReferenceLogActivity(graph.nodes[to])
+          - nodeReferenceLogActivity(graph.nodes[from]);
+        changed = true;
+      } else if (Number.isFinite(scores[to]) && !Number.isFinite(scores[from])) {
+        scores[from] = scores[to] - edgeDelta(edge, 7, 0, 4)
+          + nodeReferenceLogActivity(graph.nodes[from])
+          - nodeReferenceLogActivity(graph.nodes[to]);
+        changed = true;
+      }
+    }
+  }
+  return scores.every((value) => Number.isFinite(value));
+}
+
 export function redoxGraphPotentials(
   graph: RedoxGraph,
   pH: number,
@@ -36,7 +75,7 @@ export function redoxGraphPotentials(
   if (graph.nodes.length === 0) return { scores: [], maxCycleError: 0 };
   const index = new Map(graph.nodes.map((node, i) => [node.id, i]));
   const scores = new Array<number>(graph.nodes.length).fill(NaN);
-  scores[0] = graph.nodes[0].logActivity ?? 0;
+  scores[0] = nodeReferenceLogActivity(graph.nodes[0]);
   let changed = true;
   for (let pass = 0; pass < graph.nodes.length && changed; pass++) {
     changed = false;
@@ -46,15 +85,22 @@ export function redoxGraphPotentials(
       if (from === undefined || to === undefined) throw new Error('Redox edge references an unknown node');
       const delta = edgeDelta(edge, pH, pX, pe);
       if (Number.isFinite(scores[from]) && !Number.isFinite(scores[to])) {
-        scores[to] = scores[from] + delta;
+        scores[to] = scores[from] + delta
+          + nodeReferenceLogActivity(graph.nodes[to])
+          - nodeReferenceLogActivity(graph.nodes[from]);
         changed = true;
       } else if (Number.isFinite(scores[to]) && !Number.isFinite(scores[from])) {
-        scores[from] = scores[to] - delta;
+        scores[from] = scores[to] - delta
+          + nodeReferenceLogActivity(graph.nodes[from])
+          - nodeReferenceLogActivity(graph.nodes[to]);
         changed = true;
       }
     }
   }
   if (scores.some((value) => !Number.isFinite(value))) throw new Error('Disconnected redox graph');
+  for (let i = 0; i < graph.nodes.length; i++) {
+    if (graph.nodes[i].phase === 'solid') scores[i] = nodeReferenceLogActivity(graph.nodes[i]);
+  }
   let maxCycleError = 0;
   for (const edge of graph.edges) {
     const from = index.get(edge.from)!;
@@ -72,6 +118,7 @@ export function generalizedRedoxGrid(
   nx = 160,
   ny = 160,
 ): Grid2D {
+  const winCounts = new Array(graph.nodes.length).fill(0);
   const dominant: number[][] = [];
   const frac: number[][] = [];
   for (let j = 0; j < ny; j++) {
@@ -80,15 +127,28 @@ export function generalizedRedoxGrid(
     const rowF: number[] = [];
     for (let i = 0; i < nx; i++) {
       const { scores } = redoxGraphPotentials(graph, axisValue(pHRange, nx, i), pX, pe);
-      const max = Math.max(...scores);
-      const weights = scores.map((value) => Math.pow(10, value - max));
+      const adjusted = scores.map((value, index) => poolAdjustedScore(value, graph.nodes[index]));
+      const max = Math.max(...adjusted);
+      const weights = adjusted.map((value) => Math.pow(10, value - max));
       const total = weights.reduce((sum, value) => sum + value, 0);
       const winner = weights.indexOf(Math.max(...weights));
       rowD.push(winner);
       rowF.push(weights[winner] / total);
+      winCounts[winner] += 1;
     }
     dominant.push(rowD);
     frac.push(rowF);
+  }
+  const stable = winCounts.map((count) => count > 0);
+  if (stable.some(Boolean)) {
+    for (let j = 0; j < ny; j++) {
+      for (let i = 0; i < nx; i++) {
+        if (!stable[dominant[j][i]]) {
+          const fallback = stable.findIndex(Boolean);
+          if (fallback >= 0) dominant[j][i] = fallback;
+        }
+      }
+    }
   }
   return { dominant, frac, nx, ny, xRange: pHRange, yRange: peRange };
 }

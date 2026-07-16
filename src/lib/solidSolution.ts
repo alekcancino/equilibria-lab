@@ -22,11 +22,13 @@ export function idealSolidSolutionAtComposition(params: {
   const gammaB = params.gammaSolidB ?? 1;
   const aqueousA = params.kspA * gammaA * xA / aX;
   const aqueousB = params.kspB * gammaB * xB / aX;
-  const expectedRatio = xA > 0 && xB > 0
-    ? (params.kspB * gammaB / (params.kspA * gammaA)) * (xB / xA)
-    : aqueousA === 0 ? Infinity : 0;
-  const observedRatio = aqueousA > 0 ? aqueousB / aqueousA : Infinity;
-  return { xA, xB, aqueousA, aqueousB, commonIonActivity: aX, ratioClosure: observedRatio / expectedRatio - 1 };
+  let ratioClosure = 0;
+  if (xA > 0 && xB > 0) {
+    const expectedRatio = (params.kspB * gammaB / (params.kspA * gammaA)) * (xB / xA);
+    const observedRatio = aqueousB / aqueousA;
+    ratioClosure = observedRatio / expectedRatio - 1;
+  }
+  return { xA, xB, aqueousA, aqueousB, commonIonActivity: aX, ratioClosure };
 }
 
 export function regularSolutionGammas(xA: number, interactionParameter: number): { gammaA: number; gammaB: number } {

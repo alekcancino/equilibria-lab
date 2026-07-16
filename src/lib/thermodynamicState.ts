@@ -18,14 +18,12 @@ const WATER_PKW: Record<number, number> = {
   100: 12.264,
 };
 
-export function nernstSlope(temperatureC: number): number {
-  return GAS_CONSTANT * (temperatureC + 273.15) * Math.LN10 / FARADAY_CONSTANT;
-}
+const WATER_PKW_PRESSURE: Record<number, number> = {
+  0.1: 13.995,
+  100: 13.668,
+};
 
-export function waterThermodynamicState(
-  temperatureC = 25,
-  pressureMPa = 0.1,
-): ThermodynamicState {
+function waterPKwAt(temperatureC: number, pressureMPa: number): number {
   const temperatures = Object.keys(WATER_PKW).map(Number).sort((a, b) => a - b);
   const exact = WATER_PKW[temperatureC];
   let pKw = exact;
@@ -35,7 +33,26 @@ export function waterThermodynamicState(
     const fraction = lower === upper ? 0 : (temperatureC - lower) / (upper - lower);
     pKw = WATER_PKW[lower] + fraction * (WATER_PKW[upper] - WATER_PKW[lower]);
   }
-  if (temperatureC === 25 && Math.abs(pressureMPa - 100) < 1e-9) pKw = 13.668;
+  if (temperatureC !== 25) return pKw;
+  const pressures = Object.keys(WATER_PKW_PRESSURE).map(Number).sort((a, b) => a - b);
+  const pExact = WATER_PKW_PRESSURE[pressureMPa];
+  if (pExact !== undefined) return pExact;
+  const lowerP = [...pressures].reverse().find((value) => value < pressureMPa) ?? pressures[0];
+  const upperP = pressures.find((value) => value > pressureMPa) ?? pressures[pressures.length - 1];
+  if (lowerP === upperP) return WATER_PKW_PRESSURE[lowerP];
+  const fraction = (pressureMPa - lowerP) / (upperP - lowerP);
+  return WATER_PKW_PRESSURE[lowerP] + fraction * (WATER_PKW_PRESSURE[upperP] - WATER_PKW_PRESSURE[lowerP]);
+}
+
+export function nernstSlope(temperatureC: number): number {
+  return GAS_CONSTANT * (temperatureC + 273.15) * Math.LN10 / FARADAY_CONSTANT;
+}
+
+export function waterThermodynamicState(
+  temperatureC = 25,
+  pressureMPa = 0.1,
+): ThermodynamicState {
+  const pKw = waterPKwAt(temperatureC, pressureMPa);
   return {
     label: 'Water', temperatureC, pressureMPa, pKw,
     acidityRange: [-2, pKw + 2], lioniumLabel: 'H₃O⁺', lyateLabel: 'OH⁻',
