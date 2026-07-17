@@ -1690,6 +1690,7 @@ export const translations = {
   'pourbaix.ligandEdgeCoefficient': { es: 'Coeficiente de pX por frontera', en: 'pX coefficient per boundary' },
   'pourbaix.graphPredominant': { es: 'Predominio del grafo', en: 'Graph-predominant state' },
   'pourbaix.hessCycleError': { es: 'Error de cierre de Hess', en: 'Hess cycle-closure error' },
+  'pourbaix.poolConservationError': { es: 'Error de conservación del pool', en: 'Pool conservation error' },
   'solubilidadCondicional.solidSolutionToggle': { es: 'Coprecipitación como solución sólida común', en: 'Coprecipitation as a shared solid solution' },
   'solubilidadCondicional.solidMoleFraction': { es: 'Fracción molar de M1 en el sólido', en: 'M1 mole fraction in the solid' },
   'solubilidadCondicional.solidInteraction': { es: 'Parámetro de interacción de red', en: 'Lattice interaction parameter' },

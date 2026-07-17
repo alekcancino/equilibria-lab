@@ -79,7 +79,7 @@ import {
 import { glycineMacroConstants, glycineMicrostateFractions } from '../acidBaseMicrostates';
 import { conditionalPhaseMap, conditionalPhasePoint } from '../conditionalPhaseMap';
 import { evaluateFeasibility, feasibleIntervals1D } from '../multisystemFeasibility';
-import { generalizedRedoxGrid, isRedoxGraphConnected, redoxGraphPotentials } from '../generalizedRedoxDiagram';
+import { generalizedRedoxGrid, isRedoxGraphConnected, poolConservationError, redoxGraphPotentials, redoxPoolFractions } from '../generalizedRedoxDiagram';
 import { conditionalPKspForPrecipitation, conditionalPrecipSensorCurve } from '../conditionalPrecipSensor';
 import { precipTitrationCurve } from '../precipTitration';
 import { finiteIdealSolidSolution, hasRegularSolutionMiscibilityGap, idealSolidSolutionAtComposition, regularSolutionGammas } from '../solidSolution';
@@ -771,6 +771,27 @@ describe('R2 conditional maps and sensors', () => {
     expect(isRedoxGraphConnected(graph)).toBe(true);
     const grid = generalizedRedoxGrid(graph, [-3, 14], [-10, 25], 0, 20, 20);
     expect(new Set(grid.dominant.flat()).size).toBeGreaterThan(1);
+  });
+
+  it('conserves the metal pool and shifts solids with logC', () => {
+    const makeGraph = (logC: number) => ({
+      nodes: [
+        { id: 'fe3', label: 'Fe3+', phase: 'aqueous' as const, logActivity: logC, poolStoich: 1 },
+        { id: 'fe2', label: 'Fe2+', phase: 'aqueous' as const, logActivity: logC, poolStoich: 1 },
+        { id: 'feoh3', label: 'Fe(OH)3', phase: 'solid' as const, poolStoich: 1 },
+      ],
+      edges: [
+        { from: 'fe3', to: 'fe2', logK0: 0.771 / 0.05916, peCoefficient: -1 },
+        { from: 'fe3', to: 'feoh3', logK0: 38.7 - 42, pHCoefficient: 3 },
+      ],
+    });
+    const dilute = generalizedRedoxGrid(makeGraph(-4), [0, 14], [-5, 15], 0, 30, 30);
+    const concentrated = generalizedRedoxGrid(makeGraph(-1), [0, 14], [-5, 15], 0, 30, 30);
+    expect(concentrated.dominant).not.toEqual(dilute.dominant);
+    const point = redoxGraphPotentials(makeGraph(-2), 9, 0, 0);
+    expect(point.poolError).toBeLessThan(1e-12);
+    expect(poolConservationError(redoxPoolFractions(point.scores, makeGraph(-2).nodes), makeGraph(-2).nodes))
+      .toBeLessThan(1e-12);
   });
 
   it('couples conditional Ksp and the Nernst signal to the same free activity', () => {
