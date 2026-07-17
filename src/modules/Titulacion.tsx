@@ -51,7 +51,7 @@ import { acidBaseResinTitrationCurve } from '../lib/acidBaseResin';
 import { SOLVENT_PRESETS, waterThermodynamicState } from '../lib/thermodynamicState';
 import { conditionalPrecipSensorCurve } from '../lib/conditionalPrecipSensor';
 import { backTitration } from '../lib/titrationProtocols';
-import { acidBaseEndpointError } from '../lib/endpointError';
+import { acidBaseEndpointError, complexometricEndpointError, complexometricIndicatorFraction, precipitationEndpointError, redoxEndpointError } from '../lib/endpointError';
 import {
   acidBaseConductometricFromCurve, acidBaseOpticalFromCurve,
   complexometricConductometricFromCurve, complexometricOpticalFromCurve,
@@ -1030,11 +1030,12 @@ function EdtaTitration({ mode }: { mode: Mode }) {
   const [showAlternativeSignals, setShowAlternativeSignals] = useState(false);
   const [productEpsilon, setProductEpsilon] = useState(100);
   const [lambdaSpectator, setLambdaSpectator] = useState(50);
+  const [showIndicatorError, setShowIndicatorError] = useState(false);
 
   useShareEffect('titulacion', {
     mode, metalId, label, logKf, logBetasOH, side, edtaInFlask, pH, cFlask, vFlask, cBuret, axis, traceY,
     showSecondMetal, secondLabel, secondConc, secondLogKCond, showSensor, sensorKind, sensorE0, sensorN,
-    sensorLogKOx, sensorLogKRed, showAlternativeSignals, productEpsilon, lambdaSpectator,
+    sensorLogKOx, sensorLogKRed, showAlternativeSignals, productEpsilon, lambdaSpectator, showIndicatorError,
   }, (s) => {
     if (s.metalId) setMetalId(s.metalId);
     if (s.label) setLabel(s.label);
@@ -1061,6 +1062,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     if (s.showAlternativeSignals !== undefined) setShowAlternativeSignals(s.showAlternativeSignals);
     if (typeof s.productEpsilon === 'number') setProductEpsilon(s.productEpsilon);
     if (typeof s.lambdaSpectator === 'number') setLambdaSpectator(s.lambdaSpectator);
+    if (s.showIndicatorError !== undefined) setShowIndicatorError(s.showIndicatorError);
   });
 
   function reset() {
@@ -1078,6 +1080,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     setShowSensor(false); setSensorKind('metal'); setSensorE0(0.3); setSensorN(2);
     setSensorLogKOx(8); setSensorLogKRed(2);
     setShowAlternativeSignals(false); setProductEpsilon(100); setLambdaSpectator(50);
+    setShowIndicatorError(false);
   }
 
   function applyPreset(id: string) {
@@ -1187,6 +1190,37 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     () => complexometricConductometricFromCurve(edtaObservableParams),
     [edtaObservableParams],
   );
+  const edtaIndicatorEndpoint = useMemo(() => {
+    if (showSecondMetal || activeAxis === 'x') return null;
+    const candidates = METAL_INDICATORS.flatMap((ind) => {
+      const entry = ind.metals.find((metal) => metal.metalId === metalId);
+      if (!entry) return [];
+      const logKprimeMIn = entry.logKMIn - Math.log10(alphaH(ind.pKas, pH)) - Math.log10(alphaOH(logBetasOH, pH));
+      const deltaLogK = logKMY_pH - logKprimeMIn;
+      const badge = logKprimeMIn < 4 ? 'weak' : deltaLogK < 2 ? 'blocked' : deltaLogK < 5 ? 'marginal' : 'ok';
+      return badge === 'blocked' || badge === 'weak' ? [] : [{ ind, deltaLogK }];
+    }).sort((a, b) => b.deltaLogK - a.deltaLogK);
+    const best = candidates[0];
+    if (!best) return null;
+    const atTP = edtaAtFraction({
+      logKf, pH, cMetal: cFlask,
+      sideEditor: { ...side, showOH: side.showOH || logBetasOH.length > 0, logBetasOH: side.showOH ? side.logBetasOH : logBetasOH },
+    }, complexometricIndicatorFraction(best.deltaLogK));
+    return {
+      indicator: best.ind,
+      metric: complexometricEndpointError({
+        volumes: displayVolumes,
+        pMs: displayPMs,
+        indicatorPM: atTP.pM,
+        equivalenceVolume: curve.vEq,
+        titrantConcentration: cBuret,
+        analyteMoles: cFlask * vFlask / 1000,
+      }),
+    };
+  }, [
+    showSecondMetal, activeAxis, metalId, pH, logBetasOH, logKMY_pH, logKf, cFlask, side,
+    displayVolumes, displayPMs, curve.vEq, cBuret, vFlask,
+  ]);
 
   const titTraces = useMemo<Data[]>(() => {
     if (competitiveCurve) {
@@ -1414,6 +1448,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
               <Slider label={t('titulacion.lambdaSpectator')} value={lambdaSpectator} min={10} max={400} step={5} decimals={0} onChange={setLambdaSpectator} />
             </>
           )}
+          <Toggle label={t('titulacion.indicatorEndpointToggle')} checked={showIndicatorError} onChange={setShowIndicatorError} />
         </PanelSection>
         <Disclosure title={t('titulacion.sideReactionsDisclosure')}>
           <SideReactionEditor state={side} onChange={setSide} showLigandPKas={false} />
@@ -1455,6 +1490,13 @@ function EdtaTitration({ mode }: { mode: Mode }) {
           <p className={feasible ? 'badge ok' : 'badge warn'}>
             {feasible ? t('titulacion.edtaFeasibleMsg') : t('titulacion.edtaNotFeasibleMsg')}
           </p>
+          {showIndicatorError && edtaIndicatorEndpoint && (
+            <ResultCard items={[
+              { label: t('titulacion.indicatorUsedLabel', { name: edtaIndicatorEndpoint.indicator.abbrev }), value: '' },
+              { label: t('titulacion.endpointVolume'), value: `${edtaIndicatorEndpoint.metric.volumeTP.toFixed(3)} mL` },
+              { label: t('titulacion.relativeIndicatorError'), value: `${edtaIndicatorEndpoint.metric.relativeErrorPercent.toFixed(5)} %` },
+            ]} />
+          )}
         </PanelSection>
 
         <Disclosure title={t('titulacion.metallochromicDisclosure', { ph: pH.toFixed(1) })}>
@@ -1519,13 +1561,15 @@ function RedoxTitration({ mode }: { mode: Mode }) {
   const [showAlternativeSignals, setShowAlternativeSignals] = useState(false);
   const [productEpsilon, setProductEpsilon] = useState(100);
   const [lambdaSpectator, setLambdaSpectator] = useState(50);
+  const [showIndicatorError, setShowIndicatorError] = useState(false);
+  const [indicatorE, setIndicatorE] = useState(0.85);
 
   useShareEffect('titulacion', {
     mode, analyte, titrant, direction, pH, cAnalyte, vAnalyte, cTitrant, usePe, showDerivative,
     showSecondAnalyte, secondAnalyte, secondAnalyteConc, showConditionalStates,
     oxPolyLogs, oxPolySlopes, redPolyLogs, redPolySlopes,
     showStateNetwork, networkFinalLabel, networkE02, networkN2, showPolynuclear, analyteUnits, polynuclearXeq,
-    showAlternativeSignals, productEpsilon, lambdaSpectator,
+    showAlternativeSignals, productEpsilon, lambdaSpectator, showIndicatorError, indicatorE,
   }, (s) => {
     if (s.analyte) setAnalyte(s.analyte);
     if (s.titrant) setTitrant(s.titrant);
@@ -1554,6 +1598,8 @@ function RedoxTitration({ mode }: { mode: Mode }) {
     if (s.showAlternativeSignals !== undefined) setShowAlternativeSignals(s.showAlternativeSignals);
     if (typeof s.productEpsilon === 'number') setProductEpsilon(s.productEpsilon);
     if (typeof s.lambdaSpectator === 'number') setLambdaSpectator(s.lambdaSpectator);
+    if (s.showIndicatorError !== undefined) setShowIndicatorError(s.showIndicatorError);
+    if (typeof s.indicatorE === 'number') setIndicatorE(s.indicatorE);
   });
 
   function reset() {
@@ -1567,6 +1613,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
     setShowStateNetwork(false); setNetworkFinalLabel('A(ox II)'); setNetworkE02(1); setNetworkN2(1);
     setShowPolynuclear(false); setAnalyteUnits(1); setPolynuclearXeq(0.01);
     setShowAlternativeSignals(false); setProductEpsilon(100); setLambdaSpectator(50);
+    setShowIndicatorError(false); setIndicatorE(0.85);
   }
 
   const polynomialState = useCallback((logs: number[], slopes: number[]): ConditionalRedoxState | undefined => (
@@ -1724,6 +1771,18 @@ function RedoxTitration({ mode }: { mode: Mode }) {
     () => redoxConductometricFromCurve(redoxObservableParams),
     [redoxObservableParams],
   );
+  const redoxIndicatorEndpoint = useMemo(() => {
+    const eqVolume = activeEquivalences[activeEquivalences.length - 1];
+    if (!Number.isFinite(eqVolume)) return null;
+    return redoxEndpointError({
+      volumes: activeVolumes,
+      signal: activeEs,
+      endpointSignal: indicatorE,
+      equivalenceVolume: eqVolume,
+      titrantConcentration: cTitrant,
+      analyteMoles: cAnalyte * vAnalyte / 1000,
+    });
+  }, [activeVolumes, activeEs, indicatorE, activeEquivalences, cTitrant, cAnalyte, vAnalyte]);
 
   return (
     <>
@@ -1817,6 +1876,10 @@ function RedoxTitration({ mode }: { mode: Mode }) {
               <Slider label={t('titulacion.lambdaSpectator')} value={lambdaSpectator} min={10} max={400} step={5} decimals={0} onChange={setLambdaSpectator} />
             </>
           )}
+          <Toggle label={t('titulacion.indicatorEndpointToggle')} checked={showIndicatorError} onChange={setShowIndicatorError} />
+          {showIndicatorError && (
+            <Slider label={t('titulacion.redoxIndicatorELabel')} value={indicatorE} min={-0.5} max={2} step={0.01} onChange={setIndicatorE} unit="V" decimals={2} />
+          )}
         </PanelSection>
         <PanelSection title={t('complejos.resultSection')} icon="∑">
           <ResultCard items={[
@@ -1830,6 +1893,12 @@ function RedoxTitration({ mode }: { mode: Mode }) {
               ? t('titulacion.redoxQuantitativeMsg', { k: limitingLogK.toFixed(0) })
               : t('titulacion.redoxNotQuantitativeMsg', { k: limitingLogK.toFixed(1) })}
           </p>
+          {showIndicatorError && redoxIndicatorEndpoint && (
+            <ResultCard items={[
+              { label: t('titulacion.endpointVolume'), value: `${redoxIndicatorEndpoint.volumeTP.toFixed(3)} mL` },
+              { label: t('titulacion.relativeIndicatorError'), value: `${redoxIndicatorEndpoint.relativeErrorPercent.toFixed(5)} %` },
+            ]} />
+          )}
         </PanelSection>
         <InfoBox title={t('titulacion.calcMethodTitle')}>
           <p>{t('titulacion.redoxInfoBody')}</p>
@@ -1959,6 +2028,17 @@ function PrecipTitration({ mode }: { mode: Mode }) {
   }), [pKsp, cAnalyte, vAnalyte, cTitrant, vMax, m, x, logAlphaCation, logAlphaAnion, sensorE0, sensorTemperature]);
 
   const mohrPAg = mohrEndpointPAg(cChromate);
+  const mohrEndpointMetric = useMemo(() => {
+    if (!showMohr || !showPCation || !isAgSystem) return null;
+    return precipitationEndpointError({
+      volumes: curve.volumes,
+      pTarget: curve.pAgs,
+      endpointPTarget: mohrPAg,
+      equivalenceVolume: curve.vEq,
+      titrantConcentration: cTitrant,
+      analyteMoles: cAnalyte * vAnalyte / 1000,
+    });
+  }, [showMohr, showPCation, isAgSystem, curve.volumes, curve.pAgs, curve.vEq, mohrPAg, cTitrant, cAnalyte, vAnalyte]);
 
   // showPCation: true → y-axis is p(cation)=pAg, false → p(anion)=pX
   const yVals = showConditionalSensor ? sensorCurve.potentials : showPCation ? curve.pAgs : curve.pXs;
@@ -2095,6 +2175,10 @@ function PrecipTitration({ mode }: { mode: Mode }) {
               label: t('titulacion.mohrIndicatorLabel'),
               value: `pAg = ${mohrPAg.toFixed(2)} (Δ = ${(mohrPAg - curve.pAgEq).toFixed(2)})`,
             }] : []),
+            ...(mohrEndpointMetric ? [
+              { label: t('titulacion.endpointVolume'), value: `${mohrEndpointMetric.volumeTP.toFixed(3)} mL` },
+              { label: t('titulacion.relativeIndicatorError'), value: `${mohrEndpointMetric.relativeErrorPercent.toFixed(5)} %` },
+            ] : []),
           ]} />
           <p className={sharpness ? 'badge ok' : 'badge warn'}>
             {sharpness

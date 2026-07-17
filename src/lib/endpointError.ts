@@ -94,3 +94,63 @@ export function acidBaseEndpointError(params: {
   const absoluteErrorMoles = volumeError * ct / 1000;
   return { volumeTP, volumeError, absoluteErrorMoles, relativeErrorPercent: 100 * absoluteErrorMoles / analyteMoles };
 }
+
+/** Ringbom fraction at which a metallochromic indicator would change color. */
+export function complexometricIndicatorFraction(deltaLogK: number): number {
+  if (deltaLogK <= 0) return 0;
+  return Math.min(1 - Math.pow(10, -deltaLogK / 2), 0.999999);
+}
+
+export function complexometricEndpointError(params: {
+  volumes: number[];
+  pMs: number[];
+  indicatorPM: number;
+  equivalenceVolume: number;
+  titrantConcentration: number;
+  analyteMoles: number;
+}): EndpointErrorResult {
+  return endpointFromCurve({
+    volumes: params.volumes,
+    signal: params.pMs,
+    endpointSignal: params.indicatorPM,
+    equivalenceVolume: params.equivalenceVolume,
+    titrantConcentration: params.titrantConcentration,
+    analyteMoles: params.analyteMoles,
+  });
+}
+
+export function precipitationEndpointError(params: {
+  volumes: number[];
+  pTarget: number[];
+  endpointPTarget: number;
+  equivalenceVolume: number;
+  titrantConcentration: number;
+  analyteMoles: number;
+}): EndpointErrorResult {
+  return endpointFromCurve({
+    volumes: params.volumes,
+    signal: params.pTarget,
+    endpointSignal: params.endpointPTarget,
+    equivalenceVolume: params.equivalenceVolume,
+    titrantConcentration: params.titrantConcentration,
+    analyteMoles: params.analyteMoles,
+  });
+}
+
+export function redoxEndpointError(params: {
+  volumes: number[];
+  signal: number[];
+  endpointSignal: number;
+  equivalenceVolume: number;
+  titrantConcentration: number;
+  analyteMoles: number;
+}): EndpointErrorResult {
+  return endpointFromCurve({
+    volumes: params.volumes,
+    signal: params.signal,
+    endpointSignal: params.endpointSignal,
+    equivalenceVolume: params.equivalenceVolume,
+    titrantConcentration: params.titrantConcentration,
+    analyteMoles: params.analyteMoles,
+  });
+}
