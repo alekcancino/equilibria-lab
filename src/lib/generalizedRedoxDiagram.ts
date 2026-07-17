@@ -32,9 +32,22 @@ function nodeReferenceLogActivity(node: RedoxGraphNode): number {
   return node.logActivity ?? 0;
 }
 
-function poolAdjustedScore(score: number, node: RedoxGraphNode): number {
-  const pool = Math.max(node.poolStoich ?? 1, 1);
-  return score - Math.log10(pool);
+/** Element-pool fractions φ_i with Σ φ_i = 1, weighted by pool stoichiometry. */
+export function redoxPoolFractions(scores: number[], nodes: RedoxGraphNode[]): number[] {
+  if (scores.length === 0) return [];
+  const max = Math.max(...scores);
+  const weights = scores.map((score, index) => {
+    const stoich = Math.max(nodes[index].poolStoich ?? 1, 1);
+    return Math.pow(10, score - max) / stoich;
+  });
+  const total = weights.reduce((sum, value) => sum + value, 0);
+  if (total <= 0) return scores.map(() => 1 / scores.length);
+  return weights.map((value) => value / total);
+}
+
+export function poolConservationError(fractions: number[], nodes: RedoxGraphNode[]): number {
+  void nodes;
+  return Math.abs(fractions.reduce((sum, value) => sum + value, 0) - 1);
 }
 
 /** Returns false when any node cannot be reached from the anchor. */
@@ -71,8 +84,8 @@ export function redoxGraphPotentials(
   pH: number,
   pX: number,
   pe: number,
-): { scores: number[]; maxCycleError: number } {
-  if (graph.nodes.length === 0) return { scores: [], maxCycleError: 0 };
+): { scores: number[]; maxCycleError: number; fractions: number[]; poolError: number } {
+  if (graph.nodes.length === 0) return { scores: [], maxCycleError: 0, fractions: [], poolError: 0 };
   const index = new Map(graph.nodes.map((node, i) => [node.id, i]));
   const scores = new Array<number>(graph.nodes.length).fill(NaN);
   scores[0] = nodeReferenceLogActivity(graph.nodes[0]);
@@ -107,7 +120,13 @@ export function redoxGraphPotentials(
     const to = index.get(edge.to)!;
     maxCycleError = Math.max(maxCycleError, Math.abs(scores[to] - scores[from] - edgeDelta(edge, pH, pX, pe)));
   }
-  return { scores, maxCycleError };
+  const fractions = redoxPoolFractions(scores, graph.nodes);
+  return {
+    scores,
+    maxCycleError,
+    fractions,
+    poolError: poolConservationError(fractions, graph.nodes),
+  };
 }
 
 export function generalizedRedoxGrid(
@@ -126,14 +145,10 @@ export function generalizedRedoxGrid(
     const rowD: number[] = [];
     const rowF: number[] = [];
     for (let i = 0; i < nx; i++) {
-      const { scores } = redoxGraphPotentials(graph, axisValue(pHRange, nx, i), pX, pe);
-      const adjusted = scores.map((value, index) => poolAdjustedScore(value, graph.nodes[index]));
-      const max = Math.max(...adjusted);
-      const weights = adjusted.map((value) => Math.pow(10, value - max));
-      const total = weights.reduce((sum, value) => sum + value, 0);
-      const winner = weights.indexOf(Math.max(...weights));
+      const { fractions } = redoxGraphPotentials(graph, axisValue(pHRange, nx, i), pX, pe);
+      const winner = fractions.indexOf(Math.max(...fractions));
       rowD.push(winner);
-      rowF.push(weights[winner] / total);
+      rowF.push(fractions[winner]);
       winCounts[winner] += 1;
     }
     dominant.push(rowD);
@@ -151,4 +166,9 @@ export function generalizedRedoxGrid(
     }
   }
   return { dominant, frac, nx, ny, xRange: pHRange, yRange: peRange };
+}
+
+/** Default metal atoms per formula for Pourbaix arbitrary species. */
+export function defaultPoolStoich(kind: 'ion' | 'hydroxide' | 'metal'): number {
+  return kind === 'hydroxide' ? 1 : 1;
 }

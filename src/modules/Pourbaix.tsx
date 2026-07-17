@@ -13,7 +13,7 @@ import {
 } from '../lib/pourbaix';
 import { formatMolar } from '../lib/format';
 import { useT } from '../hooks/useT';
-import { generalizedRedoxGrid, isRedoxGraphConnected, redoxGraphPotentials, type RedoxGraph } from '../lib/generalizedRedoxDiagram';
+import { generalizedRedoxGrid, isRedoxGraphConnected, redoxGraphPotentials, defaultPoolStoich, type RedoxGraph } from '../lib/generalizedRedoxDiagram';
 
 // ── Arbitrary custom system types ─────────────────────────────────────────────
 
@@ -328,6 +328,7 @@ export default function Pourbaix() {
       id: species.formula, label: species.formula,
       phase: species.kind === 'ion' ? 'aqueous' as const : 'solid' as const,
       logActivity: species.kind === 'ion' ? logC : 0,
+      poolStoich: defaultPoolStoich(species.kind),
     })),
     edges: [
       ...arb.couples.map((couple) => ({
@@ -360,7 +361,7 @@ export default function Pourbaix() {
     }
   }, [showGeneralizedGraph, useCustom, redoxGraphConnected, redoxGraph, cursorPH, graphPX, cursorE]);
   const graphDominant = graphPoint
-    ? redoxGraph.nodes[graphPoint.scores.indexOf(Math.max(...graphPoint.scores))]?.label ?? '—'
+    ? redoxGraph.nodes[graphPoint.fractions.indexOf(Math.max(...graphPoint.fractions))]?.label ?? '—'
     : null;
 
   const { traces, annotations } = useMemo(() => {
@@ -505,6 +506,7 @@ export default function Pourbaix() {
             ...(graphDominant ? [
               { label: t('pourbaix.graphPredominant'), value: graphDominant },
               { label: t('pourbaix.hessCycleError'), value: graphPoint!.maxCycleError.toExponential(1) },
+              { label: t('pourbaix.poolConservationError'), value: graphPoint!.poolError.toExponential(1) },
             ] : []),
           ]} />
         </PanelSection>
