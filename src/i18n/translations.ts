@@ -1697,6 +1697,7 @@ export const translations = {
   'solubilidadCondicional.noIdealGap': { es: 'No en el límite ideal', en: 'None in the ideal limit' },
   'titulacion.alternativeSignalsToggle': { es: 'Señales óptica y conductométrica', en: 'Optical and conductometric signals' },
   'titulacion.productEpsilon': { es: 'ε del producto', en: 'Product ε' },
+  'titulacion.lambdaSpectator': { es: 'λ ión (S·cm²/mol)', en: 'Ion λ (S·cm²/mol)' },
   'titulacion.absorbanceTab': { es: 'Absorbancia', en: 'Absorbance' },
   'titulacion.conductivityTab': { es: 'Conductividad', en: 'Conductivity' },
   'titulacion.backProtocolToggle': { es: 'Protocolo de retrovaloración', en: 'Back-titration protocol' },

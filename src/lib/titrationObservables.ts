@@ -1,4 +1,19 @@
 import { alphaFractions, saltCounterIons } from './equilibrium';
+import { alphaRedox } from './redox';
+
+const REDOX_ION_CHARGES: Record<string, { ox: number; red: number }> = {
+  fe: { ox: 3, red: 2 },
+  ce: { ox: 4, red: 3 },
+  mno4: { ox: -1, red: 2 },
+  cr2o7: { ox: -2, red: 3 },
+  sn: { ox: 4, red: 2 },
+  cu1: { ox: 2, red: 1 },
+  i2: { ox: 0, red: -1 },
+};
+
+export function redoxIonCharges(coupleId: string): { ox: number; red: number } {
+  return REDOX_ION_CHARGES[coupleId] ?? { ox: 1, red: 1 };
+}
 
 export function absorbanceFromComposition(
   concentrations: number[],
@@ -139,4 +154,111 @@ export function strongAcidConductometricCurve(params: {
     ));
   }
   return { volumes, conductivity, vEq };
+}
+
+export interface ComplexometricObservableParams {
+  volumesML: number[];
+  pMs: number[];
+  pYs: number[];
+  cMetal: number;
+  vMetalML: number;
+  metalCharge?: number;
+  productEpsilon?: number;
+  lambdaSpectator?: number;
+  lambdaLigand?: number;
+}
+
+/** Absorbance of the MY complex along a shared pM′/V curve. */
+export function complexometricOpticalFromCurve(params: ComplexometricObservableParams): {
+  volumes: number[];
+  absorbance: number[];
+} {
+  const {
+    volumesML, pMs, cMetal, vMetalML, productEpsilon = 100,
+  } = params;
+  const absorbance = volumesML.map((volume, index) => {
+    const vTotal = vMetalML + volume;
+    const cMetalDil = cMetal * vMetalML / vTotal;
+    const mFree = Math.pow(10, -pMs[index]);
+    const my = Math.max(cMetalDil - mFree, 0);
+    return absorbanceFromComposition([my], [productEpsilon]);
+  });
+  return { volumes: volumesML, absorbance };
+}
+
+/** Conductivity from free M′ and Y′ at each curve point (λ editable). */
+export function complexometricConductometricFromCurve(params: ComplexometricObservableParams): {
+  volumes: number[];
+  conductivity: number[];
+} {
+  const {
+    volumesML, pMs, pYs,
+    metalCharge = 2, lambdaSpectator = 50, lambdaLigand = 50,
+  } = params;
+  const ligandCharge = 4;
+  const conductivity = volumesML.map((_volume, index) => {
+    const mFree = Math.pow(10, -pMs[index]);
+    const yFree = Math.pow(10, -pYs[index]);
+    return conductivityFromComposition(
+      [mFree, yFree],
+      [lambdaSpectator * metalCharge * metalCharge, lambdaLigand * ligandCharge],
+    );
+  });
+  return { volumes: volumesML, conductivity };
+}
+
+export interface RedoxObservableParams {
+  volumesML: number[];
+  pes: number[];
+  pe0Analyte: number;
+  nAnalyte: number;
+  analyteCoupleId: string;
+  direction: 'oxidante' | 'reductor';
+  cAnalyte: number;
+  vAnalyteML: number;
+  cTitrant: number;
+  productEpsilon?: number;
+  lambdaSpectator?: number;
+}
+
+/** Absorbance of the titration product (Ox or Red) along the shared pe/V curve. */
+export function redoxOpticalFromCurve(params: RedoxObservableParams): {
+  volumes: number[];
+  absorbance: number[];
+} {
+  const {
+    volumesML, pes, pe0Analyte, nAnalyte, direction,
+    cAnalyte, vAnalyteML, productEpsilon = 100,
+  } = params;
+  const absorbance = volumesML.map((volume, index) => {
+    const vTotal = vAnalyteML + volume;
+    const cDil = cAnalyte * vAnalyteML / vTotal;
+    const { ox, red } = alphaRedox(pes[index], pe0Analyte, nAnalyte);
+    const productFrac = direction === 'oxidante' ? ox : red;
+    return absorbanceFromComposition([productFrac * cDil], [productEpsilon]);
+  });
+  return { volumes: volumesML, absorbance };
+}
+
+/** Conductivity from weighted Ox/Red ion charges along the shared pe/V curve. */
+export function redoxConductometricFromCurve(params: RedoxObservableParams): {
+  volumes: number[];
+  conductivity: number[];
+} {
+  const {
+    volumesML, pes, pe0Analyte, nAnalyte, analyteCoupleId,
+    cAnalyte, vAnalyteML, cTitrant, lambdaSpectator = 50,
+  } = params;
+  const { ox: chargeOx, red: chargeRed } = redoxIonCharges(analyteCoupleId);
+  const conductivity = volumesML.map((volume, index) => {
+    const vTotal = vAnalyteML + volume;
+    const cDil = cAnalyte * vAnalyteML / vTotal;
+    const cTitrantDil = cTitrant * volume / vTotal;
+    const { ox, red } = alphaRedox(pes[index], pe0Analyte, nAnalyte);
+    const kappaAnalyte = lambdaSpectator * (
+      chargeOx * chargeOx * ox * cDil + chargeRed * chargeRed * red * cDil
+    );
+    return kappaAnalyte + lambdaSpectator * cTitrantDil;
+  });
+  return { volumes: volumesML, conductivity };
 }

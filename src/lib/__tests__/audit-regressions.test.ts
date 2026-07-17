@@ -84,7 +84,12 @@ import { precipTitrationCurve } from '../precipTitration';
 import { finiteIdealSolidSolution, hasRegularSolutionMiscibilityGap, idealSolidSolutionAtComposition, regularSolutionGammas } from '../solidSolution';
 import { backTitration, runTitrationProtocol } from '../titrationProtocols';
 import { acidBaseEndpointError, endpointFromCurve } from '../endpointError';
-import { acidBaseConductometricFromCurve, acidBaseOpticalFromCurve, absorbanceFromComposition, strongAcidConductometricCurve } from '../titrationObservables';
+import {
+  acidBaseConductometricFromCurve, acidBaseOpticalFromCurve, absorbanceFromComposition,
+  complexometricConductometricFromCurve, complexometricOpticalFromCurve,
+  redoxConductometricFromCurve, redoxOpticalFromCurve,
+  strongAcidConductometricCurve,
+} from '../titrationObservables';
 import { equimolarAssociationLogKForTarget, solveReactionExtent } from '../stoichiometricQuantitativity';
 import { polynuclearEquivalencePotential, polynuclearNernstPotential, polynuclearPoolFractions } from '../polynuclearRedox';
 
@@ -843,6 +848,36 @@ describe('R2 advanced solids, protocols, endpoints and observables', () => {
       productEpsilon: 100,
     });
     expect(optical.absorbance[2]).toBeGreaterThan(optical.absorbance[0]);
+    const edta = edtaTitrationCurve({
+      logKf: 10.65, pH: 10, cMetal: 0.01, vMetal: 50, cEdta: 0.01, vMax: 100,
+    });
+    const edtaOptical = complexometricOpticalFromCurve({
+      volumesML: edta.volumes, pMs: edta.pMs, pYs: edta.pYs,
+      cMetal: 0.01, vMetalML: 50, productEpsilon: 100,
+    });
+    expect(edtaOptical.absorbance.at(-1)).toBeGreaterThan(edtaOptical.absorbance[0]);
+    const edtaCond = complexometricConductometricFromCurve({
+      volumesML: edta.volumes, pMs: edta.pMs, pYs: edta.pYs,
+      cMetal: 0.01, vMetalML: 50, metalCharge: 2, lambdaSpectator: 60,
+    });
+    expect(edtaCond.conductivity.at(-1)).toBeLessThan(edtaCond.conductivity[0]);
+    const redoxCurve = redoxTitrationCurve({
+      analyte: { id: 'fe', name: 'Fe', halfReaction: '', ox: 'Fe³⁺', red: 'Fe²⁺', E0: 0.771, n: 1, mH: 0, reference: '' },
+      titrant: { id: 'ce', name: 'Ce', halfReaction: '', ox: 'Ce⁴⁺', red: 'Ce³⁺', E0: 1.72, n: 1, mH: 0, reference: '' },
+      direction: 'oxidante', pH: 0, cAnalyte: 0.05, vAnalyte: 50, cTitrant: 0.05, vMax: 100, points: 100,
+    });
+    const redoxOptical = redoxOpticalFromCurve({
+      volumesML: redoxCurve.volumes, pes: redoxCurve.pes, pe0Analyte: redoxCurve.pe0cAnalyte,
+      nAnalyte: 1, analyteCoupleId: 'fe', direction: 'oxidante',
+      cAnalyte: 0.05, vAnalyteML: 50, cTitrant: 0.05, productEpsilon: 100,
+    });
+    expect(Math.max(...redoxOptical.absorbance)).toBeGreaterThan(Math.min(...redoxOptical.absorbance));
+    const redoxCond = redoxConductometricFromCurve({
+      volumesML: redoxCurve.volumes, pes: redoxCurve.pes, pe0Analyte: redoxCurve.pe0cAnalyte,
+      nAnalyte: 1, analyteCoupleId: 'fe', direction: 'oxidante',
+      cAnalyte: 0.05, vAnalyteML: 50, cTitrant: 0.05, lambdaSpectator: 80,
+    });
+    expect(redoxCond.conductivity.at(-1)).not.toBe(redoxCond.conductivity[0]);
   });
 });
 
