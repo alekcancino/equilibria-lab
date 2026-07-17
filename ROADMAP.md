@@ -596,14 +596,14 @@ now support arbitrary protonation ladders, self-consistent saturation pH and com
 ionic phases. The acid-base titration UI can switch among aqueous, precipitating, biphasic and
 finite-resin media without changing the formal equivalence definition. Shared engines conserve
 mass, charge, phase inventories and resin capacity; all R2-20 through R2-27 acceptance goldens pass.
-The focused audit file contains 38 regressions and the complete suite contains 318 tests; lint,
+The focused audit file contains **52** regressions and the complete suite contains **332** tests; lint,
 TypeScript and the production build pass.
 
 ### R2 thermodynamics, generalized diagrams and analytical signals (2026-07-16) — partial
 
 Implemented the remaining R2-28 through R2-41 findings in both calculation engines and visible UI.
-Post-merge review (2026-07-16) reopened **R2-11**, **R2-32**, **R2-38** and **R2-39** as partial —
-see Near-term remediation rows below. The rest of this block stands as shipped scope:
+PR **#95** (2026-07-16) landed the first remediation pass; see Near-term rows below for what remains.
+The rest of this block stands as shipped scope:
 
 - Solvent-aware acid–base state now shares autoprotolysis, neutrality, acidity domain, lionium/
   lyate labels and temperature-dependent Nernst slope. Water at 25 °C remains the exact legacy
@@ -627,7 +627,8 @@ New pure engines: `thermodynamicState.ts`, `ionPairing.ts`, `acidBaseMicrostates
 `titrationObservables.ts`, `stoichiometricQuantitativity.ts` and `polynuclearRedox.ts`.
 The focused audit suite contains **52** direct regressions; the complete gate passes 332 tests across
 18 files plus ESLint, TypeScript and the production build. Most R2 engine findings are implemented;
-R2-11, R2-32, R2-38 and R2-39 need corrective work before they can be marked closed again.
+**R2-11** remains partial; **R2-32**, **R2-38** and **R2-39** were partially remediated in #95 and
+may close further as follow-up PRs land.
 
 ### Near-term
 
@@ -639,9 +640,9 @@ R2-11, R2-32, R2-38 and R2-39 need corrective work before they can be marked clo
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
 | **Bilingual UI (Spanish / English)** | ✅ Done — all 16 modules across all 7 hubs fully bilingual (see resolved sections above). |
 | **R2 remediation — multi-salt precipitation stages (R2-11)** | 🟡 Partial — `sharedPrecipitationEquilibrium` and a static three-solid planner ship; editable pH/pL stage sequence and conserved precipitant across changing conditions still missing. |
-| **R2 remediation — phase-aware generalized redox (R2-32)** | 🟡 Partial — `generalizedRedoxDiagram` classifies N-state graphs with cycle closure; per-node phase, activity and pool stoichiometry are not yet concentration-dependent. |
-| **R2 remediation — quantitative endpoint errors (R2-38)** | 🟡 Partial — acid–base indicator error metrics ship in Titulación; dilution-aware endpoint math and complexometric/precipitation/redox coverage remain open. |
-| **R2 remediation — titration observables (R2-39)** | 🟡 Partial — Beer–Lambert and conductometric helpers exist; UI tabs still use stoichiometric/strong-acid approximations instead of the shared chemistry curve. |
+| **R2 remediation — phase-aware generalized redox (R2-32)** | 🟡 Partial — #95 added per-node phase/activity, pool stoichiometry, unstable-state suppression and Pourbaix disconnect guard; full concentration-dependent pool conservation checks still open. |
+| **R2 remediation — quantitative endpoint errors (R2-38)** | 🟡 Partial — #95 fixed dilution-aware acid–base endpoint math; complexometric, precipitation and redox endpoint coverage still open. |
+| **R2 remediation — titration observables (R2-39)** | ✅ Closed — absorbance and conductometry in Titulación (ácido-base, EDTA, redox) follow each sub-mode's shared curve; ε and molar λ are editable in the UI. |
 | **Worked-example gallery** | Loadable, solved problems per module to speed onboarding and serve as a reference for teaching. |
 | **2D predominance diagrams** | ✅ Done — pL–pH, pL–pX and pH–log[M] (Sillén) maps, dark-mode remap, CSV/PNG export, and the Sillén map's M1/M2 comparison + side-reaction mask all shipped (see resolved section above). |
 | **Migrate constants data to Medusa/HYDRA + NIST SRD-46** | Data breadth, not methodology: replace the current Harris/Skoog textbook constants with Medusa/HYDRA and NIST SRD-46 as the primary source, per-entry provenance citations. The calculation engines and chemistry methodology stay textbook-based (Harris, Skoog, Stumm & Morgan, Ringbom, Sillén) regardless of where the numeric constants come from — this only changes the *data*, not how it's used. Constants are facts, not copyrightable code, so this is independent of any tool's license. |
