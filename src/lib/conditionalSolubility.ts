@@ -126,3 +126,37 @@ export function sharedPrecipitationEquilibrium(params: {
     precipitantBalanceError: dissolvedPrecipitantMoles + solidPrecipitantMoles - totalX,
   };
 }
+
+export interface SequentialPrecipitationStage {
+  operatingPH: number;
+  result: SharedPrecipitationResult;
+}
+
+/**
+ * Evaluates the same finite precipitant pool at a user-ordered sequence of pH
+ * values. Alpha coefficients are recomputed at each stage; precipitant moles
+ * stay conserved across the sequence.
+ */
+export function sequentialSharedPrecipitation(params: {
+  salts: SharedPrecipitationSalt[];
+  logBetasOHBySalt: number[][];
+  totalPrecipitantMoles: number;
+  volume: number;
+  alphaX?: number;
+  stagePHs: number[];
+  alphaMetalAtPH: (logBetasOH: number[], pH: number) => number;
+}): SequentialPrecipitationStage[] {
+  const { stagePHs, alphaMetalAtPH, volume, alphaX, totalPrecipitantMoles, logBetasOHBySalt } = params;
+  return stagePHs.map((operatingPH) => ({
+    operatingPH,
+    result: sharedPrecipitationEquilibrium({
+      salts: params.salts.map((salt, index) => ({
+        ...salt,
+        alphaM: alphaMetalAtPH(logBetasOHBySalt[index] ?? [], operatingPH),
+      })),
+      totalPrecipitantMoles,
+      volume,
+      alphaX,
+    }),
+  }));
+}

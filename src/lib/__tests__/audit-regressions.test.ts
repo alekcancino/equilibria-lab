@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bufferCapacityAtPH } from '../bufferCapacity';
 import { conditionalPKa, conditionalPKas } from '../acidBaseConditional';
-import { alphaH, condLogK, conditionalLogK } from '../conditional';
+import { alphaH, alphaOH, condLogK, conditionalLogK } from '../conditional';
 import {
   combineSideReactionBranches,
   composeAlphas,
@@ -33,6 +33,7 @@ import {
   conditionalMolarSolubility,
   conditionalPKsp,
   sharedPrecipitationEquilibrium,
+  sequentialSharedPrecipitation,
   solubilityWithCationComplexation,
 } from '../conditionalSolubility';
 import {
@@ -83,7 +84,7 @@ import { conditionalPKspForPrecipitation, conditionalPrecipSensorCurve } from '.
 import { precipTitrationCurve } from '../precipTitration';
 import { finiteIdealSolidSolution, hasRegularSolutionMiscibilityGap, idealSolidSolutionAtComposition, regularSolutionGammas } from '../solidSolution';
 import { backTitration, runTitrationProtocol } from '../titrationProtocols';
-import { acidBaseEndpointError, endpointFromCurve } from '../endpointError';
+import { acidBaseEndpointError, complexometricEndpointError, complexometricIndicatorFraction, endpointFromCurve, precipitationEndpointError, redoxEndpointError } from '../endpointError';
 import {
   acidBaseConductometricFromCurve, acidBaseOpticalFromCurve, absorbanceFromComposition,
   complexometricConductometricFromCurve, complexometricOpticalFromCurve,
@@ -413,6 +414,23 @@ describe('R2 separation and conditional-solubility extensions', () => {
     result.dissolvedFormulaMoles.forEach((amount, index) => {
       expect(amount + result.precipitatedFormulaMoles[index]).toBeCloseTo(1e-3, 12);
     });
+  });
+
+  it('conserves precipitant across sequential stage pH values', () => {
+    const stages = sequentialSharedPrecipitation({
+      salts: [
+        { label: 'Fe', pKsp: 15, m: 1, x: 2, totalFormulaMoles: 0.01, alphaM: 1 },
+        { label: 'Ni', pKsp: 14, m: 1, x: 2, totalFormulaMoles: 0.01, alphaM: 1 },
+      ],
+      logBetasOHBySalt: [[], []],
+      totalPrecipitantMoles: 0.03,
+      volume: 1,
+      stagePHs: [8, 10, 12],
+      alphaMetalAtPH: alphaOH,
+    });
+    expect(stages).toHaveLength(3);
+    stages.forEach((stage) => expect(Math.abs(stage.result.precipitantBalanceError)).toBeLessThan(1e-10));
+    expect(stages[2].result.precipitatedFormulaMoles[0]).toBeGreaterThanOrEqual(stages[0].result.precipitatedFormulaMoles[0]);
   });
 
   it('routes sequential extraction phases without reinitializing or losing analyte', () => {
@@ -806,6 +824,37 @@ describe('R2 advanced solids, protocols, endpoints and observables', () => {
     const interpolated = endpointFromCurve({ volumes: [0, 10, 20], signal: [2, 7, 12], endpointSignal: 7, equivalenceVolume: 9.5, titrantConcentration: 0.1, analyteMoles: 0.001 });
     expect(interpolated.volumeTP).toBe(10);
     expect(interpolated.volumeError).toBe(0.5);
+    expect(complexometricIndicatorFraction(10)).toBeGreaterThan(0.9);
+    const edtaCurve = edtaTitrationCurve({
+      logKf: 10.65, pH: 10, cMetal: 0.01, vMetal: 50, cEdta: 0.01, vMax: 100,
+    });
+    const complexEndpoint = complexometricEndpointError({
+      volumes: edtaCurve.volumes,
+      pMs: edtaCurve.pMs,
+      indicatorPM: edtaCurve.pMs[Math.floor(edtaCurve.pMs.length * 0.45)] ?? edtaCurve.pMs[0],
+      equivalenceVolume: edtaCurve.vEq,
+      titrantConcentration: 0.01,
+      analyteMoles: 0.0005,
+    });
+    expect(complexEndpoint.volumeTP).toBeGreaterThan(0);
+    const precipEndpoint = precipitationEndpointError({
+      volumes: [0, 10, 20, 30],
+      pTarget: [8, 7.9, 7.5, 6],
+      endpointPTarget: 7.8,
+      equivalenceVolume: 25,
+      titrantConcentration: 0.1,
+      analyteMoles: 0.0025,
+    });
+    expect(precipEndpoint.volumeTP).toBeGreaterThan(0);
+    const redoxEndpoint = redoxEndpointError({
+      volumes: [0, 10, 20, 30],
+      signal: [0.4, 0.6, 0.85, 1.0],
+      endpointSignal: 0.85,
+      equivalenceVolume: 25,
+      titrantConcentration: 0.05,
+      analyteMoles: 0.0025,
+    });
+    expect(redoxEndpoint.volumeTP).toBeCloseTo(20, 0);
   });
 
   it('derives optical and conductometric signals without changing chemistry', () => {
