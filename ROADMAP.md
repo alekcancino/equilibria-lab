@@ -630,6 +630,412 @@ The focused audit suite contains **52** direct regressions; the complete gate pa
 **R2-11** and **R2-38** were partially remediated in #95 and closed further in follow-up PRs;
 **R2-32** closed in follow-up PRs; no open R2 engine items remain from the audit remediation backlog.
 
+### Full bilingual product UI audit (2026-07-16–17) — code and live-render lanes complete
+
+This audit treats the interface as a product for two audiences: a learner who knows the basic
+chemistry and should understand what to do next, and an experienced user who already knows the
+model and needs fast, precise access to its full parameter space. The review covers the home and
+global shell, all 16 modules, all five titration modes, Spanish and English presentation, light and
+dark themes, desktop/mobile structure, accessibility semantics, scientific legibility and
+engine-to-UI parity.
+
+The code/architecture lane and a representative exhaustive browser lane are complete. The live
+pass covered Home, all 16 modules, all five titration modes, Spanish and English, 1440×900 desktop,
+390×844 mobile, keyboard interaction, state-bearing reloads, one dark-theme chart family and
+advanced custom states. Fifty-two screenshots were retained as local QA evidence. No UI
+corrections were made during this audit.
+
+#### Executive verdict
+
+The visual language is coherent and materially stronger than the pre-redesign app: the shell,
+section cards, model badges, metric header, chart cards and bilingual translation hook establish a
+recognizable product. The main remaining problem is no longer visual styling in isolation. It is
+**information architecture**: recently added expert capabilities are technically present but often
+compete with the basic workflow at the same visual level. A learner can obtain an answer, but is
+not consistently taught why that answer matters or which next control to change; an expert can
+reach most features, but must remember where they are hidden and scan long sidebars to do so.
+
+The remediation should therefore preserve the current design system and reorganize the product
+around a three-level progression in every module:
+
+1. **Start** — choose a goal or load a representative system; show the minimum inputs.
+2. **Understand** — expose the operating point, dominant chemistry and one plain-language reading
+   of the graph.
+3. **Extend** — reveal conditional reactions, competing phases, alternate signals and diagnostics
+   without making them disappear from expert workflows.
+
+#### Priority scale and global findings
+
+| ID | Priority | Finding | Evidence / impact | Acceptance criterion |
+| --- | --- | --- | --- | --- |
+| **UX-G01** | P0 | Numeric fields can silently leave the advertised model domain. | `NumberField` receives no `min`/`max`; a typed value can exceed the paired slider while the range thumb merely clamps visually. This can make the displayed control and the calculation disagree and can run equations outside their validated range. | Every numeric input has an explicit policy: hard bound with inline validation, or intentional expert override with a visible out-of-domain warning. The field, slider, calculation and serialized state always agree. |
+| **UX-G02** | P1 | English is not end-to-end English. | Hub assumptions, plot toolbar labels, the diagram tablist label and the chart-loading fallback remain Spanish. Human-readable database names, groups, preset descriptions and redox caveats also appear in Spanish inside English workflows. | All visible and assistive UI prose follows the selected language. Formulas, species labels and user-entered names remain language-neutral. Database records separate chemistry data from localized presentation text. |
+| **UX-G03** | P1 | Shared controls are visually labelled but not programmatically named. | Range and numeric inputs are adjacent to `<span>` labels rather than associated `<label>`/`aria-labelledby` elements; several custom selects and segmented controls have the same issue. | Every input has an accessible name, units and help/error association; a screen-reader pass can identify control purpose and current value without relying on visual proximity. |
+| **UX-G04** | P1 | Mobile variables sheet is not a complete modal interaction. | The closed sheet remains mounted with focusable descendants, has `aria-hidden` but no inert state, focus trap, Escape handling or focus return. | Opening moves focus into the sheet; Tab stays inside; Escape/close returns focus to the Variables button; closed content cannot receive focus; background is inert. |
+| **UX-G05** | P1 | Tab patterns are incomplete for keyboard users. | Global topic tabs and `DiagramTabs` expose tab roles but do not implement arrow-key navigation. The titration mode tabs lack the same semantic contract. | All tablists implement Left/Right/Home/End, roving `tabIndex`, correct panels and focus-visible states, or use a simpler button-group pattern without partial ARIA. |
+| **UX-G06** | P1 | The product lacks an explicit beginner-to-expert path. | Home is organized by chemistry taxonomy only; modules open directly into variables and charts; optional expert layers often sit beside the core inputs. | Home offers goal-based entry and worked examples; every module identifies a recommended starting workflow and groups expert layers under clearly labelled, searchable disclosures. Expert controls remain reachable in at most two actions. |
+| **UX-G07** | P1 | Important results are duplicated rather than prioritized. | Most modules render a long sidebar `ResultCard` and repeat a subset in the metric header. Large states can produce many wrapped metrics, especially on mobile. | One decision-oriented result summary is primary; detailed diagnostics live in a secondary expandable area. Duplicate values are removed unless the second placement serves a distinct workflow. |
+| **UX-G08** | P1 | Small-height and intermediate-width layouts are at risk of clipping. | Mobile charts enforce at least 55 vh/320 px while the fixed shell, tabs, metric rows and footer share a `100dvh` app with hidden overflow. Desktop switches to mobile navigation only at 800 px although seven topic pills plus brand/actions require substantially more width. **Render-check.** | Verify 360×640, 390×844, phone landscape, 768/820/1024 px and 200% zoom. No chart, toolbar, metric or navigation control is clipped; the shell chooses compact navigation before collision. |
+| **UX-G09** | P1 | Scientific chart reading relies too heavily on color and hover. | Many multi-species traces differ only by color; Plotly hover is the only exact readout; 2D maps and prediction bands do not share one consistent read-point pattern. | Series remain distinguishable without color alone; each chart supports keyboard/touch-accessible read values or a synchronized operating-point table; legends and units remain visible at narrow widths. |
+| **UX-G10** | P1 | Model validity is explained inconsistently and too late. | Activity models are plotted to `I = 2` even where their documented validity is much lower; related modules allow `I = 0.5` with extended Debye–Hückel selected. Limits live mainly in hints or assumptions, not at the operating point. | Invalid/approximate regions are shaded or warned inline; selecting a model updates the recommended range; exported scenarios preserve the warning state. |
+| **UX-G11** | P2 | Error states are often separated from the control that caused them. | Failed roots and incompatible coupled systems commonly become `—`, an empty plot or a paragraph in the results section after the user has scrolled away from the input. | Errors identify the offending variable, appear next to it, preserve the last valid visualization where safe and suggest a concrete recovery action. |
+| **UX-G12** | P2 | Help coverage is uneven. | Some advanced modules expose dozens of variables with only two to four glossary triggers; Redox relies entirely on help inside the nested couple editor. | Every non-obvious symbol has one concise definition, units, valid range and effect on the result. Repeated notation uses the same glossary entry everywhere. |
+| **UX-G13** | P2 | Chart and panel typography becomes too dense for teaching use. | Many explanatory labels and metric keys are 11–12 px; long formulas and multi-line results must fit a fixed 320 px panel. **Render-check.** | Body/help text remains readable at 100% and 200% zoom; long formulas wrap or move to a dedicated equation block; critical labels are not reduced below the design-system reading size. |
+| **UX-G14** | P2 | Icon and disclosure language is not fully consistent. | Emoji section icons, native `<details>`, custom `Disclosure`, collapsible `PanelSection` and bespoke inline buttons coexist. | Establish one disclosure hierarchy and one icon set; interactive affordances have consistent hit areas, caret motion, focus styling and accessible labels. |
+| **UX-G15** | P3 | Collapsing the desktop sidebar animates `width`. | The deterministic UI detector flagged `transition: width` in `App.css`, which can trigger layout work while Plotly is resizing. | Use a transform/grid-based reveal or verify that chart resizing remains smooth on representative hardware; reduced motion remains respected. |
+| **UX-G16** | P1 | Browser Back/Forward does not represent in-app navigation. | Topic/module changes use only `history.replaceState`, and App registers no `popstate` listener. A user cannot return to the previous module with Back, and forward navigation cannot restore app state. | Use deliberate history entries for user navigation, keep debounced parameter edits replace-only, and synchronize App state on `popstate`; add Home → module → submodule → Back/Forward tests. |
+| **UX-G17** | P2 | Save/share failures are silent. | Clipboard and localStorage operations are best-effort; a storage-full/private-mode write can appear saved in the current UI but disappear after reload, and no persistent error is shown. | Confirm durable save before success feedback; report clipboard/storage failure with a recoverable action; test private mode, denied clipboard and quota exhaustion. |
+| **UX-G18** | P2 | The chart payload needs an explicit performance budget. | The verified production build emits a 1.079 MB minified Plotly chunk (358 kB gzip) plus a 343 kB main chunk. Plotly is lazy-loaded, but first-chart latency is part of every module's core experience, especially on mobile. | Measure cold first-chart render on a mid-range phone, keep the shell interactive during load, localize the loading state and set regression budgets for JS transfer and interaction latency. |
+| **UX-G19** | P2 | Bilingual completeness has no automated regression gate. | The 334-test suite passes, but no test scans shared chrome/module surfaces for untranslated Spanish literals or verifies representative ES/EN render output. Current leaks are therefore invisible to CI. | Add dictionary completeness/type checks, a source allowlist for notation/export metadata, and representative rendered assertions for shared chrome plus every module in both languages. |
+
+#### Global product and learning architecture
+
+| ID | Priority | Finding | Acceptance criterion |
+| --- | --- | --- | --- |
+| **UX-P01** | P1 | Home asks which equilibrium to study, but not what problem the user is trying to solve. | Add goal-oriented routes such as “predict pH”, “choose a separation pH”, “select an indicator” and “build a custom system”; show the destination module before opening it. |
+| **UX-P02** | P1 | There is no canonical worked-example entry point despite the engine breadth. | Ship the planned example gallery with one basic and one advanced loadable scenario per module, a short expected observation and reset-safe state. |
+| **UX-P03** | P1 | Related modules overlap without explaining which one to use. | Add contextual handoffs: Mixtures → unified acid–base titration; Solubility → salt/conditional/competitive variants; Redox → conditional potential/Pourbaix; each handoff states what capability is added. |
+| **UX-P04** | P2 | “Assumptions” is duplicated in subnav and footer and is hidden differently on mobile. | Provide one responsive assumptions surface with model, validity and active corrections summarized at the point of use. |
+| **UX-P05** | P2 | Save/share/reset are visually compact but lack scenario context. | The save menu shows module + active sub-mode, confirms overwrite/delete, and share feedback states that all current variables were captured. |
+| **UX-P06** | P2 | Exports are implementation-oriented rather than language-aware product artifacts. | Keep chemistry metadata stable, but localize toolbar/status UI and document whether CSV headers are intentionally canonical or localized; do not mix languages inside one export. |
+
+#### Module-by-module findings
+
+##### Acid–base
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-AB01** | P1 | The glycine microstate model is presented as a peer of the basic acid system. Mark it as an advanced, topology-specific workflow; collapse it by default and load a named glycine example so four microscopic constants are not mistaken for generic pKa inputs. |
+| **UX-AB02** | P1 | Add a synchronized arbitrary-pH read point with species fractions and charge, not only the calculated pure-solution pH and Plotly hover. This is the bridge from “see the curve” to “solve the exercise”. |
+| **UX-AB03** | P1 | Localize the hardcoded `Fracción α` y-axis and preset presentation in English. |
+| **UX-AB04** | P2 | The shared solvent/temperature engine is exposed only in acid–base titration. Either expose the same thermodynamic-state selector here and in Mixtures, or state explicitly that these views are aqueous/25 °C and link to the advanced titration workflow. |
+
+##### Acid–base mixtures
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-MX01** | P1 | The default chart is buffer capacity while the primary novice question is the mixture pH and composition; the titration tab is initially an empty state. Start with a mixture operating-point/speciation view, then offer buffer capacity and titration as extensions. |
+| **UX-MX02** | P1 | Up to four full `AcidSystemEditor` instances create a very long sidebar. Use compact component summaries with one expanded editor at a time and preserve quick comparison of concentration/prepared form. |
+| **UX-MX03** | P1 | The derivative is normalized onto the 0–14 pH axis, which visually implies shared units. Give it a separate axis/panel or label it explicitly as normalized. |
+| **UX-MX04** | P2 | Clarify that this quick titration view is less complete than the unified titration module and provide a one-click “continue in Titrations” handoff with compatible state. |
+
+##### Complexation
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-CX01** | P1 | Promote the three real workflows—single ligand, Ringbom conditional scale and coupled X–M–L—to a clearly named mode selector with one-sentence consequences. The current “second agent” control still requires prior conceptual knowledge. |
+| **UX-CX02** | P1 | Add operating-point help for pL/pX, free versus analytical ligand and Bjerrum number; the current glossary coverage is too sparse for the number of symbols shown. |
+| **UX-CX03** | P2 | Support chart click/keyboard readout that updates the pL/pX operating point and the result summary. Keep mass-balance and activity corrections in an Advanced group. |
+
+##### Metal speciation
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-MS01** | P1 | Conditional pL′, solid phase and joint feasibility are powerful but appear as nested toggles inside the main metal editor. Separate “aqueous speciation” from “phase/feasibility map” workflows and summarize active constraints above the chart. |
+| **UX-MS02** | P1 | Failed free-ligand balances should highlight the responsible totals/constants next to their inputs instead of explaining the failure only below the result block. |
+| **UX-MS03** | P2 | Localize preset groups/descriptions and distinguish analytical totals from the free pL/pX values returned by the solver in every result label. |
+
+##### Conditional constants
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-CC01** | P1 | The primary section mixes M–Y identity, all side reactions, multiple reactions, evaluation pH, concentration and formation target. Keep identity + Kf + pH visible; group side reactions, competing reactions and target analysis into named advanced tasks. |
+| **UX-CC02** | P1 | The same percentage control is used for “negligible” (0.1%) and “formed/masked” (99.9%) goals, while the log-K threshold is separate. Make the question explicit—formation, masking or titration sharpness—and derive the relevant criterion. |
+| **UX-CC03** | P2 | The “optimal pH” result must state which constraints and target produced it, and distinguish mathematical maximum K′ from an experimentally feasible operating window. |
+
+##### Redox
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-RX01** | P0 | “Spontaneous reaction” currently shows only the selected oxidant plus reductant, not a balanced reaction or products. Render the complete direction, stoichiometric coefficients, electrons cancelled and log K so the UI cannot be mistaken for a solved equation when it is only a reactant pair. |
+| **UX-RX02** | P1 | Add an arbitrary pe/E operating point with all four fractions and a clear E↔pe conversion. Hover alone is insufficient for exercise solving. |
+| **UX-RX03** | P1 | Localize database caveats and keep them attached to both the selected couple and any result they qualify. |
+| **UX-RX04** | P2 | Expose temperature where the engine supports a variable Nernst slope, or label this module unambiguously as 25 °C. |
+
+##### Conditional potential
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-PC01** | P1 | This is the highest-density non-titration module: pH dependence, per-state complexation, intrinsic polynomials, a third Latimer couple, pX diagrams, a second ligand and an electrode calculator share one sidebar. Split them into task-level views with shared couple state. |
+| **UX-PC02** | P1 | Replace expert-only entry labels such as “intrinsic polynomial” with a plain-language question plus the formal term; keep coefficient editors behind Advanced. |
+| **UX-PC03** | P2 | The electrode section repeats its title as its toggle label. Use an action label, and move diagram-specific controls next to the diagram/tab they affect. |
+
+##### Pourbaix
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-PB01** | P1 | The custom species/couple editor uses tiny unlabeled × controls, inline styles and dense rows that do not match shared controls. Rebuild it with labelled remove actions, consistent field groups and row-level validation. |
+| **UX-PB02** | P1 | Let users click/tap the diagram to set pH/E and read the stable region; preserve sliders for precision and keyboard access. |
+| **UX-PB03** | P2 | Before converting a preset to custom mode, state what will and will not transfer. Graph connectivity, Hess-cycle and pool-conservation diagnostics need plain-language remediation beside the offending edge/node. |
+
+##### General solubility
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-SO01** | P0 | Molecular-solid mode renders both a standalone first-pKa slider and a full pKa list controlling the same value. Remove the duplicate and use one ladder editor. |
+| **UX-SO02** | P1 | Ionic salts and molecular acid/base solids are distinct mental models. Keep the mode switch, but change the title, equation preview, presets and result vocabulary as one coherent package when the mode changes. |
+| **UX-SO03** | P1 | Show which phase limits solubility and why at the selected pH, especially when a competing ionic phase is enabled. |
+| **UX-SO04** | P1 | Apply the global activity-model validity warning here; a typed ionic strength outside the selected model's domain cannot pass silently. |
+
+##### Salt solubility versus pH
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-SS01** | P1 | Explain when to use this view instead of General solubility or Selective precipitation; current names are too similar for a learner. |
+| **UX-SS02** | P1 | The long symbolic molar-solubility formula is placed in a 320 px result row. Move it to a readable equation block and keep the result card numerical. |
+| **UX-SS03** | P2 | Collapse the finite coupled-balance layer by default, describe its conservation inputs and review whether gamma-model selection should match the other solubility modules. |
+
+##### Selective / conditional precipitation
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-SP01** | P1 | Break the current long panel into “single solid”, “compare/select”, “plan stages” and “complexant pX” workflows. Solid solution and three-metal staging should not compete visually with the default hydroxide curve. |
+| **UX-SP02** | P1 | The result card can expand to many rows of thresholds, purity, redissolution, stage recoveries, shared pool and miscibility. Lead with one decision—recommended window/stage—and move diagnostics into grouped details. |
+| **UX-SP03** | P1 | The stage planner should expose a complete editable third candidate (including hydrolysis/side-reaction terms), add/remove stages and report mass conservation and per-stream purity, not only recovery strings. |
+| **UX-SP04** | P2 | Explain ideal versus regular solid solutions, interaction parameter and miscibility-gap result before exposing the slider. |
+
+##### Competitive precipitation
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-CP01** | P2 | This is the strongest focused advanced flow and should be used as a structural baseline. Add an explicit reaction/stoichiometry summary and a synchronized operating-point cursor for the added common ion. |
+| **UX-CP02** | P2 | Present the quantitativity target as a decision sentence (“Can salt A reach 99.9% before B starts?”), then show the p-ion window and residual contamination. |
+
+##### Liquid–liquid extraction
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-EX01** | P0 | For polyprotic analytes, the neutral form is changed through a tiny `+1` button embedded in hint text. Replace it with an explicit species selector showing charge/formula and the consequence for D. |
+| **UX-EX02** | P1 | The sequential planner is fixed to three stages although the engine accepts a stage array. Support add/remove/reorder, explicit continued/collected phase, stream labels, purity, recovery and conservation error. |
+| **UX-EX03** | P1 | Separate one extraction, repeated identical extractions, preconcentration and routed multi-stage extraction as progressive tasks; their controls currently share one Conditions section. |
+| **UX-EX04** | P2 | Move dimerization and conditional chelate coefficients into model-specific Advanced groups and explain why they change the plotted distribution ratio. |
+
+##### Ion exchange
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-IX01** | P0 | Router/share identity mismatch: App registers `ionexchange`, while the module serializes and saves `ionex`. A shared or reloaded state can fall back to Home. Use one canonical ID and add reload/share/save regression tests. |
+| **UX-IX02** | P1 | The engine accepts charge magnitudes for cationic or anionic exchange, but the UI consistently says “cation A/B” and offers only positive-charge semantics. Expose resin mode and ion sign/role, or explicitly scope the UI to cation exchange. |
+| **UX-IX03** | P1 | EDTA elution is hardcoded to NiY and Ni inventory even when the user has renamed ion A. Generalize labels/parameters to the selected ion or present it as a named Ni example that intentionally replaces the system. |
+| **UX-IX04** | P1 | Batch capacity in eq/L resin and proton-competition inputs in meq/g + resin mass appear in adjacent workflows without a conversion/relationship. Separate the models and state their conserved quantity and units. |
+| **UX-IX05** | P2 | Localize resin/application preset names in English and clarify which controls affect batch equilibrium, isotherm, breakthrough and multi-zone column charts. |
+
+##### Titrations — shared shell
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-TG01** | P1 | The five modes are chemistry categories only. Add a one-line purpose/result under each mode (pH endpoint, pM/indicator, E/pe, precipitation endpoint, sensor calibration) and preserve the active mode in save/share labels. |
+| **UX-TG02** | P1 | Use a consistent section order across modes: reaction → amounts → detection → advanced chemistry → decision/result. Current mode-specific ordering and labels drift. |
+| **UX-TG03** | P1 | Alternative absorbance/conductivity traces need units, editable species coefficients with chemical labels and a statement of the simplifying signal model; `A` or `κ` alone is insufficient. |
+
+##### Titration — acid–base
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-TA01** | P1 | Water/solvent, temperature, three mutually exclusive coupled media, activity, initial mixtures, conditional pKas, alternate signals and back titration overwhelm the default path. Keep analyte/titrant/amounts/indicator visible and place the rest in named advanced workflows. |
+| **UX-TA02** | P1 | Replace the three coupling checkboxes with one mutually exclusive medium selector (aqueous, precipitating, biphasic, resin) so the UI matches the state invariant already enforced in code. |
+| **UX-TA03** | P1 | Explain the distinction among exact equivalence, Gran estimate and visual endpoint before showing three error metrics; make the selected primary answer explicit. |
+
+##### Titration — EDTA
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-TE01** | P1 | Separate direct/back titration, competitive second metal, side reactions, indicator selection and potentiometric signal into progressive tasks. The mode is powerful but requires scanning multiple open cards to understand which curve is active. |
+| **UX-TE02** | P1 | Localize metallochromic indicator names/notes and attach blocking/interference warnings to the chosen metal/pH decision, not only as database prose. |
+| **UX-TE03** | P2 | Make free fraction `fY`, reciprocal `alphaY`, conditional K′ and pM′/pY′ relationships visible in one compact calculation trail. |
+
+##### Titration — redox
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-TR01** | P1 | Multiple analytes, conditional state networks, polynuclear correction, alternative signals and indicator error need a workflow selector and an active-model summary above the plot. |
+| **UX-TR02** | P1 | Render the balanced titration reaction and the limiting log K, including unequal electron stoichiometry, before presenting the curve. |
+| **UX-TR03** | P2 | Present E and pe as switchable representations of one signal and state the reference electrode/temperature wherever E is shown. |
+
+##### Titration — precipitation
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-TP01** | P1 | “Visualization” mixes p-cation axis, Mohr indicator, derivative and a conditional electrochemical sensor. Split chart display from endpoint method and sensor model. |
+| **UX-TP02** | P1 | Keep the general MmXx stoichiometry visible, but explain when Mohr is unavailable and why rather than conditionally removing it without a persistent scope note. |
+| **UX-TP03** | P2 | Show exact equivalence, indicator endpoint and relative error as one comparison instead of isolated result rows. |
+
+##### Titration — potentiometric
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-TV01** | P1 | First and second derivatives are scaled into the potential plot's range, which can imply physical shared units. Use separate axes/panels with actual units. |
+| **UX-TV02** | P1 | The glass-electrode slope is fixed at 25 °C while temperature is exposed in other analytical-signal workflows. Add temperature or make the fixed assumption explicit beside Kref. |
+| **UX-TV03** | P2 | Distinguish calibration parameters from chemistry inputs and explain when derivative zero crossing or Gran is the preferred endpoint estimate. |
+
+##### Activity
+
+| ID | Priority | Finding and required change |
+| --- | --- | --- |
+| **UX-AC01** | P0 | Gamma curves extend to `I = 2` for models whose useful domain is much lower. Shade invalid/approximate regions, adjust the axis by model and prevent a clean-looking extrapolation from being read as validated chemistry. |
+| **UX-AC02** | P1 | Reference pH changes the `a_H` metric but not the main gamma chart, with no strong explanation of that dependency. Group it with an explicit activity calculation or remove it from the default conditions. |
+| **UX-AC03** | P1 | Ion pairing exposes pKi and pKd without naming the molecular species, ion pair or free ions. Add an editable reaction scheme and connect each constant to the plotted bars. |
+| **UX-AC04** | P2 | The transfer-free-energy/cycle utilities in the engine are not surfaced. Add an advanced thermodynamic-cycle view or keep them explicitly internal; do not imply the current ion-pair panel exposes the entire engine. |
+
+#### Live-render audit results (2026-07-17)
+
+The browser pass confirms that the engine breadth is reachable from the interface: arbitrary
+Pourbaix species/couples, auxiliary-ligand masking, second-metal comparison, staged selective
+precipitation and every titration mode all recalculated without runtime errors. The dark Pourbaix
+view remained coherent, every module opened in both languages, and no document-level horizontal
+overflow appeared at 390×844. The console remained free of runtime errors across the complete
+navigation pass.
+
+The beginner and expert outcomes are nevertheless different. An expert can reach most of the
+calculation engine, but long sidebars and weak task grouping make discovery depend on prior
+knowledge. A learner can change inputs and receive results, but the product does not consistently
+explain which variable to try next, why a graph changed, or how to recover from an invalid value.
+The three-level **Start → Understand → Extend** structure above remains the target architecture.
+
+The live pass produced ten reproducible defects. The IDs below are the canonical implementation
+backlog; each acceptance criterion must be verified in both languages where presentation is
+involved.
+
+| QA ID | Priority | Confirmed defect | Reproduction / affected surfaces | Acceptance criterion |
+| --- | --- | --- | --- | --- |
+| **QA-UI-01** | P0 | Direct numeric entry can bypass the paired slider and modeled domain. | In Acid–base, enter pKa `99`: the field remains 99, the slider stops at 35 and pH/speciation/transition results update without warning. Confirms **UX-G01**. | Centralize numeric normalization and validation. Field, slider, serialized state and engine input must agree; an intentional expert override must show a persistent out-of-domain warning. Add boundary, paste, blur, Enter and reload tests. |
+| **QA-UI-02** | P1 | Browser Back exits the application instead of restoring the prior module. | Fresh Home → Acid–base → Complexes → Back reaches `about:blank`; reproduced three times. Confirms **UX-G16**. | User navigation creates history entries, parameter edits remain replace-only, and `popstate` restores Home/module/submode/state. Add Back/Forward integration coverage. |
+| **QA-UI-03** | P1 | English mode still contains Spanish learning and assistive content. | Acid database groups/descriptions, module assumptions, Complexes presets and chart-toolbar accessible labels remain Spanish. Confirms **UX-G02** and **UX-G19**. | Localize all human-readable presets, assumptions, loading/status and assistive labels; keep formulas/species neutral; add an automated bilingual literal/completeness gate. |
+| **QA-UI-04** | P0 | The Acid–base predominance diagram is unreadable at phone scale. | At 390×844 the diagram is a 308×140 SVG centered in a much larger card; species, pKa and axis glyphs render at roughly 8–10 px. Confirms the mobile risk in **UX-G08/UX-G13**. | Give the diagram a responsive mobile layout, readable type and labels, useful use of card height and a 200% zoom check at 360×640 and 390×844. |
+| **QA-UI-05** | P1 | Floating mobile controls obscure chart legends, labels and data. | Variables and reset/export controls overlap charts in Activity, Complexes, Redox, Pourbaix, Ion exchange and titration. | Reserve chart safe areas or move tools into a non-overlapping mobile toolbar; verify all chart families with long legends and both languages. |
+| **QA-UI-06** | P1 | Horizontal mobile tab strips conceal options without an affordance. | Titration clips Acid–base at the left and Potentiometric at the right; Extraction and Ion exchange hide later analytical views. | Keep the active item fully visible and provide scroll snapping plus a visible continuation cue, arrows or an alternate compact selector. Test touch, keyboard and programmatic mode changes. |
+| **QA-UI-07** | P1 | The mobile Variables modal has an incomplete focus lifecycle. | Opening leaves focus on the background trigger; Shift+Tab escapes and Escape does not close. Confirms **UX-G04**. | Move focus inside, trap Tab, make background inert, close on Escape and restore focus to the trigger. Add keyboard tests for open, close and route change. |
+| **QA-UI-08** | P1 | ARIA tablists do not implement arrow-key navigation. | ArrowRight changes neither focus nor selection in diagram or top-level topic tabs. Confirms **UX-G05**. | Implement roving focus with Left/Right/Home/End and associated panels, or replace partial tab semantics with an appropriate button group. |
+| **QA-UI-09** | P1 | Long English module titles collapse beside header actions. | In the 320 px desktop panel, “Liquid–liquid extraction” is squeezed into a column approximately 49 px wide; Acid–base also wraps to three lines. | Give title and actions separate responsive rows or priorities; titles must remain readable without shrinking action hit areas in both languages. |
+| **QA-UI-10** | P0 | Ion exchange state/share URLs cannot be restored. | The module opens as `m=ionexchange`, serializes as `m=ionex&s=…`, then reloads to Home and loses the scenario; reproduced twice. Confirms **UX-IX01**. | Use one canonical route/state ID, migrate or reject legacy aliases deliberately, and add save/share/reload tests that assert the complete scenario after a fresh load. |
+
+Audit baseline score: **86/100** — three high-severity defects, seven medium-severity defects and no
+console failures. The score is retained as the pre-remediation baseline; the implementation pass
+below closes the three P0 defects and the reproduced portions of the seven P1 defects.
+
+The follow-up regression matrix must extend the representative pass to 360×640, phone landscape,
+768/820/1024 px, 200% zoom, all chart families in dark mode, empty/error states, denied clipboard,
+storage failure and a complete keyboard-only save/share/export path. These are coverage extensions,
+not substitutes for the confirmed defects above.
+
+Deterministic gate re-run on 2026-07-17: ESLint passed, all **334** Vitest tests passed,
+TypeScript passed and the production build completed. The local server returned HTTP 200.
+
+#### Recommended implementation sequence
+
+1. **Live P0 defects:** QA-UI-01, QA-UI-04 and QA-UI-10, with shared-control and route regression
+   tests before module-specific polish.
+2. **Accessibility, navigation and bilingual integrity:** QA-UI-02, QA-UI-03, QA-UI-07 and
+   QA-UI-08, then the remaining UX-G02 through UX-G05 acceptance work.
+3. **Responsive shell and chart hierarchy:** QA-UI-05, QA-UI-06 and QA-UI-09 together with
+   UX-G07 through UX-G09 and the extended viewport matrix.
+4. **Scientific trust beyond the reproduced defects:** UX-RX01, UX-SO01, UX-EX01 and UX-AC01.
+5. **Progressive disclosure system:** one shared Basic/Advanced/task pattern, piloted in Conditional
+   potential, Selective precipitation and acid–base titration before rolling across modules.
+6. **Learning layer and engine parity:** goal-based Home, worked examples, cross-module handoffs,
+   operating-point readers and the remaining advanced engine surfaces.
+
+#### Confirmed UI remediation implemented (2026-07-17)
+
+The browser-confirmed backlog above has now been implemented as one shared-system pass rather than
+as module-specific patches. The product keeps its existing indigo/slate visual identity while
+correcting scientific trust, navigation, accessibility, bilingual presentation and responsive
+chart behavior.
+
+| QA ID | Status | Implementation and verification |
+| --- | --- | --- |
+| **QA-UI-01** | ✅ Closed | Shared numeric fields now carry native bounds, keep invalid drafts out of the calculation, show a bilingual inline range message and clamp on Enter/blur. A pKa of `99` remains visibly invalid while the engine stays at 4.76, then normalizes field and slider together to 35. |
+| **QA-UI-02** | ✅ Closed | Module changes create browser history entries, parameter serialization remains replace-only and `popstate` restores Home/modules. Home → Acid–base → Complexes → Back → Back now restores Acid–base and Home; Forward is supported. |
+| **QA-UI-03** | 🟡 Reproduced surfaces closed | Hub assumptions, chart loading/toolbar labels, Acid–base database names/groups/descriptions and the ethylenediamine preset group are bilingual. The systematic database-wide CI gate in **UX-G19** remains separate follow-up work. |
+| **QA-UI-04** | ✅ Closed | Mobile predominance diagrams use a readable 720 px scientific canvas inside a compact 260 px horizontal viewport with a localized “Swipe to explore” affordance. Labels are no longer scaled to 8–10 px. |
+| **QA-UI-05** | ✅ Closed | Chart controls now occupy a dedicated toolbar row. Mobile reserves a safe zone for the Variables action, and Plotly is allowed to shrink inside the card rather than overflow behind the footer/FAB. |
+| **QA-UI-06** | ✅ Closed | Mobile diagram/titration strips use scroll snapping, visible overflow treatment and active-tab scrolling. The centered-row negative-overflow bug was removed; a restored Potentiometric mode scrolls fully into view. |
+| **QA-UI-07** | ✅ Closed | The Variables sheet becomes inert while closed, focuses its close control when opened, traps Tab/Shift+Tab, closes on Escape, inerts the surrounding application and restores focus to Variables. |
+| **QA-UI-08** | ✅ Closed | Topic, submodule, diagram and titration tablists now implement roving focus plus Left/Right/Home/End automatic activation. |
+| **QA-UI-09** | ✅ Closed | Module title and actions use separate header rows. “Liquid–liquid extraction” receives the full 287 px panel width and the actions remain readable beneath it. |
+| **QA-UI-10** | ✅ Closed | Ion exchange now uses canonical `ionexchange` identity for routing, state serialization and saved systems. A generated `?m=ionexchange&s=…` URL survives a fresh reload with the scenario intact. |
+
+Verification: `npm run check` passes ESLint, all **334** Vitest tests, TypeScript and the production
+build. A live browser regression visited all 16 module routes with zero console errors and repeated
+the numeric-boundary, state reload, Back/Forward, keyboard-tab, mobile-modal, mobile chart,
+predominance and titration-strip scenarios. The remaining roadmap items are the broader product
+architecture work identified by the static audit, especially **Start → Understand → Extend**,
+database-wide localization, goal-based Home and consistent operating-point readers.
+
+#### Shared module grammar and interaction polish (2026-07-17) — implemented
+
+The first architecture pass now turns the audit's **Start → Understand → Extend** direction into a
+shared, visible interaction pattern without removing expert controls. It was implemented at the
+component level and then verified in every module rather than restyling individual screens in
+isolation.
+
+| Scope | Implementation and current status |
+| --- | --- |
+| **Module orientation (UX-G06)** | All 16 module routes and all five titration modes now open with a bilingual model orientation: one always-visible scientific objective and one compact “How to use this model” disclosure organized as **Define → Interpret → Extend**. The copy distinguishes overlapping views by their actual independent variable and purpose—for example, Complexation equilibrium is an M–L model over pL, while Metal speciation predicts hydrolysis/ligand fractions over pH. Goal-based Home routes and worked-example narratives remain separate product follow-ups, so UX-G06 is materially advanced but not fully closed. |
+| **Core versus optional hierarchy (UX-G14, UX-AB01)** | `PanelSection` is now reserved for the core model stages; optional layers use one `Disclosure` component with a shared chevron, focus treatment and ARIA-controlled body. Acid–base microstates, ion pairing, mixture titration, second-analyte extraction, conditional-solubility pX, conditional-potential pX and the electrode calculator activate from their disclosure header in one action. Native activity-correction details now use the same summary class. Emoji section icons and JavaScript-generated uppercase headings were removed. |
+| **Results and reading order (UX-G07)** | Plot-level metrics remain the primary decision summary; sidebar cards are explicitly titled **Detailed results / Resultados detallados** and use a quieter compact treatment. Section titles use sentence case and the same typography in both languages. This resolves the visual duplication ambiguity, while module-specific removal of every repeated metric remains an incremental content pass. |
+| **Complexes family consistency** | Complexation and Metal speciation now share the same header, orientation, System section, preset/disclosure surfaces, detailed-result treatment and chart chrome. Their copy deliberately preserves the scientific distinction: pL-driven formation/Bjerrum analysis versus pH-driven hydrolysis and operating-point speciation. The Metal speciation title was shortened to avoid artificial wrapping in the 320 px panel. |
+| **Preset and custom editors (UX-PB01)** | Database panels and full-system presets now share border, surface, caret, text hierarchy and interaction states. Pourbaix's arbitrary species/couple editor was rebuilt with shared label fields, selects and segmented controls; every row has a named remove action, neutral sentence-case type label and consistent add controls. The former tiny unlabeled × buttons, hardcoded category colors, native inputs and inline card styling are gone. UX-PB01 is closed. |
+| **Responsive interaction (UX-G08, UX-G14)** | The mobile variables sheet now explicitly overrides the 320 px desktop panel width and occupies the full viewport. Close, header actions, chart toolbar, tabs, disclosures, preset chips and Home destination chips use mobile touch targets; the sheet retains its focus trap/inert lifecycle. The bug was confirmed at 375 px (sheet width 320 px before, 375 px after). The broader 360×640/landscape/200% zoom matrix in UX-G08 remains follow-up coverage. |
+| **Motion, focus and semantics (UX-G14, UX-G15)** | The layout-triggering `transition: width` was removed from sidebar collapse, closing UX-G15. Buttons, summaries, inputs, selects and textareas share a visible focus rule and disabled state. Module guides, collapsible sections and disclosures expose `aria-expanded` plus `aria-controls`; all visible buttons in the route matrix have an accessible name. Help icons retain a small visual footprint with an expanded 44 px hit area. |
+| **Scientific notation and terminology** | Solubility notation now follows the established language convention consistently: Spanish uses Kps/pKps and English uses Ksp/pKsp, including the dynamic General solubility title, conditional-solubility tab/presets, solid-phase feasibility and precipitation controls. UI prose stays bilingual; species/formulas remain language-neutral. |
+
+Live verification covered Home, all 16 routes, all five titration modes, Complexation/Speciation
+side-by-side, Pourbaix custom mode, English/light desktop and Spanish/dark mobile. At 1440×900 every
+route had exactly one module orientation, zero unnamed visible buttons, zero document-level
+horizontal overflow and zero console errors. At 375×812 every route used a full-width variables
+sheet; a focused touch-target audit covered all previously undersized summaries, toolbar actions,
+preset chips and mode controls. The deterministic UI detector reports no remaining findings.
+
+#### Second-pass UI convergence and scientific minimalism (2026-07-17) — implemented
+
+The follow-up pass removed the remaining visual and interaction drift that was still visible after
+the shared module grammar landed. The governing rule is now that elevation communicates a true
+overlay; normal scientific content uses flat surfaces, restrained borders and the data as its main
+hierarchy.
+
+| Scope | Implementation and verification |
+| --- | --- |
+| **Scientific canvas and visual hierarchy** | The application now uses the full viewport instead of a framed floating card. The top bar, chart shells, predominance/2D/redox diagrams, plot metrics and Home destinations use flat surfaces and borders rather than ambient gradients, oversized radii and floating shadows. Plot metrics use the UI typeface at a compact scale instead of a hero-number treatment. Popovers, the mobile sheet and other true overlays retain elevation. |
+| **Complexes family workflow** | Complexation now follows the same progressive structure as Metal speciation. System identity and analytical concentrations remain in the core path; activity correction and conditional/coupled equilibria are separate disclosures. The Ringbom/coupled treatment selector and its dependent editors live inside the advanced layer, while the model badge continues to expose every active assumption. This aligns the interaction grammar without pretending that a pL equilibrium model and a pH speciation model are the same calculation. |
+| **Disclosure and button vocabulary** | Module guides, optional layers, database/system presets, didactic explanations and nested editor sections now share one right-aligned CSS chevron, open-state rotation, focus treatment and mobile hit-area policy. Every JSX button declares `type="button"`, preventing future accidental form submission when editors are composed into forms. The desktop panel handle is now 44 px wide. |
+| **Dense editor cleanup** | Static inline layout/style fragments were removed from the complexation, activity, extraction, conditional-constant, conditional-potential, solubility, ion-exchange, Pourbaix and titration surfaces. Repeated control spacing, quick options, preset rows, chart captions, indicator cards, analyte editors and advanced bodies now use shared semantic classes. Dynamic scientific colors, plot dimensions and tooltip coordinates remain intentionally data-driven inline values. |
+| **Extraction accessibility and international notation** | The analyte name/formula label is explicitly associated with its text field and is announced correctly in the accessibility tree. Preset selection uses the formula as the editable default (`I₂`, `HQ`, `Cu(Ox)₂`, etc.), avoiding a Spanish name leaking into English while preserving formulas as international scientific notation. The neutral-form stepper has a bilingual accessible name. |
+| **Titration bilingual integrity** | Generic acid/base systems initialize and reset in the active language and remain localized when the language changes unless the user supplied a custom label. The five visual-indicator names are bilingual in the selector; transition ranges and chemistry data remain unchanged. All five titration modes were rechecked for their own title, objective and chart flow. |
+| **Responsive and runtime matrix** | All 16 routes were exercised at 360×640, 375×812, 720×450, 768×1024 and 1440×900. Every route had one module guide, zero unnamed buttons, no document-level horizontal overflow and a full-width mobile variables sheet. English/light and Spanish/dark were inspected, including the Complexation activity layer, Metal speciation sheet, Extraction editor, Home and dense titration modes. The console remained free of runtime warnings/errors. |
+
+This pass closes the remaining shared-pattern inconsistency in the Complexes family and the
+reproduced bilingual/accessibility leaks above. Product additions such as goal-based Home routes,
+worked examples, chart click-to-read operating points, model-validity bands and full database-wide
+localization remain explicit feature work under their existing UX IDs; they should build on this
+grammar rather than introduce another surface pattern.
+
+#### Export, dark-theme and scientific-trust remediation (2026-07-17) — implemented
+
+The next live dogfooding pass focused on the small interactions that determine whether the product
+feels dependable: chart files must actually arrive, every icon must explain itself, inactive charts
+must offer the activation action where the user is looking, and scientific models must disclose
+where their equations stop being trustworthy.
+
+| Scope | Implementation and verification |
+| --- | --- |
+| **Unified chart export and PNG repair** | The former reset/PNG/CSV icon trio is now two named actions: **Reset view** and **Export**. Export opens one origin-aware 180 ms popover with **Chart image (PNG 2×)** and **Chart data (CSV + metadata)**. It supports outside click, Escape with focus restoration, ArrowUp/ArrowDown/Home/End navigation, disabled/busy states, an inline bilingual failure message and reduced motion. Plotly PNGs no longer put multi-megabyte data URLs directly on an anchor: the data URL is converted to a binary Blob and downloaded through a short-lived object URL. Native 2D maps use `canvas.toBlob` through the same path. CSV keeps the existing metadata format. Browser QA confirmed both actions close successfully with no console error; the PNG binary conversion has a regression test. |
+| **Dark-theme accent roles** | Dark mode no longer asks one translucent violet to represent selection, guidance and solid controls. It now has separate accessible tokens for accent text (`#A5ACFF`), stronger selected surfaces, and a WCAG-safe solid control fill (`#5B5FDE` with white text). Active diagram tabs, model classification and segmented controls therefore retain hierarchy against the neutral charcoal canvas. A hardcoded `white` color mix in model chips was replaced with the live surface token. Light mode keeps the same indigo identity. |
+| **Activation at the point of need** | Mixtures still opens on the useful buffer-capacity chart, while its Titration empty state now contains **Show titration curve** and creates the curve in one click. The Complexation pL–pX map and Metal-speciation pL–pH map now offer **Enable coupled equilibrium** / **Add auxiliary ligand** directly inside their explanatory empty states and open the dependent editor state automatically. Informational empty states that cannot be “enabled” (strong-acid anion alpha and missing indicator data) remain explanatory rather than pretending to be actions. |
+| **UX-RX01 — balanced redox result** | ✅ Closed. The Redox result now combines the stronger-oxidant reduction and weaker-reductant oxidation, renders reactants **and products**, scales every coefficient, cancels shared H⁺/H₂O/e⁻ terms and reports the electron count. A related engine defect was fixed at the same time: reaction `log K` now uses the least common multiple of the two electron counts, not `n₁·n₂`, which overcounted equal non-unit half-reactions. The correction is shared by Redox, Conditional potential and redox titration; Fe/Ce, MnO₄⁻/Fe²⁺ and equal-2e⁻ cases have regression coverage. |
+| **UX-SO01 — one molecular pKa ladder** | ✅ Closed. Molecular-solid solubility no longer renders a standalone first-pKa slider plus a second pKa list for the same state. One `ConstantList` owns all pKas, solubility, saturation, export metadata and the selected solid-form index. The obsolete scalar `pKa` state and monoprotic fallback path were removed. |
+| **UX-EX01 — explicit extractable species** | ✅ Closed. The polyprotic extraction editor replaces the tiny `+1` hint control with a labeled select. Options show α index, generic molecular form (`H₂A`, `HA`, `A`) and protonation position; the explanation shows the resulting charge ladder, identifies the selected `z = 0` species and states the exact consequence `D = Kd·αᵢ`. Removing pKas also clamps the selection to a physical ladder state. |
+| **UX-AC01 / UX-G10 — model validity at the operating point** | ✅ Closed for Activity. Extended Debye–Hückel, Kielland and Güntelberg use a recommended `I ≤ 0.1 M`; Davies uses `I ≤ 0.5 M`. The selected model changes the plotted domain, model badge and inline operating-point status. Past the limit the chart switches to dotted curves, shades and labels the extrapolation region, and warns that the number is not a validated prediction. The axis expands if the user deliberately evaluates a higher I, so the operating marker is never silently off-chart. |
+
+Verification covered English/light desktop and Spanish/dark mobile. The export popover fits at
+390×844 with zero document overflow, focuses its first option, traverses options by arrow keys and
+returns focus to Export on Escape. Live checks exercised the Mixtures and both 2D-map activation
+buttons, the molecular-solid editor, the 8-hydroxyquinoline neutral-species selector, the complete
+Fe/Ce redox equation, the Activity validity boundary and an out-of-range warning. A final 16-route
+desktop matrix reported one module guide, zero unnamed visible buttons, zero horizontal overflow
+and zero console errors on every route. The deterministic suite now contains **338 tests**.
+`npm run check` passes ESLint, all tests, TypeScript and the production Vite build.
+
 ### Near-term
 
 | Feature | Notes |
@@ -638,7 +1044,7 @@ The focused audit suite contains **52** direct regressions; the complete gate pa
 | **Acid–base titration direction and starting-composition corrections (R2 audit)** | ✅ Done — explicit pure/continuous starting compositions, formal equivalences outside pH 0–14, direction-aware Gran and q% are shipped. |
 | **Ion-exchange proton-competition direction correction (R2 audit)** | ✅ Done — corrected resin/bulk proton ratio, explicit charge exponent, D/φ and three-compartment elution revalidated. |
 | **Minor engine↔UI parity gaps** (2026-07-10 audit — all 5 items done) | (a) γ-model choice for AcidoBase/Mezclas/Solubilidad — **done**: all three now offer D-H extendida/Davies/Güntelberg for their own pH/Ksp corrections (Kielland stays Actividad-only, it needs a per-ion size table that doesn't generalize to free-text species). (b) `separationWindow`'s quantitativity target — **done**: Competitiva now has an editable "Objetivo de cuantitatividad" slider (90–99.999 %, chips at 99/99.9/99.99 %), same treatment as Constantes Condicionales' "% formado objetivo". (c) Mohr indicator chromate concentration — **done**: Titulaciones (modo Precipitación) now exposes [CrO₄²⁻] as an editable ConcSlider when the Mohr marker is on, instead of a fixed 5 mM. (d) Craig multi-ion breakthrough — **done**: Intercambio iónico's "Columna multi-zona" now supports an optional third competing ion (D), showing 3 simultaneous breakthrough fronts instead of capping at 2. (e) acid–base titration curves at I > 0 — **done**: Titulaciones' Ácido-base sub-mode now has the same "Corrección por actividad" control (I, D-H/Davies/Güntelberg) as Mezclas, threaded through `titrationCurve`'s new optional `I`/`model` params. During QA, found that the Gran-plot Veq detector is already inaccurate for this preset even at I=0 (pre-existing, unrelated to this change — Gran's linearization assumes concentration pH, so it's worth revisiting once the module gets its own attention). |
-| **Bilingual UI (Spanish / English)** | ✅ Done — all 16 modules across all 7 hubs fully bilingual (see resolved sections above). |
+| **Bilingual UI (Spanish / English)** | Core module rollout and the reproduced **QA-UI-03** leaks are fixed: assumptions, chart toolbar/loading labels, Acid–base database presentation and the Complexes ethylenediamine group now follow the selected language. Database-wide localization and the automated regression gate in **UX-G19** remain open. |
 | **R2 remediation — multi-salt precipitation stages (R2-11)** | ✅ Closed — `sequentialSharedPrecipitation` evaluates a conserved precipitant pool at user-editable stage pH values; Solubilidad condicional exposes per-stage recovery. |
 | **R2 remediation — phase-aware generalized redox (R2-32)** | ✅ Closed — pool-conserving `redoxPoolFractions`, per-node `poolStoich`, concentration-dependent solid stability via shared `logActivity`, and pool error surfaced in Pourbaix. |
 | **R2 remediation — quantitative endpoint errors (R2-38)** | ✅ Closed — dilution-aware acid–base (#95) plus complexometric, Mohr precipitation and redox indicator endpoint errors via shared `endpointFromCurve`. |

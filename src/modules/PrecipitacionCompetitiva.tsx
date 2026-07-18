@@ -211,8 +211,8 @@ export default function PrecipitacionCompetitiva() {
 
   return (
     <div className="module">
-      <PanelShell title={t('precipitacionCompetitiva.title')} onReset={reset} moduleId="solcomp">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+      <PanelShell title={t('precipitacionCompetitiva.title')} onReset={reset} moduleId="solcomp" guideId="solcomp">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <ModelBadge
             model={t('precipitacionCompetitiva.model')}
             additions={[win.ok && t('precipitacionCompetitiva.additionQuantWindow')]}
@@ -229,13 +229,13 @@ export default function PrecipitacionCompetitiva() {
             items={PRESETS.map((p) => ({
               id: p.id,
               label: `${p.cation}: ${p.s1.label} / ${p.s2.label}`,
-              detail: `pKsp ${p.s1.pKsp.toFixed(2)} / ${p.s2.pKsp.toFixed(2)}`,
+              detail: `${t('titulacion.pKspShort')} ${p.s1.pKsp.toFixed(2)} / ${p.s2.pKsp.toFixed(2)}`,
             }))}
             onSelect={loadPreset}
           />
         </PanelSection>
 
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <ConcSlider label={t('precipitacionCompetitiva.totalAddedLabel', { cation })} value={cM} onChange={setCM} />
           <p className="hint">
             {t('precipitacionCompetitiva.operatingPointHint')}
@@ -250,14 +250,14 @@ export default function PrecipitacionCompetitiva() {
             decimals={3}
             unit="%"
           />
-          <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-            <button className="preset-chip" onClick={() => setQuantPct(99)}>
+          <div className="quick-option-row">
+            <button type="button" className="preset-chip" onClick={() => setQuantPct(99)}>
               99 %
             </button>
-            <button className="preset-chip" onClick={() => setQuantPct(99.9)}>
+            <button type="button" className="preset-chip" onClick={() => setQuantPct(99.9)}>
               99.9 %
             </button>
-            <button className="preset-chip" onClick={() => setQuantPct(99.99)}>
+            <button type="button" className="preset-chip" onClick={() => setQuantPct(99.99)}>
               99.99 %
             </button>
           </div>
@@ -266,7 +266,7 @@ export default function PrecipitacionCompetitiva() {
           </p>
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             {
               label: t('precipitacionCompetitiva.precipitatesFirstLabel'),

@@ -47,10 +47,9 @@ export function acidSystemFromPreset(id: string, strongWithoutPKa = false): Acid
   };
 }
 
-export function strongAcidSystem(isBase = false): AcidSystem {
+export function strongAcidSystem(isBase = false, lang: Lang = 'es'): AcidSystem {
   return {
-    // Titulacion.tsx isn't translated yet — always Spanish until its turn.
-    label: isBase ? GENERIC_LABELS.strongBase.es : GENERIC_LABELS.strongAcid.es,
+    label: GENERIC_LABELS[isBase ? 'strongBase' : 'strongAcid'][lang],
     z0: isBase ? 1 : 0,
     pKas: [],
     speciesLabels: null,

@@ -5,7 +5,7 @@ import PanelShell from '../components/PanelShell';
 import Chart from '../components/Chart';
 import PredominanceDiagram from '../components/PredominanceDiagram';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, PanelSection, ResultCardRow, Segmented, Slider, Toggle } from '../components/Controls';
+import { ConcSlider, Disclosure, InfoBox, PanelSection, ResultCardRow, Segmented, Slider, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
@@ -217,17 +217,17 @@ export default function AcidoBase() {
 
   return (
     <div className="module">
-      <PanelShell title={t('acidoBase.title')} onReset={reset} moduleId="acidobase">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+      <PanelShell title={t('acidoBase.title')} onReset={reset} moduleId="acidobase" guideId="acidobase">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <AcidSystemEditor system={system} onChange={setSystem} allowAquaCations />
         </PanelSection>
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <ConcSlider label={t('acidoBase.concLabel')} value={conc} onChange={setConc} />
           <Toggle label={t('acidoBase.markPureSolutionPH')} checked={showSystemPH} onChange={setShowSystemPH} />
           <details className="section-collapse">
-            <summary>{t('acidoBase.activityCorrection')}</summary>
+            <summary className="section-collapse-title">{t('acidoBase.activityCorrection')}<span className="ui-chevron" aria-hidden /></summary>
             <Slider label={t('acidoBase.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
-            <div style={{ marginTop: 6 }}>
+            <div className="control-input">
               <Segmented
                 options={GAMMA_MODELS}
                 value={gammaModel}
@@ -237,10 +237,8 @@ export default function AcidoBase() {
             <p className="hint">{t('acidoBase.activityHint')}</p>
           </details>
         </PanelSection>
-        <PanelSection title={t('acidoBase.microstateSection')} icon="⇌">
-          <Toggle label={t('acidoBase.showMicrostates')} checked={showMicrostates} onChange={setShowMicrostates} />
-          {showMicrostates && (
-            <>
+        <Disclosure title={t('acidoBase.microstateSection')} open={showMicrostates} onToggle={setShowMicrostates}>
+          <>
               {[
                 t('acidoBase.microPKaHZ'), t('acidoBase.microPKaZA'),
                 t('acidoBase.microPKaHN'), t('acidoBase.microPKaNA'),
@@ -249,9 +247,8 @@ export default function AcidoBase() {
                   decimals={2} onChange={(value) => setMicroPKas((current) => current.map((item, i) => i === index ? value : item))} />
               ))}
               <p className="hint">{t('acidoBase.microstateHint')}</p>
-            </>
-          )}
-        </PanelSection>
+          </>
+        </Disclosure>
         {showActivityNote && (
           <InfoBox title={t('acidoBase.activityNoteTitle')}>
             <p>

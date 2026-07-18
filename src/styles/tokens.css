@@ -11,12 +11,18 @@
   --accent: #6366F1;
   --accent-hover: #4F46E5;
   --accent-soft: #EEF2FF;
+  --accent-soft-strong: #E0E7FF;
+  --accent-solid: #4F46E5;
+  --accent-contrast: #FFFFFF;
   --accent-violet: #6366F1;
   --accent-teal: #6366F1;
   --ok: #059669;
   --ok-soft: #E7F8F0;
   --warn: #D97706;
   --warn-soft: #FDF2E3;
+  --danger: #B42318;
+  --danger-soft: #FEE4E2;
+  --plot-blue: #0072B2;
 
   /* Direction "E" (C+D hybrid) — premium accent + ambient surfaces */
   --accent-2: #8B5CF6;                                   /* violet, gradient end */
@@ -51,7 +57,7 @@
   --radius-md: 10px;
   --radius-lg: 12px;
   --radius-xl: 16px;                                     /* control cards */
-  --radius-2xl: 22px;                                    /* plot hero card */
+  --radius-2xl: 12px;
   --radius-pill: 999px;
   /* Layered shadows — soft ambient + tighter contact edge reads as premium depth */
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
@@ -81,9 +87,9 @@
   --duration-normal: 200ms;
 
   /* Card & chrome gradients (flat dark equivalents in [data-theme="dark"]) */
-  --topbar-grad: linear-gradient(180deg, #FFFFFF 0%, #FBFBFE 100%);
-  --surface-grad: linear-gradient(180deg, #FFFFFF 0%, #FCFCFF 100%);
-  --content-wash: radial-gradient(130% 100% at 92% -12%, #ECEEFF 0%, rgba(236, 238, 255, 0) 48%);
+  --topbar-grad: var(--surface);
+  --surface-grad: var(--surface);
+  --content-wash: none;
   /* Glossy 1px top highlight on the topbar — a light-mode-only touch; flat/off in dark. */
   --topbar-sheen: rgba(255, 255, 255, 0.6);
 
@@ -107,15 +113,21 @@
   --border: #2E2E31;
   --text: #F2F2F3;
   --text-muted: #9A9A9E;
-  --accent: #8B8CF9;
-  --accent-hover: #A5A6FF;
-  --accent-soft: rgba(139, 140, 249, 0.16);
-  --accent-violet: #8B8CF9;
-  --accent-teal: #8B8CF9;
+  --accent: #A5ACFF;
+  --accent-hover: #C5C9FF;
+  --accent-soft: rgba(129, 140, 248, 0.17);
+  --accent-soft-strong: rgba(129, 140, 248, 0.27);
+  --accent-solid: #5B5FDE;
+  --accent-contrast: #FFFFFF;
+  --accent-violet: #A5ACFF;
+  --accent-teal: #A5ACFF;
   --ok: #3DDC97;
   --ok-soft: rgba(61, 220, 151, 0.14);
   --warn: #FBBF24;
   --warn-soft: rgba(251, 191, 36, 0.14);
+  --danger: #FF8A80;
+  --danger-soft: rgba(255, 138, 128, 0.14);
+  --plot-blue: #2E8FD0;
 
   --accent-2: #B39DFB;
   /* Flat canvas — no colorful ambient wash behind the app card in dark mode. */
@@ -127,7 +139,7 @@
   --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.4);
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px -4px rgba(0, 0, 0, 0.5);
   --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.4), 0 22px 48px -12px rgba(0, 0, 0, 0.6);
-  --focus-ring: 0 0 0 3px rgba(139, 140, 249, 0.32);
+  --focus-ring: 0 0 0 3px rgba(165, 172, 255, 0.34);
 
   --page-bg: #000000;
 

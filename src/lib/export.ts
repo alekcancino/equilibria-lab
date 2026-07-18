@@ -83,16 +83,32 @@ export function gridToCSV(
   return rows.join('\n');
 }
 
-/** Triggers a browser download of a CSV string as a .csv file. */
-export function downloadCSV(csv: string, filename: string): void {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+/** Triggers a browser download through a short-lived object URL. */
+export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename.endsWith('.csv') ? filename : `${filename}.csv`;
+  a.download = filename;
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 100);
+  setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
+
+/** Converts a base64 image data URL without routing a multi-megabyte URL through an anchor. */
+export function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, payload] = dataUrl.split(',', 2);
+  if (!header || payload === undefined) throw new Error('Invalid data URL');
+  const mime = header.match(/^data:([^;,]+)/)?.[1] ?? 'application/octet-stream';
+  const bytes = header.includes(';base64')
+    ? Uint8Array.from(atob(payload), (char) => char.charCodeAt(0))
+    : new TextEncoder().encode(decodeURIComponent(payload));
+  return new Blob([bytes], { type: mime });
+}
+
+/** Triggers a browser download of a CSV string as a .csv file. */
+export function downloadCSV(csv: string, filename: string): void {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  downloadBlob(blob, filename.endsWith('.csv') ? filename : `${filename}.csv`);
 }

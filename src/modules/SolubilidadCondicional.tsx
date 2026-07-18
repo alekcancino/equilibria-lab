@@ -466,7 +466,7 @@ export default function SolubilidadCondicional() {
     divalentSoluble: t('solubilidadCondicional.groupDivalentSoluble'),
   };
   const dbItems = OH_PRESETS.map((p) => ({
-    id: p.id, label: p.formula, detail: `${p.metal} · pKps ${p.pKsp}`, group: groupLabels[p.group] ?? p.group,
+    id: p.id, label: p.formula, detail: `${p.metal} · ${t('titulacion.pKspShort')} ${p.pKsp}`, group: groupLabels[p.group] ?? p.group,
   }));
 
   // ── pKsp' = f(pH) curve ───────────────────────────────────────────────────
@@ -615,7 +615,7 @@ export default function SolubilidadCondicional() {
     },
     {
       id: 'pksp',
-      label: "pKps′ = f(pH)",
+      label: `${t('solubilidadCondicional.pKspPrimeShort')} = f(pH)`,
       node: (
         <Chart
           data={pKspTraces}
@@ -669,8 +669,8 @@ export default function SolubilidadCondicional() {
 
   return (
     <div className="module">
-      <PanelShell title={t('solubilidadCondicional.title')} onReset={reset} moduleId="solcond">
-        <PanelSection title={t('solubilidadCondicional.metal1Section')} icon="①">
+      <PanelShell title={t('solubilidadCondicional.title')} onReset={reset} moduleId="solcond" guideId="solcond">
+        <PanelSection title={t('solubilidadCondicional.metal1Section')}>
           <ModelBadge
             model={s.m1.logBetasOH.length === 0
               ? t('solubilidadCondicional.simplePrecipitationModel')
@@ -678,10 +678,10 @@ export default function SolubilidadCondicional() {
             additions={[s.showM2 && t('solubilidadCondicional.selectiveSeparationAddition'), minHasInterior && t('solubilidadCondicional.uCurveAddition')]}
           />
           <DbPanel items={dbItems} onSelect={(id) => setM1({ ...fromPreset(id) })} title={t('solubilidadCondicional.presetsMOHn')} />
-          <p className="hint" style={{ marginBottom: 4 }}>{t('solubilidadCondicional.amphotericPresetsHint')}</p>
-          <div className="preset-chip-row" style={{ marginBottom: 8 }}>
+          <p className="hint compact-hint">{t('solubilidadCondicional.amphotericPresetsHint')}</p>
+          <div className="preset-chip-row preset-chip-row-spaced">
             {ANFOTERO_PRESETS.map((p) => (
-              <button key={p.id} className="preset-chip" onClick={() => applyAnfotero(p.id)}>
+              <button type="button" key={p.id} className="preset-chip" onClick={() => applyAnfotero(p.id)}>
                 {p.label}
               </button>
             ))}
@@ -694,9 +694,9 @@ export default function SolubilidadCondicional() {
               <span className="control-label">{t('solubilidadCondicional.stoichiometryN')}</span>
               <span className="control-value">{s.m1.n}</span>
             </div>
-            <div className="segmented" style={{ marginTop: 6 }}>
+            <div className="segmented control-input">
               {[1, 2, 3].map((n) => (
-                <button
+                <button type="button"
                   key={n}
                   className={s.m1.n === n ? 'seg-btn active' : 'seg-btn'}
                   onClick={() => setM1({ n })}
@@ -736,7 +736,7 @@ export default function SolubilidadCondicional() {
           )}
         </PanelSection>
 
-        <PanelSection title={t('solubilidadCondicional.compareSecondMetalSection')} icon="②">
+        <PanelSection title={t('solubilidadCondicional.compareSecondMetalSection')}>
           <Toggle label={t('solubilidadCondicional.selectiveSeparationToggle')} checked={s.showM2} onChange={(v) => setS((p) => ({ ...p, showM2: v }))} />
           {s.showM2 && (
             <div className="mask-section">
@@ -749,9 +749,9 @@ export default function SolubilidadCondicional() {
                   <span className="control-label">{t('solubilidadCondicional.stoichiometryNShort')}</span>
                   <span className="control-value">{s.m2.n}</span>
                 </div>
-                <div className="segmented" style={{ marginTop: 6 }}>
+                <div className="segmented control-input">
                   {[1, 2, 3].map((n) => (
-                    <button
+                    <button type="button"
                       key={n}
                       className={s.m2.n === n ? 'seg-btn active' : 'seg-btn'}
                       onClick={() => setM2({ n })}
@@ -806,7 +806,7 @@ export default function SolubilidadCondicional() {
           )}
         </PanelSection>
 
-        <PanelSection title={t('solubilidadCondicional.thresholdOperationSection')} icon="⚗">
+        <PanelSection title={t('solubilidadCondicional.thresholdOperationSection')}>
           <Slider
             label={t('complejos.ionicStrengthLabel')}
             helpId="ionicStrength"
@@ -866,7 +866,7 @@ export default function SolubilidadCondicional() {
           </p>
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
         <ResultCard items={[
           {
             label: t('solubilidadCondicional.pHWherePrecipitates', { formula: s.m1.formula }),
@@ -938,14 +938,12 @@ export default function SolubilidadCondicional() {
         ]} />
         </PanelSection>
 
-        <PanelSection title={t('solubilidadCondicional.complexantEffectSection')} icon="✦">
-          <Toggle
-            label={t('solubilidadCondicional.pxToggle')}
-            checked={s.showPX}
-            onChange={(v) => setS((p) => ({ ...p, showPX: v }))}
-          />
-          {s.showPX && (
-            <div className="mask-section">
+        <Disclosure
+          title={t('solubilidadCondicional.complexantEffectSection')}
+          open={s.showPX}
+          onToggle={(showPX) => setS((p) => ({ ...p, showPX }))}
+        >
+          <div className="mask-section">
               <LabelField label={t('solubilidadCondicional.complexantXLabel')} value={s.ligandX} onChange={(v) => setS((p) => ({ ...p, ligandX: v }))} />
               <Slider label={t('complejos.fixedPHLabel')} value={s.pHForPX} min={0} max={14} step={0.1} onChange={(v) => setS((p) => ({ ...p, pHForPX: v }))} decimals={1} />
               <ConstantList
@@ -955,9 +953,8 @@ export default function SolubilidadCondicional() {
                 onChange={(v) => setS((p) => ({ ...p, logBetasX: v }))}
                 min={0} max={25} maxItems={6}
               />
-            </div>
-          )}
-        </PanelSection>
+          </div>
+        </Disclosure>
 
         <InfoBox title={t('solubilidadCondicional.infoBoxTitle')}>
           <p>

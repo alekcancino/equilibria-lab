@@ -407,8 +407,8 @@ export default function ConstantesCondicionales() {
 
   return (
     <div className="module">
-      <PanelShell title={t('condicionales.title')} onReset={reset} moduleId="condicionalesedta">
-        <PanelSection title={t('condicionales.metalLigandSection')} icon="⚛">
+      <PanelShell title={t('condicionales.title')} onReset={reset} moduleId="condicionalesedta" guideId="condicionalesedta">
+        <PanelSection title={t('condicionales.metalLigandSection')}>
         <ModelBadge
           model={t('condicionales.primaryEquilibrium')}
           additions={[
@@ -446,7 +446,7 @@ export default function ConstantesCondicionales() {
         {s.showMulti && (
           <div className="mask-section">
             {s.extraReactions.map((rx, i) => (
-              <div key={i} style={{ marginBottom: 8 }}>
+              <div key={i} className="repeated-editor-row">
                 <LabelField
                   label={t('condicionales.reactionN', { n: i + 2 })}
                   value={rx.label}
@@ -470,7 +470,7 @@ export default function ConstantesCondicionales() {
                   }}
                   decimals={2}
                 />
-                <button
+                <button type="button"
                   className="preset-chip"
                   onClick={() => set('extraReactions', s.extraReactions.filter((_, j) => j !== i))}
                 >
@@ -478,7 +478,7 @@ export default function ConstantesCondicionales() {
                 </button>
               </div>
             ))}
-            <button
+            <button type="button"
               className="preset-chip"
               onClick={() => set('extraReactions', [...s.extraReactions, { label: 'M–L₂', logKf: 8 }])}
             >
@@ -517,11 +517,11 @@ export default function ConstantesCondicionales() {
           decimals={2}
           unit="%"
         />
-        <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-          <button className="preset-chip" onClick={() => set('targetPct', 0.1)}>
+        <div className="quick-option-row">
+          <button type="button" className="preset-chip" onClick={() => set('targetPct', 0.1)}>
             {t('condicionales.negligibleChip')}
           </button>
-          <button className="preset-chip" onClick={() => set('targetPct', 99.9)}>
+          <button type="button" className="preset-chip" onClick={() => set('targetPct', 99.9)}>
             {t('condicionales.maskedChip')}
           </button>
         </div>
@@ -530,15 +530,15 @@ export default function ConstantesCondicionales() {
         </p>
         </PanelSection>
 
-        <PanelSection title={t('condicionales.paramsSection')} icon="⚙">
+        <PanelSection title={t('condicionales.paramsSection')}>
         <div className="control">
           <div className="control-header">
             <span className="control-label">{t('condicionales.thresholdLabel')}</span>
             <span className="control-value">{s.threshold}</span>
           </div>
-          <div className="segmented" style={{ marginTop: 6 }}>
+          <div className="segmented control-input">
             {([6, 8, 10] as const).map((th) => (
-              <button
+              <button type="button"
                 key={th}
                 className={s.threshold === th ? 'seg-btn active' : 'seg-btn'}
                 onClick={() => set('threshold', th)}
@@ -611,7 +611,7 @@ export default function ConstantesCondicionales() {
         />
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
         <ResultCard items={[
           { label: t('condicionales.optimalPH'), value: pHopt.toFixed(1) },
           { label: t('condicionales.logKmax'), value: logKmax.toFixed(1), helpId: 'logKprime' },

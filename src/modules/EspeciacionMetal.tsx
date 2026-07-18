@@ -378,12 +378,23 @@ export default function EspeciacionMetal() {
           exportMetadata={exportMetadata}
         />
       ) : (
-        <div className="map2d-empty">
-          <p>
+        <div className="map2d-empty map2d-empty-actionable">
+          <div>
+            <p>
             {t('especiacion.map2dEmptyPrefix')} <strong>{t('especiacion.map2dEmptyModeBold')}</strong>{' '}
             {t('especiacion.map2dEmptyMid')} <strong>{t('complejos.tabAlpha')}</strong>{' '}
             {t('complejos.map2dEmptyOr')} <strong>{t('complejos.tabPredominance')}</strong>{t('complejos.map2dEmptySuffix')}
-          </p>
+            </p>
+            <button type="button" className="empty-plot-action" onClick={() => setSys((current) => ({
+              ...current,
+              showX: true,
+              side: { ...current.side, showAux: true },
+              speciesLabels: null,
+              reference: null,
+            }))}>
+              {t('especiacion.activateMap2D')}
+            </button>
+          </div>
         </div>
       ),
     },
@@ -391,8 +402,8 @@ export default function EspeciacionMetal() {
 
   return (
     <div className="module">
-      <PanelShell title={t('especiacion.title', { x: nX > 0 ? '–X' : '' })} onReset={reset} moduleId="especiacion">
-        <PanelSection title={t('especiacion.metalHydrolysisSection')} icon="⚛">
+      <PanelShell title={t('especiacion.title', { x: nX > 0 ? '–X' : '' })} onReset={reset} moduleId="especiacion" guideId="especiacion">
+        <PanelSection title={t('especiacion.metalHydrolysisSection')}>
           <ModelBadge
             model={nOH === 0 ? t('especiacion.noHydrolysis') : t('especiacion.hydrolysisUpTo', { n: toSub(nOH) })}
             additions={[
@@ -515,7 +526,7 @@ export default function EspeciacionMetal() {
           </p>
         </Disclosure>
 
-        <PanelSection title={t('especiacion.readingSection')} icon="∑">
+        <PanelSection title={t('especiacion.readingSection')}>
           <Slider label={t('especiacion.readPHLabel')} value={pHRead} min={0} max={14} step={0.1} onChange={setPHRead} decimals={1} />
           {readValid ? (
             <ResultCard items={[

@@ -31,6 +31,98 @@ export interface RedoxCouple {
   caveat?: string;
 }
 
+function gcd(a: number, b: number): number {
+  let x = Math.max(1, Math.round(Math.abs(a)));
+  let y = Math.max(1, Math.round(Math.abs(b)));
+  while (y !== 0) [x, y] = [y, x % y];
+  return x;
+}
+
+/** Electrons in the smallest balanced reaction formed by two half-reactions. */
+export function electronTransferCount(n1: number, n2: number): number {
+  const a = Math.max(1, Math.round(Math.abs(n1)));
+  const b = Math.max(1, Math.round(Math.abs(n2)));
+  return (a * b) / gcd(a, b);
+}
+
+interface ReactionTerm {
+  species: string;
+  coefficient: number;
+}
+
+function parseReactionSide(side: string): ReactionTerm[] {
+  return side.trim().split(/\s+\+\s+/).map((raw) => {
+    const term = raw.trim();
+    const match = term.match(/^(\d+)(.+)$/);
+    return match
+      ? { coefficient: Number(match[1]), species: match[2].trim() }
+      : { coefficient: 1, species: term };
+  });
+}
+
+function parseHalfReaction(couple: RedoxCouple): [ReactionTerm[], ReactionTerm[]] {
+  const [left = couple.ox, right = couple.red] = couple.halfReaction.split(/⇌|↔|→/);
+  const normalizeElectrons = (terms: ReactionTerm[]) => terms.map((term) => (
+    term.species === 'e⁻' || term.species === 'e-'
+      ? { ...term, coefficient: couple.n }
+      : term
+  ));
+  return [normalizeElectrons(parseReactionSide(left)), normalizeElectrons(parseReactionSide(right))];
+}
+
+function addTerms(target: Map<string, number>, order: string[], terms: ReactionTerm[], factor: number): void {
+  for (const term of terms) {
+    if (!target.has(term.species)) order.push(term.species);
+    target.set(term.species, (target.get(term.species) ?? 0) + term.coefficient * factor);
+  }
+}
+
+function formatReactionSide(terms: Map<string, number>, order: string[]): string {
+  return order
+    .filter((species) => (terms.get(species) ?? 0) > 1e-9)
+    .map((species) => {
+      const coefficient = terms.get(species) ?? 0;
+      return `${Math.abs(coefficient - 1) < 1e-9 ? '' : coefficient}${species}`;
+    })
+    .join(' + ');
+}
+
+export interface BalancedRedoxReaction {
+  equation: string;
+  reactants: string;
+  products: string;
+  electrons: number;
+}
+
+/** Combines the stronger oxidant reduction with the weaker reductant oxidation. */
+export function balancedRedoxReaction(oxidant: RedoxCouple, reductant: RedoxCouple): BalancedRedoxReaction {
+  const electrons = electronTransferCount(oxidant.n, reductant.n);
+  const oxidantFactor = electrons / Math.max(1, Math.round(oxidant.n));
+  const reductantFactor = electrons / Math.max(1, Math.round(reductant.n));
+  const [oxidantLeft, oxidantRight] = parseHalfReaction(oxidant);
+  const [reductantLeft, reductantRight] = parseHalfReaction(reductant);
+  const left = new Map<string, number>();
+  const right = new Map<string, number>();
+  const leftOrder: string[] = [];
+  const rightOrder: string[] = [];
+  addTerms(left, leftOrder, oxidantLeft, oxidantFactor);
+  addTerms(right, rightOrder, oxidantRight, oxidantFactor);
+  addTerms(left, leftOrder, reductantRight, reductantFactor);
+  addTerms(right, rightOrder, reductantLeft, reductantFactor);
+
+  for (const species of new Set([...left.keys(), ...right.keys()])) {
+    const canceled = Math.min(left.get(species) ?? 0, right.get(species) ?? 0);
+    if (canceled > 0) {
+      left.set(species, (left.get(species) ?? 0) - canceled);
+      right.set(species, (right.get(species) ?? 0) - canceled);
+    }
+  }
+
+  const reactants = formatReactionSide(left, leftOrder);
+  const products = formatReactionSide(right, rightOrder);
+  return { equation: `${reactants} → ${products}`, reactants, products, electrons };
+}
+
 export interface ConditionalAlphaTerm {
   /** log10 coefficient in a term 10^(logCoefficient + pHSlope*pH). */
   logCoefficient: number;
@@ -353,11 +445,10 @@ export function redoxTitrationCurve(params: RedoxTitrationParams): RedoxCurve {
 
   const peEq = solvePe(cAnalyte * vAnalyte, cTitrant * vEq);
 
-  // Balanced reaction: transfers n_a·n_t electrons; in reductimetry the analyte is
-  // the oxidant, so the sign is flipped.
+  const transferredElectrons = electronTransferCount(analyte.n, titrant.n);
   const logK = direction === 'oxidante'
-    ? analyte.n * titrant.n * (pe0t - pe0a)
-    : analyte.n * titrant.n * (pe0a - pe0t);
+    ? transferredElectrons * (pe0t - pe0a)
+    : transferredElectrons * (pe0a - pe0t);
 
   return {
     volumes, pes, Es, vEq,

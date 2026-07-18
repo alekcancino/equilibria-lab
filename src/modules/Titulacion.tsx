@@ -1,9 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import { useShareEffect } from '../hooks/useShareableState';
 import { useT } from '../hooks/useT';
+import { useLanguage } from '../hooks/useLanguage';
+import { handleTabKeyDown } from '../lib/tabKeyboard';
 import {
   ConcSlider, ConstantList, DbPanel, Disclosure, InfoBox, LabelField, NumberSegmented, PanelSection, ResultCard, ResultCardRow,
   Segmented, ModelBadge, SelectControl, Slider, SystemPresetPicker, Toggle,
@@ -11,12 +13,13 @@ import {
 import {
   AcidSystemEditor, CoupleEditor, SideReactionEditor,
 } from '../components/Editors';
-import { coupleFromPreset, isValidAcidSystem, strongAcidSystem, systemLabels, type AcidSystem, type CoupleState } from '../lib/editorModels';
+import { coupleFromPreset, inferredSystemLabel, isGenericSystemLabel, isValidAcidSystem, strongAcidSystem, systemLabels, type AcidSystem, type CoupleState } from '../lib/editorModels';
 import DiagramTabs from '../components/DiagramTabs';
 import { INDICATORS } from '../lib/database';
 import { formatSci } from '../lib/format';
 import { equivalenceResidual, firstDerivative, granPlot, granVeq, quantitativity, secondDerivative, titratableProtons, titrationCurve } from '../lib/titration';
 import type { GammaModel } from '../lib/activity';
+import type { TKey } from '../i18n/translations';
 import {
   alphaY4,
   competitiveEdtaTitrationCurve,
@@ -28,6 +31,7 @@ import {
 import { defaultSideEditorState, type SideReactionEditorState } from '../lib/sideReactions';
 import {
   conditionalEprimeFromStates,
+  electronTransferCount,
   NERNST_S,
   peConditional,
   redoxMixtureTitrationCurve,
@@ -102,6 +106,13 @@ function initialTitulacionMode(): Mode {
 /* ─────────────── Metallochromic indicator panel (embedded) ───────────────── */
 
 const IND_PANEL_COLORS = ['#0072B2', '#D55E00', '#009E73', '#CC79A7'];
+const INDICATOR_NAME_KEYS: Record<string, TKey> = {
+  methyl_orange: 'indicator.methylOrange',
+  methyl_red: 'indicator.methylRed',
+  bromothymol: 'indicator.bromothymolBlue',
+  phenolphthalein: 'indicator.phenolphthalein',
+  thymolphthalein: 'indicator.thymolphthalein',
+};
 
 interface IndResult {
   ind: MetalIndicator;
@@ -137,25 +148,25 @@ function IndicadorBadges({ metalId, logBetasOH, pH, logKMY_pH }: {
   );
 
   if (results.length === 0) {
-    return <p className="hint" style={{ marginTop: 6 }}>{t('titulacion.noIndicatorDataShort')}</p>;
+    return <p className="hint indicator-empty">{t('titulacion.noIndicatorDataShort')}</p>;
   }
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div className="indicator-list">
       {results.map(({ ind, logKprimeMIn, deltaLogK, badge }) => (
-        <div key={ind.id} style={{ background: 'var(--bg-alt)', borderRadius: 8, padding: '8px 10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-            <span style={{ fontWeight: 600, fontSize: 13 }}>{ind.abbrev} — {ind.name}</span>
-            <span className={IND_BADGE_CLS[badge]} style={{ fontSize: 12 }}>{IND_BADGE_LABEL[badge]}</span>
+        <div key={ind.id} className="indicator-card">
+          <div className="indicator-card-head">
+            <span className="indicator-name">{ind.abbrev} — {ind.name}</span>
+            <span className={`${IND_BADGE_CLS[badge]} indicator-status`}>{IND_BADGE_LABEL[badge]}</span>
           </div>
-          <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--text-muted)', marginBottom: 5 }}>
-            <span>log K′(MIn) = <strong style={{ color: 'var(--text)' }}>{logKprimeMIn.toFixed(1)}</strong></span>
-            <span>ΔlogK = <strong style={{ color: 'var(--text)' }}>{deltaLogK.toFixed(1)}</strong></span>
+          <div className="indicator-metrics">
+            <span>log K′(MIn) = <strong>{logKprimeMIn.toFixed(1)}</strong></span>
+            <span>ΔlogK = <strong>{deltaLogK.toFixed(1)}</strong></span>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorFree, border: '1px solid #ccc' }} title={t('titulacion.freeColorTitle')} />
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>→</span>
-            <div style={{ width: 24, height: 12, borderRadius: 3, background: ind.colorMIn, border: '1px solid #ccc' }} title={t('titulacion.mInColorTitle')} />
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>pH {ind.pHRange[0]}–{ind.pHRange[1]}</span>
+          <div className="indicator-transition">
+            <span className="indicator-swatch" style={{ background: ind.colorFree }} title={t('titulacion.freeColorTitle')} />
+            <span aria-hidden>→</span>
+            <span className="indicator-swatch" style={{ background: ind.colorMIn }} title={t('titulacion.mInColorTitle')} />
+            <span>pH {ind.pHRange[0]}–{ind.pHRange[1]}</span>
           </div>
         </div>
       ))}
@@ -237,7 +248,8 @@ function IndicadorChart({ metalId, logKf, logBetasOH, pH }: {
 
 function AcidBaseTitration({ mode }: { mode: Mode }) {
   const t = useT();
-  const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem());
+  const lang = useLanguage();
+  const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem(false, lang));
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cAnalyte, setCAnalyte] = useState(0.1);
   const [vAnalyte, setVAnalyte] = useState(25);
@@ -326,7 +338,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
   });
 
   function reset() {
-    setSystem(strongAcidSystem()); setTitrantIsAcid(false);
+    setSystem(strongAcidSystem(false, lang)); setTitrantIsAcid(false);
     setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
     setIndicatorId('phenolphthalein'); setShowIndicator(false); setShowDerivative(false);
     setIonicStrength(0); setGammaModel('dh');
@@ -343,6 +355,9 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
   }
 
   const indicator = INDICATORS.find((i) => i.id === indicatorId)!;
+  const localizedSystem = isGenericSystemLabel(system.label)
+    ? { ...system, label: inferredSystemLabel(system.z0, system.pKas, lang) }
+    : system;
   const titrantName = titrantIsAcid ? 'HCl' : 'NaOH';
   const analyteKind = system.pKas.length > 0
     ? 'equilibrium' as const
@@ -675,8 +690,8 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
 
   return (
     <>
-      <PanelShell title={t('titulacion.acidBaseTitle')} onReset={reset} moduleId="titulacion">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+      <PanelShell title={t('titulacion.acidBaseTitle')} onReset={reset} moduleId="titulacion" guideId="titulacion-acidobase">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <Segmented
             options={[
               { value: 'base', label: t('titulacion.titrantBaseSeg') },
@@ -687,7 +702,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
               const nextIsAcid = v === 'acid';
               setTitrantIsAcid(nextIsAcid);
               if (system.pKas.length === 0) {
-                setSystem(strongAcidSystem(nextIsAcid));
+                setSystem(strongAcidSystem(nextIsAcid, lang));
               } else {
                 setStartIndex(nextIsAcid ? system.pKas.length : 0);
                 setEndIndex(nextIsAcid ? 0 : system.pKas.length);
@@ -702,7 +717,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             additions={[showIndicator && t('titulacion.addVisualIndicator'), showDerivative && t('mezclas.additionDerivative'), showPrecipCoupling && t('titulacion.addPrecipCoupling'), showBiphasic && t('titulacion.addBiphasic'), showResinCoupling && t('titulacion.addResinCoupling')]}
           />
           <AcidSystemEditor
-            system={system}
+            system={localizedSystem}
             onChange={(next) => {
               const shapeChanged = next.z0 !== system.z0 || next.pKas.length !== system.pKas.length;
               setSystem(next);
@@ -794,7 +809,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             </Disclosure>
           )}
         </PanelSection>
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <SelectControl
             label={t('titulacion.solventLabel')}
             value={solventId}
@@ -845,11 +860,14 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             {!couplingEligible && (showPrecipCoupling || showBiphasic || showResinCoupling) && <p className="hint">{t('titulacion.couplingEligibilityHint')}</p>}
           </Disclosure>
         </PanelSection>
-        <PanelSection title={t('titulacion.detectionSection')} icon="✦">
+        <PanelSection title={t('titulacion.detectionSection')}>
           <SelectControl
             label={t('titulacion.visualIndicatorLabel')}
             value={indicatorId}
-            options={INDICATORS.map((i) => ({ value: i.id, label: `${i.name} (${i.range[0]}–${i.range[1]})` }))}
+            options={INDICATORS.map((i) => ({
+              value: i.id,
+              label: `${INDICATOR_NAME_KEYS[i.id] ? t(INDICATOR_NAME_KEYS[i.id]) : i.name} (${i.range[0]}–${i.range[1]})`,
+            }))}
             onChange={setIndicatorId}
           />
           <Toggle label={t('titulacion.showTransitionRangeToggle')} checked={showIndicator} onChange={setShowIndicator} />
@@ -864,9 +882,9 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
           <Toggle label={t('titulacion.backProtocolToggle')} checked={showBackProtocol} onChange={setShowBackProtocol} />
           {showBackProtocol && <Slider label={t('titulacion.primaryReagentVolume')} value={primaryReagentVolume} min={0} max={100} step={0.5} decimals={1} unit="mL" onChange={setPrimaryReagentVolume} />}
           <details className="section-collapse">
-            <summary>{t('acidoBase.activityCorrection')}</summary>
+            <summary className="section-collapse-title">{t('acidoBase.activityCorrection')}<span className="ui-chevron" aria-hidden /></summary>
             <Slider label={t('acidoBase.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
-            <div style={{ marginTop: 6 }}>
+            <div className="control-input">
               <Segmented
                 options={gammaModelsT}
                 value={gammaModel}
@@ -876,7 +894,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             <p className="hint">{t('titulacion.activityHint')}</p>
           </details>
         </PanelSection>
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           {eqInfo.length > 0 && <ResultCard items={eqInfo} />}
           {showIndicator && Number.isFinite(pHLastEq) && (
             <p className={indicatorOk ? 'badge ok' : 'badge warn'}>
@@ -932,8 +950,8 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
               id: 'gran',
               label: 'Gran',
               node: (
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <div style={{ flex: 1, minHeight: 0 }}>
+                <div className="chart-with-caption">
+                  <div className="chart-with-caption-plot">
                     <Chart
                       data={granTraces}
                       xTitle={t('mezclas.volumeAddedLabel', { titrant: titrantName })}
@@ -944,7 +962,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
                       exportMetadata={exportMetadata}
                     />
                   </div>
-                  <p className="hint" style={{ margin: '4px 8px 2px' }}>
+                  <p className="hint chart-caption">
                     {t(granHintKey)}<em>{t('titulacion.granHintBeforeEm')}</em>{t('titulacion.granHintMid')}
                     <sub>eq</sub> = {Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—'}.
                   </p>
@@ -1366,12 +1384,12 @@ function EdtaTitration({ mode }: { mode: Mode }) {
 
   return (
     <>
-      <PanelShell title={t('titulacion.edtaTitle')} onReset={reset} moduleId="titulacion">
+      <PanelShell title={t('titulacion.edtaTitle')} onReset={reset} moduleId="titulacion" guideId="titulacion-edta">
         <SystemPresetPicker
           items={SYSTEM_PRESETS.map((p) => ({ id: p.id, name: p.name, group: p.group, detail: p.detail }))}
           onSelect={applyFullSystem}
         />
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <Segmented
             options={[
               { value: 'direct', label: t('titulacion.directMode') },
@@ -1417,25 +1435,25 @@ function EdtaTitration({ mode }: { mode: Mode }) {
             </Disclosure>
           )}
         </PanelSection>
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <Slider label={t('titulacion.bufferPHLabel')} value={pH} min={1} max={13} step={0.1} onChange={setPH} decimals={1} />
           <ConcSlider label={t('titulacion.concInFlaskLabel', { name: flaskName })} value={cFlask} onChange={setCFlask} min={-4} max={-1} />
           <Slider label={t('titulacion.flaskVolumeLabel')} value={vFlask} min={5} max={100} step={1} onChange={setVFlask} unit="mL" decimals={0} />
           <ConcSlider label={t('titulacion.concOfTitrantLabel', { name: buretName })} value={cBuret} onChange={setCBuret} min={-4} max={-1} />
         </PanelSection>
-        <PanelSection title={t('titulacion.chartSection')} icon="∿">
+        <PanelSection title={t('titulacion.chartSection')}>
           <div className="control">
             <div className="control-header"><span className="control-label">{t('titulacion.horizontalAxisLabel')}</span></div>
-            <div className="segmented" style={{ marginTop: 6 }}>
-              <button className={axis === 'volume' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('volume')}>{t('titulacion.volumeAxisOption')}</button>
-              <button className={axis === 'x' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('x')}>{t('titulacion.progressAxisOption')}</button>
+            <div className="segmented control-input">
+              <button type="button" className={axis === 'volume' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('volume')}>{t('titulacion.volumeAxisOption')}</button>
+              <button type="button" className={axis === 'x' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('x')}>{t('titulacion.progressAxisOption')}</button>
             </div>
           </div>
           <div className="control">
             <div className="control-header"><span className="control-label">{t('titulacion.tracesLabel')}</span></div>
-            <div className="segmented" style={{ marginTop: 6 }}>
+            <div className="segmented control-input">
               {(['pM', 'pY', 'both'] as const).map((tr) => (
-                <button key={tr} className={traceY === tr ? 'seg-btn active' : 'seg-btn'} onClick={() => setTraceY(tr)}>
+                <button type="button" key={tr} className={traceY === tr ? 'seg-btn active' : 'seg-btn'} onClick={() => setTraceY(tr)}>
                   {tr === 'both' ? 'pM′ + pY′' : `${tr}′`}
                 </button>
               ))}
@@ -1476,7 +1494,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
             </>
           )}
         </Disclosure>
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: t('titulacion.alphaYAtPHLabel'), value: formatSci(1 / aY, 3) },
             { label: t('titulacion.condLogKfLabel'), value: curve.logKfCond.toFixed(2) },
@@ -1719,8 +1737,8 @@ function RedoxTitration({ mode }: { mode: Mode }) {
     { couple: analyte, pe0: analytePe0 },
     ...(showSecondAnalyte && !showStateNetwork ? [{ couple: secondAnalyte, pe0: peConditional(secondAnalyte, pH) }] : []),
   ].map(({ couple, pe0 }) => direction === 'oxidante'
-    ? couple.n * titrant.n * (peConditional(titrant, pH) - pe0)
-    : couple.n * titrant.n * (pe0 - peConditional(titrant, pH)));
+    ? electronTransferCount(couple.n, titrant.n) * (peConditional(titrant, pH) - pe0)
+    : electronTransferCount(couple.n, titrant.n) * (pe0 - peConditional(titrant, pH)));
   const limitingLogK = Math.min(...reactionLogKs);
   const quantitative = limitingLogK >= 6;
   const pHDependent = showConditionalStates || analyte.mH > 0 || titrant.mH > 0 || (showSecondAnalyte && secondAnalyte.mH > 0);
@@ -1786,8 +1804,8 @@ function RedoxTitration({ mode }: { mode: Mode }) {
 
   return (
     <>
-      <PanelShell title={t('titulacion.redoxTitle')} onReset={reset} moduleId="titulacion">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+      <PanelShell title={t('titulacion.redoxTitle')} onReset={reset} moduleId="titulacion" guideId="titulacion-redox">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <Segmented
             options={[
               { value: 'oxidante', label: t('titulacion.oxidationOption') },
@@ -1859,7 +1877,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
           )}
           <CoupleEditor title={t('titulacion.titrantPairTitle')} couple={titrant} onChange={setTitrant} />
         </PanelSection>
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <Slider label={t('titulacion.bufferedMediumPHLabel')} value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
           {pHDependent && (
             <p className="hint">{t('titulacion.hInHalfReactionHint')}</p>
@@ -1881,7 +1899,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
             <Slider label={t('titulacion.redoxIndicatorELabel')} value={indicatorE} min={-0.5} max={2} step={0.01} onChange={setIndicatorE} unit="V" decimals={2} />
           )}
         </PanelSection>
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: showSecondAnalyte ? t('titulacion.successiveEquivalences') : t('titulacion.volEqLabel'), value: `${activeEquivalences.map((value) => value.toFixed(2)).join(' / ')} mL` },
             { label: t('titulacion.eAtEquivalenceLabel'), value: `${eAtLastEq.toFixed(3)} V (pe ${peAtLastEq.toFixed(2)})`, helpId: 'pe' },
@@ -2105,16 +2123,16 @@ function PrecipTitration({ mode }: { mode: Mode }) {
   const sharpness = pKsp >= 6;
   return (
     <>
-      <PanelShell title={t('titulacion.precipTitle')} onReset={reset} moduleId="titulacion">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+      <PanelShell title={t('titulacion.precipTitle')} onReset={reset} moduleId="titulacion" guideId="titulacion-precipitacion">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <ModelBadge
             model={t('titulacion.precipModelBadge', { m, x })}
             additions={[showPCation && t('titulacion.addPCationAxis', { cation: cationName }), showMohr && showPCation && t('titulacion.addMohrIndicator'), showDerivative && t('mezclas.additionDerivative')]}
           />
           <p className="hint">{m > 1 ? `${m}` : ''}{cationName} + {x > 1 ? `${x}` : ''}{anionName} → {saltFormula}↓</p>
-          <div className="preset-chip-row" style={{ marginBottom: 8 }}>
+          <div className="preset-chip-row preset-chip-row-spaced">
             {PRECIP_PRESETS.map((p) => (
-              <button
+              <button type="button"
                 key={p.id}
                 className={`preset-chip${presetId === p.id ? ' active' : ''}`}
                 onClick={() => loadPreset(p.id)}
@@ -2131,13 +2149,13 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           <Slider label={t('titulacion.pKspLabel')} helpId="pKsp" value={pKsp} min={2} max={22} step={0.01} onChange={setPKsp} decimals={2} />
         </PanelSection>
 
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <ConcSlider label={t('titulacion.concOfLabel', { name: anionName })} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
           <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
           <ConcSlider label={t('titulacion.concOfLabel', { name: cationName })} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
         </PanelSection>
 
-        <PanelSection title={t('titulacion.visualizationSection')} icon="✦">
+        <PanelSection title={t('titulacion.visualizationSection')}>
           <Toggle label={t('titulacion.pCationAxisToggle', { cation: cationName, anion: anionName })} checked={showPCation} onChange={setShowPCation} />
           {isAgSystem && showPCation && (
             <Toggle label={t('titulacion.mohrMarkerToggle')} checked={showMohr} onChange={setShowMohr} />
@@ -2166,7 +2184,7 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           )}
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: t('titulacion.volEqLabel'), value: `${curve.vEq.toFixed(2)} mL` },
             { label: m === 1 && x === 1 ? t('titulacion.pAtEquivalenceHalfPKsp') : t('titulacion.pAtEquivalence'), value: curve.pAgEq.toFixed(2) },
@@ -2236,7 +2254,8 @@ const S_POT = 59.16; // mV / pH
 
 function PotenciometricaTitration({ mode }: { mode: Mode }) {
   const t = useT();
-  const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem());
+  const lang = useLanguage();
+  const [system, setSystem] = useState<AcidSystem>(() => strongAcidSystem(false, lang));
   const [titrantIsAcid, setTitrantIsAcid] = useState(false);
   const [cAnalyte, setCAnalyte] = useState(0.1);
   const [vAnalyte, setVAnalyte] = useState(25);
@@ -2257,12 +2276,15 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
   });
 
   function reset() {
-    setSystem(strongAcidSystem()); setTitrantIsAcid(false);
+    setSystem(strongAcidSystem(false, lang)); setTitrantIsAcid(false);
     setCAnalyte(0.1); setVAnalyte(25); setCTitrant(0.1);
     setKref(400); setShowDeriv1(false); setShowDeriv2(false);
   }
 
   const titrantName = titrantIsAcid ? 'HCl' : 'NaOH';
+  const localizedSystem = isGenericSystemLabel(system.label)
+    ? { ...system, label: inferredSystemLabel(system.z0, system.pKas, lang) }
+    : system;
   const analyteKind = system.pKas.length > 0
     ? 'equilibrium' as const
     : system.z0 > 0 ? 'strong-base' as const : 'strong-acid' as const;
@@ -2427,8 +2449,8 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
       id: 'gran',
       label: t('titulacion.granChartTab'),
       node: (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div style={{ flex: 1, minHeight: 0 }}>
+        <div className="chart-with-caption">
+          <div className="chart-with-caption-plot">
             <Chart
               data={granTraces}
               xTitle={t('titulacion.volumeOfLabel', { titrant: titrantName })}
@@ -2439,7 +2461,7 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
               exportMetadata={exportMetadata}
             />
           </div>
-          <p className="hint" style={{ margin: '4px 8px 2px' }}>
+          <p className="hint chart-caption">
             {t('titulacion.granOnlyBeforeAfterHint')}<em>{t('titulacion.beforeEm')}</em>{t('titulacion.granOnlyMid')}<em>{t('titulacion.afterEm')}</em>{t('titulacion.granOnlySuffix')}<sub>eq</sub>.
           </p>
         </div>
@@ -2456,8 +2478,8 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
 
   return (
     <>
-      <PanelShell title={t('titulacion.potentiometricTitle')} onReset={reset} moduleId="titulacion">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+      <PanelShell title={t('titulacion.potentiometricTitle')} onReset={reset} moduleId="titulacion" guideId="titulacion-potenciometrica">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <Segmented
             options={[
               { value: 'base', label: t('titulacion.titrantBaseSeg') },
@@ -2467,7 +2489,7 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
             onChange={(v) => {
               const nextIsAcid = v === 'acid';
               setTitrantIsAcid(nextIsAcid);
-              if (system.pKas.length === 0) setSystem(strongAcidSystem(nextIsAcid));
+              if (system.pKas.length === 0) setSystem(strongAcidSystem(nextIsAcid, lang));
             }}
           />
           <ModelBadge
@@ -2477,14 +2499,14 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
             })}
             additions={[showDeriv1 && t('titulacion.addFirstDerivative'), showDeriv2 && t('titulacion.addSecondDerivative')]}
           />
-          <AcidSystemEditor system={system} onChange={setSystem} includeStrong allowNoConstants showModel={false} allowAquaCations />
+          <AcidSystemEditor system={localizedSystem} onChange={setSystem} includeStrong allowNoConstants showModel={false} allowAquaCations />
         </PanelSection>
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <ConcSlider label={t('titulacion.analyteConcLabel')} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
           <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
           <ConcSlider label={t('titulacion.concOfLabel', { name: titrantName })} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
         </PanelSection>
-        <PanelSection title={t('titulacion.glassElectrodeSection')} icon="✦">
+        <PanelSection title={t('titulacion.glassElectrodeSection')}>
           <Slider
             label={t('titulacion.krefLabel')}
             helpId="Kref"
@@ -2495,7 +2517,7 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
           <Toggle label={t('titulacion.showFirstDerivativeToggle')} checked={showDeriv1} onChange={setShowDeriv1} />
           <Toggle label={t('titulacion.showSecondDerivativeToggle')} checked={showDeriv2} onChange={setShowDeriv2} />
         </PanelSection>
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: t('titulacion.veqExactBalanceLabel'), value: `${veqFromCurve?.toFixed(2) ?? '—'} mL` },
             ...(showDeriv2 ? [{
@@ -2545,17 +2567,30 @@ export default function Titulacion() {
     { value: 'potenciometrica', label: t('titulacion.modePotentiometric') },
   ];
   const [mode, setMode] = useState<Mode>(initialTitulacionMode);
+  const modeTabsRef = useRef<HTMLDivElement>(null);
   const modeLabel = MODES.find((m) => m.value === mode)?.label ?? '';
+
+  useEffect(() => {
+    modeTabsRef.current
+      ?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+      ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [mode]);
+
   return (
     <div className="module-with-tabs">
       <details className="tit-mode-collapse" open>
-        <summary className="tit-mode-summary">{t('titulacion.modeSummary', { mode: modeLabel })}</summary>
-        <div className="chart-tabs">
+        <summary className="tit-mode-summary">{t('titulacion.modeSummary', { mode: modeLabel })}<span className="ui-chevron" aria-hidden /></summary>
+        <div ref={modeTabsRef} className="chart-tabs" role="tablist" aria-label={t('titulacion.modeTablist')}>
           {MODES.map((m) => (
             <button
               key={m.value}
+              type="button"
+              role="tab"
+              aria-selected={mode === m.value}
+              tabIndex={mode === m.value ? 0 : -1}
               className={mode === m.value ? 'chart-tab active' : 'chart-tab'}
               onClick={() => setMode(m.value)}
+              onKeyDown={handleTabKeyDown}
             >
               {m.label}
             </button>

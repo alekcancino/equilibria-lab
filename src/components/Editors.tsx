@@ -5,6 +5,7 @@
 import { ConstantList, DbPanel, HelpTip, LabelField, ModelBadge, SelectControl, Slider, ConcSlider } from './Controls';
 import { useT } from '../hooks/useT';
 import { useLanguage } from '../hooks/useLanguage';
+import type { TKey } from '../i18n/translations';
 import { ACIDS } from '../lib/database';
 import { REDOX_COUPLES } from '../lib/redoxDatabase';
 import { COMPLEX_PRESETS } from '../lib/complexDatabase';
@@ -82,7 +83,7 @@ export function AcidSystemEditor({
         }}
       />
       <details className="section-collapse">
-        <summary className="section-collapse-title">{t('acidSystemEditor.systemTypeSummary')}</summary>
+        <summary className="section-collapse-title">{t('acidSystemEditor.systemTypeSummary')}<span className="ui-chevron" aria-hidden /></summary>
         <SelectControl
           label={t('acidSystemEditor.z0Label')}
           value={String(system.z0)}
@@ -112,9 +113,15 @@ export function AcidSystemEditor({
           id: a.id,
           label: a.formula,
           detail: a.strong
-            ? `${a.name.split(' (')[0]} · disociación completa`
-            : `${a.name.split(' (')[0]} · pKa ${a.pKas.map((k) => k.toFixed(2)).join(', ')}`,
-          group: a.strong ? 'Fuertes' : a.isBase ? 'Bases' : a.pKas.length > 1 ? 'Polipróticos' : 'Monopróticos',
+            ? `${t(`acidPreset.${a.id}` as TKey)} · ${t('acidSystemEditor.completeDissociation')}`
+            : `${t(`acidPreset.${a.id}` as TKey)} · pKa ${a.pKas.map((k) => k.toFixed(2)).join(', ')}`,
+          group: a.strong
+            ? t('acidSystemEditor.groupStrong')
+            : a.isBase
+              ? t('acidSystemEditor.groupBases')
+              : a.pKas.length > 1
+                ? t('acidSystemEditor.groupPolyprotic')
+                : t('acidSystemEditor.groupMonoprotic'),
         }))}
         onSelect={(id) => onChange(acidSystemFromPreset(id, allowNoConstants))}
       />
@@ -197,7 +204,7 @@ export function SideReactionEditor({
     <>
       {showLigandPKas && (
         <details className="section-collapse">
-          <summary className="section-collapse-title">{ligandTitle ?? t('sideReactionEditor.ligandPKasTitle')}</summary>
+          <summary className="section-collapse-title">{ligandTitle ?? t('sideReactionEditor.ligandPKasTitle')}<span className="ui-chevron" aria-hidden /></summary>
           <ConstantList
             prefix="pKa"
             helpId="pKa"
@@ -218,7 +225,7 @@ export function SideReactionEditor({
         open={state.showOH}
         onToggle={(e) => set('showOH', (e.target as HTMLDetailsElement).open)}
       >
-        <summary className="section-collapse-title">{t('sideReactionEditor.hydrolysisTitle')}</summary>
+        <summary className="section-collapse-title">{t('sideReactionEditor.hydrolysisTitle')}<span className="ui-chevron" aria-hidden /></summary>
         <ConstantList
           prefix="log β(OH)"
           helpId="logBetaOH"
@@ -241,11 +248,11 @@ export function SideReactionEditor({
         open={state.showAux}
         onToggle={(e) => set('showAux', (e.target as HTMLDetailsElement).open)}
       >
-        <summary className="section-collapse-title">{auxLigandTitle ?? t('sideReactionEditor.auxLigandTitleDefault')}</summary>
-        <p className="hint" style={{ marginBottom: 6 }}>{t('sideReactionEditor.presetsLabel')}</p>
-        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+        <summary className="section-collapse-title">{auxLigandTitle ?? t('sideReactionEditor.auxLigandTitleDefault')}<span className="ui-chevron" aria-hidden /></summary>
+        <p className="hint compact-hint">{t('sideReactionEditor.presetsLabel')}</p>
+        <div className="preset-chip-row preset-chip-row-spaced">
           {COMPLEX_PRESETS.map((cp) => (
-            <button
+            <button type="button"
               key={cp.id}
               className="preset-chip"
               title={`log β: [${cp.logBetas.join(', ')}]`}
@@ -277,13 +284,13 @@ export function SideReactionEditor({
             <span className="control-label">{t('sideReactionEditor.howMuchDissolved', { aux })}</span>
             <HelpTip id="ligFree" />
           </div>
-          <div className="segmented" style={{ marginTop: 6 }}>
+          <div className="segmented control-input">
             {([
               { value: 'free', label: t('sideReactionEditor.free', { aux }) },
               { value: 'total', label: t('sideReactionEditor.total') },
               { value: 'fixedPX', label: t('sideReactionEditor.fixedPX') },
             ] as const).map(({ value, label }) => (
-              <button
+              <button type="button"
                 key={value}
                 className={state.auxSpecMode === value ? 'seg-btn active' : 'seg-btn'}
                 onClick={() => set('auxSpecMode', value)}
@@ -329,7 +336,7 @@ export function SideReactionEditor({
           open={state.showComplex}
           onToggle={(e) => set('showComplex', (e.target as HTMLDetailsElement).open)}
         >
-          <summary className="section-collapse-title">{t('sideReactionEditor.complexProtonationTitle')}</summary>
+          <summary className="section-collapse-title">{t('sideReactionEditor.complexProtonationTitle')}<span className="ui-chevron" aria-hidden /></summary>
           <Slider
             label="log K (MY + H⁺ ⇌ MHY)"
             helpId="logKprotonation"

@@ -17,7 +17,7 @@ import DiagramTabs from '../components/DiagramTabs';
 import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, LabelField, PanelSection, ResultCardRow, Disclosure } from '../components/Controls';
 import { CoupleEditor, SideReactionEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
-import { NERNST_S, conditionalEprime, redoxStateAlpha } from '../lib/redox';
+import { NERNST_S, conditionalEprime, electronTransferCount, redoxStateAlpha } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
 import { alphaH, alphaL } from '../lib/conditional';
 import {
@@ -248,9 +248,7 @@ export default function PotencialCondicional() {
 
   const strongest = couples[0]; // strongest oxidant (highest E°')
   const weakest = couples[couples.length - 1]; // strongest reductant (lowest E°')
-  const pe1cur = E1cur / S;
-  const pe2cur = E2cur / S;
-  const logKcur = st.couple1.n * st.couple2.n * Math.abs(pe1cur - pe2cur);
+  const logKcur = electronTransferCount(strongest.c.n, weakest.c.n) * Math.abs(strongest.E - weakest.E) / S;
 
   const electrodeE = useMemo(() => {
     if (!st.showElectrode) return null;
@@ -519,8 +517,8 @@ export default function PotencialCondicional() {
 
   return (
     <div className="module">
-      <PanelShell title={t('potencialcond.title')} onReset={reset} moduleId="potencialcond">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+      <PanelShell title={t('potencialcond.title')} onReset={reset} moduleId="potencialcond" guideId="potencialcond">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <ModelBadge
             model={t('potencialcond.comparisonModel')}
             additions={[
@@ -535,7 +533,7 @@ export default function PotencialCondicional() {
           <CoupleEditor title={t('redox.couple2Title')} couple={st.couple2} onChange={(c) => set('couple2', c)} />
         </PanelSection>
 
-        <PanelSection title={t('potencialcond.complexationSection')} icon="✦">
+        <PanelSection title={t('potencialcond.complexationSection')}>
           <Toggle
             label={t('potencialcond.complexationToggle')}
             checked={st.showComplexPH1}
@@ -576,7 +574,7 @@ export default function PotencialCondicional() {
           )}
         </PanelSection>
 
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <Slider
             label={t('potencialcond.cursorPHLabel')}
             value={st.pH} min={0} max={14} step={0.1}
@@ -597,12 +595,12 @@ export default function PotencialCondicional() {
                 onChange={(c) => set('couple3', c)}
               />
               {dismutationActive ? (
-                <div className="badge warn" style={{ marginBottom: 8 }}>
+                <div className="badge warn status-spaced">
                   {t('potencialcond.dismutationActivePrefix', { ph: st.pH.toFixed(1), e3: E3cur!.toFixed(3), e1: E1cur.toFixed(3) })}
                   <strong>{st.couple1.red}</strong>{t('potencialcond.dismutationActiveSuffix')}
                 </div>
               ) : (
-                <div className="badge ok" style={{ marginBottom: 8 }}>
+                <div className="badge ok status-spaced">
                   {t('potencialcond.intermediateStableText', { ph: st.pH.toFixed(1), e1: E1cur.toFixed(3), e3: E3cur?.toFixed(3) ?? '—' })}
                 </div>
               )}
@@ -619,7 +617,7 @@ export default function PotencialCondicional() {
           )}
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: t('potencialcond.eprimeAtPH', { name: st.couple1.name, ph: st.pH.toFixed(1) }), value: `${E1cur.toFixed(3)} V  (pe°′ ${(E1cur/S).toFixed(1)})`, helpId: 'Eprime' },
             { label: t('potencialcond.eprimeAtPH', { name: st.couple2.name, ph: st.pH.toFixed(1) }), value: `${E2cur.toFixed(3)} V  (pe°′ ${(E2cur/S).toFixed(1)})`, helpId: 'Eprime' },
@@ -636,14 +634,12 @@ export default function PotencialCondicional() {
           ]} />
         </PanelSection>
 
-        <PanelSection title={t('potencialcond.ligandEffectSection')} icon="✦">
-          <Toggle
-            label={t('potencialcond.pxToggle')}
-            checked={st.showPX}
-            onChange={(v) => set('showPX', v)}
-          />
-          {st.showPX && (
-            <div className="mask-section">
+        <Disclosure
+          title={t('potencialcond.ligandEffectSection')}
+          open={st.showPX}
+          onToggle={(showPX) => set('showPX', showPX)}
+        >
+          <div className="mask-section">
               <LabelField label={t('potencialcond.oxidizedFormLabel')} value={st.pxOxLabel} onChange={(v) => set('pxOxLabel', v)} />
               <LabelField label={t('potencialcond.reducedFormLabel')} value={st.pxRedLabel} onChange={(v) => set('pxRedLabel', v)} />
               <LabelField label={t('potencialcond.ligandXLabel')} value={st.pxLigandLabel} onChange={(v) => set('pxLigandLabel', v)} />
@@ -657,9 +653,9 @@ export default function PotencialCondicional() {
                   <span className="control-label">{t('coupleEditor.nLabel')}</span>
                   <span className="control-value">{st.pxN}</span>
                 </div>
-                <div className="segmented" style={{ marginTop: 4 }}>
+                <div className="segmented control-input">
                   {[1, 2, 3].map((n) => (
-                    <button key={n} className={st.pxN === n ? 'seg-btn active' : 'seg-btn'} onClick={() => set('pxN', n)}>{n}</button>
+                    <button type="button" key={n} className={st.pxN === n ? 'seg-btn active' : 'seg-btn'} onClick={() => set('pxN', n)}>{n}</button>
                   ))}
                 </div>
               </div>
@@ -705,18 +701,15 @@ export default function PotencialCondicional() {
                   <p className="hint">{t('potencialcond.pxPrimeHint')}</p>
                 </div>
               )}
-            </div>
-          )}
-        </PanelSection>
+          </div>
+        </Disclosure>
 
-        <PanelSection title={t('potencialcond.electrodeSection')} icon="✦">
-          <Toggle
-            label={t('potencialcond.electrodeSection')}
-            checked={st.showElectrode}
-            onChange={(v) => set('showElectrode', v)}
-          />
-          {st.showElectrode && (
-            <div className="mask-section">
+        <Disclosure
+          title={t('potencialcond.electrodeSection')}
+          open={st.showElectrode}
+          onToggle={(showElectrode) => set('showElectrode', showElectrode)}
+        >
+          <div className="mask-section">
               <Slider label={t('potencialcond.e0VLabel')} helpId="E0" value={st.e0Metal} min={-1} max={2} step={0.01} onChange={(v) => set('e0Metal', v)} decimals={3} />
               <Slider label={t('coupleEditor.nLabel')} helpId="n" value={st.nElectrode} min={1} max={4} step={1} onChange={(v) => set('nElectrode', v)} decimals={0} />
               <Slider label={t('potencialcond.mHInHalfReaction')} helpId="mH" value={st.mHElectrode} min={0} max={4} step={1} onChange={(v) => set('mHElectrode', v)} decimals={0} />
@@ -729,9 +722,8 @@ export default function PotencialCondicional() {
                 ]} />
               )}
               <p className="hint">{t('potencialcond.electrodeExampleHint')}</p>
-            </div>
-          )}
-        </PanelSection>
+          </div>
+        </Disclosure>
 
         <InfoBox title={t('potencialcond.infoBoxTitle')}>
           <p>
