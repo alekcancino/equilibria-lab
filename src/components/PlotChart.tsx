@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import Plotly from 'plotly.js-basic-dist-min';
 import createPlotlyComponent from 'react-plotly.js/factory';
-import type { Layout } from 'plotly.js';
+import type { Layout, PlotMouseEvent } from 'plotly.js';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useTheme } from '../hooks/useTheme';
 import { toDarkColors } from '../lib/plotTheme';
-import type { ChartProps } from './Chart';
+import type { ChartHoverPoint, ChartProps } from './Chart';
 
 const factory = (createPlotlyComponent as unknown as { default?: typeof createPlotlyComponent }).default
   ?? createPlotlyComponent;
@@ -13,6 +13,7 @@ const Plot = factory(Plotly);
 
 export interface PlotChartProps extends ChartProps {
   onGraphDiv?: (div: HTMLElement) => void;
+  onHover?: (point: ChartHoverPoint | null) => void;
 }
 
 function plotToken(name: string, fallback: string): string {
@@ -38,6 +39,7 @@ export default function PlotChart({
   data, xTitle, yTitle, xRange, yRange, shapes, annotations, showLegend = true,
   exportName = 'equilibria-lab',
   onGraphDiv,
+  onHover,
 }: PlotChartProps) {
   const mobile = useIsMobile();
   const theme = useTheme();
@@ -123,6 +125,18 @@ export default function PlotChart({
     };
   }, [mobile, theme, xTitle, yTitle, xRange, yRange, showLegend, themedShapes, themedAnnotations, themedData.length, exportName]);
 
+  const handleHover = (event: Readonly<PlotMouseEvent>) => {
+    const point = event.points?.[0];
+    if (!point || point.x === undefined || point.y === undefined) return;
+    onHover?.({
+      x: point.x as number | string,
+      y: point.y as number | string,
+      series: typeof point.data?.name === 'string' ? point.data.name : undefined,
+    });
+  };
+
+  const handleUnhover = () => onHover?.(null);
+
   return (
     <Plot
       data={themedData}
@@ -131,6 +145,8 @@ export default function PlotChart({
       style={{ width: '100%', height: '100%' }}
       onInitialized={(_figure, graphDiv) => onGraphDiv?.(graphDiv)}
       onUpdate={(_figure, graphDiv) => onGraphDiv?.(graphDiv)}
+      onHover={handleHover}
+      onUnhover={handleUnhover}
       config={{
         displayModeBar: false,
         displaylogo: false,

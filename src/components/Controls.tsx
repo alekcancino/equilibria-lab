@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { GLOSSARY } from '../lib/glossary';
 import { useLanguage } from '../hooks/useLanguage';
 import { useT } from '../hooks/useT';
@@ -284,22 +284,51 @@ export function Toggle({
   );
 }
 
+function handleSegmentKeyDown(
+  event: KeyboardEvent<HTMLButtonElement>,
+  options: { value: string }[],
+  value: string,
+  onChange: (v: string) => void,
+): void {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  const group = event.currentTarget.closest('[role="radiogroup"]');
+  if (!group) return;
+  const radios = Array.from(group.querySelectorAll<HTMLButtonElement>('[role="radio"]:not(:disabled)'));
+  const current = radios.indexOf(event.currentTarget);
+  if (current < 0 || radios.length === 0) return;
+
+  event.preventDefault();
+  let next = current;
+  if (event.key === 'Home') next = 0;
+  if (event.key === 'End') next = radios.length - 1;
+  if (event.key === 'ArrowRight') next = (current + 1) % radios.length;
+  if (event.key === 'ArrowLeft') next = (current - 1 + radios.length) % radios.length;
+  const selected = options[next]?.value;
+  if (selected !== undefined && selected !== value) onChange(selected);
+  radios[next]?.focus();
+}
+
 /** Segmented control for choosing a mode (e.g. titration type or chart type). */
 export function Segmented({
-  options, value, onChange,
+  options, value, onChange, ariaLabel,
 }: {
   options: { value: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
+  ariaLabel?: string;
 }) {
   return (
-    <div className="segmented">
+    <div className="segmented" role="radiogroup" aria-label={ariaLabel}>
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
+          role="radio"
+          aria-checked={o.value === value}
+          tabIndex={o.value === value ? 0 : -1}
           className={o.value === value ? 'seg-btn active' : 'seg-btn'}
           onClick={() => onChange(o.value)}
+          onKeyDown={(event) => handleSegmentKeyDown(event, options, value, onChange)}
         >
           {o.label}
         </button>

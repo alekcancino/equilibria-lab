@@ -1,38 +1,55 @@
 import { useState } from 'react';
 import { useT } from '../hooks/useT';
 
-/** Copies the current URL to clipboard and shows a brief confirmation. */
-export default function ShareButton() {
-  const t = useT();
-  const [copied, setCopied] = useState(false);
-
-  const handleClick = async () => {
+async function copyCurrentUrl(): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    return true;
+  } catch {
     try {
-      await navigator.clipboard.writeText(window.location.href);
-    } catch {
-      // Fallback for older browsers / non-HTTPS
       const el = document.createElement('textarea');
       el.value = window.location.href;
       el.style.position = 'fixed';
       el.style.opacity = '0';
       document.body.appendChild(el);
       el.select();
-      document.execCommand('copy');
+      const copied = document.execCommand('copy');
       document.body.removeChild(el);
+      return copied;
+    } catch {
+      return false;
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  }
+}
+
+/** Copies the current URL to clipboard and shows a brief confirmation. */
+export default function ShareButton() {
+  const t = useT();
+  const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const handleClick = async () => {
+    setFailed(false);
+    if (await copyCurrentUrl()) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+      return;
+    }
+    setFailed(true);
+    window.setTimeout(() => setFailed(false), 4000);
   };
+
+  const label = copied ? t('share.copied') : failed ? t('share.failed') : t('share.label');
 
   return (
     <button
       type="button"
-      className={`share-btn${copied ? ' share-btn--copied' : ''}`}
+      className={`share-btn${copied ? ' share-btn--copied' : ''}${failed ? ' share-btn--failed' : ''}`}
       onClick={handleClick}
       aria-label={t('share.ariaLabel')}
-      title={t('share.label')}
+      title={label}
     >
-      {copied ? t('share.copied') : (
+      {copied || failed ? label : (
         <>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
             <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2" />

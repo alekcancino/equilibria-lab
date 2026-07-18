@@ -191,7 +191,7 @@ export default function AcidoBase() {
       id: 'alpha',
       label: t('acidoBase.tabAlpha'),
       node: (
-        <Chart data={alphaTraces} xTitle="pH" yTitle="Fracción α" xRange={[0, 14]} yRange={[0, 1.02]}
+        <Chart data={alphaTraces} xTitle="pH" yTitle={t('complejos.alphaFraction')} xRange={[0, 14]} yRange={[0, 1.02]}
           shapes={showSystemPH ? [{ type: 'line', x0: pHSystem, x1: pHSystem, y0: 0, y1: 1.02, line: { color: MARKER_COLOR, width: 2, dash: 'dashdot' } }] : []}
           exportName="equilibria-acidobase-alfa" exportMetadata={exportMetadata} />
       ),

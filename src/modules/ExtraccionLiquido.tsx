@@ -564,7 +564,7 @@ export default function ExtraccionLiquido() {
             onChange={(v) => set('showDimer', v)}
           />
           {st.showDimer && st.a1.type === 'acid' && (
-            <Slider label="log K₂ (dímero)" helpId="logK2" value={st.logK2} min={-1} max={4} step={0.1} onChange={(v) => set('logK2', v)} decimals={1} />
+            <Slider label={t('extraccionLiquido.logK2DimerLabel')} helpId="logK2" value={st.logK2} min={-1} max={4} step={0.1} onChange={(v) => set('logK2', v)} decimals={1} />
           )}
           {st.a1.type === 'chelate' && (
             <Disclosure title={t('extraccionLiquido.conditionalChelateDisclosure')}>
