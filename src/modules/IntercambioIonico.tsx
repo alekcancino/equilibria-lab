@@ -54,7 +54,7 @@ export default function IntercambioIonico() {
   const [cD0, setCD0] = useState(0.002);
   const [kDB, setKDB] = useState(3.5);
 
-  useShareEffect('ionex', {
+  useShareEffect('ionexchange', {
     labelA, labelB, zA, zB, cA0, cB0, selectivity, resinCapacity, resinVolume, flowRate,
     showCraig, nPlates, labelC, cC0, kCB, showIonD, labelD, cD0, kDB,
   }, (s) => {
@@ -377,16 +377,16 @@ export default function IntercambioIonico() {
 
   return (
     <div className="module">
-      <PanelShell title={t('intercambioIonico.title')} onReset={reset} moduleId="ionex">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+      <PanelShell title={t('intercambioIonico.title')} onReset={reset} moduleId="ionexchange" guideId="ionexchange">
+        <PanelSection title={t('acidoBase.systemSection')}>
         <ModelBadge
           model={t('intercambioIonico.model')}
           additions={[zA !== zB ? t('intercambioIonico.chargesAddition', { a: zA, b: zB }) : null, showCraig && t('intercambioIonico.addExactCompetition')]}
         />
         <p className="hint">{t('intercambioIonico.resinsHint')}</p>
-        <div className="preset-chip-row" style={{ marginBottom: 8 }}>
+        <div className="preset-chip-row preset-chip-row-spaced">
           {RESIN_PRESETS.map((p) => (
-            <button
+            <button type="button"
               key={p.id}
               className={resinId === p.id ? 'preset-chip active' : 'preset-chip'}
               onClick={() => applyResin(p.id)}
@@ -396,9 +396,9 @@ export default function IntercambioIonico() {
           ))}
         </div>
         <p className="hint">{t('intercambioIonico.applicationsHint')}</p>
-        <div className="preset-chip-row" style={{ marginBottom: 10 }}>
+        <div className="preset-chip-row preset-chip-row-roomy">
           {APPLICATION_PRESETS.map((p) => (
-            <button
+            <button type="button"
               key={p.id}
               className="preset-chip"
               onClick={() => {
@@ -434,7 +434,7 @@ export default function IntercambioIonico() {
         <Slider label={t('intercambioIonico.flowRateLabel')} value={flowRate} min={0.01} max={0.2} step={0.01} onChange={setFlowRate} decimals={2} />
         </PanelSection>
 
-        <PanelSection title={t('intercambioIonico.hCompetitionSection')} icon="⚗">
+        <PanelSection title={t('intercambioIonico.hCompetitionSection')}>
         <Toggle
           label={t('intercambioIonico.cationicCompetitionToggle')}
           checked={showCompetitive}
@@ -462,7 +462,7 @@ export default function IntercambioIonico() {
         )}
         </PanelSection>
 
-        <PanelSection title={t('intercambioIonico.multizoneColumnSection')} icon="📊" collapsible defaultOpen={false}>
+        <PanelSection title={t('intercambioIonico.multizoneColumnSection')} collapsible defaultOpen={false}>
           <Toggle
             label={t('intercambioIonico.craigModelToggle')}
             checked={showCraig}
@@ -515,7 +515,7 @@ export default function IntercambioIonico() {
           )}
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: t('intercambioIonico.finalConcLabel', { label: labelA }), value: formatMolar(eq.cAeq) },
             { label: t('intercambioIonico.finalConcLabel', { label: labelB }), value: formatMolar(eq.cBeq) },

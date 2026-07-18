@@ -1,6 +1,7 @@
 import type { Zone } from '../lib/ladder';
 import { formatAxisLabel } from '../lib/format';
 import { MARKER_COLOR } from '../lib/database';
+import { useT } from '../hooks/useT';
 
 interface PredominanceDiagramProps {
   zones: Zone[];
@@ -27,10 +28,12 @@ const BAND_BOTTOM = BAND_TOP + BAND_H;
  * with their value. Sharp, exportable SVG.
  */
 export default function PredominanceDiagram({ zones, pMin, pMax, pLabel, marker, caption }: PredominanceDiagramProps) {
+  const t = useT();
   const x = (p: number) => ((p - pMin) / (pMax - pMin)) * W;
 
   return (
     <div className="predominance-diagram">
+      <span className="predominance-scroll-hint"><span>{t('diagram.scrollHint')}</span></span>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
         {caption && (
           <text x={W / 2} y={34} textAnchor="middle" fontSize={20} fill="var(--text-muted)">

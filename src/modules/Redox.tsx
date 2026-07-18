@@ -9,7 +9,7 @@ import RedoxPredictionScale from '../components/RedoxPredictionScale';
 import { InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider } from '../components/Controls';
 import { CoupleEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
-import { alphaRedox, peConditional, NERNST_S } from '../lib/redox';
+import { alphaRedox, balancedRedoxReaction, peConditional, NERNST_S } from '../lib/redox';
 import { SPECIES_COLORS } from '../lib/database';
 import { paddedAxisRange } from '../lib/format';
 import type { Zone } from '../lib/ladder';
@@ -85,7 +85,8 @@ export default function Redox() {
 
   // Spontaneous reaction prediction
   const strong = pe01 > pe02 ? { ox: couple1, red: couple2 } : { ox: couple2, red: couple1 };
-  const logK = strong.ox.n * strong.red.n * Math.abs(pe01 - pe02);
+  const reaction = balancedRedoxReaction(strong.ox, strong.red);
+  const logK = reaction.electrons * Math.abs(pe01 - pe02);
 
   // Predominance diagram: 3 zonas basadas en los dos pe°′ condicionales
   const predominanceBandZones = useMemo<Zone[]>(() => {
@@ -146,8 +147,8 @@ export default function Redox() {
 
   return (
     <div className="module">
-      <PanelShell title={t('redox.title')} onReset={reset} moduleId="redox">
-        <PanelSection title={t('redox.couplesSection')} icon="⚛">
+      <PanelShell title={t('redox.title')} onReset={reset} moduleId="redox" guideId="redox">
+        <PanelSection title={t('redox.couplesSection')}>
           <ModelBadge
             model={t('redox.predictionModel')}
             additions={[(couple1.mH > 0 || couple2.mH > 0) && t('redox.additionPHConditioned')]}
@@ -155,14 +156,15 @@ export default function Redox() {
           <CoupleEditor title={t('redox.couple1Title')} couple={couple1} onChange={setCouple1} />
           <CoupleEditor title={t('redox.couple2Title')} couple={couple2} onChange={setCouple2} />
         </PanelSection>
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <Slider label={t('redox.mediumPHLabel')} value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
         </PanelSection>
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: t('redox.conditionalPE', { ox: couple1.ox, red: couple1.red }), value: `${pe01.toFixed(2)} (${(pe01 * NERNST_S).toFixed(3)} V)`, helpId: 'pe' },
             { label: t('redox.conditionalPE', { ox: couple2.ox, red: couple2.red }), value: `${pe02.toFixed(2)} (${(pe02 * NERNST_S).toFixed(3)} V)`, helpId: 'pe' },
-            { label: t('redox.spontaneousReaction'), value: `${strong.ox.ox} + ${strong.red.red}` },
+            { label: t('redox.spontaneousReaction'), value: reaction.equation },
+            { label: t('redox.electronsCanceled'), value: `${reaction.electrons} e⁻` },
             { label: 'log K', value: logK.toFixed(1) },
           ]} />
         </PanelSection>
@@ -181,7 +183,8 @@ export default function Redox() {
       <section className="plot-area">
         <DiagramTabs tabs={diagrams} initialId="alpha" />
         <ResultCardRow items={[
-          { label: t('redox.spontaneousReaction'), value: `${strong.ox.ox} + ${strong.red.red}`, accent: true },
+          { label: t('redox.spontaneousReaction'), value: reaction.equation, accent: true },
+          { label: t('redox.electronsCanceled'), value: `${reaction.electrons} e⁻` },
           { label: 'log K', value: logK.toFixed(1) },
         ]} />
       </section>

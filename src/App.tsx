@@ -8,6 +8,7 @@ import LanguageToggle from './components/LanguageToggle';
 import { useActivityNote } from './context/ActivityContext';
 import { useT } from './hooks/useT';
 import type { TKey } from './i18n/translations';
+import { handleTabKeyDown } from './lib/tabKeyboard';
 import './App.css';
 
 // Keep ?m=<viewId> in the URL whenever the active view changes.
@@ -22,6 +23,15 @@ function syncModuleUrl(viewId: string | null) {
   const next = new URLSearchParams();
   next.set('m', viewId);
   window.history.replaceState(null, '', `${window.location.pathname}?${next.toString()}`);
+}
+
+function pushModuleUrl(viewId: string | null) {
+  const current = new URLSearchParams(window.location.search).get('m');
+  if (current === viewId) return;
+  const url = viewId === null
+    ? window.location.pathname
+    : `${window.location.pathname}?m=${encodeURIComponent(viewId)}`;
+  window.history.pushState(null, '', url);
 }
 
 const AcidoBase              = lazy(() => import('./modules/AcidoBase'));
@@ -48,10 +58,8 @@ export interface HubMeta {
   labelKey: TKey;
   /** One-line description shown on the home card. */
   descKey: TKey;
-  /** Hub-specific model assumptions (methodology only; source citations live in docs).
-   * Not yet translated (textbook-notation-heavy prose) — stays Spanish regardless of
-   * the language toggle until a follow-up pass covers it. */
-  assumptions: string;
+  /** Hub-specific model assumptions (methodology only; source citations live in docs). */
+  assumptionsKey: TKey;
 }
 
 interface Hub extends HubMeta { views: View[] }
@@ -61,7 +69,7 @@ const HUBS: Hub[] = [
   {
     id: 'acidobase', labelKey: 'hub.acidobase.label',
     descKey: 'hub.acidobase.desc',
-    assumptions: 'Balance de cargas exacto (bisección) · pKa por etapa.',
+    assumptionsKey: 'hub.acidobase.assumptions',
     views: [
       { id: 'acidobase', labelKey: 'view.acidobase.label', component: AcidoBase },
       { id: 'mezclas', labelKey: 'view.mezclas.label', component: Mezclas },
@@ -70,7 +78,7 @@ const HUBS: Hub[] = [
   {
     id: 'complejos', labelKey: 'hub.complejos.label',
     descKey: 'hub.complejos.desc',
-    assumptions: 'Complejos mononucleares MLₙ · α de Ringbom para reacciones parásitas.',
+    assumptionsKey: 'hub.complejos.assumptions',
     views: [
       { id: 'complejos', labelKey: 'view.complejos.label', component: Complejos },
       { id: 'especiacion', labelKey: 'view.especiacion.label', component: EspeciacionMetal },
@@ -80,7 +88,7 @@ const HUBS: Hub[] = [
   {
     id: 'redox', labelKey: 'hub.redox.label',
     descKey: 'hub.redox.desc',
-    assumptions: 'pe = E/0.05916 V (convención de Sillén) · E°′ = f(pH) por mH/n · Pourbaix data-driven vía ley de Hess.',
+    assumptionsKey: 'hub.redox.assumptions',
     views: [
       { id: 'redox', labelKey: 'view.redox.label', component: Redox },
       { id: 'potencialcond', labelKey: 'view.potencialcond.label', component: PotencialCondicional },
@@ -90,7 +98,7 @@ const HUBS: Hub[] = [
   {
     id: 'solubilidad', labelKey: 'hub.solubilidad.label',
     descKey: 'hub.solubilidad.desc',
-    assumptions: 'Sólidos iónicos MmXx con Kps · anión básico y complejos hidroxo vía α · selección de fases por prueba de combinaciones (2 sales).',
+    assumptionsKey: 'hub.solubilidad.assumptions',
     views: [
       { id: 'solubilidad', labelKey: 'view.solubilidad.label', component: Solubilidad },
       { id: 'solsal', labelKey: 'view.solsal.label', component: SolubilidadSal },
@@ -101,7 +109,7 @@ const HUBS: Hub[] = [
   {
     id: 'separaciones', labelKey: 'hub.separaciones.label',
     descKey: 'hub.separaciones.desc',
-    assumptions: 'Reparto de la especie neutra (D = Kd·α) · resina con balance en 3 compartimentos.',
+    assumptionsKey: 'hub.separaciones.assumptions',
     views: [
       { id: 'extraccion', labelKey: 'view.extraccion.label', component: ExtraccionLiquido },
       { id: 'ionexchange', labelKey: 'view.ionexchange.label', component: IntercambioIonico },
@@ -110,7 +118,7 @@ const HUBS: Hub[] = [
   {
     id: 'titulaciones', labelKey: 'hub.titulaciones.label',
     descKey: 'hub.titulaciones.desc',
-    assumptions: 'pH/pM/pe exactos punto a punto con dilución · función de Gran y cuantitatividad.',
+    assumptionsKey: 'hub.titulaciones.assumptions',
     views: [
       { id: 'titulacion', labelKey: 'view.titulacion.label', component: Titulacion },
     ],
@@ -118,7 +126,7 @@ const HUBS: Hub[] = [
   {
     id: 'actividad', labelKey: 'hub.actividad.label',
     descKey: 'hub.actividad.desc',
-    assumptions: 'Debye–Hückel extendida (a ≈ 3 Å) válida a I ≲ 0.1 M · K′w = Kw/(γH·γOH).',
+    assumptionsKey: 'hub.actividad.assumptions',
     views: [
       { id: 'actividad', labelKey: 'view.actividad.label', component: Actividad },
     ],
@@ -157,6 +165,7 @@ export default function App() {
   const openView = (viewId: string) => {
     const h = findHubByView(viewId);
     if (!h) return;
+    pushModuleUrl(viewId);
     setViewByHub((prev) => ({ ...prev, [h.id]: viewId }));
     setActiveViewId(viewId);
   };
@@ -164,13 +173,31 @@ export default function App() {
   const openHub = (hubId: string) => {
     const h = HUBS.find((x) => x.id === hubId);
     if (!h) return;
-    setActiveViewId(viewByHub[h.id] ?? h.views[0].id);
+    openView(viewByHub[h.id] ?? h.views[0].id);
   };
 
-  const goHome = () => setActiveViewId(null);
+  const goHome = () => {
+    pushModuleUrl(null);
+    setActiveViewId(null);
+  };
 
   // Sync ?m= whenever the active view changes (modules override with ?s= via their own hook).
   useEffect(() => { syncModuleUrl(activeViewId); }, [activeViewId]);
+
+  useEffect(() => {
+    const restoreFromHistory = () => {
+      const nextView = initialViewId();
+      setActiveViewId(nextView);
+      if (nextView) {
+        const nextHub = findHubByView(nextView);
+        if (nextHub) {
+          setViewByHub((prev) => ({ ...prev, [nextHub.id]: nextView }));
+        }
+      }
+    };
+    window.addEventListener('popstate', restoreFromHistory);
+    return () => window.removeEventListener('popstate', restoreFromHistory);
+  }, []);
 
   return (
     <div className="app">
@@ -200,8 +227,10 @@ export default function App() {
                 role="tab"
                 type="button"
                 aria-selected={selected}
+                tabIndex={selected ? 0 : -1}
                 className={selected ? 'section-btn active' : 'section-btn'}
                 onClick={() => openHub(h.id)}
+                onKeyDown={handleTabKeyDown}
               >
                 {t(h.labelKey)}
               </button>
@@ -223,8 +252,10 @@ export default function App() {
                   role="tab"
                   type="button"
                   aria-selected={selected}
+                  tabIndex={selected ? 0 : -1}
                   className={selected ? 'subnav-tab active' : 'subnav-tab'}
                   onClick={() => openView(v.id)}
+                  onKeyDown={handleTabKeyDown}
                 >
                   {t(v.labelKey)}
                 </button>
@@ -233,7 +264,7 @@ export default function App() {
           </div>
           <details className="hub-assumptions">
             <summary>{t('chrome.assumptionsShort')}</summary>
-            <p>{hub.assumptions}</p>
+            <p>{t(hub.assumptionsKey)}</p>
           </details>
         </div>
       )}
@@ -256,7 +287,7 @@ export default function App() {
           <summary>{t('chrome.assumptionsLong')}</summary>
           <p className="assumptions-text">
             {t('chrome.assumptionsBase1')}<sub>w</sub>{t('chrome.assumptionsBase2')}
-            {hub && <> · <strong>{t(hub.labelKey)}:</strong> {hub.assumptions}</>}
+            {hub && <> · <strong>{t(hub.labelKey)}:</strong> {t(hub.assumptionsKey)}</>}
           </p>
         </details>
         <span className="footer-meta">

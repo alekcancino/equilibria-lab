@@ -4,7 +4,7 @@ import { MARKER_COLOR } from '../lib/database';
 import { speciesInGrid, type Grid2D } from '../lib/predominance2D';
 import { useTheme } from '../hooks/useTheme';
 import { toDarkColors } from '../lib/plotTheme';
-import { gridToCSV, downloadCSV } from '../lib/export';
+import { downloadBlob, gridToCSV, downloadCSV } from '../lib/export';
 import PlotToolbar from './PlotToolbar';
 
 interface Predominance2DProps {
@@ -199,13 +199,10 @@ export default function Predominance2D({
       ctx.fillStyle = isDark ? '#1E293B' : '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const a = document.createElement('a');
-      a.href = canvas.toDataURL('image/png');
-      a.download = `${exportName}.png`;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const png = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('canvas export failed')), 'image/png');
+      });
+      downloadBlob(png, `${exportName}.png`);
     } finally {
       URL.revokeObjectURL(svgUrl);
     }
@@ -306,7 +303,7 @@ export default function Predominance2D({
           </g>
         )}
       </svg>
-      <PlotToolbar onExport={exportPng} onExportCSV={exportCsv} />
+      <PlotToolbar onExportPng={exportPng} onExportCsv={exportCsv} />
     </div>
   );
 }

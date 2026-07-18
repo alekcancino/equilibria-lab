@@ -4,7 +4,7 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Segmented, Slider, Toggle } from '../components/Controls';
+import { ConcSlider, Disclosure, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Segmented, Slider, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
 import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from '../lib/equilibrium';
@@ -215,8 +215,8 @@ export default function Mezclas() {
 
   return (
     <div className="module">
-      <PanelShell title={t('mezclas.title')} onReset={reset} moduleId="mezclas">
-        <PanelSection title={t('mezclas.systemsSection')} icon="⚛">
+      <PanelShell title={t('mezclas.title')} onReset={reset} moduleId="mezclas" guideId="mezclas">
+        <PanelSection title={t('mezclas.systemsSection')}>
         <ModelBadge
           model={rows.length === 1
             ? t('mezclas.oneSystem')
@@ -231,7 +231,7 @@ export default function Mezclas() {
               <div className="mix-row-header">
                 <span className="control-label">{t('mezclas.componentN', { n: i + 1 })}</span>
                 {rows.length > 1 && (
-                  <button className="mini-btn" onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>
+                  <button type="button" className="mini-btn" onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>
                 )}
               </div>
               <AcidSystemEditor
@@ -269,7 +269,7 @@ export default function Mezclas() {
           );
         })}
         {rows.length < MAX_ROWS && (
-          <button
+          <button type="button"
             className="add-btn"
             onClick={() => setRows([...rows, newRow()])}
           >
@@ -278,13 +278,11 @@ export default function Mezclas() {
         )}
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
         <ResultCard items={speciation} />
         </PanelSection>
 
-        <PanelSection title={t('mezclas.titrationSection')} icon="⚗">
-        <Toggle label={t('mezclas.showTitrationCurve')} checked={titrate} onChange={setTitrate} />
-        {titrate && (
+        <Disclosure title={t('mezclas.titrationSection')} open={titrate} onToggle={setTitrate}>
           <>
             <Toggle label={t('mezclas.titrateWithStrongAcid', { titrant: titrantName })} checked={titrantIsAcid} onChange={setTitrantIsAcid} />
             <ConcSlider label={t('mezclas.concentrationOf', { name: titrantName })} value={cTitrant} onChange={setCTitrant} min={-3} max={0} />
@@ -295,11 +293,10 @@ export default function Mezclas() {
             />
             <Toggle label={t('mezclas.showDerivativeToggle')} checked={showDerivative} onChange={setShowDerivative} />
           </>
-        )}
         <details className="section-collapse">
-          <summary>{t('acidoBase.activityCorrection')}</summary>
+          <summary className="section-collapse-title">{t('acidoBase.activityCorrection')}<span className="ui-chevron" aria-hidden /></summary>
           <Slider label={t('complejos.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
-          <div style={{ marginTop: 6 }}>
+          <div className="control-input">
             <Segmented
               options={GAMMA_MODELS}
               value={gammaModel}
@@ -308,7 +305,7 @@ export default function Mezclas() {
           </div>
           <p className="hint">{t('mezclas.activityHint')}</p>
         </details>
-        </PanelSection>
+        </Disclosure>
 
         <InfoBox title={t('mezclas.infoBoxTitle')}>
           <p>
@@ -338,6 +335,9 @@ export default function Mezclas() {
               <div className="empty-plot">
                 <p>{t('mezclas.mixturePH')}: <strong>{pHInvalid ? '—' : pHMix.toFixed(2)}</strong></p>
                 <p className="hint">{t('mezclas.enableTitrationHint')}</p>
+                <button type="button" className="empty-plot-action" onClick={() => setTitrate(true)}>
+                  {t('mezclas.showTitrationCurve')}
+                </button>
               </div>
             ),
           },

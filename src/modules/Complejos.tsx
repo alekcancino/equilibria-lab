@@ -7,7 +7,7 @@ import PanelShell from '../components/PanelShell';
 import PredominanceDiagram from '../components/PredominanceDiagram';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConcSlider, ConstantList, DbPanel, InfoBox, LabelField,
+  ConcSlider, ConstantList, DbPanel, Disclosure, InfoBox, LabelField,
   ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Segmented, Slider, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
@@ -453,12 +453,20 @@ export default function Complejos() {
           exportMetadata={exportMetadata}
         />
       ) : (
-        <div className="map2d-empty">
-          <p>
+        <div className="map2d-empty map2d-empty-actionable">
+          <div>
+            <p>
             {t('complejos.map2dEmptyPrefix')} <strong>{t('complejos.map2dEmptyModeBold')}</strong>{' '}
             {t('complejos.map2dEmptyMid')} <strong>{t('complejos.tabAlpha')}</strong>{' '}
             {t('complejos.map2dEmptyOr')} <strong>{t('complejos.tabPredominance')}</strong>{t('complejos.map2dEmptySuffix')}
-          </p>
+            </p>
+            <button type="button" className="empty-plot-action" onClick={() => {
+              setSideMode('acoplada');
+              setSide((current) => ({ ...current, showAux: true }));
+            }}>
+              {t('complejos.activateMap2D')}
+            </button>
+          </div>
         </div>
       ),
     },
@@ -466,8 +474,8 @@ export default function Complejos() {
 
   return (
     <div className="module">
-      <PanelShell title={t('complejos.title')} onReset={reset} moduleId="complejos">
-        <PanelSection title={t('complejos.systemSection')} icon="⚛">
+      <PanelShell title={t('complejos.title')} onReset={reset} moduleId="complejos" guideId="complejos">
+        <PanelSection title={t('complejos.systemSection')}>
           <ModelBadge
             model={sys.logBetas.length === 1
               ? t('complejos.model11')
@@ -504,7 +512,9 @@ export default function Complejos() {
               id: p.id,
               label: `${p.metalLabel} / ${p.ligandLabel}`,
               detail: `log β: ${p.logBetas.map((b) => b.toFixed(2)).join(', ')}`,
-              group: p.group,
+              group: p.group === 'Metal / etilendiamina'
+                ? t('complejos.groupEthylenediamine')
+                : p.group,
             }))}
             onSelect={(id) => {
               const p = COMPLEX_PRESETS.find((x) => x.id === id)!;
@@ -513,27 +523,32 @@ export default function Complejos() {
           />
         </PanelSection>
 
-        <PanelSection title={t('complejos.conditionsSection')} icon="⚗">
+        <PanelSection title={t('complejos.conditionsSection')}>
           <ConcSlider label={t('complejos.cmLabel')} value={cM} onChange={setCM} />
           <ConcSlider label={t('complejos.clLabel')} value={cL} onChange={setCL} />
           <Toggle label={t('complejos.markEquilPL')} checked={showEquil} onChange={setShowEquil} />
-          <Toggle label={t('complejos.activityToggle')} checked={useActivity} onChange={setUseActivity} />
-          {useActivity && (
-            <div className="mask-section">
-              <ConcSlider label={t('complejos.ionicStrengthLabel')} helpId="ionicStrength" value={ionicI} onChange={setIonicI} min={-3} max={0} />
-              <NumberSegmented label={t('complejos.metalChargeLabel')} value={zM} options={[1, 2, 3, 4]} onChange={setZM} />
-              <NumberSegmented label={t('complejos.ligandChargeLabel')} value={zL} options={[-4, -3, -2, -1, 0]} onChange={setZL} />
-              <p className="hint">
-                {t('complejos.activityHint')}
-                {xBranch !== null && t('complejos.activityHintXBranch')}
-              </p>
-            </div>
-          )}
-          <div>
+        </PanelSection>
+
+        <Disclosure
+          title={t('complejos.activityToggle')}
+          open={useActivity}
+          onToggle={setUseActivity}
+        >
+          <ConcSlider label={t('complejos.ionicStrengthLabel')} helpId="ionicStrength" value={ionicI} onChange={setIonicI} min={-3} max={0} />
+          <NumberSegmented label={t('complejos.metalChargeLabel')} value={zM} options={[1, 2, 3, 4]} onChange={setZM} />
+          <NumberSegmented label={t('complejos.ligandChargeLabel')} value={zL} options={[-4, -3, -2, -1, 0]} onChange={setZL} />
+          <p className="hint">
+            {t('complejos.activityHint')}
+            {xBranch !== null && t('complejos.activityHintXBranch')}
+          </p>
+        </Disclosure>
+
+        <Disclosure title={t('complejos.advancedEquilibriaSection')} defaultOpen={sideMode !== 'ninguna'}>
+          <div className="control">
             <div className="control-header">
-              <span className="control-label">{t('complejos.secondAgentLabel')}</span>
+              <span className="control-label">{t('complejos.treatmentLabel')}</span>
             </div>
-            <div style={{ marginTop: 6 }}>
+            <div className="control-input">
               <Segmented
                 options={[
                   { value: 'ninguna', label: t('complejos.sideModeNone') },
@@ -552,14 +567,14 @@ export default function Complejos() {
             </div>
           </div>
           {sideMode === 'ringbom' && (
-            <div className="mask-section">
+            <div className="advanced-layer-body">
               <Slider label={t('complejos.fixedPHLabel')} value={pHScale} min={0} max={14} step={0.1} onChange={setPHScale} decimals={1} />
               <SideReactionEditor state={side} onChange={setSide} showLigandPKas={false} />
               <p className="hint">{t('complejos.ringbomHint')}</p>
             </div>
           )}
           {sideMode === 'acoplada' && (
-            <div className="mask-section">
+            <div className="advanced-layer-body">
               <Slider label={t('complejos.fixedPHLabel')} value={pHScale} min={0} max={14} step={0.1} onChange={setPHScale} decimals={1} />
               <SideReactionEditor
                 state={side}
@@ -583,9 +598,9 @@ export default function Complejos() {
               </p>
             </div>
           )}
-        </PanelSection>
+        </Disclosure>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             {
               label: t('complejos.pLEquilResult'),

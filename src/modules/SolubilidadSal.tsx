@@ -121,9 +121,9 @@ function SalEditor({ sal, onChange }: {
   return (
     <>
       {/* Preset chips */}
-      <div className="preset-chip-row" style={{ marginBottom: 8 }}>
+      <div className="preset-chip-row preset-chip-row-spaced">
         {PRESETS.map((p) => (
-          <button
+          <button type="button"
             key={p.id}
             className={`preset-chip${activePreset?.id === p.id ? ' active' : ''}`}
             style={{ borderColor: p.color }}
@@ -162,7 +162,7 @@ function SalEditor({ sal, onChange }: {
         min={0} max={14} maxItems={4} minItems={0} initialValue={7}
       />
       {sal.pKas.length > 0 && (
-        <button className="mini-btn" style={{ marginTop: 2 }} onClick={() => onChange({ pKas: [] })}>
+        <button type="button" className="mini-btn mini-btn-offset" onClick={() => onChange({ pKas: [] })}>
           {t('solubilidadSal.strongAcidAnionButton')}
         </button>
       )}
@@ -288,8 +288,8 @@ export default function SolubilidadSal() {
 
   return (
     <div className="module">
-      <PanelShell title={t('solubilidadSal.title')} onReset={reset} moduleId="solsal">
-        <PanelSection title={t('solubilidadSal.system1Section')} icon="①">
+      <PanelShell title={t('solubilidadSal.title')} onReset={reset} moduleId="solsal" guideId="solsal">
+        <PanelSection title={t('solubilidadSal.system1Section')}>
         <ModelBadge
           model={sal1.pKas.length === 0 ? t('solubilidad.pHIndependentKspModel') : t('solubilidad.pHConditionedModel')}
           additions={[showP2 && t('solubilidadSal.additionSystemComparison')]}
@@ -297,7 +297,7 @@ export default function SolubilidadSal() {
         <SalEditor sal={sal1} onChange={(p) => setSal1((s) => ({ ...s, ...p }))} />
         </PanelSection>
 
-        <PanelSection title={t('solubilidadSal.system2Section')} icon="②">
+        <PanelSection title={t('solubilidadSal.system2Section')}>
         <Toggle label={t('solubilidadSal.compareSecondSystem')} checked={showP2} onChange={setShowP2} />
         {showP2 && (
           <div className="mask-section">
@@ -306,7 +306,7 @@ export default function SolubilidadSal() {
         )}
         </PanelSection>
 
-        <PanelSection title={t('solubilidadSal.ionicStrengthSection')} icon="γ">
+        <PanelSection title={t('solubilidadSal.ionicStrengthSection')}>
           <Slider
             label={t('complejos.ionicStrengthLabel')}
             helpId="ionicStrength"
@@ -317,7 +317,7 @@ export default function SolubilidadSal() {
           />
         </PanelSection>
 
-        <PanelSection title={t('solubilidadSal.coupledBalanceSection')} icon="⇌">
+        <PanelSection title={t('solubilidadSal.coupledBalanceSection')}>
           <Toggle label={t('solubilidadSal.coupledBalanceToggle')} checked={showCoupledBalance} onChange={setShowCoupledBalance} />
           {showCoupledBalance && (
             <div className="mask-section">
@@ -328,7 +328,7 @@ export default function SolubilidadSal() {
           )}
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
         <ResultCard items={[
           { label: t('solubilidadSal.minSDash', { name: sal1.name }), value: `log S = ${minS1.logS.toFixed(2)}  (pH ${minS1.pH.toFixed(1)})` },
           { label: t('solubilidadSal.formulaPQLabel'), value: `M_${sal1.p} A_${sal1.q}  →  S = (Kps / ${sal1.p ** sal1.p}·${sal1.q ** sal1.q}·αₙ^${sal1.q})^{1/${sal1.p + sal1.q}}` },

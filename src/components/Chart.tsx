@@ -1,7 +1,8 @@
 import { lazy, Suspense, useCallback, useRef } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import PlotToolbar from './PlotToolbar';
-import { tracesToCSV, downloadCSV } from '../lib/export';
+import { dataUrlToBlob, downloadBlob, tracesToCSV, downloadCSV } from '../lib/export';
+import { useT } from '../hooks/useT';
 
 const PlotChart = lazy(() => import('./PlotChart'));
 
@@ -22,6 +23,7 @@ export interface ChartProps {
 
 /** Interactive chart: initial autoscale, gesture zoom, no Plotly modebar. */
 export default function Chart(props: ChartProps) {
+  const t = useT();
   const { exportName = 'equilibria-lab' } = props;
   const graphDivRef = useRef<HTMLElement | null>(null);
 
@@ -39,13 +41,7 @@ export default function Chart(props: ChartProps) {
       width: Math.round(rect.width * 2),
       height: Math.round(rect.height * 2),
     });
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${exportName}.png`;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    downloadBlob(dataUrlToBlob(url), `${exportName}.png`);
   }, [exportName]);
 
   const resetZoom = useCallback(async () => {
@@ -69,11 +65,13 @@ export default function Chart(props: ChartProps) {
 
   return (
     <div className="chart-shell">
+      <div className="chart-toolbar-row">
+        <PlotToolbar onResetZoom={resetZoom} onExportPng={exportPng} onExportCsv={exportCsv} />
+      </div>
       <div className="chart-plot">
-        <Suspense fallback={<div className="chart-loading">Cargando gráfica…</div>}>
+        <Suspense fallback={<div className="chart-loading">{t('chart.loading')}</div>}>
           <PlotChart {...props} onGraphDiv={onGraphDiv} />
         </Suspense>
-        <PlotToolbar onResetZoom={resetZoom} onExport={exportPng} onExportCSV={exportCsv} />
       </div>
     </div>
   );

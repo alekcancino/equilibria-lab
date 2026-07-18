@@ -1,14 +1,7 @@
-// Bilingual UI dictionary — pilot rollout (see AGENTS.md "Language rules").
+// Bilingual UI dictionary (see AGENTS.md "Language rules").
 // Chemistry notation, formulas and user-entered free-text labels are NEVER
 // translated (they're already international/language-neutral); only static
 // prose (labels, hints, button/menu text) goes through this dictionary.
-//
-// Scope translated so far: shared chrome (nav, panel, share/save buttons) +
-// generic Controls.tsx defaults + AcidSystemEditor + SideReactionEditor +
-// the Ácido-base and Complejos modules. Every other module's JSX stays
-// hardcoded Spanish until translated in a follow-up PR — toggling to
-// English elsewhere simply shows Spanish there, which is expected for an
-// incremental rollout, not a bug.
 //
 // Every key requires BOTH `es` and `en` in the same object literal, so a
 // missing translation is a compile error, not a silent fallback.
@@ -16,6 +9,173 @@
 import type { Lang } from '../hooks/useLanguage';
 
 export const translations = {
+  // ── Shared module orientation ─────────────────────────────────────────────
+  'guide.label': { es: 'Orientación del modelo', en: 'Model orientation' },
+  'guide.howToUse': { es: 'Cómo usar este modelo', en: 'How to use this model' },
+  'guide.define': { es: 'Definir', en: 'Define' },
+  'guide.interpret': { es: 'Interpretar', en: 'Interpret' },
+  'guide.extend': { es: 'Ampliar', en: 'Extend' },
+  'guide.acidobase.objective': {
+    es: 'Relaciona el pH con la distribución y la concentración de las especies ácido–base.',
+    en: 'Relate pH to acid–base species distribution and concentration.',
+  },
+  'guide.acidobase.workflow': {
+    es: 'Define la familia y sus pKa; interpreta predominio, fracciones α y log C; amplía con actividad o microestados cuando el modelo lo requiera.',
+    en: 'Define the family and its pKa values; interpret predominance, α fractions and log C; extend with activity or microstates when the model requires them.',
+  },
+  'guide.actividad.objective': {
+    es: 'Estima coeficientes de actividad y constantes aparentes a fuerza iónica finita.',
+    en: 'Estimate activity coefficients and apparent constants at finite ionic strength.',
+  },
+  'guide.actividad.workflow': {
+    es: 'Define el electrolito y las cargas; interpreta γ y el desplazamiento de las constantes; amplía con asociación iónica si es significativa.',
+    en: 'Define the electrolyte and charges; interpret γ and constant shifts; extend with ion pairing when it is significant.',
+  },
+  'guide.complejos.objective': {
+    es: 'Describe el equilibrio M–L en función de pL, desde la formación sucesiva hasta el balance de masa.',
+    en: 'Describe M–L equilibrium as a function of pL, from successive formation to mass balance.',
+  },
+  'guide.complejos.workflow': {
+    es: 'Define M, L y log β; interpreta predominio, α y el número medio de ligandos; amplía con actividad, reacciones laterales o un segundo agente.',
+    en: 'Define M, L and log β; interpret predominance, α and the mean ligand number; extend with activity, side reactions or a second agent.',
+  },
+  'guide.condicionalesedta.objective': {
+    es: 'Evalúa cómo el pH y las reacciones laterales modifican la constante de formación efectiva.',
+    en: 'Evaluate how pH and side reactions modify the effective formation constant.',
+  },
+  'guide.condicionalesedta.workflow': {
+    es: 'Define el par metal–ligando; interpreta log K′ y sus coeficientes α; amplía con hidrólisis, enmascarantes o competencia metálica.',
+    en: 'Define the metal–ligand pair; interpret log K′ and its α coefficients; extend with hydrolysis, masking agents or metal competition.',
+  },
+  'guide.especiacion.objective': {
+    es: 'Predice la especiación de un metal en función del pH, incluyendo hidrólisis y ligandos auxiliares.',
+    en: 'Predict metal speciation as a function of pH, including hydrolysis and auxiliary ligands.',
+  },
+  'guide.especiacion.workflow': {
+    es: 'Define el metal y sus log β; interpreta las fracciones en el punto de operación de pH; amplía con ligandos, un segundo agente o factibilidad de precipitación.',
+    en: 'Define the metal and its log β values; interpret fractions at the pH operating point; extend with ligands, a second agent or precipitation feasibility.',
+  },
+  'guide.extraccion.objective': {
+    es: 'Relaciona pH, razón de distribución y recuperación en extracción líquido–líquido.',
+    en: 'Relate pH, distribution ratio and recovery in liquid–liquid extraction.',
+  },
+  'guide.extraccion.workflow': {
+    es: 'Define el analito y el equilibrio de reparto; interpreta D y el porcentaje extraído; amplía con etapas sucesivas, quelación o un segundo analito.',
+    en: 'Define the analyte and partition equilibrium; interpret D and percent extracted; extend with successive stages, chelation or a second analyte.',
+  },
+  'guide.ionexchange.objective': {
+    es: 'Modela selectividad, carga y elución en una columna de intercambio iónico.',
+    en: 'Model selectivity, loading and elution in an ion-exchange column.',
+  },
+  'guide.ionexchange.workflow': {
+    es: 'Define resina, iones y selectividad; interpreta fracciones retenidas y balance; amplía con competencia de H⁺ o perfiles multizona.',
+    en: 'Define resin, ions and selectivity; interpret retained fractions and balance; extend with H⁺ competition or multizone profiles.',
+  },
+  'guide.mezclas.objective': {
+    es: 'Resuelve el pH de mezclas ácido–base mediante balances exactos de masa y carga.',
+    en: 'Solve the pH of acid–base mixtures through exact mass and charge balances.',
+  },
+  'guide.mezclas.workflow': {
+    es: 'Define composición y volumen de cada sistema; interpreta pH y especies dominantes; amplía el volumen añadido para estudiar una valoración.',
+    en: 'Define each system’s composition and volume; interpret pH and dominant species; extend the added volume to study a titration.',
+  },
+  'guide.potencialcond.objective': {
+    es: 'Calcula E°′ cuando protonación, complejación o precipitación alteran un par redox.',
+    en: 'Calculate E°′ when protonation, complexation or precipitation alters a redox couple.',
+  },
+  'guide.potencialcond.workflow': {
+    es: 'Define el par y sus estados químicos; interpreta E°′ frente a pH; amplía con ligandos, reacciones laterales, un segundo par o respuesta de electrodo.',
+    en: 'Define the couple and its chemical states; interpret E°′ versus pH; extend with ligands, side reactions, a second couple or electrode response.',
+  },
+  'guide.pourbaix.objective': {
+    es: 'Delimita las regiones termodinámicas de predominio en el plano E–pH.',
+    en: 'Delimit thermodynamic predominance regions in the E–pH plane.',
+  },
+  'guide.pourbaix.workflow': {
+    es: 'Define especies y fronteras redox; interpreta dominios y líneas de estabilidad del agua; amplía con fases, ligandos o redes enlazadas por la ley de Hess.',
+    en: 'Define species and redox boundaries; interpret domains and water-stability lines; extend with phases, ligands or Hess-law-linked networks.',
+  },
+  'guide.redox.objective': {
+    es: 'Compara pares redox y predice la dirección termodinámica de transferencia electrónica.',
+    en: 'Compare redox couples and predict the thermodynamic direction of electron transfer.',
+  },
+  'guide.redox.workflow': {
+    es: 'Define E° y n para cada par; interpreta zonas de predominio y escala de predicción; amplía el intervalo de pe para inspeccionar los límites.',
+    en: 'Define E° and n for each couple; interpret predominance zones and the prediction scale; extend the pe range to inspect the limits.',
+  },
+  'guide.solcomp.objective': {
+    es: 'Determina qué sólidos pueden coexistir cuando dos sales compiten por precipitar.',
+    en: 'Determine which solids can coexist when two salts compete to precipitate.',
+  },
+  'guide.solcomp.workflow': {
+    es: 'Define las dos sales y concentraciones; interpreta índices de saturación y fase estable; amplía el barrido de composición para comparar regiones.',
+    en: 'Define both salts and concentrations; interpret saturation indices and the stable phase; extend the composition sweep to compare regions.',
+  },
+  'guide.solcond.objective': {
+    es: 'Diseña una separación por precipitación selectiva mediante constantes condicionales.',
+    en: 'Design a selective-precipitation separation through conditional constants.',
+  },
+  'guide.solcond.workflow': {
+    es: 'Define los metales, Kps y reacciones laterales; interpreta umbrales y ventana selectiva; amplía con un tercer candidato, complejante o solución sólida.',
+    en: 'Define metals, Ksp and side reactions; interpret thresholds and the selective window; extend with a third candidate, complexant or solid solution.',
+  },
+  'guide.solsal.objective': {
+    es: 'Resuelve la solubilidad de una sal cuando pH, protonación e hidrólisis están acoplados.',
+    en: 'Solve salt solubility when pH, protonation and hydrolysis are coupled.',
+  },
+  'guide.solsal.workflow': {
+    es: 'Define catión, anión y Kps; interpreta solubilidad y especies frente a pH; amplía con fuerza iónica y el balance acoplado.',
+    en: 'Define cation, anion and Ksp; interpret solubility and species versus pH; extend with ionic strength and the coupled balance.',
+  },
+  'guide.solubilidad.objective': {
+    es: 'Relaciona Kps, ion común y pH con la solubilidad de un sólido iónico.',
+    en: 'Relate Ksp, common-ion concentration and pH to ionic-solid solubility.',
+  },
+  'guide.solubilidad.workflow': {
+    es: 'Define la estequiometría y Kps; interpreta S, saturación y umbrales; amplía con protonación, hidrólisis, anfoterismo o actividad.',
+    en: 'Define stoichiometry and Ksp; interpret S, saturation and thresholds; extend with protonation, hydrolysis, amphoterism or activity.',
+  },
+  'guide.titulacionAcidobase.objective': {
+    es: 'Simula una valoración ácido–base y localiza equivalencia, amortiguamiento y punto final.',
+    en: 'Simulate an acid–base titration and locate equivalence, buffering and endpoint.',
+  },
+  'guide.titulacionAcidobase.workflow': {
+    es: 'Define analito y titulante; interpreta pH frente a volumen y la linealización de Gran; amplía con medios acoplados y criterios de detección.',
+    en: 'Define analyte and titrant; interpret pH versus volume and the Gran linearization; extend with coupled media and detection criteria.',
+  },
+  'guide.titulacionEdta.objective': {
+    es: 'Simula una valoración complejométrica con EDTA bajo condiciones químicas reales.',
+    en: 'Simulate a complexometric EDTA titration under realistic chemical conditions.',
+  },
+  'guide.titulacionEdta.workflow': {
+    es: 'Define metal, EDTA y pH; interpreta pM, equivalencia y cuantitatividad; amplía con competencia, reacciones laterales, indicador o sensor.',
+    en: 'Define metal, EDTA and pH; interpret pM, equivalence and quantitativity; extend with competition, side reactions, indicator or sensor.',
+  },
+  'guide.titulacionPotenciometrica.objective': {
+    es: 'Predice la señal de un electrodo potenciométrico durante una valoración.',
+    en: 'Predict the signal of a potentiometric electrode during a titration.',
+  },
+  'guide.titulacionPotenciometrica.workflow': {
+    es: 'Define muestra, titulante y respuesta del sensor; interpreta E frente a volumen y el punto de inflexión; amplía con parámetros instrumentales.',
+    en: 'Define sample, titrant and sensor response; interpret E versus volume and the inflection point; extend with instrumental parameters.',
+  },
+  'guide.titulacionPrecipitacion.objective': {
+    es: 'Simula una valoración por precipitación y compara criterios de punto final.',
+    en: 'Simulate a precipitation titration and compare endpoint criteria.',
+  },
+  'guide.titulacionPrecipitacion.workflow': {
+    es: 'Define analito, titulante y Kps; interpreta pAg y equivalencia; amplía con Mohr, Fajans, Volhard o constantes condicionales.',
+    en: 'Define analyte, titrant and Ksp; interpret pAg and equivalence; extend with Mohr, Fajans, Volhard or conditional constants.',
+  },
+  'guide.titulacionRedox.objective': {
+    es: 'Simula una valoración redox con estequiometría electrónica y potenciales condicionales.',
+    en: 'Simulate a redox titration with electron stoichiometry and conditional potentials.',
+  },
+  'guide.titulacionRedox.workflow': {
+    es: 'Define ambos pares y sus electrones; interpreta E frente a volumen y equivalencia; amplía con estados condicionales, redes o estequiometría polinuclear.',
+    en: 'Define both couples and their electron counts; interpret E versus volume and equivalence; extend with conditional states, networks or polynuclear stoichiometry.',
+  },
+
   // ── Chrome: topbar, footer, home ──────────────────────────────────────────
   'chrome.goHome': { es: 'Ir al inicio', en: 'Go home' },
   'chrome.tagline': { es: 'Simulador de equilibrio químico', en: 'Chemical equilibrium simulator' },
@@ -26,8 +186,8 @@ export const translations = {
   // Split around the <sub>w</sub> in "Kw" — no Unicode subscript "w" exists.
   'chrome.assumptionsBase1': { es: 'T = 25 °C · actividades ≈ concentraciones · K', en: 'T = 25 °C · activities ≈ concentrations · K' },
   'chrome.assumptionsBase2': {
-    es: ' = 10⁻¹⁴ · exporta gráficas con el botón flotante sobre la gráfica',
-    en: ' = 10⁻¹⁴ · export charts with the floating button over the chart',
+    es: ' = 10⁻¹⁴ · exporta PNG o CSV desde el menú Exportar de cada gráfica',
+    en: ' = 10⁻¹⁴ · export PNG or CSV from each chart’s Export menu',
   },
   'chrome.viewsOf': { es: 'Vistas de', en: 'Views for' },
   'chrome.showActivityCorrection': { es: 'Mostrar corrección γ', en: 'Show γ correction' },
@@ -47,6 +207,10 @@ export const translations = {
   },
   'view.acidobase.label': { es: 'Sistema único', en: 'Single system' },
   'view.mezclas.label': { es: 'Mezclas', en: 'Mixtures' },
+  'hub.acidobase.assumptions': {
+    es: 'Balance de cargas exacto (bisección) · pKa por etapa.',
+    en: 'Exact charge balance (bisection) · stagewise pKa values.',
+  },
 
   'hub.complejos.label': { es: 'Complejos', en: 'Complexes' },
   'hub.complejos.desc': {
@@ -56,6 +220,10 @@ export const translations = {
   'view.complejos.label': { es: 'Equilibrio (pL)', en: 'Equilibrium (pL)' },
   'view.especiacion.label': { es: 'Especiación vs pH', en: 'Speciation vs pH' },
   'view.condicionalesedta.label': { es: 'K′ condicional', en: 'Conditional K′' },
+  'hub.complejos.assumptions': {
+    es: 'Complejos mononucleares MLₙ · α de Ringbom para reacciones parásitas.',
+    en: 'Mononuclear MLₙ complexes · Ringbom α for side reactions.',
+  },
 
   'hub.redox.label': { es: 'Redox', en: 'Redox' },
   'hub.redox.desc': {
@@ -65,6 +233,10 @@ export const translations = {
   'view.redox.label': { es: 'Escala y zonas de predominio', en: 'Scale and predominance zones' },
   'view.potencialcond.label': { es: 'E°′ condicional', en: 'Conditional E°′' },
   'view.pourbaix.label': { es: 'Pourbaix (E–pH)', en: 'Pourbaix (E–pH)' },
+  'hub.redox.assumptions': {
+    es: 'pe = E/0.05916 V (convención de Sillén) · E°′ = f(pH) por mH/n · Pourbaix basado en datos mediante la ley de Hess.',
+    en: 'pe = E/0.05916 V (Sillén convention) · E°′ = f(pH) through mH/n · data-driven Pourbaix via Hess’s law.',
+  },
 
   'hub.solubilidad.label': { es: 'Solubilidad', en: 'Solubility' },
   'hub.solubilidad.desc': {
@@ -75,6 +247,10 @@ export const translations = {
   'view.solsal.label': { es: 'Solubilidad y pH', en: 'Solubility and pH' },
   'view.solcond.label': { es: 'Precipitación selectiva', en: 'Selective precipitation' },
   'view.solcomp.label': { es: 'Competitiva (2 sales)', en: 'Competitive (2 salts)' },
+  'hub.solubilidad.assumptions': {
+    es: 'Sólidos iónicos MₘXₓ con Kps · anión básico y complejos hidroxo vía α · selección de fases por combinaciones de dos sales.',
+    en: 'Ionic MₘXₓ solids with Ksp · basic anions and hydroxo complexes through α · phase selection by testing two-salt combinations.',
+  },
 
   'hub.separaciones.label': { es: 'Separaciones', en: 'Separations' },
   'hub.separaciones.desc': {
@@ -83,6 +259,10 @@ export const translations = {
   },
   'view.extraccion.label': { es: 'Extracción L–L', en: 'L–L extraction' },
   'view.ionexchange.label': { es: 'Intercambio iónico', en: 'Ion exchange' },
+  'hub.separaciones.assumptions': {
+    es: 'Reparto de la especie neutra (D = Kd·α) · resina con balance en tres compartimentos.',
+    en: 'Neutral-species partitioning (D = Kd·α) · resin with a three-compartment balance.',
+  },
 
   'hub.titulaciones.label': { es: 'Titulaciones', en: 'Titrations' },
   'hub.titulaciones.desc': {
@@ -90,6 +270,10 @@ export const translations = {
     en: 'Acid-base, EDTA, redox, precipitation and potentiometric titration curves.',
   },
   'view.titulacion.label': { es: 'Curvas de titulación', en: 'Titration curves' },
+  'hub.titulaciones.assumptions': {
+    es: 'pH/pM/pe exactos punto a punto con dilución · función de Gran y cuantitatividad.',
+    en: 'Exact pointwise pH/pM/pe with dilution · Gran function and quantitativity.',
+  },
 
   'hub.actividad.label': { es: 'Actividad', en: 'Activity' },
   'hub.actividad.desc': {
@@ -97,6 +281,26 @@ export const translations = {
     en: 'γ coefficients — Debye–Hückel, Kielland, Davies or Güntelberg — ionic strength and apparent pKw.',
   },
   'view.actividad.label': { es: 'Debye–Hückel', en: 'Debye–Hückel' },
+  'hub.actividad.assumptions': {
+    es: 'Debye–Hückel extendida (a ≈ 3 Å) válida a I ≲ 0.1 M · K′w = Kw/(γH·γOH).',
+    en: 'Extended Debye–Hückel (a ≈ 3 Å) valid at I ≲ 0.1 M · K′w = Kw/(γH·γOH).',
+  },
+
+  // ── Plot toolbar ─────────────────────────────────────────────────────────
+  'plotToolbar.controls': { es: 'Controles de gráfica', en: 'Chart controls' },
+  'plotToolbar.resetTitle': { es: 'Restablecer zoom (doble clic en la gráfica)', en: 'Reset zoom (double-click the chart)' },
+  'plotToolbar.reset': { es: 'Restablecer zoom', en: 'Reset zoom' },
+  'plotToolbar.resetView': { es: 'Restablecer vista', en: 'Reset view' },
+  'plotToolbar.export': { es: 'Exportar', en: 'Export' },
+  'plotToolbar.exportOptions': { es: 'Opciones de exportación', en: 'Export options' },
+  'plotToolbar.exportPng': { es: 'Exportar PNG', en: 'Export PNG' },
+  'plotToolbar.exportCsv': { es: 'Exportar datos CSV', en: 'Export CSV data' },
+  'plotToolbar.pngTitle': { es: 'Imagen de la gráfica', en: 'Chart image' },
+  'plotToolbar.pngDetail': { es: 'PNG a resolución 2×', en: 'PNG at 2× resolution' },
+  'plotToolbar.csvTitle': { es: 'Datos de la gráfica', en: 'Chart data' },
+  'plotToolbar.csvDetail': { es: 'Tabla CSV con metadatos', en: 'CSV table with metadata' },
+  'plotToolbar.exportError': { es: 'No se pudo generar el archivo. Inténtalo de nuevo.', en: 'The file could not be generated. Try again.' },
+  'plotToolbar.zoomHint': { es: 'Pellizca o desplaza para ampliar', en: 'Pinch or scroll to zoom' },
 
   // ── Panel shell (sidebar / mobile sheet) ──────────────────────────────────
   'panel.reset': { es: '↺ Restablecer', en: '↺ Reset' },
@@ -133,12 +337,47 @@ export const translations = {
 
   // ── Generic Controls.tsx defaults ──────────────────────────────────────────
   'controls.help': { es: 'Ayuda', en: 'Help' },
+  'controls.remove': { es: 'Eliminar', en: 'Remove' },
   'controls.removeConstant': { es: 'Quitar constante', en: 'Remove constant' },
   'controls.add': { es: 'Agregar', en: 'Add' },
   'controls.dbExamples': { es: 'Ejemplos de la base de datos', en: 'Database examples' },
   'controls.otherGroup': { es: 'Otros', en: 'Other' },
   'controls.loadFullSystem': { es: 'Cargar sistema completo', en: 'Load full system' },
   'controls.modelDetected': { es: 'Modelo detectado', en: 'Model detected' },
+  'controls.valueRange': { es: 'Usa un valor entre {min} y {max}.', en: 'Use a value from {min} to {max}.' },
+  'controls.invalidNumber': { es: 'Escribe un número válido.', en: 'Enter a valid number.' },
+  'controls.diagrams': { es: 'Diagramas', en: 'Diagrams' },
+  'chart.loading': { es: 'Cargando gráfica…', en: 'Loading chart…' },
+  'diagram.scrollHint': { es: 'Desliza para explorar →', en: 'Swipe to explore →' },
+  'acidSystemEditor.completeDissociation': { es: 'disociación completa', en: 'complete dissociation' },
+  'acidSystemEditor.groupStrong': { es: 'Fuertes', en: 'Strong' },
+  'acidSystemEditor.groupBases': { es: 'Bases', en: 'Bases' },
+  'acidSystemEditor.groupPolyprotic': { es: 'Polipróticos', en: 'Polyprotic' },
+  'acidSystemEditor.groupMonoprotic': { es: 'Monopróticos', en: 'Monoprotic' },
+
+  // ── Acid/base database presentation ──────────────────────────────────────
+  'acidPreset.hcl': { es: 'Ácido clorhídrico', en: 'Hydrochloric acid' },
+  'acidPreset.acetic': { es: 'Ácido acético', en: 'Acetic acid' },
+  'acidPreset.formic': { es: 'Ácido fórmico', en: 'Formic acid' },
+  'acidPreset.hf': { es: 'Ácido fluorhídrico', en: 'Hydrofluoric acid' },
+  'acidPreset.hocl': { es: 'Ácido hipocloroso', en: 'Hypochlorous acid' },
+  'acidPreset.carbonic': { es: 'Ácido carbónico', en: 'Carbonic acid' },
+  'acidPreset.oxalic': { es: 'Ácido oxálico', en: 'Oxalic acid' },
+  'acidPreset.sulfurous': { es: 'Ácido sulfuroso', en: 'Sulfurous acid' },
+  'acidPreset.phosphoric': { es: 'Ácido fosfórico', en: 'Phosphoric acid' },
+  'acidPreset.citric': { es: 'Ácido cítrico', en: 'Citric acid' },
+  'acidPreset.edta': { es: 'EDTA (H₄Y)', en: 'EDTA (H₄Y)' },
+  'acidPreset.ammonium': { es: 'Amoniaco / amonio', en: 'Ammonia / ammonium' },
+  'acidPreset.methylamine': { es: 'Metilamina', en: 'Methylamine' },
+  'acidPreset.pyridine': { es: 'Piridina', en: 'Pyridine' },
+  'acidPreset.naoh': { es: 'Hidróxido de sodio', en: 'Sodium hydroxide' },
+  'acidPreset.fe3aq': { es: 'Fe³⁺ (acuo-ácido)', en: 'Fe³⁺ (aqua acid)' },
+  'acidPreset.al3aq': { es: 'Al³⁺ (acuo-ácido)', en: 'Al³⁺ (aqua acid)' },
+  'indicator.methylOrange': { es: 'Naranja de metilo', en: 'Methyl orange' },
+  'indicator.methylRed': { es: 'Rojo de metilo', en: 'Methyl red' },
+  'indicator.bromothymolBlue': { es: 'Azul de bromotimol', en: 'Bromothymol blue' },
+  'indicator.phenolphthalein': { es: 'Fenolftaleína', en: 'Phenolphthalein' },
+  'indicator.thymolphthalein': { es: 'Timolftaleína', en: 'Thymolphthalein' },
 
   // ── Shared AcidSystemEditor (also reused by Mezclas/Titulación — those
   //    modules stay Spanish elsewhere until translated, so this editor may
@@ -276,7 +515,7 @@ export const translations = {
   'complejos.pLAxisLabel': { es: 'pL (−log[L])', en: 'pL (−log[L])' },
   'complejos.systemSection': { es: 'Sistema', en: 'System' },
   'complejos.conditionsSection': { es: 'Condiciones', en: 'Conditions' },
-  'complejos.resultSection': { es: 'Resultado', en: 'Result' },
+  'complejos.resultSection': { es: 'Resultados detallados', en: 'Detailed results' },
   'complejos.model11': { es: 'complejo 1:1 (ML)', en: '1:1 complex (ML)' },
   'complejos.modelSuccessive': { es: 'complejación sucesiva hasta ML{n}', en: 'successive complexation up to ML{n}' },
   'complejos.additionMassBalance': { es: 'balance de masa y pL de equilibrio', en: 'mass balance and equilibrium pL' },
@@ -298,6 +537,8 @@ export const translations = {
   },
   'complejos.activityHintXBranch': { es: ' Las β de la rama X permanecen ideales.', en: ' The X branch\'s β values stay ideal.' },
   'complejos.secondAgentLabel': { es: 'Segundo agente complejante (X)', en: 'Second complexing agent (X)' },
+  'complejos.advancedEquilibriaSection': { es: 'Equilibrios condicionales y acoplados', en: 'Conditional and coupled equilibria' },
+  'complejos.treatmentLabel': { es: 'Tratamiento', en: 'Treatment' },
   'complejos.sideModeNone': { es: 'Ninguna', en: 'None' },
   'complejos.sideModeRingbom': { es: 'pX′ (Ringbom)', en: 'pX′ (Ringbom)' },
   'complejos.sideModeCoupled': { es: 'X–M–L acoplada', en: 'Coupled X–M–L' },
@@ -378,13 +619,15 @@ export const translations = {
   },
   'complejos.map2dEmptyOr': { es: 'o', en: 'or' },
   'complejos.map2dEmptySuffix': { es: '.', en: ' tab.' },
+  'complejos.activateMap2D': { es: 'Activar equilibrio acoplado', en: 'Enable coupled equilibrium' },
   'complejos.dbExamples': { es: 'Ejemplos de la base de datos', en: 'Database examples' },
+  'complejos.groupEthylenediamine': { es: 'Metal / etilendiamina', en: 'Metal / ethylenediamine' },
   'complejos.equilMarker': { es: 'equil. · {axis} {value}', en: 'equil. · {axis} {value}' },
   'complejos.speciesFallback': { es: 'ML{n}', en: 'ML{n}' },
 
   // ── Especiación del metal module ───────────────────────────────────────────
-  'especiacion.title': { es: 'Especiación del metal (M–OH–L{x} vs pH)', en: 'Metal speciation (M–OH–L{x} vs pH)' },
-  'especiacion.metalHydrolysisSection': { es: 'Metal e hidrólisis', en: 'Metal and hydrolysis' },
+  'especiacion.title': { es: 'Especiación metálica vs pH', en: 'Metal speciation vs pH' },
+  'especiacion.metalHydrolysisSection': { es: 'Sistema', en: 'System' },
   'especiacion.noHydrolysis': { es: 'sin hidrólisis modelada', en: 'no hydrolysis modeled' },
   'especiacion.hydrolysisUpTo': { es: 'hidrólisis hasta M(OH){n}', en: 'hydrolysis up to M(OH){n}' },
   'especiacion.complexationWith': { es: 'complejación con {ligand} hasta ML{n}', en: 'complexation with {ligand} up to ML{n}' },
@@ -410,7 +653,7 @@ export const translations = {
     es: 'Solo cambia cómo se muestran las especies en gráficas y resultados, no el cálculo. Editar una constante (log β, metal, ligando) restablece los nombres genéricos.',
     en: 'Only changes how species are shown in charts and results, not the calculation. Editing a constant (log β, metal, ligand) resets the generic names.',
   },
-  'especiacion.readingSection': { es: 'Lectura', en: 'Reading' },
+  'especiacion.readingSection': { es: 'Punto de operación', en: 'Operating point' },
   'especiacion.readPHLabel': { es: 'pH de lectura', en: 'Read pH' },
   'especiacion.pLFree': { es: 'pL libre', en: 'Free pL' },
   'especiacion.pLFreeNoLigand': { es: '∞ (sin ligando)', en: '∞ (no ligand)' },
@@ -453,6 +696,7 @@ export const translations = {
     es: 'con al menos un log β para dibujar el mapa 2D pL–pH. Sin ligando, la especiación solo depende del pH — usa la pestaña',
     en: 'with at least one log β to draw the pL–pH 2D map. Without a ligand, speciation only depends on pH — use the',
   },
+  'especiacion.activateMap2D': { es: 'Agregar ligando auxiliar', en: 'Add auxiliary ligand' },
 
   // ── Constantes Condicionales module ─────────────────────────────────────────
   'condicionales.divalentMetals': { es: 'Metales bivalentes', en: 'Divalent metals' },
@@ -630,6 +874,7 @@ export const translations = {
   'redox.mediumPHLabel': { es: 'pH del medio', en: 'pH of the medium' },
   'redox.conditionalPE': { es: 'pe°′ {ox}/{red}', en: 'pe°′ {ox}/{red}' },
   'redox.spontaneousReaction': { es: 'Reacción espontánea', en: 'Spontaneous reaction' },
+  'redox.electronsCanceled': { es: 'Electrones cancelados', en: 'Electrons canceled' },
   'redox.predominanceExplain': {
     es: ': en cada tramo de pe domina una especie; las fronteras están en los pe°′ condicionales de cada par.',
     en: ': one species dominates each pe range, with boundaries at the conditional pe°′ of each couple.',
@@ -646,8 +891,8 @@ export const translations = {
   },
   'redox.lowerEm': { es: 'menor', en: 'lower pe°′' },
   'redox.scaleExplainSuffix': {
-    es: ', con log K = n₁·n₂·Δpe°′. Mueve el pH y observa cómo los pares con H⁺ en su semirreacción se desplazan — un oxidante puede dejar de serlo al subir el pH.',
-    en: ', with log K = n₁·n₂·Δpe°′. Move the pH and watch how couples with H⁺ in their half-reaction shift — an oxidant can stop being one as the pH rises.',
+    es: ', con log K = nₑ·Δpe°′, donde nₑ es el mínimo número de electrones que cancela ambas semirreacciones. Mueve el pH y observa cómo los pares con H⁺ se desplazan — un oxidante puede dejar de serlo al subir el pH.',
+    en: ', with log K = nₑ·Δpe°′, where nₑ is the smallest electron count that cancels both half-reactions. Move the pH and watch how H⁺-dependent couples shift — an oxidant can stop being one as pH rises.',
   },
 
   // ── PotencialCondicional module ─────────────────────────────────────────
@@ -808,7 +1053,7 @@ export const translations = {
   'pourbaix.predominantApproxLabel': { es: 'Especie predominante (aprox.)', en: 'Predominant species (approx.)' },
   'pourbaix.infoBoxTitle': { es: '¿Cómo se construye este diagrama?', en: 'How is this diagram built?' },
   'pourbaix.para1Prefix': {
-    es: 'Solo E° de los pares base y pKsp de los hidróxidos son datos de entrada. Todos los potenciales de frontera con sólidos se ',
+    es: 'Solo E° de los pares base y pKps de los hidróxidos son datos de entrada. Todos los potenciales de frontera con sólidos se ',
     en: 'Only the E° of the base couples and the pKsp of the hydroxides are input data. Every boundary potential involving solids is ',
   },
   'pourbaix.hessBold': { es: 'derivan por ley de Hess', en: 'derived from Hess\u2019s law' },
@@ -830,6 +1075,7 @@ export const translations = {
   'solubilidad.logSWithCommonIon': { es: 'log s (con ion común)', en: 'log s (with common ion)' },
   'solubilidad.logSNoCommonIon': { es: 'log s (sin ion común)', en: 'log s (without common ion)' },
   'solubilidad.titleIonicPrefix': { es: 'Solubilidad (K', en: 'Solubility (K' },
+  'solubilidad.kspSubscript': { es: 'ps', en: 'sp' },
   'solubilidad.titleMolecular': { es: 'Solubilidad (sólido molecular)', en: 'Solubility (molecular solid)' },
   'solubilidad.solidModelLabel': { es: 'Modelo del sólido', en: 'Solid model' },
   'solubilidad.ionicSaltOption': { es: 'Sal iónica (Kps)', en: 'Ionic salt (Ksp)' },
@@ -928,7 +1174,7 @@ export const translations = {
   'solubilidadSal.formulaExplainPrefix': { es: 'Para M_p A_q: ', en: 'For M_p A_q: ' },
   'solubilidadSal.formulaExplainCode': {
     es: 'S = (Kps / (p^p·q^q·αₙ^q))^(1/(p+q))',
-    en: 'S = (Kps / (p^p·q^q·αₙ^q))^(1/(p+q))',
+    en: 'S = (Ksp / (p^p·q^q·αₙ^q))^(1/(p+q))',
   },
   'solubilidadSal.para2': {
     es: 'αₙ = fracción del anión totalmente desprotonado. A pH ácido αₙ↓ → S↑. PO₄³⁻ > CO₃²⁻ > F⁻ > SO₄²⁻ en sensibilidad al pH. Anión de ácido fuerte (Cl⁻): α=1 siempre → sin dependencia de pH.',
@@ -1030,9 +1276,9 @@ export const translations = {
   'solubilidadCondicional.complexantXLabel': { es: 'Complejante X', en: 'Complexing agent X' },
   'solubilidadCondicional.infoBoxTitle': { es: 'Separación selectiva de hidróxidos', en: 'Selective separation of hydroxides' },
   'solubilidadCondicional.para1Prefix': { es: 'La solubilidad de M(OH)ₙ sigue ', en: 'The solubility of M(OH)ₙ follows ' },
-  'solubilidadCondicional.para1Code': { es: 'log s = −pKsp + n·pOH', en: 'log s = −pKsp + n·pOH' },
+  'solubilidadCondicional.para1Code': { es: 'log s = −pKps + n·pOH', en: 'log s = −pKsp + n·pOH' },
   'solubilidadCondicional.para1Mid': {
-    es: ' (pendiente −n por unidad de pH). Los metales con mayor pKsp o menor n precipitan a pH más alto. Controlando el pH se puede ',
+    es: ' (pendiente −n por unidad de pH). Los metales con mayor pKps o menor n precipitan a pH más alto. Controlando el pH se puede ',
     en: ' (slope −n per pH unit). Metals with higher pKsp or lower n precipitate at higher pH. By controlling pH you can ',
   },
   'solubilidadCondicional.selectivelyPrecipitateBold': { es: 'precipitar selectivamente', en: 'selectively precipitate' },
@@ -1121,7 +1367,14 @@ export const translations = {
   'extraccionLiquido.multiIonizationModel': { es: 'reparto condicionado por {n} ionizaciones', en: 'partition conditioned by {n} ionizations' },
   'extraccionLiquido.acidPresetsHint': { es: 'Presets ácidos:', en: 'Acid presets:' },
   'extraccionLiquido.chelatePresetsHint': { es: 'Presets quelatos (D = K_ex · [HL]^n · 10^(n·pH)):', en: 'Chelate presets (D = K_ex · [HL]^n · 10^(n·pH)):' },
-  'extraccionLiquido.neutralFormIndexHint': { es: 'Índice de la forma neutra (0 = más protonada): {idx}', en: 'Neutral form index (0 = most protonated): {idx}' },
+  'extraccionLiquido.extractableNeutralFormLabel': { es: 'Forma neutra extraíble', en: 'Extractable neutral form' },
+  'extraccionLiquido.mostProtonatedForm': { es: 'forma más protonada', en: 'most protonated form' },
+  'extraccionLiquido.intermediateForm': { es: 'forma intermedia', en: 'intermediate form' },
+  'extraccionLiquido.mostDeprotonatedForm': { es: 'forma más desprotonada', en: 'most deprotonated form' },
+  'extraccionLiquido.neutralFormConsequence': {
+    es: 'Forma seleccionada: {form} (α{idx}, z=0). Escalera de carga en notación general: {charges}. Solo α{idx} cruza a la fase orgánica: D = Kd·α{idx}.',
+    en: 'Selected form: {form} (α{idx}, z=0). Charge ladder in generic notation: {charges}. Only α{idx} partitions into the organic phase: D = Kd·α{idx}.',
+  },
   'extraccionLiquido.metalChargeNLabel': { es: 'n (carga del metal)', en: 'n (metal charge)' },
   'extraccionLiquido.chelateDFormulaHint': { es: 'D = 10^(log K_ex + n·log[HL] + n·pH) → sube con el pH', en: 'D = 10^(log K_ex + n·log[HL] + n·pH) → increases with pH' },
   'extraccionLiquido.pctExtractionLabel': { es: '% extracción', en: '% extraction' },
@@ -1275,6 +1528,7 @@ export const translations = {
   // ── Titulación module (5 sub-modes: acid-base, EDTA, redox, precipitation,
   //    potentiometric) — shared metallochromic-indicator helpers first ───────
   'titulacion.modeSummary': { es: 'Tipo de titulación: {mode}', en: 'Titration type: {mode}' },
+  'titulacion.modeTablist': { es: 'Tipo de titulación', en: 'Titration type' },
   'titulacion.modeAcidBase': { es: 'Ácido-base', en: 'Acid-base' },
   'titulacion.modeEdta': { es: 'Complejométrica', en: 'Complexometric' },
   'titulacion.modeRedox': { es: 'Redox', en: 'Redox' },
@@ -1618,6 +1872,18 @@ export const translations = {
     es: 'I fija: cambiar la carga z no altera I (útil para leer γ a I constante).',
     en: 'Fixed I: changing the charge z does not change I (useful for reading γ at constant I).',
   },
+  'actividad.recommendedRange': { es: 'intervalo recomendado: I ≤ {max} M', en: 'recommended range: I ≤ {max} M' },
+  'actividad.withinValidity': {
+    es: 'I = {value} M está dentro del intervalo recomendado del modelo (I ≤ {max} M).',
+    en: 'I = {value} M is within the model’s recommended range (I ≤ {max} M).',
+  },
+  'actividad.outsideValidity': {
+    es: 'I = {value} M excede el intervalo recomendado (I ≤ {max} M). El resultado se muestra como extrapolación, no como predicción validada.',
+    en: 'I = {value} M exceeds the recommended range (I ≤ {max} M). The result is shown as an extrapolation, not a validated prediction.',
+  },
+  'actividad.extrapolationShort': { es: 'extrapolación', en: 'extrapolation' },
+  'actividad.extrapolatedHover': { es: 'Fuera del intervalo recomendado', en: 'Outside the recommended range' },
+  'actividad.extrapolationRegion': { es: 'Extrapolación', en: 'Extrapolation' },
   'actividad.electrolyteConcLabel': { es: 'Concentración del electrolito', en: 'Electrolyte concentration' },
   'actividad.referencePHLabel': { es: 'pH de referencia', en: 'Reference pH' },
   'actividad.gammaZ1A3Label': { es: 'γ (z = 1, a = 3 Å)', en: 'γ (z = 1, a = 3 Å)' },
@@ -1673,7 +1939,7 @@ export const translations = {
   'actividad.ionPairFraction': { es: 'Fracción como par', en: 'Ion-pair fraction' },
   'actividad.freeIonFraction': { es: 'Fracción como iones libres', en: 'Free-ion fraction' },
   'especiacion.conditionalMapToggle': { es: 'Mapa condicional pL′–pH con sólido y especie mixta', en: 'Conditional pL′–pH map with solid and mixed species' },
-  'especiacion.mapPKspLabel': { es: 'pKsp de la fase sólida', en: 'Solid-phase pKsp' },
+  'especiacion.mapPKspLabel': { es: 'pKps de la fase sólida', en: 'Solid-phase pKsp' },
   'especiacion.feasibilityToggle': { es: 'Superponer factibilidad de dos sistemas', en: 'Overlay two-system feasibility' },
   'especiacion.secondSystemLogBeta': { es: 'log β del segundo sistema', en: 'Second-system log β' },
   'especiacion.targetPctLabel': { es: 'Objetivo de separación', en: 'Separation target' },
@@ -1684,7 +1950,7 @@ export const translations = {
   'titulacion.conditionalSensorToggle': { es: 'Sensor potenciométrico con precipitación condicional', en: 'Potentiometric sensor with conditional precipitation' },
   'titulacion.logAlphaCation': { es: 'log α del catión', en: 'Cation log α' },
   'titulacion.logAlphaAnion': { es: 'log α del anión', en: 'Anion log α' },
-  'titulacion.conditionalPKsp': { es: 'pKsp condicional', en: 'Conditional pKsp' },
+  'titulacion.conditionalPKsp': { es: 'pKps condicional', en: 'Conditional pKsp' },
   'pourbaix.generalizedGraphToggle': { es: 'Clasificador redox generalizado con fases y ligando', en: 'Generalized redox classifier with phases and ligand' },
   'pourbaix.disconnectedGraphHint': { es: 'El grafo redox no está conectado: revisa parejas e hidróxidos antes de usar el clasificador.', en: 'The redox graph is disconnected — check couples and hydroxide links before using the classifier.' },
   'pourbaix.ligandEdgeCoefficient': { es: 'Coeficiente de pX por frontera', en: 'pX coefficient per boundary' },

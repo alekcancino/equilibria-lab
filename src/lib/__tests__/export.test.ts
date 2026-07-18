@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tracesToCSV, gridToCSV } from '../export';
+import { dataUrlToBlob, tracesToCSV, gridToCSV } from '../export';
 import { predominanceGrid } from '../predominance2D';
 
 describe('tracesToCSV', () => {
@@ -99,5 +99,13 @@ describe('gridToCSV', () => {
     const csv = gridToCSV(grid, labels, 'x', 'y');
     const rows = csv.split('\n');
     expect(rows[1]).toBe('1.000,,');
+  });
+});
+
+describe('dataUrlToBlob', () => {
+  it('converts a PNG data URL into binary bytes for an object-URL download', async () => {
+    const blob = dataUrlToBlob('data:image/png;base64,iVBORw0KGgo=');
+    expect(blob.type).toBe('image/png');
+    expect([...new Uint8Array(await blob.arrayBuffer())]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
   });
 });

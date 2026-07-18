@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { GLOSSARY } from '../lib/glossary';
 import { useLanguage } from '../hooks/useLanguage';
 import { useT } from '../hooks/useT';
@@ -58,33 +58,93 @@ export function HelpTip({ id }: { id: string }) {
 
 /** Numeric field that tolerates intermediate states while typing. */
 function NumberField({
-  value, onCommit, step, width = 72,
+  value, onCommit, step, min, max, width = 72, labelledBy,
 }: {
   value: number;
   onCommit: (v: number) => void;
   step?: number;
+  min?: number;
+  max?: number;
   width?: number;
+  labelledBy: string;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [draft, setDraft] = useState(String(value));
+  const [invalid, setInvalid] = useState(false);
+
   useEffect(() => {
-    if (inputRef.current && parseFloat(inputRef.current.value) !== value) {
-      inputRef.current.value = String(value);
+    if (document.activeElement !== inputRef.current) {
+      setDraft(String(value));
+      setInvalid(false);
     }
   }, [value]);
+
+  const withinBounds = (v: number) =>
+    (min === undefined || v >= min) && (max === undefined || v <= max);
+
+  const commitDraft = () => {
+    if (draft.trim() === '') {
+      setDraft(String(value));
+      setInvalid(false);
+      return;
+    }
+    const parsed = Number(draft);
+    if (!Number.isFinite(parsed)) {
+      setDraft(String(value));
+      setInvalid(false);
+      return;
+    }
+    const bounded = Math.min(max ?? parsed, Math.max(min ?? parsed, parsed));
+    onCommit(bounded);
+    setDraft(String(bounded));
+    setInvalid(false);
+  };
+
+  const errorMessage = min !== undefined && max !== undefined
+    ? t('controls.valueRange', { min, max })
+    : t('controls.invalidNumber');
+
   return (
-    <input
-      ref={inputRef}
-      type="number"
-      className="num-field"
-      style={{ width }}
-      defaultValue={value}
-      step={step ?? 'any'}
-      onChange={(e) => {
-        const v = parseFloat(e.target.value);
-        if (Number.isFinite(v)) onCommit(v);
-      }}
-      onBlur={(e) => { e.target.value = String(value); }}
-    />
+    <span className="num-field-wrap">
+      <input
+        ref={inputRef}
+        type="number"
+        className={`num-field${invalid ? ' invalid' : ''}`}
+        style={{ width }}
+        value={draft}
+        min={min}
+        max={max}
+        step={step ?? 'any'}
+        aria-labelledby={labelledBy}
+        aria-invalid={invalid}
+        aria-describedby={invalid ? `${labelledBy}-error` : undefined}
+        onChange={(e) => {
+          const next = e.target.value;
+          const parsed = Number(next);
+          setDraft(next);
+          const valid = next !== '' && Number.isFinite(parsed) && withinBounds(parsed);
+          setInvalid(!valid);
+          if (valid) onCommit(parsed);
+        }}
+        onBlur={commitDraft}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            commitDraft();
+            inputRef.current?.blur();
+          } else if (e.key === 'Escape') {
+            setDraft(String(value));
+            setInvalid(false);
+            inputRef.current?.blur();
+          }
+        }}
+      />
+      {invalid && (
+        <span id={`${labelledBy}-error`} className="num-field-error" role="alert">
+          {errorMessage}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -102,13 +162,22 @@ export function Slider({
   decimals?: number;
   helpId?: string;
 }) {
+  const controlId = useId();
+  const labelId = `${controlId}-label`;
   const rounded = parseFloat(value.toFixed(decimals));
   return (
     <div className="control">
       <div className="control-header">
-        <span className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
+        <span id={labelId} className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
         <span className="control-value">
-          <NumberField value={rounded} onCommit={onChange} step={step} />
+          <NumberField
+            value={rounded}
+            onCommit={onChange}
+            step={step}
+            min={min}
+            max={max}
+            labelledBy={labelId}
+          />
           {unit && <span className="unit">{unit}</span>}
         </span>
       </div>
@@ -118,6 +187,7 @@ export function Slider({
         max={max}
         step={step}
         value={Math.min(Math.max(value, min), max)}
+        aria-labelledby={labelId}
         onChange={(e) => onChange(parseFloat(e.target.value))}
       />
     </div>
@@ -138,14 +208,21 @@ export function ConcSlider({
   max?: number;
   helpId?: string;
 }) {
+  const controlId = useId();
+  const labelId = `${controlId}-label`;
+  const valueMin = Math.pow(10, min);
+  const valueMax = Math.pow(10, max);
   return (
     <div className="control">
       <div className="control-header">
-        <span className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
+        <span id={labelId} className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
         <span className="control-value">
           <NumberField
             value={parseFloat(value.toPrecision(4))}
-            onCommit={(v) => v > 0 && onChange(v)}
+            onCommit={onChange}
+            min={valueMin}
+            max={valueMax}
+            labelledBy={labelId}
           />
           <span className="unit">M</span>
         </span>
@@ -156,6 +233,7 @@ export function ConcSlider({
         max={max}
         step={0.05}
         value={Math.log10(value)}
+        aria-labelledby={labelId}
         onChange={(e) => onChange(Math.pow(10, parseFloat(e.target.value)))}
       />
     </div>
@@ -171,14 +249,16 @@ export function SelectControl({
   onChange: (v: string) => void;
   helpId?: string;
 }) {
+  const controlId = useId();
+  const labelId = `${controlId}-label`;
   return (
     <div className="control">
       {label && (
         <div className="control-header">
-          <span className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
+          <span id={labelId} className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
         </div>
       )}
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
+      <select value={value} aria-labelledby={label ? labelId : undefined} onChange={(e) => onChange(e.target.value)}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
@@ -217,6 +297,7 @@ export function Segmented({
       {options.map((o) => (
         <button
           key={o.value}
+          type="button"
           className={o.value === value ? 'seg-btn active' : 'seg-btn'}
           onClick={() => onChange(o.value)}
         >
@@ -245,7 +326,7 @@ export function NumberSegmented({
         <span className="control-label">{label}</span>
         <span className="control-value">{value}{suffix}</span>
       </div>
-      <div style={{ marginTop: 4 }}>
+      <div className="control-input">
         <Segmented options={options.map((n) => ({ value: String(n), label: String(n) }))} value={String(value)} onChange={(v) => onChange(Number(v))} />
       </div>
       {hint && <p className="hint">{hint}</p>}
@@ -262,12 +343,17 @@ export function LabelField({
   onChange: (v: string) => void;
   helpId?: string;
 }) {
+  const inputId = useId();
   return (
     <div className="control">
       <div className="control-header">
-        <span className="control-label">{label}{helpId && <HelpTip id={helpId} />}</span>
+        <span className="control-label">
+          <label htmlFor={inputId}>{label}</label>
+          {helpId && <HelpTip id={helpId} />}
+        </span>
       </div>
       <input
+        id={inputId}
         type="text"
         className="text-field"
         value={value}
@@ -337,6 +423,7 @@ export function ConstantList({
             />
           </div>
           <button
+            type="button"
             className="mini-btn"
             title={t('controls.removeConstant')}
             onClick={() => onChange(values.filter((_, j) => j !== i))}
@@ -348,6 +435,7 @@ export function ConstantList({
       ))}
       {values.length < maxItems && (
         <button
+          type="button"
           className="add-btn"
           onClick={() => onChange([
             ...values,
@@ -393,6 +481,7 @@ export function DbPanel({
   const renderItem = (it: DbItem) => (
     <button
       key={it.id}
+      type="button"
       className="db-item"
       onClick={() => {
         onSelect(it.id);
@@ -406,7 +495,7 @@ export function DbPanel({
 
   return (
     <details className="db-panel" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary>{title ?? t('controls.dbExamples')}</summary>
+      <summary>{title ?? t('controls.dbExamples')}<span className="ui-chevron" aria-hidden /></summary>
       {groups.map((g) => (
         <div key={g ?? 'all'}>
           {g && <p className="db-group-title">{g}</p>}
@@ -435,13 +524,14 @@ export function SystemPresetPicker({
   const groups = [...new Set(items.map((it) => it.group))];
   return (
     <details className="preset-picker" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary><span className="preset-picker-spark" aria-hidden>✦</span> {title ?? t('controls.loadFullSystem')}</summary>
+      <summary>{title ?? t('controls.loadFullSystem')}<span className="ui-chevron" aria-hidden /></summary>
       {groups.map((g) => (
         <div key={g} className="preset-group">
           <p className="preset-group-title">{g}</p>
           {items.filter((it) => it.group === g).map((it) => (
             <button
               key={it.id}
+              type="button"
               className="preset-item"
               onClick={() => { onSelect(it.id); setOpen(false); }}
             >
@@ -490,47 +580,34 @@ export function ResultCard({ items }: { items: { label: ReactNode; value: string
   );
 }
 
-/**
- * Header caps are applied in JS (not CSS text-transform) because uppercasing
- * Greek destroys chemistry symbols: β → Β is indistinguishable from Latin B
- * ("log β" rendered as "LOG B"). Greek codepoints are left as-is.
- */
-const upperKeepGreek = (t: ReactNode): ReactNode =>
-  typeof t === 'string' ? t.replace(/[^Ͱ-Ͽ]+/g, (seg) => seg.toUpperCase()) : t;
-
-/**
- * Section card with header ("E" direction): groups related controls
- * on a rounded surface with a soft elevation. Replaces ad-hoc grouping
- * with bare <h3> elements.
- */
+/** Groups the core controls for one stage of a scientific model. */
 export function PanelSection({
-  title, icon, children, defaultOpen, collapsible = false,
+  title, children, defaultOpen, collapsible = false,
 }: {
   title?: ReactNode;
-  icon?: ReactNode;
   children: ReactNode;
   /** If collapsible, initial state (open by default). */
   defaultOpen?: boolean;
   collapsible?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen ?? true);
+  const bodyId = useId();
   const header = title && (
     <div className="psection-head">
-      {icon && <span className="psection-ic" aria-hidden>{icon}</span>}
-      <span className="psection-title">{upperKeepGreek(title)}</span>
-      {collapsible && <span className="psection-caret" aria-hidden>{open ? '▾' : '▸'}</span>}
+      <span className="psection-title">{title}</span>
+      {collapsible && <span className="ui-chevron" aria-hidden />}
     </div>
   );
   return (
-    <section className="psection">
+    <section className={collapsible && open ? 'psection open' : 'psection'}>
       {collapsible
         ? (
-          <button type="button" className="psection-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <button type="button" className="psection-toggle" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
             {header}
           </button>
         )
         : header}
-      {open && <div className="psection-body">{children}</div>}
+      {open && <div id={bodyId} className="psection-body">{children}</div>}
     </section>
   );
 }
@@ -545,11 +622,12 @@ export function Disclosure({
   title: ReactNode;
   defaultOpen?: boolean;
   children: ReactNode;
-  /** Modo controlado: si se pasa `open`, el componente lo obedece (úsese con `onToggle`). */
+  /** In controlled mode, `open` owns the state and should be paired with `onToggle`. */
   open?: boolean;
   onToggle?: (open: boolean) => void;
 }) {
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const bodyId = useId();
   const isControlled = openProp !== undefined;
   const open = isControlled ? openProp : internalOpen;
   const toggle = () => {
@@ -559,28 +637,21 @@ export function Disclosure({
   };
   return (
     <section className={open ? 'disclosure open' : 'disclosure'}>
-      <button type="button" className="disclosure-head" aria-expanded={open} onClick={toggle}>
-        <span className="disclosure-title">{upperKeepGreek(title)}</span>
-        <span className="disclosure-caret" aria-hidden>▾</span>
+      <button type="button" className="disclosure-head" aria-expanded={open} aria-controls={bodyId} onClick={toggle}>
+        <span className="disclosure-title">{title}</span>
+        <span className="ui-chevron" aria-hidden />
       </button>
-      {open && <div className="disclosure-body">{children}</div>}
+      {open && <div id={bodyId} className="disclosure-body">{children}</div>}
     </section>
   );
 }
 
-/**
- * Result card row below the chart ("C" direction): large numbers readable for students.
- * The `accent` item uses the indigo→violet gradient for the key value.
- * Placed as the last child of `.plot-area`.
- */
+/** Primary metrics rendered with the plot, separate from detailed sidebar results. */
 export function ResultCardRow({
   items,
 }: {
   items: { label: ReactNode; value: ReactNode; accent?: boolean; helpId?: string }[];
 }) {
-  // Rendered as a slim metric header that sits ABOVE the plot (via CSS order),
-  // reading as the chart card's header row. The `accent` item is emphasized in
-  // indigo. Data comes unchanged from each module.
   if (items.length === 0) return null;
   return (
     <div className="result-row">
@@ -598,7 +669,7 @@ export function ResultCardRow({
 export function InfoBox({ title, children }: { title: string; children: ReactNode }) {
   return (
     <details className="info-box">
-      <summary>{title}</summary>
+      <summary>{title}<span className="ui-chevron" aria-hidden /></summary>
       <div>{children}</div>
     </details>
   );

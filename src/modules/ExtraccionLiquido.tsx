@@ -14,13 +14,13 @@
 //   • Amphoteric (8-HQ): D has a bell-shaped maximum
 //   • Non-ionisable (I₂): D constant = Kd
 
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { useShareableState } from '../hooks/useShareableState';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { Disclosure, InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow } from '../components/Controls';
+import { Disclosure, InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow, SelectControl } from '../components/Controls';
 import {
   conditionalChelateLogK, distributionD, percentE1, percentEn, nFor, sequentialExtraction, type AnalyteState,
 } from '../lib/extraction';
@@ -71,13 +71,21 @@ const C2 = SPECIES_COLORS[1]; // blue   — analyte 2 (comparison)
 const C_N = ['#D55E00', '#0072B2', '#009E73'];
 
 const PH_N = 400;
+const SUBSCRIPT_DIGITS = '₀₁₂₃₄₅₆₇₈₉';
+
+function genericAcidForm(totalProtons: number, index: number): string {
+  const remaining = Math.max(0, totalProtons - index);
+  if (remaining === 0) return 'A';
+  if (remaining === 1) return 'HA';
+  return `H${String(remaining).split('').map((digit) => SUBSCRIPT_DIGITS[Number(digit)]).join('')}A`;
+}
 
 // ── State interfaces ──────────────────────────────────────────────────────────
 
 function presetState(id: string): AnalyteState {
   const p = PRESETS.find((x) => x.id === id) ?? PRESETS[0];
   return {
-    label: p.label,
+    label: p.formula,
     type: p.type,
     logKd: p.logKd,
     pKas: [...p.pKas],
@@ -118,26 +126,36 @@ function AnalyteEditor({ a, color, additions, onChange }: {
   onChange: (patch: Partial<AnalyteState>) => void;
 }) {
   const t = useT();
+  const nameId = useId();
   const acidPresets = PRESETS.filter((p) => p.type === 'acid');
   const chelatePresets = PRESETS.filter((p) => p.type === 'chelate');
+  const selectedNeutralIdx = Math.min(a.neutralIdx, a.pKas.length);
+  const neutralFormOptions = Array.from({ length: a.pKas.length + 1 }, (_, index) => ({
+    value: String(index),
+    label: `α${index} · ${genericAcidForm(a.pKas.length, index)} · ${index === 0
+      ? t('extraccionLiquido.mostProtonatedForm')
+      : index === a.pKas.length
+        ? t('extraccionLiquido.mostDeprotonatedForm')
+        : t('extraccionLiquido.intermediateForm')}`,
+  }));
   return (
-    <div style={{ marginBottom: 12 }}>
-      <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-        <span aria-hidden style={{ width: 9, height: 9, borderRadius: '50%', background: color, flexShrink: 0 }} />
+    <div className="analyte-editor">
+      <label className="analyte-label" htmlFor={nameId}>
+        <span className="analyte-dot" aria-hidden style={{ background: color }} />
         {t('extraccionLiquido.nameFormulaLabel')}
       </label>
       <input
+        id={nameId}
         className="text-input"
         value={a.label}
         onChange={(e) => onChange({ label: e.target.value })}
-        style={{ width: '100%', marginBottom: 8 }}
       />
 
-      <div className="control" style={{ marginBottom: 6 }}>
+      <div className="control analyte-type-control">
         <div className="control-header">
           <span className="control-label">{t('solubilidad.typeLabel')}</span>
         </div>
-        <div className="segmented" style={{ marginTop: 4 }}>
+        <div className="segmented control-input">
           {(['acid', 'chelate'] as const).map((tp) => (
             <button
               key={tp}
@@ -160,19 +178,19 @@ function AnalyteEditor({ a, color, additions, onChange }: {
         additions={additions}
       />
 
-      <p className="hint" style={{ marginBottom: 6 }}>
+      <p className="hint analyte-preset-hint">
         {a.type === 'acid'
           ? t('extraccionLiquido.acidPresetsHint')
           : t('extraccionLiquido.chelatePresetsHint')}
       </p>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+      <div className="preset-chip-row preset-chip-row-spaced">
         {(a.type === 'acid' ? acidPresets : chelatePresets).map((p) => (
-          <button
+          <button type="button"
             key={p.id}
             className="preset-chip"
             title={`${p.system}  ·  logKd = ${p.logKd}`}
             onClick={() => onChange({
-              label: p.label, type: p.type, logKd: p.logKd,
+              label: p.formula, type: p.type, logKd: p.logKd,
               pKas: [...p.pKas], neutralIdx: p.neutralIdx,
               n: p.n ?? 2, logCHL: p.logCHL ?? -1,
               logBetasMetalOH: [], chelatorPKas: [], chelatorPartitionRatio: 1,
@@ -189,7 +207,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
           <ConstantList
             prefix="pKa"
             values={a.pKas}
-            onChange={(v) => onChange({ pKas: v })}
+            onChange={(v) => onChange({ pKas: v, neutralIdx: Math.min(a.neutralIdx, v.length) })}
             min={0}
             max={14}
             maxItems={4}
@@ -197,15 +215,21 @@ function AnalyteEditor({ a, color, additions, onChange }: {
             initialValue={4.76}
           />
           {a.pKas.length > 1 && (
-            <p className="hint">{t('extraccionLiquido.neutralFormIndexHint', { idx: a.neutralIdx })}
-              {' '}
-              <button
-                style={{ fontSize: 12, background: 'none', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', padding: '1px 6px' }}
-                onClick={() => onChange({ neutralIdx: (a.neutralIdx + 1) % (a.pKas.length + 1) })}
-              >
-                +1
-              </button>
-            </p>
+            <>
+              <SelectControl
+                label={t('extraccionLiquido.extractableNeutralFormLabel')}
+                value={String(selectedNeutralIdx)}
+                options={neutralFormOptions}
+                onChange={(value) => onChange({ neutralIdx: Number(value) })}
+              />
+              <p className="hint">{t('extraccionLiquido.neutralFormConsequence', {
+                idx: selectedNeutralIdx,
+                form: genericAcidForm(a.pKas.length, selectedNeutralIdx),
+                charges: Array.from({ length: a.pKas.length + 1 }, (_, index) => (
+                  `${genericAcidForm(a.pKas.length, index)}: z=${selectedNeutralIdx - index > 0 ? '+' : ''}${selectedNeutralIdx - index}`
+                )).join(' · '),
+              })}</p>
+            </>
           )}
         </>
       ) : (
@@ -216,9 +240,9 @@ function AnalyteEditor({ a, color, additions, onChange }: {
               <span className="control-label">{t('extraccionLiquido.metalChargeNLabel')}</span>
               <span className="control-value">{a.n}</span>
             </div>
-            <div className="segmented" style={{ marginTop: 4 }}>
+            <div className="segmented control-input">
               {[1, 2, 3].map((n) => (
-                <button key={n} className={a.n === n ? 'seg-btn active' : 'seg-btn'} onClick={() => onChange({ n })}>
+                <button type="button" key={n} className={a.n === n ? 'seg-btn active' : 'seg-btn'} onClick={() => onChange({ n })}>
                   {n}
                 </button>
               ))}
@@ -512,8 +536,8 @@ export default function ExtraccionLiquido() {
 
   return (
     <div className="module">
-      <PanelShell title={t('extraccionLiquido.title')} onReset={reset} moduleId="extraccion">
-        <PanelSection title={t('extraccionLiquido.analyte1Section')} icon="①">
+      <PanelShell title={t('extraccionLiquido.title')} onReset={reset} moduleId="extraccion" guideId="extraccion">
+        <PanelSection title={t('extraccionLiquido.analyte1Section')}>
           <AnalyteEditor
             a={st.a1}
             color={C1}
@@ -522,21 +546,18 @@ export default function ExtraccionLiquido() {
           />
         </PanelSection>
 
-        <PanelSection title={t('extraccionLiquido.analyte2ComparisonSection')} icon="②">
-          <Toggle label={t('extraccionLiquido.compareSecondAnalyte')} checked={st.showA2} onChange={(v) => set('showA2', v)} />
-          {st.showA2 && (
-            <div className="mask-section">
+        <Disclosure title={t('extraccionLiquido.analyte2ComparisonSection')} open={st.showA2} onToggle={(v) => set('showA2', v)}>
+          <div className="mask-section">
               <AnalyteEditor
                 a={st.a2}
                 color={C2}
                 additions={[st.showA2 && t('extraccionLiquido.additionAnalyteComparison'), st.nMax > 1 && t('extraccionLiquido.additionSuccessiveExtractions', { n: st.nMax })]}
                 onChange={(p) => set('a2', { ...st.a2, ...p })}
               />
-            </div>
-          )}
-        </PanelSection>
+          </div>
+        </Disclosure>
 
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <Toggle
             label={t('extraccionLiquido.polymerizationToggle')}
             checked={st.showDimer}
@@ -570,7 +591,7 @@ export default function ExtraccionLiquido() {
           ))}
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: t('extraccionLiquido.dAtPHLabel', { ph: st.pH.toFixed(1) }), value: D1cur >= 0.001 ? D1cur.toFixed(3) : formatSci(D1cur) },
             { label: 'log D', value: D1cur > 0 ? Math.log10(D1cur).toFixed(2) : '< −10' },

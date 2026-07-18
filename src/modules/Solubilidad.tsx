@@ -9,7 +9,7 @@ import {
 } from '../components/Controls';
 import { SALTS, type SaltPreset } from '../lib/database';
 import { formatMolar } from '../lib/format';
-import { solubility, acidSolidSolubility, baseSolidSolubility } from '../lib/solubility';
+import { solubility } from '../lib/solubility';
 import type { GammaModel } from '../lib/activity';
 import { toSub } from '../lib/complexDatabase';
 import { useT } from '../hooks/useT';
@@ -55,7 +55,6 @@ const DEFAULT_SALT_ID = 'agcl';
 interface MolecularState {
   name: string;
   S0: number;
-  pKa: number;
   kind: 'acid' | 'base';
   reference: string | null;
   pKas: number[];
@@ -63,18 +62,17 @@ interface MolecularState {
 }
 
 function defaultMolecular(): MolecularState {
-  return { name: 'Ácido benzoico', S0: 0.0278, pKa: 4.2, kind: 'acid', reference: 'Martin, Physical Pharmacy', pKas: [4.2], solidFormIndex: 0 };
+  return { name: 'Ácido benzoico', S0: 0.0278, kind: 'acid', reference: 'Martin, Physical Pharmacy', pKas: [4.2], solidFormIndex: 0 };
 }
 
 function molecularSolubility(m: MolecularState, pH: number): number {
-  if (m.pKas?.length) return multiproticMolecularSolubility({
+  return multiproticMolecularSolubility({
     label: m.name,
     S0: m.S0,
     pKas: m.pKas,
     z0: m.kind === 'acid' ? 0 : m.pKas.length,
     solidFormIndex: Math.min(m.solidFormIndex ?? 0, m.pKas.length),
   }, pH);
-  return m.kind === 'acid' ? acidSolidSolubility(m.S0, m.pKa, pH) : baseSolidSolubility(m.S0, m.pKa, pH);
 }
 
 /** Solubility of sparingly soluble salts: pH effect and common-ion effect. */
@@ -105,12 +103,13 @@ export default function Solubilidad() {
     if (s.mode === 'ionic' || s.mode === 'molecular') setMode(s.mode);
     if (s.salt) setSalt((prev) => ({ ...prev, ...s.salt }));
     if (s.molecular) setMolecular((prev) => {
-      const merged = { ...prev, ...s.molecular };
-      if ((!merged.pKas || merged.pKas.length === 0) && typeof merged.pKa === 'number') {
-        merged.pKas = [merged.pKa];
-      }
-      if (merged.kind === 'acid') merged.solidFormIndex = Math.min(merged.solidFormIndex ?? 0, (merged.pKas?.length ?? 1));
-      else merged.solidFormIndex = Math.min(merged.solidFormIndex ?? merged.pKas?.length ?? 1, merged.pKas?.length ?? 1);
+      const incoming = s.molecular as Partial<MolecularState>;
+      const pKas = Array.isArray(incoming.pKas) && incoming.pKas.length > 0
+        ? incoming.pKas.filter((value) => Number.isFinite(value)).slice(0, 4)
+        : prev.pKas;
+      const merged = { ...prev, ...incoming, pKas };
+      if (merged.kind === 'acid') merged.solidFormIndex = Math.min(merged.solidFormIndex ?? 0, pKas.length);
+      else merged.solidFormIndex = Math.min(merged.solidFormIndex ?? pKas.length, pKas.length);
       return merged;
     });
     if (s.useCommon !== undefined) setUseCommon(s.useCommon);
@@ -152,9 +151,9 @@ export default function Solubilidad() {
       ? { Módulo: 'Solubilidad', Sal: salt.label, pKps: salt.pKsp.toFixed(2), 'I / M': ionicStrength.toFixed(3), 'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel }
       : {
           Módulo: 'Solubilidad', Sólido: molecular.name, 'S₀ / M': molecular.S0.toExponential(3),
-          pKa: molecular.pKa.toFixed(2), Tipo: molecular.kind === 'acid' ? 'ácido' : 'base',
+          pKa: molecular.pKas.map((value) => value.toFixed(2)).join(' / '), Tipo: molecular.kind === 'acid' ? 'ácido' : 'base',
         }
-  ), [mode, salt.label, salt.pKsp, ionicStrength, gammaModel, molecular.name, molecular.S0, molecular.pKa, molecular.kind, GAMMA_MODELS]);
+  ), [mode, salt.label, salt.pKsp, ionicStrength, gammaModel, molecular.name, molecular.S0, molecular.pKas, molecular.kind, GAMMA_MODELS]);
 
   const traces = useMemo<Data[]>(() => {
     const phs: number[] = [];
@@ -193,9 +192,9 @@ export default function Solubilidad() {
   const molecularSystem = useMemo(() => ({
     label: molecular.name,
     S0: molecular.S0,
-    pKas: molecular.pKas?.length ? molecular.pKas : [molecular.pKa],
-    z0: molecular.kind === 'acid' ? 0 : (molecular.pKas?.length ?? 1),
-    solidFormIndex: Math.min(molecular.solidFormIndex ?? 0, molecular.pKas?.length ?? 1),
+    pKas: molecular.pKas,
+    z0: molecular.kind === 'acid' ? 0 : molecular.pKas.length,
+    solidFormIndex: Math.min(molecular.solidFormIndex ?? 0, molecular.pKas.length),
   }), [molecular]);
   const saturationState = useMemo(
     () => mode === 'molecular' ? molecularSolidSaturationPH(molecularSystem) : null,
@@ -227,16 +226,17 @@ export default function Solubilidad() {
   return (
     <div className="module">
       <PanelShell
-        title={mode === 'ionic' ? <>{t('solubilidad.titleIonicPrefix')}<sub>ps</sub>)</> : t('solubilidad.titleMolecular')}
+        title={mode === 'ionic' ? <>{t('solubilidad.titleIonicPrefix')}<sub>{t('solubilidad.kspSubscript')}</sub>)</> : t('solubilidad.titleMolecular')}
         onReset={reset}
         moduleId="solubilidad"
+        guideId="solubilidad"
       >
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <div className="control">
             <div className="control-header">
               <span className="control-label">{t('solubilidad.solidModelLabel')}</span>
             </div>
-            <div style={{ marginTop: 6 }}>
+            <div className="control-input">
               <Segmented
                 options={[
                   { value: 'ionic', label: t('solubilidad.ionicSaltOption') },
@@ -270,7 +270,7 @@ export default function Solubilidad() {
                 />
               ) : (
                 <>
-                  <button className="add-btn" onClick={() => edited({ anionPKas: [7] })}>
+                  <button type="button" className="add-btn" onClick={() => edited({ anionPKas: [7] })}>
                     {t('solubilidad.anionIsBasicButton')}
                   </button>
                   <p className="hint">
@@ -279,7 +279,7 @@ export default function Solubilidad() {
                 </>
               )}
               {salt.anionPKas.length > 0 && (
-                <button className="add-btn" onClick={() => edited({ anionPKas: [] })}>
+                <button type="button" className="add-btn" onClick={() => edited({ anionPKas: [] })}>
                   {t('solubilidad.strongAcidAnionButton')}
                 </button>
               )}
@@ -304,7 +304,7 @@ export default function Solubilidad() {
                 <div className="control-header">
                   <span className="control-label">{t('solubilidad.typeLabel')}</span>
                 </div>
-                <div style={{ marginTop: 6 }}>
+                <div className="control-input">
                   <Segmented
                     options={[
                       { value: 'acid', label: t('solubilidad.weakAcidOption') },
@@ -314,7 +314,7 @@ export default function Solubilidad() {
                     onChange={(v) => setMolecular({
                       ...molecular,
                       kind: v === 'base' ? 'base' : 'acid',
-                      solidFormIndex: v === 'base' ? (molecular.pKas?.length ?? 1) : 0,
+                      solidFormIndex: v === 'base' ? molecular.pKas.length : 0,
                       reference: null,
                     })}
                   />
@@ -325,30 +325,13 @@ export default function Solubilidad() {
                 value={molecular.S0}
                 onChange={(S0) => setMolecular({ ...molecular, S0, reference: null })}
               />
-              <Slider
-                label={molecular.kind === 'acid' ? 'pKa' : t('sideReactionEditor.conjugateAcidPrefix')}
-                helpId="pKa"
-                value={molecular.pKa} min={0} max={14} step={0.01}
-                onChange={(pKa) => setMolecular({
-                  ...molecular,
-                  pKa,
-                  pKas: (molecular.pKas?.length ?? 1) > 1
-                    ? [pKa, ...(molecular.pKas?.slice(1) ?? [])]
-                    : [pKa],
-                  solidFormIndex: molecular.kind === 'acid'
-                    ? 0
-                    : Math.min(molecular.solidFormIndex ?? molecular.pKas?.length ?? 1, (molecular.pKas?.length ?? 1)),
-                  reference: null,
-                })}
-                decimals={2}
-              />
               <ConstantList
-                prefix="pKa"
-                values={molecular.pKas ?? [molecular.pKa]}
+                prefix={molecular.kind === 'acid' ? 'pKa' : t('sideReactionEditor.conjugateAcidPrefix')}
+                helpId="pKa"
+                values={molecular.pKas}
                 onChange={(pKas) => setMolecular({
                   ...molecular,
                   pKas,
-                  pKa: pKas[0] ?? molecular.pKa,
                   solidFormIndex: Math.min(molecular.solidFormIndex ?? 0, pKas.length),
                   reference: null,
                 })}
@@ -361,16 +344,16 @@ export default function Solubilidad() {
               <NumberSegmented
                 label={t('solubilidad.solidFormIndexLabel')}
                 value={molecular.solidFormIndex ?? 0}
-                options={Array.from({ length: (molecular.pKas?.length ?? 1) + 1 }, (_, index) => index)}
+                options={Array.from({ length: molecular.pKas.length + 1 }, (_, index) => index)}
                 onChange={(solidFormIndex) => setMolecular({ ...molecular, solidFormIndex, reference: null })}
               />
-              <button className="add-btn" onClick={() => setMolecular(defaultMolecular())}>
+              <button type="button" className="add-btn" onClick={() => setMolecular(defaultMolecular())}>
                 {t('solubilidad.loadBenzoicAcidButton')}
               </button>
             </>
           )}
         </PanelSection>
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           {mode === 'ionic' && (
             <>
               <Toggle label={t('solubilidad.commonIonToggle', { anion: salt.anionLabel })} checked={useCommon} onChange={setUseCommon} />
@@ -393,9 +376,9 @@ export default function Solubilidad() {
           <Slider label={t('solubilidad.evaluateAtPHLabel')} value={pHPoint} min={0} max={14} step={0.1} onChange={setPHPoint} decimals={1} />
           {mode === 'ionic' && (
           <details className="section-collapse">
-            <summary>{t('acidoBase.activityCorrection')}</summary>
+            <summary className="section-collapse-title">{t('acidoBase.activityCorrection')}<span className="ui-chevron" aria-hidden /></summary>
             <Slider label={t('complejos.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
-            <div style={{ marginTop: 6 }}>
+            <div className="control-input">
               <Segmented
                 options={GAMMA_MODELS}
                 value={gammaModel}
@@ -406,7 +389,7 @@ export default function Solubilidad() {
           </details>
           )}
         </PanelSection>
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={mode === 'ionic' ? [
             {
               label: t('solubilidad.solubilityAtPH', { ph: pHPoint.toFixed(1) }),
@@ -465,7 +448,7 @@ export default function Solubilidad() {
             accent: true,
           },
           { label: 'S₀', value: formatMolar(molecular.S0) },
-          { label: 'pKa', value: (molecular.pKas ?? [molecular.pKa]).map((value) => value.toFixed(2)).join(' / ') },
+          { label: 'pKa', value: molecular.pKas.map((value) => value.toFixed(2)).join(' / ') },
         ]} />
       </section>
     </div>

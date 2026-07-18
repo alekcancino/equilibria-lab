@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useShareEffect } from '../hooks/useShareableState';
 import { useT } from '../hooks/useT';
-import type { Data } from 'plotly.js';
+import type { Annotations, Data, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConcSlider, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Segmented, Slider, Toggle,
+  ConcSlider, Disclosure, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Segmented, Slider,
 } from '../components/Controls';
 import {
   ionicStrength,
@@ -33,6 +33,13 @@ const MODEL_LABELS: Record<GammaModel, string> = {
   kielland: 'D-H con a por ion (Kielland)',
   davies: 'Davies',
   guntelberg: 'Güntelberg',
+};
+
+const MODEL_VALIDITY: Record<GammaModel, { maxI: number; plotMax: number }> = {
+  dh: { maxI: 0.1, plotMax: 0.25 },
+  kielland: { maxI: 0.1, plotMax: 0.25 },
+  davies: { maxI: 0.5, plotMax: 1 },
+  guntelberg: { maxI: 0.1, plotMax: 0.25 },
 };
 
 /** Generic-charge γ for the selected model (Kielland's per-ion size only
@@ -101,6 +108,9 @@ export default function Actividad() {
     () => (iMode === 'impose' ? iDirect : ionicStrength([{ c: cIon, z: zEff }, { c: cIon, z: -zEff }])),
     [iMode, iDirect, cIon, zEff],
   );
+  const validity = MODEL_VALIDITY[model];
+  const chartMaxI = Math.max(validity.plotMax, Math.ceil(I * 1.15 * 20) / 20);
+  const outsideValidity = I > validity.maxI + 1e-12;
 
   const logGammaMain = model === 'kielland'
     ? logActivityCoefficient(ion.z, I, ion.a)
@@ -120,33 +130,63 @@ export default function Actividad() {
   const overallK = overallIonizationConstant(pairConstants);
 
   const gammaTraces = useMemo<Data[]>(() => {
-    const Is: number[] = [];
-    const g1: number[] = [];
-    const g2: number[] = [];
-    const g3: number[] = [];
-    const gIon: number[] = [];
-    for (let i = 0; i <= I_POINTS; i++) {
-      const ii = (2 * i) / I_POINTS;
-      Is.push(ii);
-      g1.push(gammaOf(model, 1, ii));
-      g2.push(gammaOf(model, 2, ii));
-      g3.push(gammaOf(model, 3, ii));
-      if (model === 'kielland') gIon.push(activityCoefficient(ion.z, ii, ion.a));
-    }
-    const traces: Data[] = [
-      { x: Is, y: g1, type: 'scatter', mode: 'lines', name: 'γ (z = ±1)', line: { width: 3, color: '#0072B2' } },
-      { x: Is, y: g2, type: 'scatter', mode: 'lines', name: 'γ (z = ±2)', line: { width: 2.5, color: '#D55E00' } },
-      { x: Is, y: g3, type: 'scatter', mode: 'lines', name: 'γ (z = ±3)', line: { width: 2.5, color: '#009E73' } },
+    const series = [
+      { name: 'γ (z = ±1)', color: '#0072B2', width: 3, value: (ii: number) => gammaOf(model, 1, ii) },
+      { name: 'γ (z = ±2)', color: '#D55E00', width: 2.5, value: (ii: number) => gammaOf(model, 2, ii) },
+      { name: 'γ (z = ±3)', color: '#009E73', width: 2.5, value: (ii: number) => gammaOf(model, 3, ii) },
     ];
     if (model === 'kielland') {
-      traces.push({
-        x: Is, y: gIon, type: 'scatter', mode: 'lines',
+      series.push({
         name: `γ (${ion.label}, a = ${ion.a} Å)`,
-        line: { width: 3, color: '#CC79A7', dash: 'dash' },
+        color: '#CC79A7', width: 3,
+        value: (ii: number) => activityCoefficient(ion.z, ii, ion.a),
       });
     }
+    const sample = (start: number, end: number) => Array.from({ length: I_POINTS + 1 }, (_, index) => (
+      start + (end - start) * index / I_POINTS
+    ));
+    const validI = sample(0, validity.maxI);
+    const approximateI = chartMaxI > validity.maxI ? sample(validity.maxI, chartMaxI) : [];
+    const traces: Data[] = series.flatMap((entry) => [
+      {
+        x: validI, y: validI.map(entry.value), type: 'scatter', mode: 'lines', name: entry.name,
+        line: { width: entry.width, color: entry.color },
+      } as Data,
+      ...(approximateI.length > 0 ? [{
+        x: approximateI, y: approximateI.map(entry.value), type: 'scatter', mode: 'lines',
+        name: `${entry.name} · ${t('actividad.extrapolationShort')}`,
+        showlegend: false,
+        line: { width: entry.width, color: entry.color, dash: 'dot' },
+        hovertemplate: `I = %{x:.3f} M<br>γ = %{y:.4f}<br>${t('actividad.extrapolatedHover')}<extra></extra>`,
+      } as Data] : []),
+    ]);
     return traces;
-  }, [model, ion]);
+  }, [model, ion, validity.maxI, chartMaxI, t]);
+
+  const validityShapes = useMemo<Partial<Shape>[]>(() => [
+    ...(chartMaxI > validity.maxI ? [{
+      type: 'rect' as const,
+      x0: validity.maxI, x1: chartMaxI, y0: 0, y1: 1, yref: 'paper' as const,
+      fillcolor: 'rgba(217, 119, 6, 0.10)', line: { width: 0 }, layer: 'below' as const,
+    }, {
+      type: 'line' as const,
+      x0: validity.maxI, x1: validity.maxI, y0: 0, y1: 1, yref: 'paper' as const,
+      line: { color: '#D97706', width: 1.5, dash: 'dash' as const },
+    }] : []),
+    ...(I > 0 ? [{
+      type: 'line' as const, x0: I, x1: I, y0: 0, y1: 1, yref: 'paper' as const,
+      line: { color: '#CC79A7', width: 2, dash: 'dashdot' as const },
+    }] : []),
+  ], [chartMaxI, validity.maxI, I]);
+
+  const validityAnnotations = useMemo<Partial<Annotations>[]>(() => chartMaxI > validity.maxI ? [{
+    x: (validity.maxI + chartMaxI) / 2,
+    y: 0.97,
+    yref: 'paper',
+    text: t('actividad.extrapolationRegion'),
+    showarrow: false,
+    font: { color: '#D97706', size: 11 },
+  }] : [], [chartMaxI, validity.maxI, t]);
 
   const exportMetadata = useMemo(() => ({
     Módulo: 'Actividad',
@@ -173,12 +213,10 @@ export default function Actividad() {
           data={gammaTraces}
           xTitle={t('actividad.ionicStrengthAxisLabel')}
           yTitle={t('actividad.gammaAxisLabel')}
-          xRange={[0, 2]}
+          xRange={[0, chartMaxI]}
           yRange={[0, 1.05]}
-          shapes={I > 0 ? [{
-            type: 'line', x0: I, x1: I, y0: 0, y1: 1,
-            line: { color: '#CC79A7', width: 2, dash: 'dashdot' },
-          }] : []}
+          shapes={validityShapes}
+          annotations={validityAnnotations}
           exportName="equilibria-actividad-gamma"
           exportMetadata={exportMetadata}
         />
@@ -204,14 +242,14 @@ export default function Actividad() {
 
   return (
     <div className="module">
-      <PanelShell title={t('actividad.title')} onReset={reset} moduleId="actividad">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
-          <ModelBadge model={modelLabelsT[model]} />
+      <PanelShell title={t('actividad.title')} onReset={reset} moduleId="actividad" guideId="actividad">
+        <PanelSection title={t('acidoBase.systemSection')}>
+          <ModelBadge model={modelLabelsT[model]} additions={[t('actividad.recommendedRange', { max: validity.maxI })]} />
           <div className="control">
             <div className="control-header">
               <span className="control-label">{t('actividad.gammaModelLabel')}</span>
             </div>
-            <div style={{ marginTop: 6 }}>
+            <div className="control-input">
               <Segmented
                 options={[
                   { value: 'dh', label: t('actividad.extendedOption') },
@@ -231,10 +269,9 @@ export default function Actividad() {
                 <span className="control-value">a = {ion.a} Å · z = {ion.z}</span>
               </div>
               <select
-                className="editor-select"
+                className="editor-select control-select"
                 value={ionIdx}
                 onChange={(e) => setIonIdx(Number(e.target.value))}
-                style={{ marginTop: 6, width: '100%' }}
               >
                 {ION_SIZES.map((it, i) => (
                   <option key={it.label} value={i}>{it.label} (a = {it.a} Å)</option>
@@ -247,9 +284,9 @@ export default function Actividad() {
                 <span className="control-label">{t('actividad.ionicChargeLabel')}</span>
                 <span className="control-value">{z}</span>
               </div>
-              <div className="segmented" style={{ marginTop: 6 }}>
+              <div className="segmented control-input">
                 {[1, 2, 3].map((v) => (
-                  <button key={v} className={z === v ? 'seg-btn active' : 'seg-btn'} onClick={() => setZ(v)}>
+                  <button type="button" key={v} className={z === v ? 'seg-btn active' : 'seg-btn'} onClick={() => setZ(v)}>
                     {v}
                   </button>
                 ))}
@@ -257,12 +294,12 @@ export default function Actividad() {
             </div>
           )}
         </PanelSection>
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <div className="control">
             <div className="control-header">
               <span className="control-label">{t('actividad.iSourceLabel')}</span>
             </div>
-            <div style={{ marginTop: 6 }}>
+            <div className="control-input">
               <Segmented
                 options={[
                   { value: 'impose', label: t('actividad.imposeIOption') },
@@ -282,8 +319,13 @@ export default function Actividad() {
             <ConcSlider label={t('actividad.electrolyteConcLabel')} value={cIon} onChange={setCIon} min={-3} max={0} />
           )}
           <Slider label={t('actividad.referencePHLabel')} value={pH} min={0} max={14} step={0.1} onChange={setPH} decimals={1} />
+          <p className={`model-validity-note ${outsideValidity ? 'warn' : 'ok'}`} role="status">
+            {outsideValidity
+              ? t('actividad.outsideValidity', { value: I.toPrecision(3), max: validity.maxI })
+              : t('actividad.withinValidity', { value: I.toPrecision(3), max: validity.maxI })}
+          </p>
         </PanelSection>
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: t('acidoBase.ionicStrengthLabel'), value: formatMolar(I) },
             { label: model === 'kielland' ? t('actividad.gammaZ1A3Label') : 'γ (z = 1)', value: gamma1.toFixed(3) },
@@ -300,16 +342,13 @@ export default function Actividad() {
             { label: 'a_H ≈ γ·[H⁺]', value: formatSci(gammaH * Math.pow(10, -pH)) },
           ]} />
         </PanelSection>
-        <PanelSection title={t('actividad.ionPairSection')} icon="⇌">
-          <Toggle label={t('actividad.showIonPairing')} checked={showIonPairing} onChange={setShowIonPairing} />
-          {showIonPairing && (
-            <>
+        <Disclosure title={t('actividad.ionPairSection')} open={showIonPairing} onToggle={setShowIonPairing}>
+          <>
               <Slider label={t('actividad.pKiLabel')} value={pKi} min={-2} max={12} step={0.01} decimals={2} onChange={setPKi} />
               <Slider label={t('actividad.pKdLabel')} value={pKd} min={-2} max={12} step={0.01} decimals={2} onChange={setPKd} />
               <p className="hint">{t('actividad.ionPairHint')}</p>
-            </>
-          )}
-        </PanelSection>
+          </>
+        </Disclosure>
         <InfoBox title={t('actividad.activityCoeffModelsTitle')}>
           <p>
             <strong>{t('actividad.dhExtendedBold')}</strong>: <code>log γ = −0.51 z² √I / (1 + 0.33·a·√I)</code>{t('actividad.dhExtendedBody')}

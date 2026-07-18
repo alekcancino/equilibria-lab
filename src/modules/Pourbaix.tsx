@@ -4,8 +4,8 @@ import type { Data, Annotations, Shape } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import {
-  InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow,
-  SelectControl, Slider, Toggle,
+  InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard,
+  ResultCardRow, SelectControl, Slider, Toggle,
 } from '../components/Controls';
 import {
   availableSystems, buildSystem, buildArbitraryDiagram, getSystemDef, presetToArbitrary, waterLines, S_NERNST,
@@ -64,91 +64,46 @@ function SpeciesEditor({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className="arbitrary-editor">
       {species.map((sp, i) => (
-        <div key={i} className="editor-card" style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="editor-title" style={{ fontSize: 12, color: sp.kind === 'ion' ? '#0072B2' : sp.kind === 'hydroxide' ? '#D55E00' : '#009E73', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        <div key={i} className="editor-card">
+          <div className="editor-card-header">
+            <span className="editor-card-kind">
               {sp.kind === 'ion' ? t('pourbaix.kindIon') : sp.kind === 'hydroxide' ? t('pourbaix.kindHydroxide') : t('pourbaix.kindMetal')}
             </span>
-            <button onClick={() => remove(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 14, padding: '0 2px' }}>✕</button>
+            <button type="button" className="icon-remove-btn" onClick={() => remove(i)} aria-label={t('controls.remove')}>×</button>
           </div>
 
-          <div className="control">
-            <div className="control-header">
-              <span className="control-label">{t('pourbaix.formulaLabel')}</span>
-            </div>
-            <input
-              className="label-input"
-              value={sp.formula}
-              onChange={(e) => update(i, { formula: e.target.value })}
-              style={{ width: '100%', marginTop: 4 }}
-            />
-          </div>
+          <LabelField label={t('pourbaix.formulaLabel')} value={sp.formula} onChange={(formula) => update(i, { formula })} />
 
           {sp.kind === 'ion' && (
-            <div className="control">
-              <div className="control-header">
-                <span className="control-label">{t('pourbaix.chargeZLabel')}</span>
-                <span className="control-value">{sp.z}</span>
-              </div>
-              <div className="segmented" style={{ marginTop: 4 }}>
-                {[1, 2, 3, 4].map((v) => (
-                  <button key={v} className={sp.z === v ? 'seg-btn active' : 'seg-btn'}
-                    onClick={() => update(i, { z: v })}>
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <NumberSegmented label={t('pourbaix.chargeZLabel')} value={sp.z} options={[1, 2, 3, 4]} onChange={(z) => update(i, { z })} />
           )}
 
           {sp.kind === 'hydroxide' && (
             <>
-              <div className="control">
-                <div className="control-header">
-                  <span className="control-label">{t('pourbaix.chargeZLabel')}</span>
-                  <span className="control-value">{sp.z}</span>
-                </div>
-                <div className="segmented" style={{ marginTop: 4 }}>
-                  {[1, 2, 3, 4].map((v) => (
-                    <button key={v} className={sp.z === v ? 'seg-btn active' : 'seg-btn'}
-                      onClick={() => update(i, { z: v })}>
-                      {v}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <NumberSegmented label={t('pourbaix.chargeZLabel')} value={sp.z} options={[1, 2, 3, 4]} onChange={(z) => update(i, { z })} />
               <Slider
-                label={`${t('titulacion.pKspShort')} = ${sp.pKsp.toFixed(1)}`}
+                label={t('titulacion.pKspShort')}
                 helpId="pKsp"
                 value={sp.pKsp} min={2} max={50} step={0.1}
                 onChange={(pKsp) => update(i, { pKsp })}
                 decimals={1}
               />
-              <div className="control">
-                <div className="control-header">
-                  <span className="control-label">{t('pourbaix.referenceIonLabel')}</span>
-                </div>
-                <select
-                  className="select-control"
-                  value={sp.ionRef}
-                  onChange={(e) => update(i, { ionRef: e.target.value })}
-                  style={{ marginTop: 4, width: '100%' }}
-                >
-                  {ions.map((ion) => (
-                    <option key={ion.formula} value={ion.formula}>{ion.formula}</option>
-                  ))}
-                </select>
-              </div>
+              <SelectControl
+                label={t('pourbaix.referenceIonLabel')}
+                value={sp.ionRef}
+                options={ions.map((ion) => ({ value: ion.formula, label: ion.formula }))}
+                onChange={(ionRef) => update(i, { ionRef })}
+              />
             </>
           )}
         </div>
       ))}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <button className="btn-secondary" onClick={addIon} style={{ fontSize: 12 }}>{t('pourbaix.addIonButton')}</button>
-        <button className="btn-secondary" onClick={addHydrox} style={{ fontSize: 12 }}>{t('pourbaix.addHydroxideButton')}</button>
-        <button className="btn-secondary" onClick={addMetal} style={{ fontSize: 12 }}>{t('pourbaix.addMetalButton')}</button>
+      <div className="editor-actions">
+        <button type="button" className="editor-add-btn" onClick={addIon}>{t('pourbaix.addIonButton')}</button>
+        <button type="button" className="editor-add-btn" onClick={addHydrox}>{t('pourbaix.addHydroxideButton')}</button>
+        <button type="button" className="editor-add-btn" onClick={addMetal}>{t('pourbaix.addMetalButton')}</button>
       </div>
     </div>
   );
@@ -183,29 +138,19 @@ function CoupleEditorArb({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className="arbitrary-editor">
       {couples.map((c, i) => (
-        <div key={i} className="editor-card" style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: '#0072B2', fontWeight: 700 }}>
+        <div key={i} className="editor-card">
+          <div className="editor-card-header">
+            <span className="editor-card-kind">
               {t('pourbaix.redoxCoupleN', { n: i + 1 })}
             </span>
-            <button onClick={() => remove(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: 14, padding: '0 2px' }}>✕</button>
+            <button type="button" className="icon-remove-btn" onClick={() => remove(i)} aria-label={t('controls.remove')}>×</button>
           </div>
 
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div className="control" style={{ flex: 1 }}>
-              <div className="control-header"><span className="control-label">{t('pourbaix.oxLeftLabel')}</span></div>
-              <select className="select-control" value={c.ox} onChange={(e) => update(i, { ox: e.target.value })} style={{ marginTop: 4, width: '100%' }}>
-                {ions.map((f) => <option key={f} value={f}>{f}</option>)}
-              </select>
-            </div>
-            <div className="control" style={{ flex: 1 }}>
-              <div className="control-header"><span className="control-label">{t('pourbaix.redRightLabel')}</span></div>
-              <select className="select-control" value={c.red} onChange={(e) => update(i, { red: e.target.value })} style={{ marginTop: 4, width: '100%' }}>
-                {redOpts.map((f) => <option key={f} value={f}>{f}</option>)}
-              </select>
-            </div>
+          <div className="control-grid-2">
+            <SelectControl label={t('pourbaix.oxLeftLabel')} value={c.ox} options={ions.map((f) => ({ value: f, label: f }))} onChange={(ox) => update(i, { ox })} />
+            <SelectControl label={t('pourbaix.redRightLabel')} value={c.red} options={redOpts.map((f) => ({ value: f, label: f }))} onChange={(red) => update(i, { red })} />
           </div>
 
           <Slider
@@ -216,23 +161,10 @@ function CoupleEditorArb({
             decimals={3}
           />
 
-          <div className="control">
-            <div className="control-header">
-              <span className="control-label">{t('pourbaix.electronsNLabel')}</span>
-              <span className="control-value">{c.n}</span>
-            </div>
-            <div className="segmented" style={{ marginTop: 4 }}>
-              {[1, 2, 3, 4].map((v) => (
-                <button key={v} className={c.n === v ? 'seg-btn active' : 'seg-btn'}
-                  onClick={() => update(i, { n: v })}>
-                  {v}
-                </button>
-              ))}
-            </div>
-          </div>
+          <NumberSegmented label={t('pourbaix.electronsNLabel')} value={c.n} options={[1, 2, 3, 4]} onChange={(n) => update(i, { n })} />
         </div>
       ))}
-      <button className="btn-secondary" onClick={addCouple} style={{ fontSize: 12 }}>{t('pourbaix.addCoupleButton')}</button>
+      <button type="button" className="editor-add-btn" onClick={addCouple}>{t('pourbaix.addCoupleButton')}</button>
     </div>
   );
 }
@@ -422,8 +354,8 @@ export default function Pourbaix() {
 
   return (
     <div className="module">
-      <PanelShell title={t('pourbaix.title')} onReset={reset} moduleId="pourbaix">
-        <PanelSection title={t('acidoBase.systemSection')} icon="⚛">
+      <PanelShell title={t('pourbaix.title')} onReset={reset} moduleId="pourbaix" guideId="pourbaix">
+        <PanelSection title={t('acidoBase.systemSection')}>
           <ModelBadge
             model={useCustom ? t('pourbaix.arbitrarySystemModel') : t('pourbaix.metalWaterSystemModel')}
             additions={[!useCustom && t('pourbaix.additionDbSpecies'), showWater && t('pourbaix.additionWaterStability')]}
@@ -462,15 +394,15 @@ export default function Pourbaix() {
                   {t('pourbaix.notConvertedWarning', { list: editWarnings.join(', ') })}
                 </p>
               )}
-              <p className="editor-title" style={{ color: '#0072B2', marginBottom: 6 }}>{t('pourbaix.speciesTitle')}</p>
+              <p className="editor-title pourbaix-editor-title">{t('pourbaix.speciesTitle')}</p>
               <SpeciesEditor species={arb.species} onChange={(species) => setArb((a) => ({ ...a, species }))} />
-              <p className="editor-title" style={{ color: '#0072B2', marginTop: 12, marginBottom: 6 }}>{t('pourbaix.fundamentalCouplesTitle')}</p>
+              <p className="editor-title pourbaix-editor-title pourbaix-editor-title-next">{t('pourbaix.fundamentalCouplesTitle')}</p>
               <CoupleEditorArb couples={arb.couples} species={arb.species} onChange={(couples) => setArb((a) => ({ ...a, couples }))} />
             </>
           )}
         </PanelSection>
 
-        <PanelSection title={t('acidoBase.conditionsSection')} icon="⚗">
+        <PanelSection title={t('acidoBase.conditionsSection')}>
           <Slider
             label={t('pourbaix.logCLabel', { molar: formatMolar(Math.pow(10, logC)) })}
             value={logC} min={-6} max={0} step={0.5}
@@ -494,12 +426,12 @@ export default function Pourbaix() {
           )}
         </PanelSection>
 
-        <PanelSection title={t('pourbaix.cursorSection')} icon="✦">
+        <PanelSection title={t('pourbaix.cursorSection')}>
           <Slider label={t('potencialcond.cursorPHLabel')} value={cursorPH} min={0} max={14} step={0.1} onChange={setCursorPH} decimals={1} />
           <Slider label={t('pourbaix.cursorELabel')} value={cursorE} min={-1.6} max={2.2} step={0.05} onChange={setCursorE} decimals={2} />
         </PanelSection>
 
-        <PanelSection title={t('complejos.resultSection')} icon="∑">
+        <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
             { label: t('pourbaix.conditionsResultLabel'), value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
             { label: t('pourbaix.predominantApproxLabel'), value: predominant },
