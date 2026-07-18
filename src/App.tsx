@@ -219,15 +219,16 @@ export default function App() {
           showTabs={showSubTabs}
         />
         <nav className="sections desktop-only" role="tablist" aria-label={t('chrome.topics')}>
-          {HUBS.map((h) => {
+          {HUBS.map((h, index) => {
             const selected = hub?.id === h.id;
+            const tabIndex = hub ? (selected ? 0 : -1) : (index === 0 ? 0 : -1);
             return (
               <button
                 key={h.id}
                 role="tab"
                 type="button"
                 aria-selected={selected}
-                tabIndex={selected ? 0 : -1}
+                tabIndex={tabIndex}
                 className={selected ? 'section-btn active' : 'section-btn'}
                 onClick={() => openHub(h.id)}
                 onKeyDown={handleTabKeyDown}

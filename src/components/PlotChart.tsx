@@ -74,11 +74,18 @@ export default function PlotChart({
 
     // Legend only when there is more than one data series (lead curve, "D" direction)
     const legendNeeded = showLegend && themedData.length > 1;
+    const mobileLegendAbove = mobile && legendNeeded;
+    const legendRows = mobileLegendAbove ? Math.ceil(themedData.length / 2) : 0;
 
     return {
       autosize: true,
       margin: mobile
-        ? { l: 46, r: 14, t: 10, b: legendNeeded ? 56 : 48 }
+        ? {
+          l: 46,
+          r: 14,
+          t: mobileLegendAbove ? 12 + legendRows * 20 : 10,
+          b: 48,
+        }
         : { l: 58, r: 18, t: 14, b: legendNeeded ? 56 : 50 },
       paper_bgcolor: 'transparent',
       plot_bgcolor: plotBg,
@@ -111,11 +118,13 @@ export default function PlotChart({
         exponentformat: 'power',
       },
       showlegend: legendNeeded,
-      legend: {
+      legend: legendNeeded ? {
         orientation: 'h',
-        y: mobile ? -0.24 : -0.2,
         font: { size: fontSize, family: fontFamily },
-      },
+        ...(mobileLegendAbove
+          ? { y: 1, yanchor: 'bottom', x: 0, xanchor: 'left' }
+          : { y: mobile ? -0.24 : -0.2 }),
+      } : undefined,
       hovermode: mobile ? 'closest' : 'x unified',
       shapes: themedShapes,
       annotations: themedAnnotations,

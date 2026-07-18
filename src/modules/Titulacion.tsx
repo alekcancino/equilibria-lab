@@ -1449,19 +1449,32 @@ function EdtaTitration({ mode }: { mode: Mode }) {
         <PanelSection title={t('titulacion.chartSection')}>
           <div className="control">
             <div className="control-header"><span className="control-label">{t('titulacion.horizontalAxisLabel')}</span></div>
-            <div className="segmented control-input">
-              <button type="button" className={axis === 'volume' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('volume')}>{t('titulacion.volumeAxisOption')}</button>
-              <button type="button" className={axis === 'x' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('x')}>{t('titulacion.progressAxisOption')}</button>
+            <div className="control-input">
+              <Segmented
+                compact
+                ariaLabel={t('titulacion.horizontalAxisLabel')}
+                options={[
+                  { value: 'volume', label: t('titulacion.volumeAxisOption') },
+                  { value: 'x', label: t('titulacion.progressAxisOption') },
+                ]}
+                value={axis}
+                onChange={(value) => setAxis(value as 'volume' | 'x')}
+              />
             </div>
           </div>
           <div className="control">
             <div className="control-header"><span className="control-label">{t('titulacion.tracesLabel')}</span></div>
-            <div className="segmented control-input">
-              {(['pM', 'pY', 'both'] as const).map((tr) => (
-                <button type="button" key={tr} className={traceY === tr ? 'seg-btn active' : 'seg-btn'} onClick={() => setTraceY(tr)}>
-                  {tr === 'both' ? 'pM′ + pY′' : `${tr}′`}
-                </button>
-              ))}
+            <div className="control-input">
+              <Segmented
+                compact
+                ariaLabel={t('titulacion.tracesLabel')}
+                options={(['pM', 'pY', 'both'] as const).map((tr) => ({
+                  value: tr,
+                  label: tr === 'both' ? 'pM′ + pY′' : `${tr}′`,
+                }))}
+                value={traceY}
+                onChange={(value) => setTraceY(value as 'pM' | 'pY' | 'both')}
+              />
             </div>
           </div>
           <Toggle label={t('titulacion.alternativeSignalsToggle')} checked={showAlternativeSignals} onChange={setShowAlternativeSignals} />

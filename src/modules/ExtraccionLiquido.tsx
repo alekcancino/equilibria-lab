@@ -20,7 +20,7 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { Disclosure, InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow, SelectControl } from '../components/Controls';
+import { Disclosure, InfoBox, ModelBadge, NumberSegmented, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow, Segmented, SelectControl } from '../components/Controls';
 import {
   conditionalChelateLogK, distributionD, percentE1, percentEn, nFor, sequentialExtraction, type AnalyteState,
 } from '../lib/extraction';
@@ -155,16 +155,16 @@ function AnalyteEditor({ a, color, additions, onChange }: {
         <div className="control-header">
           <span className="control-label">{t('solubilidad.typeLabel')}</span>
         </div>
-        <div className="segmented control-input">
-          {(['acid', 'chelate'] as const).map((tp) => (
-            <button
-              key={tp}
-              className={a.type === tp ? 'seg-btn active' : 'seg-btn'}
-              onClick={() => onChange({ type: tp })}
-            >
-              {tp === 'acid' ? t('extraccionLiquido.acidNeutralOption') : t('extraccionLiquido.metalChelateOption')}
-            </button>
-          ))}
+        <div className="control-input">
+          <Segmented
+            ariaLabel={t('solubilidad.typeLabel')}
+            options={[
+              { value: 'acid', label: t('extraccionLiquido.acidNeutralOption') },
+              { value: 'chelate', label: t('extraccionLiquido.metalChelateOption') },
+            ]}
+            value={a.type}
+            onChange={(value) => onChange({ type: value as 'acid' | 'chelate' })}
+          />
         </div>
       </div>
       <ModelBadge
@@ -235,19 +235,12 @@ function AnalyteEditor({ a, color, additions, onChange }: {
       ) : (
         <>
           <Slider label="log K_ex" helpId="Kex" value={a.logKd} min={-2} max={20} step={0.1} onChange={(v) => onChange({ logKd: v })} decimals={2} />
-          <div className="control">
-            <div className="control-header">
-              <span className="control-label">{t('extraccionLiquido.metalChargeNLabel')}</span>
-              <span className="control-value">{a.n}</span>
-            </div>
-            <div className="segmented control-input">
-              {[1, 2, 3].map((n) => (
-                <button type="button" key={n} className={a.n === n ? 'seg-btn active' : 'seg-btn'} onClick={() => onChange({ n })}>
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
+          <NumberSegmented
+            label={t('extraccionLiquido.metalChargeNLabel')}
+            value={a.n}
+            options={[1, 2, 3]}
+            onChange={(n) => onChange({ n })}
+          />
           <Slider label="log[HL]_org" value={a.logCHL} min={-4} max={0} step={0.1} onChange={(v) => onChange({ logCHL: v })} decimals={1} />
           <ConstantList
             prefix="log βM(OH)"

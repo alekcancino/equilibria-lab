@@ -9,7 +9,7 @@ import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   Slider, ConstantList, ConcSlider, DbPanel, Disclosure, InfoBox, LabelField,
-  ModelBadge, PanelSection, ResultCard, ResultCardRow, Segmented, Toggle,
+  ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Segmented, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import Predominance2D from '../components/Predominance2D';
@@ -728,23 +728,12 @@ export default function SolubilidadCondicional() {
           <LabelField label={t('solubilidadCondicional.metalLabel')} value={s.m1.label} onChange={(v) => setM1({ label: v })} />
           <LabelField label={t('pourbaix.formulaLabel')} value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
           <Slider label={t('titulacion.pKspShort')} helpId="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
-          <div className="control">
-            <div className="control-header">
-              <span className="control-label">{t('solubilidadCondicional.stoichiometryN')}</span>
-              <span className="control-value">{s.m1.n}</span>
-            </div>
-            <div className="segmented control-input">
-              {[1, 2, 3].map((n) => (
-                <button type="button"
-                  key={n}
-                  className={s.m1.n === n ? 'seg-btn active' : 'seg-btn'}
-                  onClick={() => setM1({ n })}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
+          <NumberSegmented
+            label={t('solubilidadCondicional.stoichiometryN')}
+            value={s.m1.n}
+            options={[1, 2, 3]}
+            onChange={(n) => setM1({ n })}
+          />
           <Disclosure
             title={t('solubilidadCondicional.hydroxoComplexesM1Title')}
             open={s.hydroxoOpen}
@@ -782,23 +771,12 @@ export default function SolubilidadCondicional() {
               <LabelField label={t('condicionales.secondMetalLabel')} value={s.m2.label} onChange={(v) => setM2({ label: v })} />
               <LabelField label={t('pourbaix.formulaLabel')} value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
               <Slider label={t('titulacion.pKspShort')} helpId="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
-              <div className="control">
-                <div className="control-header">
-                  <span className="control-label">{t('solubilidadCondicional.stoichiometryNShort')}</span>
-                  <span className="control-value">{s.m2.n}</span>
-                </div>
-                <div className="segmented control-input">
-                  {[1, 2, 3].map((n) => (
-                    <button type="button"
-                      key={n}
-                      className={s.m2.n === n ? 'seg-btn active' : 'seg-btn'}
-                      onClick={() => setM2({ n })}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <NumberSegmented
+                label={t('solubilidadCondicional.stoichiometryNShort')}
+                value={s.m2.n}
+                options={[1, 2, 3]}
+                onChange={(n) => setM2({ n })}
+              />
             </div>
               <Toggle label={t('solubilidadCondicional.solidSolutionToggle')} checked={s.showSolidSolution} onChange={(showSolidSolution) => setS((prev) => ({ ...prev, showSolidSolution }))} />
               {s.showSolidSolution && (

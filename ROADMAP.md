@@ -1057,6 +1057,19 @@ Remaining open product work unchanged: goal-based Home (**UX-P01**), worked exam
 (**UX-P02**), database-wide EN (**UX-G02**), bilingual CI gate (**UX-G19**), arbitrary-pH
 operating-point readers (**UX-AB02**), extended viewport matrix (**UX-G08**).
 
+#### Fourth-pass audit remediation (2026-07-18) — implemented
+
+The live/code audit in `docs/UI-UX-AUDIT.md` (fourth pass) identified five P1 release
+blockers. All five are now closed on branch `feat/ux-audit-waves` (PR #100):
+
+| ID | Fix |
+| --- | --- |
+| **UIA-01** | Home topic tabs: first tab is focusable when no hub is active (`tabIndex` roving entry). |
+| **UIA-02** | All ten hand-built `.segmented` groups replaced with shared `Segmented`/`NumberSegmented`; Kielland ion select uses `aria-labelledby`. |
+| **UIA-03** | Light theme `--accent-text` (#4338CA) for selected nav/diagram copy on soft surfaces (AA). |
+| **UIA-04** | Plot annotation `#fff` surfaces and `#7f8c8d` ink remapped in `plotTheme.ts`; crossing label uses theme-safe ink. |
+| **UIA-05** | Mobile Plotly legends move above the plot with content-aware top margin; compact segmented groups stay horizontal in the Variables sheet. |
+
 #### Fourth-pass UI/UX quality audit (2026-07-18) — open backlog
 
 An independent audit of `8c5b30b` plus the current uncommitted remediation worktree covered

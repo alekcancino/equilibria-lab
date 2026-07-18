@@ -310,15 +310,17 @@ function handleSegmentKeyDown(
 
 /** Segmented control for choosing a mode (e.g. titration type or chart type). */
 export function Segmented({
-  options, value, onChange, ariaLabel,
+  options, value, onChange, ariaLabel, compact = false,
 }: {
   options: { value: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
   ariaLabel?: string;
+  /** Keep a horizontal row on narrow panels (short numeric/symbol options). */
+  compact?: boolean;
 }) {
   return (
-    <div className="segmented" role="radiogroup" aria-label={ariaLabel}>
+    <div className={`segmented${compact ? ' segmented--compact' : ''}`} role="radiogroup" aria-label={ariaLabel}>
       {options.map((o) => (
         <button
           key={o.value}
@@ -356,7 +358,7 @@ export function NumberSegmented({
         <span className="control-value">{value}{suffix}</span>
       </div>
       <div className="control-input">
-        <Segmented options={options.map((n) => ({ value: String(n), label: String(n) }))} value={String(value)} onChange={(v) => onChange(Number(v))} />
+        <Segmented compact options={options.map((n) => ({ value: String(n), label: String(n) }))} value={String(value)} onChange={(v) => onChange(Number(v))} />
       </div>
       {hint && <p className="hint">{hint}</p>}
     </div>
