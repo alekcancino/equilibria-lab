@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useId, useMemo, useRef } from 'react';
 import { formatAxisLabel } from '../lib/format';
 import { MARKER_COLOR } from '../lib/database';
 import { speciesInGrid, type Grid2D } from '../lib/predominance2D';
 import { useTheme } from '../hooks/useTheme';
+import { useT } from '../hooks/useT';
 import { toDarkColors } from '../lib/plotTheme';
 import { downloadBlob, gridToCSV, downloadCSV } from '../lib/export';
 import PlotToolbar from './PlotToolbar';
@@ -98,6 +99,9 @@ export default function Predominance2D({
 }: Predominance2DProps) {
   const { nx, ny, xRange, yRange } = grid;
   const isDark = useTheme() === 'dark';
+  const t = useT();
+  const titleId = useId();
+  const descId = useId();
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Remap once per theme change rather than re-deriving per pixel/legend row.
@@ -138,6 +142,10 @@ export default function Predominance2D({
   }, [grid, nx, ny, effColors, mixTarget, noSolution]);
 
   const present = useMemo(() => speciesInGrid(grid), [grid]);
+  const speciesSummary = useMemo(
+    () => present.map((idx) => labels[idx] ?? `S${idx}`).join(', '),
+    [present, labels],
+  );
 
   const toPx = (x: number) => PAD_L + ((x - xRange[0]) / (xRange[1] - xRange[0])) * PLOT_W;
   const toPy = (y: number) => PLOT_BOTTOM - ((y - yRange[0]) / (yRange[1] - yRange[0])) * PLOT_H;
@@ -209,8 +217,14 @@ export default function Predominance2D({
   }, [exportName, isDark, H]);
 
   return (
-    <div className="predom2d">
-      <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <div className="predom2d" role="img" aria-labelledby={titleId} aria-describedby={descId}>
+      <span id={titleId} className="sr-only">{t('diagram.map2dTitle', { x: xLabel, y: yLabel })}</span>
+      <span id={descId} className="sr-only">
+        {caption ? `${caption}. ` : ''}
+        {t('diagram.map2dDesc', { x: xLabel, y: yLabel, species: speciesSummary })}
+        {marker ? ` ${marker.label ?? `${xLabel} ${marker.x}, ${yLabel} ${marker.y}`}.` : ''}
+      </span>
+      <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden="true">
         {caption && (
           <text x={W / 2} y={26} textAnchor="middle" fontSize={17} fill="var(--text-muted)">
             {caption}

@@ -319,8 +319,10 @@ export function Segmented({
   /** Keep a horizontal row on narrow panels (short numeric/symbol options). */
   compact?: boolean;
 }) {
+  const longestLabel = options.reduce((max, o) => Math.max(max, o.label.length), 0);
+  const useCompact = compact || (options.length <= 4 && longestLabel <= 12);
   return (
-    <div className={`segmented${compact ? ' segmented--compact' : ''}`} role="radiogroup" aria-label={ariaLabel}>
+    <div className={`segmented${useCompact ? ' segmented--compact' : ''}`} role="radiogroup" aria-label={ariaLabel}>
       {options.map((o) => (
         <button
           key={o.value}

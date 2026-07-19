@@ -195,8 +195,8 @@ export const translations = {
   // ── Home landing screen ───────────────────────────────────────────────────
   'home.title': { es: '¿Qué equilibrio quieres estudiar?', en: 'Which equilibrium do you want to study?' },
   'home.intro': {
-    es: 'Catorce motores de química analítica en siete temas. Cada tema empieza con el modelo mínimo y crece contigo: agrega constantes, reacciones laterales o comparaciones cuando las necesites.',
-    en: 'Fourteen analytical-chemistry engines across seven topics. Each topic starts from the minimal model and grows with you: add constants, side reactions or comparisons whenever you need them.',
+    es: 'Catorce motores de química analítica repartidos en dieciséis flujos guiados en siete temas. Cada tema empieza con el modelo mínimo y crece contigo: agrega constantes, reacciones laterales o comparaciones cuando las necesites.',
+    en: 'Fourteen analytical-chemistry engines across sixteen guided workflows in seven topics. Each topic starts from the minimal model and grows with you: add constants, side reactions or comparisons whenever you need them.',
   },
 
   // ── Hub navigation (App.tsx HUBS) ─────────────────────────────────────────
@@ -352,7 +352,27 @@ export const translations = {
   'chart.loading': { es: 'Cargando gráfica…', en: 'Loading chart…' },
   'chart.readoutHint': { es: 'Pasa el cursor o desliza sobre la curva para leer valores exactos', en: 'Hover or drag over the curve to read exact values' },
   'chart.readoutValue': { es: '{xLabel} = {x} · {series} = {y}', en: '{xLabel} = {x} · {series} = {y}' },
+  'chart.a11ySummary': {
+    es: 'Gráfica científica: {y} frente a {x} con {n} series.',
+    en: 'Scientific chart: {y} vs {x} with {n} data series.',
+  },
   'diagram.scrollHint': { es: 'Desliza para explorar →', en: 'Swipe to explore →' },
+  'diagram.predominanceTitle': { es: 'Diagrama de zonas de predominio frente a {axis}', en: 'Predominance zone diagram vs {axis}' },
+  'diagram.predominanceDesc': {
+    es: 'Escala {axis} de {min} a {max}. Zonas: {zones}.',
+    en: '{axis} scale from {min} to {max}. Zones: {zones}.',
+  },
+  'diagram.map2dTitle': { es: 'Mapa 2D de especies dominantes: {y} frente a {x}', en: '2D dominant-species map: {y} vs {x}' },
+  'diagram.map2dDesc': {
+    es: 'Regiones coloreadas por especie dominante ({species}) en el plano {x}–{y}.',
+    en: 'Colored regions by dominant species ({species}) in the {x}–{y} plane.',
+  },
+  'diagram.redoxScaleTitle': { es: 'Escala de predicción redox (pe°′)', en: 'Redox prediction scale (pe°′)' },
+  'diagram.redoxScaleDesc': {
+    es: 'Eje pe de {min} a {max}. Pares: {couples}.',
+    en: 'pe axis from {min} to {max}. Couples: {couples}.',
+  },
+  'language.ariaLabel': { es: 'Idioma de la interfaz', en: 'Interface language' },
   'acidSystemEditor.completeDissociation': { es: 'disociación completa', en: 'complete dissociation' },
   'acidSystemEditor.groupStrong': { es: 'Fuertes', en: 'Strong' },
   'acidSystemEditor.groupBases': { es: 'Bases', en: 'Bases' },
@@ -408,7 +428,7 @@ export const translations = {
   'acidSystemEditor.classPolyprotic': { es: '{role} poliprótico ({n} etapas)', en: 'polyprotic {role} ({n} steps)' },
 
   // ── Ácido-base module (pilot) ──────────────────────────────────────────────
-  'acidoBase.title': { es: 'Equilibrio ácido-base', en: 'Acid-base equilibrium' },
+  'acidoBase.title': { es: 'Equilibrio ácido–base', en: 'Acid–base equilibrium' },
   'acidoBase.systemSection': { es: 'Sistema', en: 'System' },
   'acidoBase.conditionsSection': { es: 'Condiciones', en: 'Conditions' },
   'acidoBase.concLabel': { es: 'Concentración analítica', en: 'Analytical concentration' },
@@ -1395,7 +1415,7 @@ export const translations = {
   'extraccionLiquido.pctCumulativeExtractionLabel': { es: '% extracción acumulada', en: '% cumulative extraction' },
   'extraccionLiquido.tabPreconcentration': { es: 'Preconcentración (%E vs n)', en: 'Preconcentration (%E vs n)' },
   'extraccionLiquido.numberOfExtractionsLabel': { es: 'Número de extracciones (n)', en: 'Number of extractions (n)' },
-  'extraccionLiquido.title': { es: 'Extracción líquido-líquido', en: 'Liquid–liquid extraction' },
+  'extraccionLiquido.title': { es: 'Extracción líquido–líquido', en: 'Liquid–liquid extraction' },
   'extraccionLiquido.analyte1Section': { es: 'Analito 1', en: 'Analyte 1' },
   'extraccionLiquido.additionAnalyteComparison': { es: 'comparación entre analitos', en: 'comparison between analytes' },
   'extraccionLiquido.additionSuccessiveExtractions': { es: '{n} extracciones sucesivas', en: '{n} successive extractions' },
@@ -1645,7 +1665,7 @@ export const translations = {
   },
 
   // ── Acid-base sub-mode ──────────────────────────────────────────────────────
-  'titulacion.acidBaseTitle': { es: 'Titulación ácido-base', en: 'Acid-base titration' },
+  'titulacion.acidBaseTitle': { es: 'Titulación ácido–base', en: 'Acid–base titration' },
   'titulacion.startingFormLabel': { es: 'Forma preparada', en: 'Prepared form' },
   'titulacion.targetFormLabel': { es: 'Forma en la equivalencia final', en: 'Form at final equivalence' },
   'titulacion.noFormalReaction': {
@@ -1871,7 +1891,7 @@ export const translations = {
   'titulacion.vEqZeroCrossingShort': { es: 'V_eq (d²E/dV²=0)', en: 'V_eq (d²E/dV²=0)' },
 
   // ── Actividad module ────────────────────────────────────────────────────────
-  'actividad.title': { es: 'Actividad y Debye-Hückel', en: 'Activity and Debye–Hückel' },
+  'actividad.title': { es: 'Actividad y Debye–Hückel', en: 'Activity and Debye–Hückel' },
   'actividad.modelDH': { es: 'D-H extendida (a = 3 Å)', en: 'Extended D-H (a = 3 Å)' },
   'actividad.modelKielland': { es: 'D-H con a por ion (Kielland)', en: 'D-H with per-ion a (Kielland)' },
   'actividad.modelDavies': { es: 'Davies', en: 'Davies' },

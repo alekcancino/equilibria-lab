@@ -1070,7 +1070,19 @@ blockers. All five are now closed on branch `feat/ux-audit-waves` (PR #100):
 | **UIA-04** | Plot annotation `#fff` surfaces and `#7f8c8d` ink remapped in `plotTheme.ts`; crossing label uses theme-safe ink. |
 | **UIA-05** | Mobile Plotly legends move above the plot with content-aware top margin; compact segmented groups stay horizontal in the Variables sheet. |
 
-#### Fourth-pass UI/UX quality audit (2026-07-18) — open backlog
+#### Fourth-pass audit P2/P3 remediation (2026-07-18) — implemented
+
+PR #101 (`fix/ux-audit-p2-p3`) closes the remaining fourth-pass backlog:
+
+| ID | Fix |
+| --- | --- |
+| **UIA-06** | `Chart`, `PredominanceDiagram`, `Predominance2D` and `RedoxPredictionScale` expose bilingual `role="img"` summaries. |
+| **UIA-07** | Top-bar language control is now an ES/EN segmented toggle with the active language visibly selected. |
+| **UIA-08** | `Segmented` auto-applies compact layout when all labels are ≤12 characters (≤4 options). |
+| **UIA-09** | Home intro clarifies **14 engines / 16 guided workflows**. |
+| **UIA-10** | Module titles normalized to en-dash typography (`ácido–base`, `líquido–líquido`, `Debye–Hückel`). |
+
+#### Fourth-pass UI/UX quality audit (2026-07-18) — closed
 
 An independent audit of `8c5b30b` plus the current uncommitted remediation worktree covered
 all 16 routes at 1440×900, 375×812 and
