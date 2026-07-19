@@ -1,4 +1,6 @@
+import { useId, useMemo } from 'react';
 import { formatAxisLabel } from '../lib/format';
+import { useT } from '../hooks/useT';
 
 export interface RedoxScaleCouple {
   ox: string;
@@ -22,11 +24,24 @@ const TICK_H = 44;
 
 /** Redox prediction scale: oxidant above, reductant below, pe°′ on the axis. */
 export default function RedoxPredictionScale({ couples, peMin, peMax, caption }: RedoxPredictionScaleProps) {
+  const t = useT();
+  const titleId = useId();
+  const descId = useId();
   const x = (pe: number) => ((pe - peMin) / (peMax - peMin)) * W;
 
+  const coupleSummary = useMemo(
+    () => couples.map((c) => `${c.ox}/${c.red} pe°′=${formatAxisLabel(c.pe0)}`).join('; '),
+    [couples],
+  );
+
   return (
-    <div className="redox-scale">
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <div className="redox-scale" role="img" aria-labelledby={titleId} aria-describedby={descId}>
+      <span id={titleId} className="sr-only">{t('diagram.redoxScaleTitle')}</span>
+      <span id={descId} className="sr-only">
+        {caption ? `${caption}. ` : ''}
+        {t('diagram.redoxScaleDesc', { min: formatAxisLabel(peMin), max: formatAxisLabel(peMax), couples: coupleSummary })}
+      </span>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden="true">
         {caption && (
           <text x={W / 2} y={28} textAnchor="middle" fontSize={18} fill="var(--text-muted)">
             {caption}

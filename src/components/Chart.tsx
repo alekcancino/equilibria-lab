@@ -27,6 +27,8 @@ export interface ChartProps {
   exportMetadata?: Record<string, string>;
   /** Show the persistent crosshair readout strip (default true). */
   showReadout?: boolean;
+  /** Optional screen-reader summary; defaults to axes + series count. */
+  accessibilitySummary?: string;
 }
 
 function formatReadoutValue(value: number | string): string {
@@ -41,9 +43,14 @@ function formatReadoutValue(value: number | string): string {
 /** Interactive chart: initial autoscale, gesture zoom, no Plotly modebar. */
 export default function Chart(props: ChartProps) {
   const t = useT();
-  const { exportName = 'equilibria-lab', showReadout = true } = props;
+  const { exportName = 'equilibria-lab', showReadout = true, accessibilitySummary } = props;
   const graphDivRef = useRef<HTMLElement | null>(null);
   const [hoverPoint, setHoverPoint] = useState<ChartHoverPoint | null>(null);
+  const chartSummary = accessibilitySummary ?? t('chart.a11ySummary', {
+    y: props.yTitle,
+    x: props.xTitle,
+    n: props.data.length,
+  });
 
   const onGraphDiv = useCallback((div: HTMLElement) => {
     graphDivRef.current = div;
@@ -90,13 +97,13 @@ export default function Chart(props: ChartProps) {
       <div className="chart-toolbar-row">
         <PlotToolbar onResetZoom={resetZoom} onExportPng={exportPng} onExportCsv={exportCsv} />
       </div>
-      <div className="chart-plot">
+      <div className="chart-plot" role="img" aria-label={chartSummary}>
         <Suspense fallback={<div className="chart-loading">{t('chart.loading')}</div>}>
           <PlotChart {...props} onGraphDiv={onGraphDiv} onHover={onHover} />
         </Suspense>
       </div>
       {showReadout && (
-        <p className="chart-readout" aria-live="polite">
+        <p className="chart-readout" aria-live="polite" aria-atomic="true">
           {hoverPoint
             ? t('chart.readoutValue', {
               xLabel: props.xTitle,

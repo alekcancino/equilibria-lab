@@ -12,7 +12,8 @@ production build in `dist/`.
 This pass is diagnostic only. It records fixes but does not implement them.
 
 **Update (2026-07-18):** P1 items UIA-01 through UIA-05 were implemented on PR #100
-(`feat/ux-audit-waves`). P2/P3 items (UIA-06–10) remain open — see Recommended actions below.
+(`feat/ux-audit-waves`). P2/P3 items UIA-06–10 were implemented on PR #101
+(`fix/ux-audit-p2-p3`). See Recommended actions below for any residual follow-ups.
 
 ## Audit health score
 

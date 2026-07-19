@@ -1,3 +1,4 @@
+import { useId, useMemo } from 'react';
 import type { Zone } from '../lib/ladder';
 import { formatAxisLabel } from '../lib/format';
 import { MARKER_COLOR } from '../lib/database';
@@ -29,19 +30,31 @@ const BAND_BOTTOM = BAND_TOP + BAND_H;
  */
 export default function PredominanceDiagram({ zones, pMin, pMax, pLabel, marker, caption }: PredominanceDiagramProps) {
   const t = useT();
+  const titleId = useId();
+  const descId = useId();
   const x = (p: number) => ((p - pMin) / (pMax - pMin)) * W;
 
+  const zoneSummary = useMemo(
+    () => zones.map((z) => `${z.label} (${formatAxisLabel(z.pStart)}–${formatAxisLabel(z.pEnd)})`).join('; '),
+    [zones],
+  );
+
   return (
-    <div className="predominance-diagram">
-      <span className="predominance-scroll-hint"><span>{t('diagram.scrollHint')}</span></span>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+    <div className="predominance-diagram" role="img" aria-labelledby={titleId} aria-describedby={descId}>
+      <span id={titleId} className="sr-only">{t('diagram.predominanceTitle', { axis: pLabel })}</span>
+      <span id={descId} className="sr-only">
+        {caption ? `${caption}. ` : ''}
+        {t('diagram.predominanceDesc', { axis: pLabel, zones: zoneSummary, min: formatAxisLabel(pMin), max: formatAxisLabel(pMax) })}
+        {marker ? ` ${marker.label ?? `${pLabel} ${marker.p.toFixed(2)}`}.` : ''}
+      </span>
+      <span className="predominance-scroll-hint" aria-hidden="true"><span>{t('diagram.scrollHint')}</span></span>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden="true">
         {caption && (
           <text x={W / 2} y={34} textAnchor="middle" fontSize={20} fill="var(--text-muted)">
             {caption}
           </text>
         )}
 
-        {/* Zonas */}
         {zones.map((z, i) => {
           const x0 = x(z.pStart);
           const x1 = x(z.pEnd);
@@ -77,7 +90,6 @@ export default function PredominanceDiagram({ zones, pMin, pMax, pLabel, marker,
           );
         })}
 
-        {/* Fronteras internas con su valor p */}
         {zones.slice(1).map((z, i) => {
           const px = x(z.pStart);
           return (
@@ -90,7 +102,6 @@ export default function PredominanceDiagram({ zones, pMin, pMax, pLabel, marker,
           );
         })}
 
-        {/* Marca del sistema (ej. pH real) */}
         {marker && marker.p >= pMin && marker.p <= pMax && (
           <g>
             <line
@@ -108,7 +119,6 @@ export default function PredominanceDiagram({ zones, pMin, pMax, pLabel, marker,
           </g>
         )}
 
-        {/* Eje */}
         <line x1={0} y1={BAND_BOTTOM} x2={W} y2={BAND_BOTTOM} stroke="var(--plot-axis)" strokeWidth={1.5} />
         <text x={4} y={BAND_BOTTOM + 30} textAnchor="start" fontSize={18} fill="var(--text-muted)">
           {formatAxisLabel(pMin)}
