@@ -2,7 +2,7 @@
 // PRIMARY = free label + editable constants with ± buttons.
 // SECONDARY = collapsible database that auto-fills and closes.
 
-import { ConstantList, DbPanel, HelpTip, LabelField, ModelBadge, SelectControl, Slider, ConcSlider } from './Controls';
+import { ConstantList, DbPanel, HelpTip, LabelField, ModelBadge, Segmented, SelectControl, Slider, ConcSlider } from './Controls';
 import { useT } from '../hooks/useT';
 import { useLanguage } from '../hooks/useLanguage';
 import type { TKey } from '../i18n/translations';
@@ -284,20 +284,17 @@ export function SideReactionEditor({
             <span className="control-label">{t('sideReactionEditor.howMuchDissolved', { aux })}</span>
             <HelpTip id="ligFree" />
           </div>
-          <div className="segmented control-input">
-            {([
-              { value: 'free', label: t('sideReactionEditor.free', { aux }) },
-              { value: 'total', label: t('sideReactionEditor.total') },
-              { value: 'fixedPX', label: t('sideReactionEditor.fixedPX') },
-            ] as const).map(({ value, label }) => (
-              <button type="button"
-                key={value}
-                className={state.auxSpecMode === value ? 'seg-btn active' : 'seg-btn'}
-                onClick={() => set('auxSpecMode', value)}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="control-input">
+            <Segmented
+              ariaLabel={t('sideReactionEditor.howMuchDissolved', { aux })}
+              options={([
+                { value: 'free', label: t('sideReactionEditor.free', { aux }) },
+                { value: 'total', label: t('sideReactionEditor.total') },
+                { value: 'fixedPX', label: t('sideReactionEditor.fixedPX') },
+              ])}
+              value={state.auxSpecMode}
+              onChange={(value) => set('auxSpecMode', value as SideReactionEditorState['auxSpecMode'])}
+            />
           </div>
           <p className="hint">
             <strong>{t('sideReactionEditor.free', { aux })}</strong>{t('sideReactionEditor.specModeFreeBody')}{' '}

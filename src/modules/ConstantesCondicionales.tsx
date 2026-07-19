@@ -10,7 +10,7 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  Slider, ConcSlider, DbPanel, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Toggle,
+  Slider, ConcSlider, DbPanel, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Segmented, Toggle,
 } from '../components/Controls';
 import { fractionFormedExcess, operatingPoint } from '../lib/metrics';
 import { SideReactionEditor } from '../components/Editors';
@@ -534,18 +534,15 @@ export default function ConstantesCondicionales() {
         <div className="control">
           <div className="control-header">
             <span className="control-label">{t('condicionales.thresholdLabel')}</span>
-            <span className="control-value">{s.threshold}</span>
           </div>
-          <div className="segmented control-input">
-            {([6, 8, 10] as const).map((th) => (
-              <button type="button"
-                key={th}
-                className={s.threshold === th ? 'seg-btn active' : 'seg-btn'}
-                onClick={() => set('threshold', th)}
-              >
-                {th}
-              </button>
-            ))}
+          <div className="control-input">
+            <Segmented
+              compact
+              ariaLabel={t('condicionales.thresholdLabel')}
+              options={([6, 8, 10] as const).map((th) => ({ value: String(th), label: String(th) }))}
+              value={String(s.threshold)}
+              onChange={(v) => set('threshold', Number(v) as 6 | 8 | 10)}
+            />
           </div>
           <p className="hint">{t('condicionales.thresholdHint')}</p>
         </div>

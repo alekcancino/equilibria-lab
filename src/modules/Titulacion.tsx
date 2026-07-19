@@ -278,6 +278,12 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
   const [showResinCoupling, setShowResinCoupling] = useState(false);
   const [resinCapacity, setResinCapacity] = useState(0.001);
   const [resinKBinding, setResinKBinding] = useState(1e3);
+  const couplingMedium = showPrecipCoupling ? 'precip' : showBiphasic ? 'biphasic' : showResinCoupling ? 'resin' : 'none';
+  const setCouplingMedium = (medium: 'none' | 'precip' | 'biphasic' | 'resin') => {
+    setShowPrecipCoupling(medium === 'precip');
+    setShowBiphasic(medium === 'biphasic');
+    setShowResinCoupling(medium === 'resin');
+  };
   const [solventId, setSolventId] = useState<'water' | 'dmf' | 'ethanol'>('water');
   const [temperatureC, setTemperatureC] = useState(25);
   const [showBackProtocol, setShowBackProtocol] = useState(false);
@@ -826,10 +832,17 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
           <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
           <ConcSlider label={t('titulacion.concOfLabel', { name: titrantName })} value={cTitrant} onChange={setCTitrant} min={-4} max={0} />
           <Disclosure title={t('titulacion.coupledMediaTitle')}>
-            <Toggle label={t('titulacion.precipCouplingToggle')} checked={showPrecipCoupling} onChange={(value) => {
-              setShowPrecipCoupling(value);
-              if (value) { setShowBiphasic(false); setShowResinCoupling(false); }
-            }} />
+            <Segmented
+              ariaLabel={t('titulacion.coupledMediaTitle')}
+              options={[
+                { value: 'none', label: t('titulacion.couplingMediumNone') },
+                { value: 'precip', label: t('titulacion.couplingMediumPrecip') },
+                { value: 'biphasic', label: t('titulacion.couplingMediumBiphasic') },
+                { value: 'resin', label: t('titulacion.couplingMediumResin') },
+              ]}
+              value={couplingMedium}
+              onChange={(value) => setCouplingMedium(value as 'none' | 'precip' | 'biphasic' | 'resin')}
+            />
             {showPrecipCoupling && (
               <div className="mask-section">
                 <Slider label={t('titulacion.pKspShort')} value={coupledPKsp} min={0} max={40} step={0.1} onChange={setCoupledPKsp} decimals={1} />
@@ -837,27 +850,19 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
                 <Slider label={t('titulacion.hydroxideStoichLabel')} value={granHydroxideStoich} min={1} max={6} step={1} onChange={setGranHydroxideStoich} decimals={0} />
               </div>
             )}
-            <Toggle label={t('titulacion.biphasicToggle')} checked={showBiphasic} onChange={(value) => {
-              setShowBiphasic(value);
-              if (value) { setShowPrecipCoupling(false); setShowResinCoupling(false); }
-            }} />
             {showBiphasic && (
               <div className="mask-section">
                 <Slider label="log KD" value={Math.log10(organicKD)} min={-2} max={8} step={0.1} onChange={(value) => setOrganicKD(Math.pow(10, value))} decimals={1} />
                 <Slider label="Vorg" value={organicVolume} min={0} max={100} step={1} onChange={setOrganicVolume} unit="mL" decimals={0} />
               </div>
             )}
-            <Toggle label={t('titulacion.resinCouplingToggle')} checked={showResinCoupling} onChange={(value) => {
-              setShowResinCoupling(value);
-              if (value) { setShowPrecipCoupling(false); setShowBiphasic(false); }
-            }} />
             {showResinCoupling && (
               <div className="mask-section">
                 <ConcSlider label={t('titulacion.resinCapacityLabel')} value={resinCapacity} onChange={setResinCapacity} min={-6} max={-1} />
                 <Slider label="log Kres" value={Math.log10(resinKBinding)} min={-2} max={12} step={0.1} onChange={(value) => setResinKBinding(Math.pow(10, value))} decimals={1} />
               </div>
             )}
-            {!couplingEligible && (showPrecipCoupling || showBiphasic || showResinCoupling) && <p className="hint">{t('titulacion.couplingEligibilityHint')}</p>}
+            {!couplingEligible && couplingMedium !== 'none' && <p className="hint">{t('titulacion.couplingEligibilityHint')}</p>}
           </Disclosure>
         </PanelSection>
         <PanelSection title={t('titulacion.detectionSection')}>
@@ -1001,7 +1006,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
         />
         <ResultCardRow items={[
           { label: t('titulacion.pHAtEquivalence'), value: Number.isFinite(pHLastEq) ? pHLastEq.toFixed(2) : '—', accent: true },
-          { label: 'Veq (Gran)', value: Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—', helpId: 'gran' },
+          { label: t('titulacion.granVolumeLabel'), value: Number.isFinite(granVeqDetected) ? `${granVeqDetected.toFixed(2)} mL` : '—', helpId: 'gran' },
           { label: t('titulacion.qQuantitativity'), value: Number.isFinite(qPercent) ? `${qPercent >= 99.95 ? qPercent.toFixed(3) : qPercent.toFixed(1)} %` : '—' },
           ...(Number.isFinite(granErrorPct)
             ? [{ label: t('titulacion.pctErrorPE'), value: `${granErrorPct.toFixed(2)} %` }]
@@ -1444,19 +1449,32 @@ function EdtaTitration({ mode }: { mode: Mode }) {
         <PanelSection title={t('titulacion.chartSection')}>
           <div className="control">
             <div className="control-header"><span className="control-label">{t('titulacion.horizontalAxisLabel')}</span></div>
-            <div className="segmented control-input">
-              <button type="button" className={axis === 'volume' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('volume')}>{t('titulacion.volumeAxisOption')}</button>
-              <button type="button" className={axis === 'x' ? 'seg-btn active' : 'seg-btn'} onClick={() => setAxis('x')}>{t('titulacion.progressAxisOption')}</button>
+            <div className="control-input">
+              <Segmented
+                compact
+                ariaLabel={t('titulacion.horizontalAxisLabel')}
+                options={[
+                  { value: 'volume', label: t('titulacion.volumeAxisOption') },
+                  { value: 'x', label: t('titulacion.progressAxisOption') },
+                ]}
+                value={axis}
+                onChange={(value) => setAxis(value as 'volume' | 'x')}
+              />
             </div>
           </div>
           <div className="control">
             <div className="control-header"><span className="control-label">{t('titulacion.tracesLabel')}</span></div>
-            <div className="segmented control-input">
-              {(['pM', 'pY', 'both'] as const).map((tr) => (
-                <button type="button" key={tr} className={traceY === tr ? 'seg-btn active' : 'seg-btn'} onClick={() => setTraceY(tr)}>
-                  {tr === 'both' ? 'pM′ + pY′' : `${tr}′`}
-                </button>
-              ))}
+            <div className="control-input">
+              <Segmented
+                compact
+                ariaLabel={t('titulacion.tracesLabel')}
+                options={(['pM', 'pY', 'both'] as const).map((tr) => ({
+                  value: tr,
+                  label: tr === 'both' ? 'pM′ + pY′' : `${tr}′`,
+                }))}
+                value={traceY}
+                onChange={(value) => setTraceY(value as 'pM' | 'pY' | 'both')}
+              />
             </div>
           </div>
           <Toggle label={t('titulacion.alternativeSignalsToggle')} checked={showAlternativeSignals} onChange={setShowAlternativeSignals} />

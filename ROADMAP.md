@@ -1036,6 +1036,69 @@ desktop matrix reported one module guide, zero unnamed visible buttons, zero hor
 and zero console errors on every route. The deterministic suite now contains **338 tests**.
 `npm run check` passes ESLint, all tests, TypeScript and the production Vite build.
 
+#### UI/UX audit follow-up (2026-07-18) — implemented
+
+Third-pass audit reconciled stale **UX-G\*** / **QA-UI-\*** rows against code at `8c5b30b`
+(PR #99) and closed the remaining shared-control and progressive-disclosure gaps identified
+in the audit plan. Full report: [`docs/UI-UX-AUDIT.md`](docs/UI-UX-AUDIT.md).
+
+| Wave | Scope | Status |
+| --- | --- | --- |
+| **Wave 1** | `Segmented` radiogroup + arrow-key navigation; Share/Saved-systems failure feedback (**UX-G03**, **UX-G17**); i18n leaks (**UX-AB03**, extraction dimer label, Gran volume label). | ✅ |
+| **Wave 2** | Acid–base titration coupled medium: one **Segmented** selector (aqueous / precipitation / biphasic / resin) instead of three exclusive toggles (**UX-TA01/02** partial). | ✅ |
+| **Wave 3** | Conditional solubility workflow selector: single / compare / stages / pX with gated panel sections (**UX-SP01/02** partial). | ✅ |
+| **Wave 4** | Persistent chart readout strip under Plotly charts (**UX-G09** partial). | ✅ |
+
+Live `/browse` verification (1440×900 and 390×844) covered Home, Ácido-base, Titulación,
+Solubilidad condicional, Pourbaix, Extracción and Actividad with zero console errors on fresh
+loads. Screenshots are stored locally under `docs/testing/ui-audit-2026-07-18/`.
+
+Remaining open product work unchanged: goal-based Home (**UX-P01**), worked examples
+(**UX-P02**), database-wide EN (**UX-G02**), bilingual CI gate (**UX-G19**), arbitrary-pH
+operating-point readers (**UX-AB02**), extended viewport matrix (**UX-G08**).
+
+#### Fourth-pass audit remediation (2026-07-18) — implemented
+
+The live/code audit in `docs/UI-UX-AUDIT.md` (fourth pass) identified five P1 release
+blockers. All five are now closed on branch `feat/ux-audit-waves` (PR #100):
+
+| ID | Fix |
+| --- | --- |
+| **UIA-01** | Home topic tabs: first tab is focusable when no hub is active (`tabIndex` roving entry). |
+| **UIA-02** | All ten hand-built `.segmented` groups replaced with shared `Segmented`/`NumberSegmented`; Kielland ion select uses `aria-labelledby`. |
+| **UIA-03** | Light theme `--accent-text` (#4338CA) for selected nav/diagram copy on soft surfaces (AA). |
+| **UIA-04** | Plot annotation `#fff` surfaces and `#7f8c8d` ink remapped in `plotTheme.ts`; crossing label uses theme-safe ink. |
+| **UIA-05** | Mobile Plotly legends move above the plot with content-aware top margin; compact segmented groups stay horizontal in the Variables sheet. |
+
+#### Fourth-pass UI/UX quality audit (2026-07-18) — open backlog
+
+An independent audit of `8c5b30b` plus the current uncommitted remediation worktree covered
+all 16 routes at 1440×900, 375×812 and
+320×568, representative Spanish/English and light/dark states, keyboard flows, live PNG/CSV
+activation, contrast pairs and the current production bundle. The application scored **15/20
+(Good)**: no P0 blockers, five P1 release issues, three P2 follow-ups and two P3 polish items.
+The complete evidence, WCAG mapping and acceptance guidance live in
+[`docs/UI-UX-AUDIT.md`](docs/UI-UX-AUDIT.md).
+
+| ID | Priority | Confirmed finding and required change |
+| --- | --- | --- |
+| **UIA-01** | P1 | Home's seven desktop topic tabs all use `tabIndex=-1` when no hub is active, leaving global topic navigation without a keyboard entry point. Use navigation semantics or a valid roving-focus target and add Home keyboard coverage. |
+| **UIA-02** | P1 | Ten inline `.segmented` groups bypass the accessible shared component, and the Kielland ion-size select has no programmatic label. Replace lookalikes with shared labeled controls and block regressions. |
+| **UIA-03** | P1 | Light selected-state accent text is below AA (`3.995:1` on the soft accent surface; `4.467:1` on white). Separate text and decorative accent roles. |
+| **UIA-04** | P1 | Conditional potential leaves a literal white crossing annotation in dark mode; remapped text reaches only `2.564:1`. Theme annotation surfaces and test both modes. |
+| **UIA-05** | P1 | At 375 px, Plotly legend/title collisions are measurable in Complexes, Competitive precipitation and Activity. Make legend placement and bottom margin content-aware. |
+| **UIA-06** | P2 | Plotly and custom SVG diagrams do not provide a complete immediate non-visual alternative. Add bilingual summaries, SVG titles/descriptions and structured key data. |
+| **UIA-07** | P2 | The language pill shows the current language while its accessible label describes the destination, making bare `ES`/`EN` ambiguous. Use a selected two-state control or one action convention. |
+| **UIA-08** | P2 | Mobile stacks every segmented control vertically, including compact numeric and two-option groups. Preserve horizontal 44 px targets for short options and stack only verbose groups. |
+| **UIA-09** | P3 | Home says 14 engines while the product presents 16 workflow destinations. Clarify the distinction or adopt one canonical inventory count. |
+| **UIA-10** | P3 | Bilingual prose mixes hyphen-minus and en dash in acid–base, liquid–liquid and Debye–Hückel constructions. Normalize display typography through a short notation style guide. |
+
+Positive regression results are equally explicit: all routes loaded with zero console errors;
+none overflowed the document at any tested width; the Variables sheet passed focus-trap, Escape,
+background-inert and focus-return checks; and the unified Export menu passed pointer and keyboard
+activation for both PNG and CSV. These behaviors are the baseline to preserve while closing
+**UIA-01…10**.
+
 ### Near-term
 
 | Feature | Notes |

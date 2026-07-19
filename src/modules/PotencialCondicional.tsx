@@ -14,7 +14,7 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { InfoBox, ModelBadge, ResultCard, Slider, Toggle, ConstantList, LabelField, PanelSection, ResultCardRow, Disclosure } from '../components/Controls';
+import { InfoBox, ModelBadge, NumberSegmented, ResultCard, Slider, Toggle, ConstantList, LabelField, PanelSection, ResultCardRow, Disclosure } from '../components/Controls';
 import { CoupleEditor, SideReactionEditor } from '../components/Editors';
 import { coupleFromPreset, type CoupleState } from '../lib/editorModels';
 import { NERNST_S, conditionalEprime, electronTransferCount, redoxStateAlpha } from '../lib/redox';
@@ -301,8 +301,8 @@ export default function PotencialCondicional() {
         x: cross12, y: conditionalEprime(st.couple1, cross12, oxStack1, redStack1),
         text: `×  pH ${cross12.toFixed(1)}`,
         showarrow: false,
-        font: { size: 11, color: '#7F8C8D' },
-        bgcolor: '#fff', borderpad: 3,
+        font: { size: 11, color: '#2c3e50' },
+        bgcolor: '#ffffff', borderpad: 3,
       });
     }
     return out;
@@ -648,17 +648,12 @@ export default function PotencialCondicional() {
                 <Slider label={t('potencialcond.pxMaxLabel')} value={st.pxMax} min={1} max={30} step={1} onChange={(v) => set('pxMax', Math.max(v, st.pxMin + 1))} decimals={0} />
               </div>
               <Slider label={t('potencialcond.coupleE0Label')} helpId="E0" value={st.pxE0} min={-1.5} max={2.5} step={0.01} onChange={(v) => set('pxE0', v)} decimals={3} />
-              <div className="control">
-                <div className="control-header">
-                  <span className="control-label">{t('coupleEditor.nLabel')}</span>
-                  <span className="control-value">{st.pxN}</span>
-                </div>
-                <div className="segmented control-input">
-                  {[1, 2, 3].map((n) => (
-                    <button type="button" key={n} className={st.pxN === n ? 'seg-btn active' : 'seg-btn'} onClick={() => set('pxN', n)}>{n}</button>
-                  ))}
-                </div>
-              </div>
+              <NumberSegmented
+                label={t('coupleEditor.nLabel')}
+                value={st.pxN}
+                options={[1, 2, 3]}
+                onChange={(n) => set('pxN', n)}
+              />
               <Disclosure title={t('potencialcond.logBetaOxTitle')}>
                 <ConstantList prefix="log β(Ox)" helpId="logBeta" values={st.pxLogBetasOx} onChange={(v) => set('pxLogBetasOx', v)} min={0} max={35} maxItems={6} />
               </Disclosure>

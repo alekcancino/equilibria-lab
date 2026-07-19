@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useShareEffect } from '../hooks/useShareableState';
 import { useT } from '../hooks/useT';
 import type { Annotations, Data, Shape } from 'plotly.js';
@@ -6,7 +6,7 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
-  ConcSlider, Disclosure, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, Segmented, Slider,
+  ConcSlider, Disclosure, InfoBox, ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Segmented, Slider,
 } from '../components/Controls';
 import {
   ionicStrength,
@@ -61,6 +61,7 @@ function logGammaOf(model: GammaModel, z: number, I: number): number {
 /** Ionic activity: extended Debye-Hückel, Kielland sizes, Davies, Güntelberg (25 °C). */
 export default function Actividad() {
   const t = useT();
+  const kiellandSelectId = useId();
   const [cIon, setCIon] = useState(0.1);
   const [z, setZ] = useState(1);
   const [pH, setPH] = useState(7);
@@ -265,11 +266,12 @@ export default function Actividad() {
           {model === 'kielland' ? (
             <div className="control">
               <div className="control-header">
-                <span className="control-label">{t('actividad.kiellandIonLabel')}</span>
+                <span id={kiellandSelectId} className="control-label">{t('actividad.kiellandIonLabel')}</span>
                 <span className="control-value">a = {ion.a} Å · z = {ion.z}</span>
               </div>
               <select
                 className="editor-select control-select"
+                aria-labelledby={kiellandSelectId}
                 value={ionIdx}
                 onChange={(e) => setIonIdx(Number(e.target.value))}
               >
@@ -279,19 +281,12 @@ export default function Actividad() {
               </select>
             </div>
           ) : (
-            <div className="control">
-              <div className="control-header">
-                <span className="control-label">{t('actividad.ionicChargeLabel')}</span>
-                <span className="control-value">{z}</span>
-              </div>
-              <div className="segmented control-input">
-                {[1, 2, 3].map((v) => (
-                  <button type="button" key={v} className={z === v ? 'seg-btn active' : 'seg-btn'} onClick={() => setZ(v)}>
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <NumberSegmented
+              label={t('actividad.ionicChargeLabel')}
+              value={z}
+              options={[1, 2, 3]}
+              onChange={setZ}
+            />
           )}
         </PanelSection>
         <PanelSection title={t('acidoBase.conditionsSection')}>

@@ -26,8 +26,10 @@ const SERIES_DARK: Record<string, string> = {
 
 /** Ink/guide colors hardcoded in modules: light hex → dark equivalent. */
 const INK_DARK: Record<string, string> = {
+  '#ffffff': '#232325',
+  '#fff': '#232325',
   '#2c3e50': '#CBD5E1', // annotation ink only — never reuse this hex for a data series
-  '#7f8c8d': '#94A3B8',
+  '#7f8c8d': '#E2E8F0',
   '#999999': '#7C8BA3',
   '#95a5a6': '#7C8BA3',
   '#aaaaaa': '#5A6B85',

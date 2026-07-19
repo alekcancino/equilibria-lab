@@ -50,10 +50,13 @@ function readAll(): SavedSystem[] {
   }
 }
 
-function writeAll(systems: SavedSystem[]): void {
+function writeAll(systems: SavedSystem[]): boolean {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(systems));
-  } catch { /* private mode / storage full — best-effort, UI state still updates */ }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -81,33 +84,31 @@ export function useSavedSystems(moduleId: string) {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const save = useCallback((name: string) => {
+  const save = useCallback((name: string): Promise<boolean> => {
     const trimmed = name.trim();
-    if (!trimmed) return;
-    // Wait past the share-link debounce so a save right after an edit
-    // (e.g. releasing a slider and immediately clicking "Guardar") captures
-    // the just-edited state instead of whatever URL preceded the edit.
-    window.setTimeout(() => {
-      const entry: SavedSystem = {
-        id: crypto.randomUUID(),
-        name: trimmed,
-        moduleId,
-        savedAt: new Date().toISOString(),
-        url: window.location.href,
-      };
-      // Read fresh rather than reuse this instance's `all`: another tab may
-      // have saved/removed a system since this instance last synced, and
-      // writing from a stale copy would silently drop that change.
-      const next = [...readAll(), entry];
-      writeAll(next);
-      setAll(next);
-    }, SHARE_DEBOUNCE_MS + 50);
+    if (!trimmed) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      window.setTimeout(() => {
+        const entry: SavedSystem = {
+          id: crypto.randomUUID(),
+          name: trimmed,
+          moduleId,
+          savedAt: new Date().toISOString(),
+          url: window.location.href,
+        };
+        const next = [...readAll(), entry];
+        const persisted = writeAll(next);
+        if (persisted) setAll(next);
+        resolve(persisted);
+      }, SHARE_DEBOUNCE_MS + 50);
+    });
   }, [moduleId]);
 
-  const remove = useCallback((id: string) => {
+  const remove = useCallback((id: string): boolean => {
     const next = readAll().filter((s) => s.id !== id);
-    writeAll(next);
-    setAll(next);
+    const persisted = writeAll(next);
+    if (persisted) setAll(next);
+    return persisted;
   }, []);
 
   const load = useCallback((entry: SavedSystem) => {

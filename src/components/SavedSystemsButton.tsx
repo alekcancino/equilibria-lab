@@ -15,16 +15,20 @@ export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
   const [name, setName] = useState('');
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    save(name);
-    setName('');
-    // save() itself is debounce-delayed (see useSavedSystems) — clear the
-    // "Guardando…" state a bit after it settles rather than track its
-    // completion, which would need threading a callback through the hook.
-    window.setTimeout(() => setSaving(false), 500);
+    setSaveError(false);
+    const persisted = await save(name);
+    setSaving(false);
+    if (persisted) {
+      setName('');
+      return;
+    }
+    setSaveError(true);
+    window.setTimeout(() => setSaveError(false), 4000);
   };
 
   return (
@@ -40,12 +44,13 @@ export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
             placeholder={t('saved.namePlaceholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') void handleSave(); }}
           />
-          <button type="button" className="add-btn" onClick={handleSave} disabled={!name.trim() || saving}>
+          <button type="button" className="add-btn" onClick={() => void handleSave()} disabled={!name.trim() || saving}>
             {saving ? t('saved.saving') : t('saved.save')}
           </button>
         </div>
+        {saveError && <p className="hint saved-systems-error" role="alert">{t('saved.failed')}</p>}
         {systems.length === 0 ? (
           <p className="hint">{t('saved.empty')}</p>
         ) : (
@@ -60,7 +65,7 @@ export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
                   type="button"
                   className="mini-btn"
                   title={t('saved.delete')}
-                  onClick={() => remove(s.id)}
+                  onClick={() => { if (!remove(s.id)) setSaveError(true); }}
                 >
                   ✕
                 </button>

@@ -9,7 +9,7 @@ import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   Slider, ConstantList, ConcSlider, DbPanel, Disclosure, InfoBox, LabelField,
-  ModelBadge, PanelSection, ResultCard, ResultCardRow, Toggle,
+  ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Segmented, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import Predominance2D from '../components/Predominance2D';
@@ -105,6 +105,22 @@ interface State {
   solidXA: number;
   solidInteraction: number;
   stageTargetPHs: number[];
+  workflow: 'single' | 'compare' | 'stages' | 'px';
+}
+
+function workflowFlags(workflow: State['workflow']): Pick<State, 'showM2' | 'showStagePlanner' | 'showPX'> {
+  return {
+    showM2: workflow === 'compare',
+    showStagePlanner: workflow === 'stages',
+    showPX: workflow === 'px',
+  };
+}
+
+function workflowFromLegacy(state: Pick<State, 'showM2' | 'showStagePlanner' | 'showPX'>): State['workflow'] {
+  if (state.showStagePlanner) return 'stages';
+  if (state.showPX) return 'px';
+  if (state.showM2) return 'compare';
+  return 'single';
 }
 
 // ── Amphoteric presets ────────────────────────────────────────────────────────
@@ -144,6 +160,7 @@ function defaultState(): State {
     solidXA: 0.5,
     solidInteraction: 0,
     stageTargetPHs: [],
+    workflow: 'single',
   };
 }
 
@@ -160,6 +177,14 @@ const C_THRESH = 'rgba(127,140,141,0.9)'; // threshold line
 export default function SolubilidadCondicional() {
   const t = useT();
   const [s, setS] = useShareableState<State>('solcond', defaultState());
+  const workflow = s.workflow ?? workflowFromLegacy(s);
+  const setWorkflow = (next: State['workflow']) => setS((prev) => ({ ...prev, workflow: next, ...workflowFlags(next) }));
+  const workflowHintKey = {
+    single: 'solubilidadCondicional.workflowHintSingle',
+    compare: 'solubilidadCondicional.workflowHintCompare',
+    stages: 'solubilidadCondicional.workflowHintStages',
+    px: 'solubilidadCondicional.workflowHintPX',
+  } as const;
 
   const setM1 = (patch: Partial<MetalState>) =>
     setS((prev) => ({ ...prev, m1: { ...prev.m1, ...patch } }));
@@ -670,6 +695,20 @@ export default function SolubilidadCondicional() {
   return (
     <div className="module">
       <PanelShell title={t('solubilidadCondicional.title')} onReset={reset} moduleId="solcond" guideId="solcond">
+        <PanelSection title={t('solubilidadCondicional.workflowSection')}>
+          <Segmented
+            ariaLabel={t('solubilidadCondicional.workflowSection')}
+            options={[
+              { value: 'single', label: t('solubilidadCondicional.workflowSingle') },
+              { value: 'compare', label: t('solubilidadCondicional.workflowCompare') },
+              { value: 'stages', label: t('solubilidadCondicional.workflowStages') },
+              { value: 'px', label: t('solubilidadCondicional.workflowPX') },
+            ]}
+            value={workflow}
+            onChange={(value) => setWorkflow(value as State['workflow'])}
+          />
+          <p className="hint">{t(workflowHintKey[workflow])}</p>
+        </PanelSection>
         <PanelSection title={t('solubilidadCondicional.metal1Section')}>
           <ModelBadge
             model={s.m1.logBetasOH.length === 0
@@ -689,23 +728,12 @@ export default function SolubilidadCondicional() {
           <LabelField label={t('solubilidadCondicional.metalLabel')} value={s.m1.label} onChange={(v) => setM1({ label: v })} />
           <LabelField label={t('pourbaix.formulaLabel')} value={s.m1.formula} onChange={(v) => setM1({ formula: v })} />
           <Slider label={t('titulacion.pKspShort')} helpId="pKsp" value={s.m1.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM1({ pKsp: v })} decimals={1} />
-          <div className="control">
-            <div className="control-header">
-              <span className="control-label">{t('solubilidadCondicional.stoichiometryN')}</span>
-              <span className="control-value">{s.m1.n}</span>
-            </div>
-            <div className="segmented control-input">
-              {[1, 2, 3].map((n) => (
-                <button type="button"
-                  key={n}
-                  className={s.m1.n === n ? 'seg-btn active' : 'seg-btn'}
-                  onClick={() => setM1({ n })}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
+          <NumberSegmented
+            label={t('solubilidadCondicional.stoichiometryN')}
+            value={s.m1.n}
+            options={[1, 2, 3]}
+            onChange={(n) => setM1({ n })}
+          />
           <Disclosure
             title={t('solubilidadCondicional.hydroxoComplexesM1Title')}
             open={s.hydroxoOpen}
@@ -736,35 +764,20 @@ export default function SolubilidadCondicional() {
           )}
         </PanelSection>
 
+        {workflow === 'compare' && (
         <PanelSection title={t('solubilidadCondicional.compareSecondMetalSection')}>
-          <Toggle label={t('solubilidadCondicional.selectiveSeparationToggle')} checked={s.showM2} onChange={(v) => setS((p) => ({ ...p, showM2: v }))} />
-          {s.showM2 && (
             <div className="mask-section">
               <DbPanel items={dbItems} onSelect={(id) => setM2({ ...fromPreset(id) })} title={t('solubilidadCondicional.presetsM2')} />
               <LabelField label={t('condicionales.secondMetalLabel')} value={s.m2.label} onChange={(v) => setM2({ label: v })} />
               <LabelField label={t('pourbaix.formulaLabel')} value={s.m2.formula} onChange={(v) => setM2({ formula: v })} />
               <Slider label={t('titulacion.pKspShort')} helpId="pKsp" value={s.m2.pKsp} min={2} max={45} step={0.1} onChange={(v) => setM2({ pKsp: v })} decimals={1} />
-              <div className="control">
-                <div className="control-header">
-                  <span className="control-label">{t('solubilidadCondicional.stoichiometryNShort')}</span>
-                  <span className="control-value">{s.m2.n}</span>
-                </div>
-                <div className="segmented control-input">
-                  {[1, 2, 3].map((n) => (
-                    <button type="button"
-                      key={n}
-                      className={s.m2.n === n ? 'seg-btn active' : 'seg-btn'}
-                      onClick={() => setM2({ n })}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <NumberSegmented
+                label={t('solubilidadCondicional.stoichiometryNShort')}
+                value={s.m2.n}
+                options={[1, 2, 3]}
+                onChange={(n) => setM2({ n })}
+              />
             </div>
-          )}
-          {s.showM2 && (
-            <>
               <Toggle label={t('solubilidadCondicional.solidSolutionToggle')} checked={s.showSolidSolution} onChange={(showSolidSolution) => setS((prev) => ({ ...prev, showSolidSolution }))} />
               {s.showSolidSolution && (
                 <>
@@ -772,14 +785,11 @@ export default function SolubilidadCondicional() {
                   <Slider label={t('solubilidadCondicional.solidInteraction')} value={s.solidInteraction} min={0} max={6} step={0.1} decimals={1} onChange={(solidInteraction) => setS((prev) => ({ ...prev, solidInteraction }))} />
                 </>
               )}
-            </>
-          )}
-          <Toggle
-            label={t('solubilidadCondicional.stagePlannerToggle')}
-            checked={s.showStagePlanner}
-            onChange={(v) => setS((p) => ({ ...p, showStagePlanner: v }))}
-          />
-          {s.showStagePlanner && (
+        </PanelSection>
+        )}
+
+        {workflow === 'stages' && (
+        <PanelSection title={t('solubilidadCondicional.stagePlannerToggle')}>
             <Disclosure title={t('solubilidadCondicional.thirdCandidateTitle')} defaultOpen>
               <ConcSlider label={t('solubilidadCondicional.totalPrecipitantLabel')} value={s.cPrecipitant} onChange={(v) => setS((p) => ({ ...p, cPrecipitant: v }))} min={-5} max={0} />
               <DbPanel items={dbItems} onSelect={(id) => setM3({ ...fromPreset(id) })} title={t('solubilidadCondicional.presetsM3')} />
@@ -803,8 +813,24 @@ export default function SolubilidadCondicional() {
                 />
               ))}
             </Disclosure>
-          )}
         </PanelSection>
+        )}
+
+        {workflow === 'px' && (
+        <PanelSection title={t('solubilidadCondicional.complexantEffectSection')}>
+          <div className="mask-section">
+              <LabelField label={t('solubilidadCondicional.complexantXLabel')} value={s.ligandX} onChange={(v) => setS((p) => ({ ...p, ligandX: v }))} />
+              <Slider label={t('complejos.fixedPHLabel')} value={s.pHForPX} min={0} max={14} step={0.1} onChange={(v) => setS((p) => ({ ...p, pHForPX: v }))} decimals={1} />
+              <ConstantList
+                prefix="log β(X)"
+                helpId="logBeta"
+                values={s.logBetasX}
+                onChange={(v) => setS((p) => ({ ...p, logBetasX: v }))}
+                min={0} max={25} maxItems={6}
+              />
+          </div>
+        </PanelSection>
+        )}
 
         <PanelSection title={t('solubilidadCondicional.thresholdOperationSection')}>
           <Slider
@@ -937,24 +963,6 @@ export default function SolubilidadCondicional() {
           }] : []),
         ]} />
         </PanelSection>
-
-        <Disclosure
-          title={t('solubilidadCondicional.complexantEffectSection')}
-          open={s.showPX}
-          onToggle={(showPX) => setS((p) => ({ ...p, showPX }))}
-        >
-          <div className="mask-section">
-              <LabelField label={t('solubilidadCondicional.complexantXLabel')} value={s.ligandX} onChange={(v) => setS((p) => ({ ...p, ligandX: v }))} />
-              <Slider label={t('complejos.fixedPHLabel')} value={s.pHForPX} min={0} max={14} step={0.1} onChange={(v) => setS((p) => ({ ...p, pHForPX: v }))} decimals={1} />
-              <ConstantList
-                prefix="log β(X)"
-                helpId="logBeta"
-                values={s.logBetasX}
-                onChange={(v) => setS((p) => ({ ...p, logBetasX: v }))}
-                min={0} max={25} maxItems={6}
-              />
-          </div>
-        </Disclosure>
 
         <InfoBox title={t('solubilidadCondicional.infoBoxTitle')}>
           <p>

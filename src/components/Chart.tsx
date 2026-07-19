@@ -1,10 +1,16 @@
-import { lazy, Suspense, useCallback, useRef } from 'react';
+import { lazy, Suspense, useCallback, useRef, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import PlotToolbar from './PlotToolbar';
 import { dataUrlToBlob, downloadBlob, tracesToCSV, downloadCSV } from '../lib/export';
 import { useT } from '../hooks/useT';
 
 const PlotChart = lazy(() => import('./PlotChart'));
+
+export interface ChartHoverPoint {
+  x: number | string;
+  y: number | string;
+  series?: string;
+}
 
 export interface ChartProps {
   data: Data[];
@@ -19,16 +25,32 @@ export interface ChartProps {
   exportName?: string;
   /** Module-specific parameters prepended as # comments in the CSV */
   exportMetadata?: Record<string, string>;
+  /** Show the persistent crosshair readout strip (default true). */
+  showReadout?: boolean;
+}
+
+function formatReadoutValue(value: number | string): string {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const abs = Math.abs(value);
+    if (abs >= 1000 || (abs > 0 && abs < 0.001)) return value.toExponential(3);
+    return value.toFixed(abs >= 10 ? 2 : 3);
+  }
+  return String(value);
 }
 
 /** Interactive chart: initial autoscale, gesture zoom, no Plotly modebar. */
 export default function Chart(props: ChartProps) {
   const t = useT();
-  const { exportName = 'equilibria-lab' } = props;
+  const { exportName = 'equilibria-lab', showReadout = true } = props;
   const graphDivRef = useRef<HTMLElement | null>(null);
+  const [hoverPoint, setHoverPoint] = useState<ChartHoverPoint | null>(null);
 
   const onGraphDiv = useCallback((div: HTMLElement) => {
     graphDivRef.current = div;
+  }, []);
+
+  const onHover = useCallback((point: ChartHoverPoint | null) => {
+    setHoverPoint(point);
   }, []);
 
   const exportPng = useCallback(async () => {
@@ -70,9 +92,21 @@ export default function Chart(props: ChartProps) {
       </div>
       <div className="chart-plot">
         <Suspense fallback={<div className="chart-loading">{t('chart.loading')}</div>}>
-          <PlotChart {...props} onGraphDiv={onGraphDiv} />
+          <PlotChart {...props} onGraphDiv={onGraphDiv} onHover={onHover} />
         </Suspense>
       </div>
+      {showReadout && (
+        <p className="chart-readout" aria-live="polite">
+          {hoverPoint
+            ? t('chart.readoutValue', {
+              xLabel: props.xTitle,
+              x: formatReadoutValue(hoverPoint.x),
+              series: hoverPoint.series ?? props.yTitle,
+              y: formatReadoutValue(hoverPoint.y),
+            })
+            : t('chart.readoutHint')}
+        </p>
+      )}
     </div>
   );
 }

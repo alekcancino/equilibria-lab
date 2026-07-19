@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import Plotly from 'plotly.js-basic-dist-min';
 import createPlotlyComponent from 'react-plotly.js/factory';
-import type { Layout } from 'plotly.js';
+import type { Layout, PlotMouseEvent } from 'plotly.js';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useTheme } from '../hooks/useTheme';
 import { toDarkColors } from '../lib/plotTheme';
-import type { ChartProps } from './Chart';
+import type { ChartHoverPoint, ChartProps } from './Chart';
 
 const factory = (createPlotlyComponent as unknown as { default?: typeof createPlotlyComponent }).default
   ?? createPlotlyComponent;
@@ -13,6 +13,7 @@ const Plot = factory(Plotly);
 
 export interface PlotChartProps extends ChartProps {
   onGraphDiv?: (div: HTMLElement) => void;
+  onHover?: (point: ChartHoverPoint | null) => void;
 }
 
 function plotToken(name: string, fallback: string): string {
@@ -38,6 +39,7 @@ export default function PlotChart({
   data, xTitle, yTitle, xRange, yRange, shapes, annotations, showLegend = true,
   exportName = 'equilibria-lab',
   onGraphDiv,
+  onHover,
 }: PlotChartProps) {
   const mobile = useIsMobile();
   const theme = useTheme();
@@ -72,11 +74,18 @@ export default function PlotChart({
 
     // Legend only when there is more than one data series (lead curve, "D" direction)
     const legendNeeded = showLegend && themedData.length > 1;
+    const mobileLegendAbove = mobile && legendNeeded;
+    const legendRows = mobileLegendAbove ? Math.ceil(themedData.length / 2) : 0;
 
     return {
       autosize: true,
       margin: mobile
-        ? { l: 46, r: 14, t: 10, b: legendNeeded ? 56 : 48 }
+        ? {
+          l: 46,
+          r: 14,
+          t: mobileLegendAbove ? 12 + legendRows * 20 : 10,
+          b: 48,
+        }
         : { l: 58, r: 18, t: 14, b: legendNeeded ? 56 : 50 },
       paper_bgcolor: 'transparent',
       plot_bgcolor: plotBg,
@@ -109,11 +118,13 @@ export default function PlotChart({
         exponentformat: 'power',
       },
       showlegend: legendNeeded,
-      legend: {
+      legend: legendNeeded ? {
         orientation: 'h',
-        y: mobile ? -0.24 : -0.2,
         font: { size: fontSize, family: fontFamily },
-      },
+        ...(mobileLegendAbove
+          ? { y: 1, yanchor: 'bottom', x: 0, xanchor: 'left' }
+          : { y: mobile ? -0.24 : -0.2 }),
+      } : undefined,
       hovermode: mobile ? 'closest' : 'x unified',
       shapes: themedShapes,
       annotations: themedAnnotations,
@@ -123,6 +134,18 @@ export default function PlotChart({
     };
   }, [mobile, theme, xTitle, yTitle, xRange, yRange, showLegend, themedShapes, themedAnnotations, themedData.length, exportName]);
 
+  const handleHover = (event: Readonly<PlotMouseEvent>) => {
+    const point = event.points?.[0];
+    if (!point || point.x === undefined || point.y === undefined) return;
+    onHover?.({
+      x: point.x as number | string,
+      y: point.y as number | string,
+      series: typeof point.data?.name === 'string' ? point.data.name : undefined,
+    });
+  };
+
+  const handleUnhover = () => onHover?.(null);
+
   return (
     <Plot
       data={themedData}
@@ -131,6 +154,8 @@ export default function PlotChart({
       style={{ width: '100%', height: '100%' }}
       onInitialized={(_figure, graphDiv) => onGraphDiv?.(graphDiv)}
       onUpdate={(_figure, graphDiv) => onGraphDiv?.(graphDiv)}
+      onHover={handleHover}
+      onUnhover={handleUnhover}
       config={{
         displayModeBar: false,
         displaylogo: false,
