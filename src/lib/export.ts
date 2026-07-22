@@ -7,6 +7,15 @@ interface XYTrace {
   y: unknown[];
 }
 
+/**
+ * Plotly serializes font-family into an SVG style attribute before raster export.
+ * Quoted family names become unescaped nested quotes in that SVG, which browsers
+ * render on screen but reject when decoding the SVG for PNG/JPEG/WebP output.
+ */
+export function plotlySafeFontFamily(value: string): string {
+  return value.replace(/["']/g, '').replace(/\s+/g, ' ').trim();
+}
+
 function hasXY(t: Data): t is Data & XYTrace {
   return Array.isArray((t as XYTrace).x) && Array.isArray((t as XYTrace).y);
 }

@@ -1,8 +1,9 @@
-import { lazy, Suspense, useCallback, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import PlotToolbar from './PlotToolbar';
 import { dataUrlToBlob, downloadBlob, tracesToCSV, downloadCSV } from '../lib/export';
 import { useT } from '../hooks/useT';
+import { chartTraceFacts } from '../lib/chartAccessibility';
 
 const PlotChart = lazy(() => import('./PlotChart'));
 
@@ -46,11 +47,41 @@ export default function Chart(props: ChartProps) {
   const { exportName = 'equilibria-lab', showReadout = true, accessibilitySummary } = props;
   const graphDivRef = useRef<HTMLElement | null>(null);
   const [hoverPoint, setHoverPoint] = useState<ChartHoverPoint | null>(null);
-  const chartSummary = accessibilitySummary ?? t('chart.a11ySummary', {
-    y: props.yTitle,
-    x: props.xTitle,
-    n: props.data.length,
-  });
+  const chartSummary = useMemo(() => {
+    if (accessibilitySummary) return accessibilitySummary;
+    const base = t('chart.a11ySummary', {
+      y: props.yTitle,
+      x: props.xTitle,
+      n: props.data.length,
+    });
+    const details = chartTraceFacts(props.data).map((fact) => {
+      const name = fact.name ?? t('chart.a11yUnnamedSeries', { n: fact.index + 1 });
+      const span = t('chart.a11yTraceSpan', {
+        name,
+        x: props.xTitle,
+        startX: formatReadoutValue(fact.startX as number | string),
+        startY: formatReadoutValue(fact.startY),
+        endX: formatReadoutValue(fact.endX as number | string),
+        endY: formatReadoutValue(fact.endY),
+      });
+      if (fact.hasInteriorPeak) {
+        return `${span} ${t('chart.a11yTracePeak', {
+          y: formatReadoutValue(fact.peakY),
+          x: props.xTitle,
+          at: formatReadoutValue(fact.peakX as number | string),
+        })}`;
+      }
+      if (fact.hasInteriorMinimum) {
+        return `${span} ${t('chart.a11yTraceMinimum', {
+          y: formatReadoutValue(fact.minimumY),
+          x: props.xTitle,
+          at: formatReadoutValue(fact.minimumX as number | string),
+        })}`;
+      }
+      return span;
+    });
+    return [base, ...details].join(' ');
+  }, [accessibilitySummary, props.data, props.xTitle, props.yTitle, t]);
 
   const onGraphDiv = useCallback((div: HTMLElement) => {
     graphDivRef.current = div;

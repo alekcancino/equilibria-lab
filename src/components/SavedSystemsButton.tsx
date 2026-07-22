@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useSavedSystems } from '../hooks/useSavedSystems';
+import { useId, useMemo, useState } from 'react';
+import { useSavedSystems, type SavedSystem } from '../hooks/useSavedSystems';
 import { useT } from '../hooks/useT';
+import { useLanguage } from '../hooks/useLanguage';
 
 /**
  * "Mis sistemas" — save/load named snapshots of the current scenario.
@@ -11,11 +12,18 @@ import { useT } from '../hooks/useT';
  */
 export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
   const t = useT();
-  const { systems, save, remove, load } = useSavedSystems(moduleId);
+  const lang = useLanguage();
+  const { systems, save, remove, restore, load } = useSavedSystems(moduleId);
+  const nameId = useId();
   const [name, setName] = useState('');
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [removed, setRemoved] = useState<SavedSystem | null>(null);
+  const dateFormatter = useMemo(
+    () => new Intl.DateTimeFormat(lang === 'es' ? 'es-MX' : 'en-US', { dateStyle: 'medium' }),
+    [lang],
+  );
 
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -31,14 +39,35 @@ export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
     window.setTimeout(() => setSaveError(false), 4000);
   };
 
+  const handleRemove = (system: SavedSystem) => {
+    if (remove(system.id)) {
+      setRemoved(system);
+      setSaveError(false);
+      return;
+    }
+    setSaveError(true);
+  };
+
+  const handleUndo = () => {
+    if (!removed) return;
+    if (restore(removed)) {
+      setRemoved(null);
+      setSaveError(false);
+      return;
+    }
+    setSaveError(true);
+  };
+
   return (
     <details className="saved-systems" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary className="share-btn" title={t('saved.button')} aria-label={t('saved.button')}>
         ✦ {t('saved.buttonShort')}{systems.length > 0 ? ` (${systems.length})` : ''}
       </summary>
       <div className="saved-systems-menu">
+        <label className="saved-systems-label" htmlFor={nameId}>{t('saved.nameLabel')}</label>
         <div className="saved-systems-save">
           <input
+            id={nameId}
             type="text"
             className="text-field"
             placeholder={t('saved.namePlaceholder')}
@@ -50,6 +79,12 @@ export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
             {saving ? t('saved.saving') : t('saved.save')}
           </button>
         </div>
+        {removed && (
+          <div className="saved-systems-undo" role="status">
+            <span>{t('saved.deletedNamed', { name: removed.name })}</span>
+            <button type="button" onClick={handleUndo}>{t('saved.undo')}</button>
+          </div>
+        )}
         {saveError && <p className="hint saved-systems-error" role="alert">{t('saved.failed')}</p>}
         {systems.length === 0 ? (
           <p className="hint">{t('saved.empty')}</p>
@@ -59,13 +94,14 @@ export default function SavedSystemsButton({ moduleId }: { moduleId: string }) {
               <li key={s.id}>
                 <button type="button" className="saved-systems-load" onClick={() => load(s)}>
                   <span>{s.name}</span>
-                  <span className="saved-systems-date">{new Date(s.savedAt).toLocaleDateString()}</span>
+                  <span className="saved-systems-date">{dateFormatter.format(new Date(s.savedAt))}</span>
                 </button>
                 <button
                   type="button"
                   className="mini-btn"
-                  title={t('saved.delete')}
-                  onClick={() => { if (!remove(s.id)) setSaveError(true); }}
+                  title={t('saved.deleteNamed', { name: s.name })}
+                  aria-label={t('saved.deleteNamed', { name: s.name })}
+                  onClick={() => handleRemove(s)}
                 >
                   ✕
                 </button>

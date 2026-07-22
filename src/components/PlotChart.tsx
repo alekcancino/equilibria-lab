@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Plotly from 'plotly.js-basic-dist-min';
 import createPlotlyComponent from 'react-plotly.js/factory';
 import type { Layout, PlotMouseEvent } from 'plotly.js';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useTheme } from '../hooks/useTheme';
 import { toDarkColors } from '../lib/plotTheme';
+import { plotlySafeFontFamily } from '../lib/export';
 import type { ChartHoverPoint, ChartProps } from './Chart';
 
 const factory = (createPlotlyComponent as unknown as { default?: typeof createPlotlyComponent }).default
@@ -44,6 +45,23 @@ export default function PlotChart({
   const mobile = useIsMobile();
   const theme = useTheme();
   const dark = theme === 'dark';
+  const [viewportWidth, setViewportWidth] = useState(() => typeof window === 'undefined' ? 1024 : window.innerWidth);
+
+  useEffect(() => {
+    let frame = 0;
+    const onResize = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        setViewportWidth(window.innerWidth);
+      });
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   // Modules build traces with the light palette; remap to validated dark twins.
   const themedData = useMemo(
@@ -63,7 +81,7 @@ export default function PlotChart({
     // CSS custom properties change with the theme — re-reading them is the whole
     // point of having `theme` in the dependency list.
     void theme;
-    const fontFamily = plotToken('--font-ui', 'Inter, system-ui, sans-serif');
+    const fontFamily = plotlySafeFontFamily(plotToken('--font-ui', 'Inter, system-ui, sans-serif'));
     const textColor = plotToken('--text', '#0F172A');
     const gridColor = plotToken('--plot-grid', '#E2E8F0');
     const axisColor = plotToken('--plot-axis', '#CBD5E1');
@@ -73,9 +91,18 @@ export default function PlotChart({
       : parseInt(plotToken('--plot-font-size', '13'), 10);
 
     // Legend only when there is more than one data series (lead curve, "D" direction)
-    const legendNeeded = showLegend && themedData.length > 1;
+    const legendEntries = themedData.filter((trace) => {
+      const entry = trace as { showlegend?: boolean; name?: string };
+      return entry.showlegend !== false && Boolean(entry.name);
+    });
+    const legendNeeded = showLegend && legendEntries.length > 1;
     const mobileLegendAbove = mobile && legendNeeded;
-    const legendRows = mobileLegendAbove ? Math.ceil(themedData.length / 2) : 0;
+    const longestLegendLabel = legendEntries.reduce((longest, trace) => {
+      const name = (trace as { name?: string }).name?.replace(/<[^>]*>/g, '') ?? '';
+      return Math.max(longest, name.length);
+    }, 0);
+    const mobileLegendColumns = viewportWidth < 340 && longestLegendLabel > 12 ? 1 : 2;
+    const legendRows = mobileLegendAbove ? Math.ceil(legendEntries.length / mobileLegendColumns) : 0;
 
     return {
       autosize: true,
@@ -83,7 +110,7 @@ export default function PlotChart({
         ? {
           l: 46,
           r: 14,
-          t: mobileLegendAbove ? 12 + legendRows * 20 : 10,
+          t: mobileLegendAbove ? 28 + legendRows * 20 : 10,
           b: 48,
         }
         : { l: 58, r: 18, t: 14, b: legendNeeded ? 56 : 50 },
@@ -122,7 +149,14 @@ export default function PlotChart({
         orientation: 'h',
         font: { size: fontSize, family: fontFamily },
         ...(mobileLegendAbove
-          ? { y: 1, yanchor: 'bottom', x: 0, xanchor: 'left' }
+          ? {
+            y: 1.07,
+            yanchor: 'bottom',
+            x: 0,
+            xanchor: 'left',
+            entrywidthmode: 'fraction' as const,
+            entrywidth: 1 / mobileLegendColumns,
+          }
           : { y: mobile ? -0.24 : -0.2 }),
       } : undefined,
       hovermode: mobile ? 'closest' : 'x unified',
@@ -132,7 +166,7 @@ export default function PlotChart({
       // instead of snapping back to xRange/yRange on every re-render.
       uirevision: exportName,
     };
-  }, [mobile, theme, xTitle, yTitle, xRange, yRange, showLegend, themedShapes, themedAnnotations, themedData.length, exportName]);
+  }, [mobile, viewportWidth, theme, xTitle, yTitle, xRange, yRange, showLegend, themedShapes, themedAnnotations, themedData, exportName]);
 
   const handleHover = (event: Readonly<PlotMouseEvent>) => {
     const point = event.points?.[0];
