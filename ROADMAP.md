@@ -1111,6 +1111,35 @@ background-inert and focus-return checks; and the unified Export menu passed poi
 activation for both PNG and CSV. These behaviors are the baseline to preserve while closing
 **UIA-01…10**.
 
+The PNG statement above records the 2026-07-18 run only. The fifth pass below reproduced a real
+raster-export failure on current `main`; it supersedes that historical result.
+
+#### Fifth-pass UI/UX quality audit (2026-07-22) — implemented
+
+A clean-state follow-up on `main` at `dd9e4c0` rechecked the fourth-pass remediations in code and
+through the live application. The matrix covered all 16 routes at 1440×900, 375×812 and 320×568,
+plus short-height probes at 360×640 and 375×667; it included ES/EN, light/dark, keyboard flows,
+contrast measurement, chart collision geometry and live PNG/CSV activation. The remediation raises
+the current score to **19/20** and closes all **two P1** and **four P2** items. Full evidence and
+acceptance guidance:
+[`docs/UI-UX-AUDIT.md`](docs/UI-UX-AUDIT.md).
+
+| ID | Priority | Confirmed finding and required change |
+| --- | --- | --- |
+| **UIA-R2-01** | P1 | ✅ Plotly's font family is serialized without invalid nested quotes. The full toolbar flow produced a 75,589-byte PNG with the correct binary signature; Activity, Complexes, Conditional potential and Competitive precipitation pass live export. |
+| **UIA-R2-02** | P1 | ✅ Mobile chart regions scroll instead of compressing; direct charts keep 480 px, short-height tabbed charts keep 360 px, and legend columns/margins follow visible content. All 16 routes pass at 320×568 with no measured collisions or document overflow. |
+| **UIA-R2-03** | P2 | ✅ The shared Chart generates bilingual series endpoints and meaningful interior maxima/minima, excluding hidden, gap and non-numeric data while preserving module overrides. |
+| **UIA-R2-04** | P2 | ✅ Mobile number fields, ranges, selects, toggles, compact segments and saved-system actions expose 44 px targets without making the visual slider track heavier. |
+| **UIA-R2-05** | P2 | ✅ Saved systems has a persistent label, example placeholder, contextual remove names, language-aware dates, invalid-date hardening and immediate Undo after deletion. |
+| **UIA-R2-06** | P2 | ✅ Topic/subview groups use navigation landmarks and `aria-current="page"`; roving Arrow/Home/End behavior remains, while genuine chart tabs keep tab semantics. |
+
+Verified closures to preserve: UIA-01 through UIA-10 and UIA-R2-01 through UIA-R2-06. All 16
+routes remain free of console errors and document-level horizontal overflow at the tested widths.
+The 320/375 px chart collisions are closed; selected-state contrast reaches 7.07:1 in light mode,
+the dark crossing annotation reaches 10.57:1, the Variables sheet retains its
+focus/inert/Escape behavior, all inspected mobile variable controls reach 44 px, and the inspected
+ES/EN chrome contains no reproduced cross-language leaks.
+
 ### Near-term
 
 | Feature | Notes |

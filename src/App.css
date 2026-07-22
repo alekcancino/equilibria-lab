@@ -1774,6 +1774,12 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   box-shadow: var(--shadow-md);
 }
 
+.saved-systems-label {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
 .saved-systems-save {
   display: flex;
   gap: 6px;
@@ -1793,6 +1799,41 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   flex-shrink: 0;
   padding: 6px 10px;
   font-size: var(--text-xs);
+}
+
+.saved-systems-undo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--text);
+  font-size: var(--text-xs);
+}
+
+.saved-systems-undo span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-systems-undo button {
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.saved-systems-undo button:hover {
+  background: var(--accent-soft);
 }
 
 .saved-systems-list {
@@ -2107,11 +2148,20 @@ textarea:disabled {
     flex: 1;
     min-height: 0;
     padding: var(--space-2) var(--space-2) 72px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
   }
 
   .chart-shell {
     height: 100%;
     min-height: max(55vh, 320px);
+  }
+
+  .plot-area > .chart-shell {
+    flex: 0 0 max(55vh, 480px);
+    height: max(55vh, 480px);
+    min-height: max(55vh, 480px);
   }
 
   .chart-plot {
@@ -2174,12 +2224,57 @@ textarea:disabled {
     flex-wrap: wrap;
   }
 
+  .segmented.segmented--compact .seg-btn {
+    flex: 1 1 var(--touch-min);
+    min-width: var(--touch-min);
+    text-align: center;
+  }
+
   .seg-btn {
     flex: none;
     padding: 10px 12px;
     min-height: var(--touch-min);
     font-size: var(--text-sm);
     text-align: left;
+  }
+
+  #variables-panel .num-field,
+  #variables-panel .text-field,
+  #variables-panel select,
+  #variables-panel .toggle {
+    min-height: var(--touch-min);
+  }
+
+  #variables-panel input[type='range'] {
+    height: var(--touch-min);
+    padding: 0;
+    background: transparent;
+  }
+
+  #variables-panel input[type='range']::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-alt);
+  }
+
+  #variables-panel input[type='range']::-webkit-slider-thumb {
+    margin-top: -5.5px;
+  }
+
+  #variables-panel input[type='range']::-moz-range-track {
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-alt);
+  }
+
+  .saved-systems-undo button,
+  .saved-systems-load,
+  .saved-systems-list .mini-btn {
+    min-height: var(--touch-min);
+  }
+
+  .saved-systems-list .mini-btn {
+    min-width: var(--touch-min);
   }
 
   .assumptions {
@@ -2245,6 +2340,14 @@ textarea:disabled {
   .tit-mode-collapse:not([open]) .chart-tabs { display: none; }
 
   .db-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 800px) and (max-height: 700px) {
+  .diagram-tab-body > .chart-shell {
+    flex: 0 0 360px;
+    height: 360px;
+    min-height: 360px;
+  }
 }
 
 /* ---------- Shared module surfaces ---------- */

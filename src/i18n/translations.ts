@@ -323,11 +323,14 @@ export const translations = {
   'share.failed': { es: 'No se pudo copiar — copia la URL manualmente', en: 'Copy failed — copy the URL manually' },
   'saved.button': { es: 'Mis sistemas guardados', en: 'My saved systems' },
   'saved.buttonShort': { es: 'Mis sistemas', en: 'My systems' },
-  'saved.namePlaceholder': { es: 'Nombre del sistema', en: 'System name' },
+  'saved.nameLabel': { es: 'Nombre del sistema', en: 'System name' },
+  'saved.namePlaceholder': { es: 'p. ej., tampón de acetato', en: 'e.g., acetate buffer' },
   'saved.saving': { es: 'Guardando…', en: 'Saving…' },
   'saved.save': { es: 'Guardar', en: 'Save' },
   'saved.empty': { es: 'Aún no hay sistemas guardados en este módulo.', en: 'No systems saved in this module yet.' },
-  'saved.delete': { es: 'Eliminar', en: 'Delete' },
+  'saved.deleteNamed': { es: 'Eliminar {name}', en: 'Delete {name}' },
+  'saved.deletedNamed': { es: 'Se eliminó {name}.', en: '{name} was deleted.' },
+  'saved.undo': { es: 'Deshacer', en: 'Undo' },
   'saved.failed': { es: 'No se pudo guardar (almacenamiento lleno o modo privado)', en: 'Could not save (storage full or private mode)' },
 
   // ── Mobile nav ─────────────────────────────────────────────────────────────
@@ -355,6 +358,19 @@ export const translations = {
   'chart.a11ySummary': {
     es: 'Gráfica científica: {y} frente a {x} con {n} series.',
     en: 'Scientific chart: {y} vs {x} with {n} data series.',
+  },
+  'chart.a11yUnnamedSeries': { es: 'Serie {n}', en: 'Series {n}' },
+  'chart.a11yTraceSpan': {
+    es: '{name}: comienza en {startY} cuando {x} = {startX} y termina en {endY} cuando {x} = {endX}.',
+    en: '{name}: starts at {startY} when {x} = {startX} and ends at {endY} when {x} = {endX}.',
+  },
+  'chart.a11yTracePeak': {
+    es: 'Alcanza un máximo de {y} cerca de {x} = {at}.',
+    en: 'It reaches a maximum of {y} near {x} = {at}.',
+  },
+  'chart.a11yTraceMinimum': {
+    es: 'Alcanza un mínimo de {y} cerca de {x} = {at}.',
+    en: 'It reaches a minimum of {y} near {x} = {at}.',
   },
   'diagram.scrollHint': { es: 'Desliza para explorar →', en: 'Swipe to explore →' },
   'diagram.predominanceTitle': { es: 'Diagrama de zonas de predominio frente a {axis}', en: 'Predominance zone diagram vs {axis}' },

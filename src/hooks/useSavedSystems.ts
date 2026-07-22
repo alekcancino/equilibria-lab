@@ -27,7 +27,7 @@ export function isValidSavedSystem(x: unknown): x is SavedSystem {
   return typeof s.id === 'string'
     && typeof s.name === 'string' && s.name.trim().length > 0
     && typeof s.moduleId === 'string'
-    && typeof s.savedAt === 'string'
+    && typeof s.savedAt === 'string' && Number.isFinite(Date.parse(s.savedAt))
     && typeof s.url === 'string';
 }
 
@@ -111,9 +111,18 @@ export function useSavedSystems(moduleId: string) {
     return persisted;
   }, []);
 
+  const restore = useCallback((entry: SavedSystem): boolean => {
+    const current = readAll();
+    if (current.some((system) => system.id === entry.id)) return true;
+    const next = [...current, entry];
+    const persisted = writeAll(next);
+    if (persisted) setAll(next);
+    return persisted;
+  }, []);
+
   const load = useCallback((entry: SavedSystem) => {
     window.location.href = entry.url;
   }, []);
 
-  return { systems, save, remove, load };
+  return { systems, save, remove, restore, load };
 }

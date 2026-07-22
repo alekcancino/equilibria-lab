@@ -8,7 +8,7 @@ import LanguageToggle from './components/LanguageToggle';
 import { useActivityNote } from './context/ActivityContext';
 import { useT } from './hooks/useT';
 import type { TKey } from './i18n/translations';
-import { handleTabKeyDown } from './lib/tabKeyboard';
+import { handleRovingNavigationKeyDown } from './lib/tabKeyboard';
 import './App.css';
 
 // Keep ?m=<viewId> in the URL whenever the active view changes.
@@ -218,20 +218,19 @@ export default function App() {
           onTabChange={openView}
           showTabs={showSubTabs}
         />
-        <nav className="sections desktop-only" role="tablist" aria-label={t('chrome.topics')}>
+        <nav className="sections desktop-only" data-roving-navigation aria-label={t('chrome.topics')}>
           {HUBS.map((h, index) => {
             const selected = hub?.id === h.id;
             const tabIndex = hub ? (selected ? 0 : -1) : (index === 0 ? 0 : -1);
             return (
               <button
                 key={h.id}
-                role="tab"
                 type="button"
-                aria-selected={selected}
+                aria-current={selected ? 'page' : undefined}
                 tabIndex={tabIndex}
                 className={selected ? 'section-btn active' : 'section-btn'}
                 onClick={() => openHub(h.id)}
-                onKeyDown={handleTabKeyDown}
+                onKeyDown={handleRovingNavigationKeyDown}
               >
                 {t(h.labelKey)}
               </button>
@@ -244,25 +243,24 @@ export default function App() {
 
       {hub && showSubTabs && (
         <div className="subnav desktop-only">
-          <div className="subnav-tabs" role="tablist" aria-label={`${t('chrome.viewsOf')} ${t(hub.labelKey)}`}>
+          <nav className="subnav-tabs" data-roving-navigation aria-label={`${t('chrome.viewsOf')} ${t(hub.labelKey)}`}>
             {hub.views.map((v) => {
               const selected = activeViewId === v.id;
               return (
                 <button
                   key={v.id}
-                  role="tab"
                   type="button"
-                  aria-selected={selected}
+                  aria-current={selected ? 'page' : undefined}
                   tabIndex={selected ? 0 : -1}
                   className={selected ? 'subnav-tab active' : 'subnav-tab'}
                   onClick={() => openView(v.id)}
-                  onKeyDown={handleTabKeyDown}
+                  onKeyDown={handleRovingNavigationKeyDown}
                 >
                   {t(v.labelKey)}
                 </button>
               );
             })}
-          </div>
+          </nav>
           <details className="hub-assumptions">
             <summary>{t('chrome.assumptionsShort')}</summary>
             <p>{t(hub.assumptionsKey)}</p>

@@ -25,6 +25,7 @@ describe('isValidSavedSystem', () => {
     expect(isValidSavedSystem({ ...valid, name: '' })).toBe(false);
     expect(isValidSavedSystem({ ...valid, name: '   ' })).toBe(false);
     expect(isValidSavedSystem({ ...valid, moduleId: 42 })).toBe(false);
+    expect(isValidSavedSystem({ ...valid, savedAt: 'not-a-date' })).toBe(false);
     expect(isValidSavedSystem({ ...valid, url: null })).toBe(false);
   });
 });

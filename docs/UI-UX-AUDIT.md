@@ -1,64 +1,186 @@
-# UI/UX Audit — Equilibria Lab (2026-07-18, fourth pass)
+# UI/UX Audit — Equilibria Lab (2026-07-22, fifth pass)
 
-Baseline: `main` at `8c5b30b` plus the current uncommitted UI audit-wave worktree.
+Baseline: `main` at `dd9e4c0` plus the current fifth-pass remediation worktree.
 
-Method: code-level audit using the product register and WCAG 2.1/2.2 criteria, plus live
-browser inspection on `localhost:5173`. The route matrix covered all 16 module destinations at
-1440×900, 375×812 and 320×568; representative workflows were inspected in Spanish and English,
-light and dark themes. Keyboard checks covered the module sheet, tablists and chart export menu.
-PNG and CSV actions were activated from the live UI. Bundle evidence comes from the current
-production build in `dist/`.
+Method: code-level review against the product register and WCAG 2.1/2.2, plus live browser
+inspection on `localhost:5173`. The route matrix covered all 16 destinations at 1440×900,
+375×812 and 320×568; short-height behavior was additionally measured at 360×640 and 375×667.
+Representative workflows were inspected in Spanish and English, light and dark themes. Keyboard
+checks covered Home navigation, the Variables sheet, language selection and the Export menu. PNG
+and CSV were activated from live Plotly charts instead of inferred from unit tests.
 
-This pass is diagnostic only. It records fixes but does not implement them.
+**Implementation update (2026-07-22):** UIA-R2-01 through UIA-R2-06 are implemented in the
+current worktree and verified through the live application. The detailed findings remain below as
+the acceptance record.
 
-**Update (2026-07-18):** P1 items UIA-01 through UIA-05 were implemented on PR #100
-(`feat/ux-audit-waves`). P2/P3 items UIA-06–10 were implemented on PR #101
-(`fix/ux-audit-p2-p3`). See Recommended actions below for any residual follow-ups.
+## Current audit health score
 
-## Audit health score
-
-| # | Dimension | Score | Key finding |
+| # | Dimension | Score | Current evidence |
 | --- | --- | ---: | --- |
-| 1 | Accessibility | 2/4 | The Home topic tabs have no keyboard entry point; ten local segmented groups and one select have incomplete accessible semantics. |
-| 2 | Performance | 3/4 | Route-level lazy loading is effective; Plotly remains a 1.0 MB raw on-demand chunk. |
-| 3 | Responsive design | 3/4 | All routes avoid document overflow down to 320 px, but three mobile plots have measured legend/title collisions. |
-| 4 | Theming | 3/4 | Tokens and dark remapping are strong; one unmapped white annotation produces a 2.56:1 dark-mode label and light selected text is below AA. |
-| 5 | Anti-patterns | 4/4 | The interface is restrained, task-oriented and free of visible AI-design tropes. |
-| **Total** |  | **15/20** | **Good — address the accessibility and chart-reading defects before the next release.** |
+| 1 | Accessibility | 4/4 | Charts expose bilingual series endpoints and interior extrema; navigation semantics match route behavior; saved-system actions are persistently labeled; mobile controls meet the 44 px target. |
+| 2 | Performance | 3/4 | Route-level lazy loading remains effective; Plotly is still the dominant on-demand bundle. |
+| 3 | Responsive design | 4/4 | Direct and tabbed plots preserve readable minima on short phones, use content-aware mobile legends and scroll vertically instead of compressing scientific data. |
+| 4 | Theming | 4/4 | Selected states and plot annotations now meet contrast in both themes; the inspected dark-mode accents and scientific labels remain legible. |
+| 5 | Anti-patterns | 4/4 | The interface remains restrained, task-oriented and visually coherent without decorative dashboard noise. |
+| **Total** |  | **19/20** | **Release-ready UI/UX; the remaining point is the intentionally lazy but large Plotly bundle.** |
 
-Issue count: **0 P0, 5 P1, 3 P2 and 2 P3**.
-
-## Anti-pattern verdict
-
-**Pass. The product does not look AI-generated.** The scientific canvas is primary, surfaces are
-quiet, decoration is subordinate to data and components follow a recognizable vocabulary. The
-Home cards are legitimate topic destinations rather than a generic metric-card dashboard. The
-small scientific SVG previews are functional route cues, not decorative illustrations.
-
-The only system-level cleanup is internal: atmospheric/glass tokens remain in `tokens.css` even
-though the shipped UI is now flat. They are not visibly harming the product, but removing unused
-roles would make future theming decisions less ambiguous.
+Open issue count from this pass: **0 P0, 0 P1, 0 P2 and 0 P3**.
 
 ## Executive summary
 
-The current interface is materially better than the previous audit baseline. Every route loads
-without a console error, no route creates document-level horizontal overflow at 320, 375 or 1440
-px, the mobile Variables sheet traps focus and restores it correctly, and the unified Export menu
-works with pointer and keyboard for PNG and CSV. Complexation equilibrium and metal speciation now
-share a coherent shell while retaining their different independent variables and scientific goals.
+The fourth-pass work is real: Home has a keyboard entry point, all former manual segmented groups
+use the shared accessible control, light selected text now reaches 7.07:1 on the soft accent
+surface, the conditional-potential crossing annotation reaches 10.57:1 in dark mode, and the
+measured Complexes/Competitive precipitation/Activity collisions are gone at 375×812. Language is
+now an unambiguous ES/EN selected control, compact segmented groups remain horizontal, Home states
+14 engines across 16 workflows, and scientific titles use normalized dash typography.
 
-The remaining release-level problems are narrow but important:
+The remediation closes both user-visible failures and all four accessibility follow-ups. Plotly
+now receives an SVG-safe font-family string and produces valid PNG files; short viewports keep
+readable chart dimensions inside a vertically scrollable scientific canvas. Chart alternatives
+include endpoints and interior extrema for every numeric series, global route controls use
+navigation semantics, saved-system deletion names its target and supports Undo, and all inspected
+mobile controls reach at least 44×44 px.
 
-1. Home's desktop topic navigation is unreachable by keyboard because every topic is assigned
-   `tabIndex=-1` when no hub is active.
-2. Ten hand-built segmented controls bypass the accessible shared `Segmented` component, and the
-   Kielland ion-size select has no programmatic label.
-3. Light-mode selected text misses WCAG AA (`3.995:1` on the selected soft surface and `4.467:1`
-   on white).
-4. Conditional potential renders a white crossing label in dark mode; the remapped text is only
-   `2.564:1` against it.
-5. At phone width, the x-axis title intersects the legend in Complexes, Competitive precipitation
-   and Activity.
+## Fifth-pass findings
+
+### P1 — fix before release
+
+#### UIA-R2-01 — Plotly PNG export failure — resolved
+
+- **Location:** `src/components/Chart.tsx:63-73`; `src/components/PlotToolbar.tsx:55-64`
+- **Evidence:** Live activation failed in Activity, Complexes, Conditional potential and
+  Competitive precipitation. Every attempt kept the menu open and rendered “The file could not
+  be generated. Try again.” CSV succeeded and returned focus to Export. Direct browser probing
+  showed `Plotly.toImage(..., {format: 'svg'})` succeeds, while `png`, `jpeg` and `webp` reject
+  with an image error event.
+- **Impact:** The primary visual export promised by the menu is unavailable across Plotly-backed
+  modules; the user's original report is still reproducible.
+- **Recommendation:** Make rasterization browser-safe after SVG generation or replace the export
+  path with a proven Plotly-compatible raster flow. Add a real-browser test that downloads the
+  file and verifies its PNG signature and non-zero dimensions; the current Blob unit test starts
+  after the failing step and cannot detect this regression.
+- **Suggested command:** `$impeccable harden`
+- **Resolution:** Plotly font tokens are normalized before layout serialization so the generated
+  SVG contains no unescaped nested quotes. Live interception of the full toolbar flow produced
+  `equilibria-actividad-gamma.png`, MIME `image/png`, 75,589 bytes, with the correct eight-byte
+  PNG signature. Activity, Complexes, Conditional potential and Competitive precipitation all
+  close the menu without an error and return focus to Export.
+
+#### UIA-R2-02 — Direct charts collapse on short phone viewports — resolved
+
+- **Location:** `src/App.css:1549-1552` and mobile chart rules around `src/App.css:2112`
+- **Evidence:** At 320×568, the Plotly canvas measures 76.8 px in Solubility and 60.8 px in
+  Pourbaix. At 360×640, Pourbaix is 132.8 px high and multiple legend/annotation intersections
+  remain. The more specific `.plot-area > .chart-shell { min-height: 0; }` wins over the mobile
+  `.chart-shell` minimum. The document itself does not overflow, so content is compressed instead
+  of becoming scrollable.
+- **Impact:** Axes, legends and species labels merge into unreadable scientific notation on small
+  phones. Pourbaix can no longer communicate phase boundaries reliably.
+- **Recommendation:** Enforce a readable plot minimum for direct-chart routes and let the content
+  region scroll vertically when the viewport is too short. Keep legends outside the plotting
+  rectangle or make their space content-aware. Add visual/collision tests at 320×568 and 360×640,
+  not width-only overflow assertions.
+- **Suggested command:** `$impeccable adapt`
+- **Resolution:** Mobile plot areas now scroll vertically; direct charts keep a 480 px minimum,
+  tabbed Plotly charts keep 360 px on viewports no taller than 700 px, and mobile legend columns,
+  rows and top clearance follow the visible legend entries. All 16 routes pass collision and
+  document-overflow checks at 320×568; Solubility and Pourbaix expose 388.8 px Plotly canvases
+  instead of 76.8 px and 60.8 px.
+
+### P2 — next focused pass
+
+#### UIA-R2-03 — Chart alternatives describe structure, not meaning — resolved
+
+- **Location:** `src/components/Chart.tsx:48-53`; `chart.a11ySummary` in
+  `src/i18n/translations.ts`
+- **Evidence:** The new `role="img"` wrapper is bilingual, but every Plotly chart falls back to
+  “Y vs X with N data series.” No module supplies `accessibilitySummary`, so the alternative does
+  not state trends, crossings, operating-point values or dominant regions.
+- **Impact:** A screen-reader user learns that a graph exists but not what relationship it shows.
+  CSV remains useful, but it is a separate download rather than an immediate equivalent.
+- **Recommendation:** Provide module-specific bilingual summaries with the key scientific result,
+  and expose a compact data/key-points table where the relationship cannot be summarized safely.
+- **Suggested command:** `$impeccable harden`
+- **Resolution:** The shared Chart derives bilingual endpoint facts for every visible numeric
+  series and adds meaningful interior maxima/minima when present. Non-numeric, hidden and gap
+  values are excluded. Modules can still override the generated summary when a domain-specific
+  explanation is safer.
+
+#### UIA-R2-04 — Shared numeric controls miss the 44 px product target — resolved
+
+- **Location:** `.num-field` and `input[type='range']` in `src/App.css`; shared `Slider` and
+  `ConcSlider` in `src/components/Controls.tsx`
+- **Evidence:** In the live mobile Variables sheet, editable number fields measure 72×24 px and
+  range inputs measure 311×6 px. Compact segmented options can be 31×44 px. Keyboard focus is
+  visible and WCAG's 24 px minimum can be met in some cases, but the product register explicitly
+  requires 44 px targets.
+- **Impact:** Fine adjustment is unnecessarily difficult for touch users, especially when several
+  scientific parameters are edited in sequence.
+- **Recommendation:** Preserve the visually light track and fields while enlarging their actual
+  hit boxes through wrappers/padding; keep dense symbolic segmented controls compact only when
+  spacing or an equivalent control satisfies the target exception.
+- **Suggested command:** `$impeccable harden`
+- **Resolution:** Mobile number fields, selects, text inputs, toggles, range hit areas, compact
+  segmented options and saved-system actions now measure at least 44 px in each constrained
+  dimension. Slider tracks remain visually 6 px through browser-specific track styling, so the
+  larger hit target does not add visual weight.
+
+#### UIA-R2-05 — Saved-system labels disappear or do not describe the action — resolved
+
+- **Location:** `src/components/SavedSystemsButton.tsx:40-70`
+- **Evidence:** “System name” is only a placeholder, so the instruction disappears after typing.
+  A saved row's remove button is announced as “✕”; `title="Delete"` is not its accessible name and
+  does not identify which saved system will be removed.
+- **Impact:** Users can lose input context, and screen-reader users cannot distinguish the purpose
+  or target of a destructive action.
+- **Recommendation:** Add a persistent visible label, give removal an `aria-label` containing the
+  saved name, and provide a lightweight undo or explicit recovery path for accidental deletion.
+- **Suggested command:** `$impeccable clarify`
+- **Resolution:** A persistent bilingual label is linked to the name field, the placeholder is an
+  example rather than the label, remove actions include the saved name, dates follow the selected
+  UI language and deletion exposes an immediate Undo action. Invalid stored dates are rejected
+  before rendering.
+
+#### UIA-R2-06 — Global navigation still uses incomplete tab semantics — resolved
+
+- **Location:** topic and subview navigation in `src/App.tsx:221-263`
+- **Evidence:** Keyboard entry and arrow navigation now work, but topic/subview controls expose
+  `tablist`/`tab` without controlled `tabpanel` elements or `aria-controls`. On Home, the tablist
+  has one focusable tab but no selected tab because these controls are navigation destinations,
+  not tabs within one composite panel.
+- **Impact:** Assistive technology receives a widget model that does not match the page structure,
+  despite the interaction itself being keyboard-operable.
+- **Recommendation:** Model the controls as navigation links/buttons with `aria-current`, or add
+  complete tab/tabpanel relationships if the interface is intentionally a tab widget.
+- **Suggested command:** `$impeccable harden`
+- **Resolution:** Topic and subview groups are navigation landmarks with `aria-current="page"`.
+  Roving focus and Arrow/Home/End activation remain intact, while genuine diagram/titration tabs
+  retain the complete tab widget pattern.
+
+## Positive regression results
+
+- All 16 routes loaded with zero console errors at 1440×900, 375×812 and 320×568.
+- No route produced document-level horizontal overflow at those widths.
+- The former 375 px axis-title/legend collisions are closed in all Plotly routes.
+- Light selected text now measures 7.07:1 on `--accent-soft` and 7.90:1 on white.
+- The dark conditional-potential crossing label measures 10.57:1 and no longer renders as a white
+  patch.
+- The mobile Variables sheet focuses Close, makes background regions inert, closes on Escape and
+  restores focus to Variables.
+- Home and shared segmented controls support roving focus and arrow-key selection.
+- ES/EN chrome checks found no reproduced cross-language leaks in the 16-route matrix.
+- CSV export succeeds, closes its menu and restores focus.
+- PNG export now succeeds through the same menu in both themes and produces a valid binary file.
+- At 320×568, all 16 routes report zero title/legend/annotation collisions, zero document overflow
+  and zero console errors.
+- The final deterministic suite contains 20 test files and 341 tests.
+
+## Historical fourth-pass record (2026-07-18)
+
+The detailed UIA-01…10 findings below preserve the original evidence and rationale. PRs #100 and
+#101 closed their primary implementation scope; the partial semantic/accessibility residuals are
+tracked above as UIA-R2-03 and UIA-R2-06.
 
 ## Detailed findings
 

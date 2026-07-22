@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dataUrlToBlob, tracesToCSV, gridToCSV } from '../export';
+import { dataUrlToBlob, tracesToCSV, gridToCSV, plotlySafeFontFamily } from '../export';
 import { predominanceGrid } from '../predominance2D';
 
 describe('tracesToCSV', () => {
@@ -107,5 +107,12 @@ describe('dataUrlToBlob', () => {
     const blob = dataUrlToBlob('data:image/png;base64,iVBORw0KGgo=');
     expect(blob.type).toBe('image/png');
     expect([...new Uint8Array(await blob.arrayBuffer())]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+  });
+});
+
+describe('plotlySafeFontFamily', () => {
+  it('removes quotes that would invalidate Plotly raster-export SVG', () => {
+    expect(plotlySafeFontFamily("'Source Sans 3', system-ui, -apple-system, sans-serif"))
+      .toBe('Source Sans 3, system-ui, -apple-system, sans-serif');
   });
 });
