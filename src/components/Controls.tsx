@@ -20,7 +20,12 @@ export function HelpTip({ id }: { id: string }) {
   const show = () => {
     if (btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: r.left });
+      const maxW = 220;
+      const pad = 8;
+      const left = Math.min(Math.max(r.left, pad), window.innerWidth - maxW - pad);
+      let top = r.bottom + 6;
+      if (top + 96 > window.innerHeight - pad) top = Math.max(pad, r.top - 96 - 6);
+      setPos({ top, left });
     }
   };
   const hide = () => setPos(null);

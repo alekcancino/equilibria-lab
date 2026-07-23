@@ -1159,6 +1159,8 @@ unlabeled radiogroups and touch-target gaps, then closed six actionable items. F
 | **UIA-R3-11** | P2 | ✅ Constant-list sliders keep minimum track width; sidebar result lines wrap; disclosures no longer clip inline errors. |
 | **UIA-R3-12** | P1 | ✅ Desktop 1440×900 pass: panel control headers stack at the fixed 320 px width (not only below 800 px viewport). |
 
+| **UIA-R3-13** | P1 | ✅ Panel collapsibles (segmented, sliders, toggles, mask sections) readable at 320 px on desktop and mobile. |
+
 Deferred: **UIA-R3-08** (export/database i18n policy, **UX-G02** / **UX-P06**).
 
 | **UIA-R3-07** | P2 | ✅ Remaining modules no longer duplicate plot-primary metrics in sidebar cards (**UX-G07**). |

@@ -281,8 +281,7 @@ export function SideReactionEditor({
         />
         <div className="control">
           <div className="control-header">
-            <span className="control-label">{t('sideReactionEditor.howMuchDissolved', { aux })}</span>
-            <HelpTip id="ligFree" />
+            <span className="control-label">{t('sideReactionEditor.howMuchDissolved', { aux })}<HelpTip id="ligFree" /></span>
           </div>
           <div className="control-input">
             <Segmented
