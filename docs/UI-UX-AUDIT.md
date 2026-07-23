@@ -43,6 +43,7 @@ Open issue count from this pass: **0 P0, 0 P1, 0 P2** implemented; **1 P3** defe
 | **UIA-R3-10** | P2 | ✅ Tall variable sheets (e.g. Conditional constants) felt truncated at 70 vh with no scroll affordance. | Sheet `max-height` → `min(85vh, 100dvh − 48px)`; bottom inset shadow + `scroll-padding` on `.panel-body`. |
 | **UIA-R3-11** | P2 | ✅ Constant-list slider rows could compress beside remove buttons; sidebar result lines clipped long values. | `constant-slider` `flex: 1 1 120px`; `result-item` wraps; disclosure bodies no longer clip validation/errors. |
 | **UIA-R3-12** | P1 | ✅ Desktop audit (1440×900): `SideReactionEditor` “how much aux is dissolved” header overflowed because panel stacking rules were gated to viewports ≤800 px while the panel stays 320 px wide. | Apply `.panel-shell` / `.panel-sheet` control-header stacking at all viewport widths. Re-check: 0 header overflows on all 16 routes at 1440×900. |
+| **UIA-R3-13** | P1 | ✅ Sliders/segmented/toggles inside collapsible sections could clip or compress in the 320 px panel (especially long EN labels like “Analytical total”; `section-collapse` `overflow: hidden`). | Panel-scoped segmented stack/wrap at all viewports; single-column `control-grid-2`; toggle/label/result wrap; `section-collapse`/`mask-section` overflow visible; HelpTip viewport clamp; SideReactionEditor ⓘ inline with label. |
 
 ---
 
