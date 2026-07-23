@@ -324,10 +324,6 @@ export default function Actividad() {
         </PanelSection>
         <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
-            { label: t('acidoBase.ionicStrengthLabel'), value: formatMolar(I) },
-            { label: model === 'kielland' ? t('actividad.gammaZ1A3Label') : 'γ (z = 1)', value: gamma1.toFixed(3) },
-            { label: model === 'kielland' ? t('actividad.gammaZ2A3Label') : 'γ (z = 2)', value: gamma2.toFixed(3) },
-            { label: model === 'kielland' ? t('actividad.gammaZ3A3Label') : 'γ (z = 3)', value: gamma3.toFixed(3) },
             {
               label: model === 'kielland' ? `log γ (${ion.label})` : `log γ (z = ${z})`,
               value: logGammaMain.toFixed(3),
@@ -335,7 +331,6 @@ export default function Actividad() {
             ...(model === 'kielland'
               ? [{ label: `γ (${ion.label})`, value: gammaMain.toFixed(3) }]
               : []),
-            { label: t('actividad.apparentPKw'), value: pKwApp.toFixed(2), helpId: 'pKwApp' },
             { label: 'a_H ≈ γ·[H⁺]', value: formatSci(gammaH * Math.pow(10, -pH)) },
           ]} />
         </PanelSection>

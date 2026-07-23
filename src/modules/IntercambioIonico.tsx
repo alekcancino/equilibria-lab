@@ -519,15 +519,7 @@ export default function IntercambioIonico() {
           <ResultCard items={[
             { label: t('intercambioIonico.finalConcLabel', { label: labelA }), value: formatMolar(eq.cAeq) },
             { label: t('intercambioIonico.finalConcLabel', { label: labelB }), value: formatMolar(eq.cBeq) },
-            { label: t('intercambioIonico.labelInResinLabel', { label: labelA }), value: `${(eq.fracAInResin * 100).toFixed(1)} %` },
             { label: t('intercambioIonico.kselReferenceLabel'), value: selectivityFromKd(selectivity, 1).toFixed(1) },
-            ...(showCompetitive ? [
-              { label: t('intercambioIonico.phiAtPHLabel', { ph: pHBulk.toFixed(1) }), value: `${(phiAtBulk * 100).toFixed(1)} %` },
-              ...(showElution ? [
-                { label: t('intercambioIonico.optimalElutionPHLabel'), value: elution.pH.toFixed(1) },
-                { label: t('intercambioIonico.elutedFractionLabel'), value: `${(elution.fractionEluted * 100).toFixed(0)} %` },
-              ] : []),
-            ] : []),
             ...(showCraig ? [
               { label: t('intercambioIonico.exactAqueousLabel', { label: labelA }), value: formatMolar(exactCompetitive.aqueous[0]) },
               { label: t('intercambioIonico.exactAqueousLabel', { label: labelC }), value: formatMolar(exactCompetitive.aqueous[1]) },

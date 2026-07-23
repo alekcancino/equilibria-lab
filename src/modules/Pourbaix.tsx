@@ -434,7 +434,6 @@ export default function Pourbaix() {
         {graphDominant && (
         <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
-            { label: t('pourbaix.graphPredominant'), value: graphDominant },
             { label: t('pourbaix.hessCycleError'), value: graphPoint!.maxCycleError.toExponential(1) },
             { label: t('pourbaix.poolConservationError'), value: graphPoint!.poolError.toExponential(1) },
           ]} />

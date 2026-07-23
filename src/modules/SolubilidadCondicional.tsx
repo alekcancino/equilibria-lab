@@ -894,22 +894,6 @@ export default function SolubilidadCondicional() {
 
         <PanelSection title={t('complejos.resultSection')}>
         <ResultCard items={[
-          {
-            label: t('solubilidadCondicional.pHWherePrecipitates', { formula: s.m1.formula }),
-            value: pH1precip !== null ? `pH ${pH1precip.toFixed(1)}` : t('solubilidadCondicional.doesNotReachThreshold'),
-          },
-          ...(minHasInterior ? [{
-            label: t('solubilidadCondicional.minSolubilityOf', { formula: s.m1.formula }),
-            value: `pH ${minSolubility.pH.toFixed(1)} · log s ${minSolubility.logS.toFixed(2)}`,
-          }] : []),
-          ...(s.showM2 ? [{
-            label: t('solubilidadCondicional.pHWherePrecipitates', { formula: s.m2.formula }),
-            value: pH2precip !== null ? `pH ${pH2precip.toFixed(1)}` : t('solubilidadCondicional.doesNotReachThreshold'),
-          }] : []),
-          ...(selectiveWindow ? [{
-            label: t('solubilidadCondicional.selectiveWindowLabel'),
-            value: `pH ${selectiveWindow[0].toFixed(1)}–${selectiveWindow[1].toFixed(1)}`,
-          }] : []),
           ...(verdict ? [{ label: t('solubilidadCondicional.verdictLabel'), value: verdict.text }] : []),
           ...(purityAtM1Precip !== null ? [{
             label: t('solubilidadCondicional.theoreticalPurityLabel'),

@@ -614,10 +614,6 @@ export default function Complejos() {
               value: Number.isFinite(coupledEq.pX) ? coupledEq.pX.toFixed(3) : '—',
             }] : []),
             { label: t('complejos.nBarEquilResult'), value: eqValid ? nBarEq.toFixed(2) : '—' },
-            {
-              label: t('complejos.dominantSpecies'),
-              value: eqValid ? `${labels[domIdx]} (α = ${alphasEq[domIdx].toFixed(3)})` : '—',
-            },
           ]} />
         </PanelSection>
 

@@ -146,7 +146,7 @@ export default function Mezclas() {
       return [{ label: t('mezclas.mixturePH'), value: t('mezclas.noRootFound') }];
     }
     const h = Math.pow(10, -pHMix);
-    const items: { label: string; value: string }[] = [{ label: t('mezclas.mixturePH'), value: pHMix.toFixed(2) }];
+    const items: { label: string; value: string }[] = [];
     for (const r of rows) {
       const alphas = alphaFractions(h, r.system.pKas);
       const dominant = alphas.indexOf(Math.max(...alphas));

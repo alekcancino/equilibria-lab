@@ -25,7 +25,7 @@ for UIA-R2-*.
 | 5 | Anti-patterns | 4/4 | Duplicate hub assumptions removed from subnav; five modules now follow the AcidoBase pattern of plot-first result summaries with sidebar diagnostics only. |
 | **Total** |  | **19/20** | **Same release-ready score; sixth pass closes control-naming and result-duplication debt without changing the performance ceiling.** |
 
-Open issue count from this pass: **0 P0, 0 P1** implemented; **2 P2** deferred (see UIA-R3-07, UIA-R3-08).
+Open issue count from this pass: **0 P0, 0 P1, 0 P2** implemented; **1 P3** deferred (see UIA-R3-08).
 
 ## Sixth-pass findings
 
@@ -37,7 +37,7 @@ Open issue count from this pass: **0 P0, 0 P1** implemented; **2 P2** deferred (
 | **UIA-R3-04** | P2 | ✅ Hub assumptions appeared in both subnav and footer on desktop (**UX-P04** partial). | Removed subnav `hub-assumptions`; footer `assumptions-details` is the single surface on all widths. |
 | **UIA-R3-05** | P2 | ✅ Language toggle ES/EN buttons were 36 px wide on mobile; empty-plot and database tiles could fall below 44 px. | Mobile `min-width: var(--touch-min)` on language toggle; `empty-plot-action` and `.db-item` min-height bumps. |
 | **UIA-R3-06** | P2 | ✅ `ConstantList` remove buttons relied on `title` only. | Added `aria-label={t('controls.removeConstant')}`. |
-| **UIA-R3-07** | P2 | **Deferred** — Remaining modules (Complejos, Mezclas, Solubility variants, Titulación sub-modes, etc.) still duplicate a subset of plot metrics in sidebar cards. | Follow-up pass: apply the AcidoBase/plot-first pattern module-by-module without losing diagnostic depth. |
+| **UIA-R3-07** | P2 | ✅ Remaining modules duplicated plot-primary metrics in sidebar `ResultCard` rows. | Sidebar trimmed to diagnostics only in Complejos, Mezclas, Solubility (×3), Activity, Liquid extraction, Ion exchange, Pourbaix, and all five Titulación sub-modes; plot `ResultCardRow` remains the decision summary (**UX-G07** closed). |
 | **UIA-R3-08** | P3 | **Deferred** — Database preset human names and export metadata remain Spanish by design (**UX-G02**, **UX-P06**). | Product decision; not a UI regression. |
 | **UIA-R3-09** | P1 | ✅ Slider/value rows clipped on the 320 px variables panel when labels carried a help tip (`control-header` overflow). | Flex-wrap headers; stack label above the value pill inside the fixed-width panel; widen `num-field` with `min-width`/`max-width`. |
 | **UIA-R3-10** | P2 | ✅ Tall variable sheets (e.g. Conditional constants) felt truncated at 70 vh with no scroll affordance. | Sheet `max-height` → `min(85vh, 100dvh − 48px)`; bottom inset shadow + `scroll-padding` on `.panel-body`. |

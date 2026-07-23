@@ -330,7 +330,6 @@ export default function SolubilidadSal() {
 
         <PanelSection title={t('complejos.resultSection')}>
         <ResultCard items={[
-          { label: t('solubilidadSal.minSDash', { name: sal1.name }), value: `log S = ${minS1.logS.toFixed(2)}  (pH ${minS1.pH.toFixed(1)})` },
           { label: t('solubilidadSal.formulaPQLabel'), value: `M_${sal1.p} A_${sal1.q}  →  S = (Kps / ${sal1.p ** sal1.p}·${sal1.q ** sal1.q}·αₙ^${sal1.q})^{1/${sal1.p + sal1.q}}` },
           ...(coupledState ? [{
             label: t('solubilidadSal.solidFractionLabel'),

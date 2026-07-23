@@ -511,7 +511,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
     : null,
   [showPrecipCoupling, couplingEligible, effectivePKas, system.z0, cAnalyte, coupledPKsp, coupledPM, thermoState.pKw]);
 
-  const { traces, shapes, annotations, eqInfo } = useMemo(() => {
+  const { traces, shapes, annotations } = useMemo(() => {
     const data: Data[] = [{
       x: displayCurve.volumes, y: displayCurve.pHs, type: 'scatter', mode: 'lines', name: 'pH',
       line: { width: 3, color: '#0072B2' },
@@ -534,25 +534,18 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
       });
     }
     const annList: Partial<Annotations>[] = [];
-    const info: { label: string; value: string }[] = [];
     displayCurve.equivalenceVolumes.forEach((veq, k) => {
       shapeList.push({
         type: 'line', x0: veq, x1: veq, y0: thermoState.acidityRange[0], y1: thermoState.acidityRange[1],
         line: { color: '#2C3E50', width: 1.5, dash: 'dash' },
       });
-      const idx = displayCurve.volumes.findIndex((v) => v >= veq);
-      const pHeq = idx > 0 ? displayCurve.pHs[idx] : NaN;
       annList.push({
         x: veq, y: thermoState.acidityRange[1] - 0.5,
         text: `${t('titulacion.pE')}${displayCurve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
         showarrow: false, font: { color: '#2C3E50', size: 12 },
       });
-      info.push({
-        label: `${t('titulacion.equivalenceLabel')}${displayCurve.equivalenceVolumes.length > 1 ? ` ${k + 1}` : ''}`,
-        value: `${veq.toFixed(2)} mL · pH ${pHeq.toFixed(2)}`,
-      });
     });
-    return { traces: data, shapes: shapeList, annotations: annList, eqInfo: info };
+    return { traces: data, shapes: shapeList, annotations: annList };
   }, [displayCurve, showIndicator, showDerivative, indicator, vMax, thermoState.acidityRange, t]);
 
   const lastEq = displayCurve.equivalenceVolumes[displayCurve.equivalenceVolumes.length - 1];
@@ -902,7 +895,6 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
           </details>
         </PanelSection>
         <PanelSection title={t('complejos.resultSection')}>
-          {eqInfo.length > 0 && <ResultCard items={eqInfo} />}
           {showIndicator && Number.isFinite(pHLastEq) && (
             <p className={indicatorOk ? 'badge ok' : 'badge warn'}>
               {indicatorOk
@@ -1520,10 +1512,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
           <ResultCard items={[
             { label: t('titulacion.alphaYAtPHLabel'), value: formatSci(1 / aY, 3) },
             { label: t('titulacion.condLogKfLabel'), value: curve.logKfCond.toFixed(2) },
-            { label: showSecondMetal ? t('titulacion.successiveEquivalences') : axis === 'x' ? t('titulacion.xEqLabel') : t('titulacion.volEqLabel'), value: showSecondMetal ? eqXs.map((value) => value.toFixed(2)).join(' / ') + ' mL' : axis === 'x' ? `${curve.xEq.toFixed(2)}` : `${curve.vEq.toFixed(2)} mL` },
-            { label: t('titulacion.pMAt50'), value: at50.pM.toFixed(2) },
             { label: t('titulacion.pYAt50'), value: at50.pY.toFixed(2) },
-            { label: t('titulacion.pMAt150'), value: at150.pM.toFixed(2) },
             { label: t('titulacion.exactStoichQ'), value: `${(100 * exactAssociation.limitingConversion).toFixed(4)} %` },
             { label: t('titulacion.logKFor99'), value: target99LogK.toFixed(4) },
           ]} />
@@ -1924,8 +1913,6 @@ function RedoxTitration({ mode }: { mode: Mode }) {
         </PanelSection>
         <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
-            { label: showSecondAnalyte ? t('titulacion.successiveEquivalences') : t('titulacion.volEqLabel'), value: `${activeEquivalences.map((value) => value.toFixed(2)).join(' / ')} mL` },
-            { label: t('titulacion.eAtEquivalenceLabel'), value: `${eAtLastEq.toFixed(3)} V (pe ${peAtLastEq.toFixed(2)})`, helpId: 'pe' },
             { label: t('titulacion.logKReactionLabel'), value: limitingLogK.toFixed(1) },
             ...(showPolynuclear ? [{ label: t('titulacion.polynuclearEeq'), value: `${polynuclearEeq.toFixed(4)} V` }] : []),
           ]} />
@@ -2207,11 +2194,9 @@ function PrecipTitration({ mode }: { mode: Mode }) {
           )}
         </PanelSection>
 
+        {(isAgSystem && showPCation) || mohrEndpointMetric ? (
         <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
-            { label: t('titulacion.volEqLabel'), value: `${curve.vEq.toFixed(2)} mL` },
-            { label: m === 1 && x === 1 ? t('titulacion.pAtEquivalenceHalfPKsp') : t('titulacion.pAtEquivalence'), value: curve.pAgEq.toFixed(2) },
-            ...(showConditionalSensor ? [{ label: t('titulacion.conditionalPKsp'), value: sensorCurve.pKspConditional.toFixed(3) }] : []),
             ...(isAgSystem && showPCation ? [{
               label: t('titulacion.mohrIndicatorLabel'),
               value: `pAg = ${mohrPAg.toFixed(2)} (Δ = ${(mohrPAg - curve.pAgEq).toFixed(2)})`,
@@ -2227,6 +2212,13 @@ function PrecipTitration({ mode }: { mode: Mode }) {
               : t('titulacion.diffuseJumpMsg')}
           </p>
         </PanelSection>
+        ) : (
+          <p className={sharpness ? 'badge ok' : 'badge warn'}>
+            {sharpness
+              ? t('titulacion.sharpJumpMsg', { ksp: pKsp.toFixed(2) })
+              : t('titulacion.diffuseJumpMsg')}
+          </p>
+        )}
 
         <InfoBox title={t('titulacion.endpointMethodsTitle')}>
           <p><strong>{t('titulacion.mohrBold')}</strong>{t('titulacion.mohrBody')}</p>
@@ -2540,19 +2532,6 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
           <p className="hint">{t('titulacion.nernstHint')}</p>
           <Toggle label={t('titulacion.showFirstDerivativeToggle')} checked={showDeriv1} onChange={setShowDeriv1} />
           <Toggle label={t('titulacion.showSecondDerivativeToggle')} checked={showDeriv2} onChange={setShowDeriv2} />
-        </PanelSection>
-        <PanelSection title={t('complejos.resultSection')}>
-          <ResultCard items={[
-            { label: t('titulacion.veqExactBalanceLabel'), value: `${veqFromCurve?.toFixed(2) ?? '—'} mL` },
-            ...(showDeriv2 ? [{
-              label: t('titulacion.veqZeroCrossingLabel'),
-              value: veqFromZero !== null ? `${veqFromZero.toFixed(2)} mL` : '—',
-            }] : []),
-            { label: t('titulacion.eAtPELabel'), value: veqFromCurve !== undefined ? (() => {
-                const idx = curve.volumes.findIndex((v) => v >= veqFromCurve);
-                return idx > 0 ? `${Es[idx].toFixed(1)} mV (pH ${curve.pHs[idx].toFixed(2)})` : '—';
-              })() : '—' },
-          ]} />
         </PanelSection>
         <InfoBox title={t('titulacion.endpointLocationTitle')}>
           <p><strong>{t('titulacion.firstDerivBold')}</strong>{t('titulacion.firstDerivBody')}</p>
