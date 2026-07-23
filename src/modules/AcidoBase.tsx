@@ -229,6 +229,7 @@ export default function AcidoBase() {
             <Slider label={t('acidoBase.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
             <div className="control-input">
               <Segmented
+                ariaLabel={t('actividad.gammaModelLabel')}
                 options={GAMMA_MODELS}
                 value={gammaModel}
                 onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}

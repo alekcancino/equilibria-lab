@@ -330,6 +330,8 @@ html, body, #root {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  padding-bottom: var(--space-3);
+  scroll-padding-bottom: var(--space-3);
 }
 /* Direct children must never shrink below their content size — panel-body's
    own overflow-y:auto is what should absorb tall content, not the children.
@@ -681,7 +683,7 @@ html, body, #root {
     bottom: 0;
     z-index: 50;
     width: 100%;
-    max-height: 70vh;
+    max-height: min(85vh, calc(100dvh - 48px));
     box-sizing: border-box;
     padding: var(--space-3) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
     border-radius: 16px 16px 0 0;
@@ -726,6 +728,10 @@ html, body, #root {
     overflow-y: auto;
     flex: 1;
     min-height: 0;
+    padding-bottom: var(--space-4);
+    scroll-padding-bottom: var(--space-4);
+    -webkit-overflow-scrolling: touch;
+    box-shadow: inset 0 -10px 10px -10px color-mix(in srgb, var(--text) 6%, transparent);
   }
 
   .panel-sheet .panel-header {
@@ -749,6 +755,20 @@ html, body, #root {
     height: var(--touch-min);
   }
 
+  .panel-sheet .mix-row .mini-btn,
+  .panel-sheet .mini-btn {
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+  }
+
+  .empty-plot-action {
+    min-height: var(--touch-min);
+  }
+
+  .db-item {
+    min-height: var(--touch-min);
+  }
+
   body.panel-sheet-open {
     overflow: hidden;
   }
@@ -763,12 +783,20 @@ html, body, #root {
 
 .control-header {
   display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
   justify-content: space-between;
+  gap: 4px 8px;
   margin-bottom: 4px;
   font-size: 13px;
 }
 
-.control-label { color: var(--text); }
+.control-label {
+  color: var(--text);
+  flex: 1 1 120px;
+  min-width: 0;
+  line-height: 1.35;
+}
 
 /* Contextual help: ⓘ trigger + tooltip on cryptic variable labels */
 .help-tip {
@@ -848,6 +876,8 @@ html, body, #root {
   display: inline-flex;
   align-items: baseline;
   gap: 1px;
+  flex: 0 0 auto;
+  max-width: 100%;
   padding: 2px 10px;
   background: var(--accent-soft);
   border-radius: var(--radius-pill);
@@ -903,6 +933,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 
 .result-item {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
@@ -916,6 +947,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .badge {
@@ -969,6 +1001,9 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 
 /* ---------- Campos numéricos y de texto ---------- */
 .num-field {
+  width: auto;
+  min-width: 72px;
+  max-width: 112px;
   padding: 2px 4px;
   border: 1px solid transparent;
   border-radius: 4px;
@@ -1029,11 +1064,6 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   font-size: 12px;
   color: var(--text-muted);
   margin-left: 2px;
-}
-
-.control-value {
-  display: inline-flex;
-  align-items: baseline;
 }
 
 .text-field {
@@ -1265,7 +1295,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   gap: 4px;
 }
 
-.constant-slider { flex: 1; min-width: 0; }
+.constant-slider { flex: 1 1 120px; min-width: 0; }
 
 .constant-row .mini-btn {
   margin-bottom: 14px;
@@ -1940,6 +1970,10 @@ textarea:disabled {
 
 .section-collapse-title:hover { color: var(--accent); }
 
+.section-collapse[open] {
+  padding-bottom: 6px;
+}
+
 .section-collapse > *:not(summary) {
   padding: 8px 10px 4px;
 }
@@ -2426,7 +2460,7 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
   background: var(--surface-alt);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: var(--space-3);
 }
 .disclosure-head {
@@ -2448,7 +2482,31 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
   color: var(--text);
 }
 .disclosure-head .ui-chevron { color: var(--text-muted); }
-.disclosure-body { padding: 0 12px 12px; }
+.disclosure-body {
+  padding: 0 12px 12px;
+  overflow: visible;
+}
+
+/* Fixed 320 px variables panel: stack headers at every viewport width. */
+.panel-sheet .control-header,
+.panel-shell .control-header {
+  row-gap: 6px;
+}
+
+.panel-sheet .control-label,
+.panel-shell .control-label {
+  flex-basis: 100%;
+}
+
+.panel-sheet .control-value,
+.panel-shell .control-value {
+  margin-left: auto;
+}
+
+.panel-sheet input[type='range'],
+.panel-shell input[type='range'] {
+  width: 100%;
+}
 
 /* Key results sit above the plot as its metric header. */
 .result-row {
@@ -2835,7 +2893,7 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
     margin-left: 0;
   }
   .lang-toggle-btn {
-    min-width: 36px;
+    min-width: var(--touch-min);
     height: var(--touch-min);
   }
 
