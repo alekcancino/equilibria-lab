@@ -4,13 +4,15 @@ Baseline: `main` at `21993e5` (PR #102 merge) plus sixth-pass remediation on `fi
 
 Method: live browser inspection on `localhost:5173` via gstack `/browse` (Playwright), code review
 against shared controls and the product register, plus WCAG 2.1/2.2 checks. The route matrix
-covered all 16 destinations at desktop width and a mobile smoke at 375×812; control inventory
+covered all 16 destinations at desktop (1440×900, 1024×768) and mobile (375×812); control inventory
 counted buttons, inputs, segmented groups and touch targets per route. Titulación was inspected
 across acid–base, EDTA, redox, precipitation and potentiometric sub-modes in code and on the live
 acid–base route.
 
-**Implementation update (2026-07-23):** UIA-R3-01 through UIA-R3-06 are implemented in the current
-branch. Fifth-pass evidence remains below as the acceptance record for UIA-R2-*.
+**Implementation update (2026-07-23):** UIA-R3-01 through UIA-R3-06 and UIA-R3-09 through UIA-R3-12
+are implemented in the current branch. Fifth-pass evidence remains below as the acceptance record
+for UIA-R2-*.
+
 
 ## Current audit health score
 
@@ -18,7 +20,7 @@ branch. Fifth-pass evidence remains below as the acceptance record for UIA-R2-*.
 | --- | --- | ---: | --- |
 | 1 | Accessibility | 4/4 | All inspected `Segmented` / `NumberSegmented` radiogroups carry programmatic names; mixture remove buttons and constant-list remove controls are labeled; zero unlabeled radiogroups on the re-checked routes at 375×812. |
 | 2 | Performance | 3/4 | Route-level lazy loading unchanged; Plotly remains the dominant on-demand bundle. |
-| 3 | Responsive design | 4/4 | Mobile touch rules extended to mixture mini-buttons, language toggle width, empty-plot CTAs and database tiles; chart scroll behavior from fifth pass preserved. |
+| 3 | Responsive design | 4/4 | Mobile touch rules extended to mixture mini-buttons, language toggle width, empty-plot CTAs and database tiles; chart scroll behavior from fifth pass preserved; desktop 1440×900 pass confirms the 320 px panel stacks control headers. |
 | 4 | Theming | 4/4 | No regressions in light/dark contrast on inspected chrome. |
 | 5 | Anti-patterns | 4/4 | Duplicate hub assumptions removed from subnav; five modules now follow the AcidoBase pattern of plot-first result summaries with sidebar diagnostics only. |
 | **Total** |  | **19/20** | **Same release-ready score; sixth pass closes control-naming and result-duplication debt without changing the performance ceiling.** |
@@ -37,9 +39,10 @@ Open issue count from this pass: **0 P0, 0 P1** implemented; **2 P2** deferred (
 | **UIA-R3-06** | P2 | ✅ `ConstantList` remove buttons relied on `title` only. | Added `aria-label={t('controls.removeConstant')}`. |
 | **UIA-R3-07** | P2 | **Deferred** — Remaining modules (Complejos, Mezclas, Solubility variants, Titulación sub-modes, etc.) still duplicate a subset of plot metrics in sidebar cards. | Follow-up pass: apply the AcidoBase/plot-first pattern module-by-module without losing diagnostic depth. |
 | **UIA-R3-08** | P3 | **Deferred** — Database preset human names and export metadata remain Spanish by design (**UX-G02**, **UX-P06**). | Product decision; not a UI regression. |
-| **UIA-R3-09** | P1 | ✅ Slider/value rows clipped on the 320 px variables panel when labels carried a help tip (`control-header` overflow). | Flex-wrap headers; on mobile stack label above the value pill; widen `num-field` with `min-width`/`max-width`. |
+| **UIA-R3-09** | P1 | ✅ Slider/value rows clipped on the 320 px variables panel when labels carried a help tip (`control-header` overflow). | Flex-wrap headers; stack label above the value pill inside the fixed-width panel; widen `num-field` with `min-width`/`max-width`. |
 | **UIA-R3-10** | P2 | ✅ Tall variable sheets (e.g. Conditional constants) felt truncated at 70 vh with no scroll affordance. | Sheet `max-height` → `min(85vh, 100dvh − 48px)`; bottom inset shadow + `scroll-padding` on `.panel-body`. |
 | **UIA-R3-11** | P2 | ✅ Constant-list slider rows could compress beside remove buttons; sidebar result lines clipped long values. | `constant-slider` `flex: 1 1 120px`; `result-item` wraps; disclosure bodies no longer clip validation/errors. |
+| **UIA-R3-12** | P1 | ✅ Desktop audit (1440×900): `SideReactionEditor` “how much aux is dissolved” header overflowed because panel stacking rules were gated to viewports ≤800 px while the panel stays 320 px wide. | Apply `.panel-shell` / `.panel-sheet` control-header stacking at all viewport widths. Re-check: 0 header overflows on all 16 routes at 1440×900. |
 
 ---
 

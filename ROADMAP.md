@@ -1154,13 +1154,13 @@ unlabeled radiogroups and touch-target gaps, then closed six actionable items. F
 | **UIA-R3-04** | P2 | ✅ Hub assumptions live only in the footer; subnav duplicate removed (**UX-P04** partial). |
 | **UIA-R3-05** | P2 | ✅ Language toggle, empty-plot CTAs and database tiles reach 44 px on mobile. |
 | **UIA-R3-06** | P2 | ✅ Constant-list remove buttons use `aria-label`, not `title` alone. |
-
-Deferred: **UIA-R3-07** (remaining module result-card duplication, **UX-G07**) and **UIA-R3-08**
-(export/database i18n policy, **UX-G02** / **UX-P06**).
-
 | **UIA-R3-09** | P1 | ✅ Variables-panel slider rows no longer clip labels/values on the 320 px sidebar. |
 | **UIA-R3-10** | P2 | ✅ Mobile variables sheet uses 85 vh with scroll padding and a bottom inset affordance. |
 | **UIA-R3-11** | P2 | ✅ Constant-list sliders keep minimum track width; sidebar result lines wrap; disclosures no longer clip inline errors. |
+| **UIA-R3-12** | P1 | ✅ Desktop 1440×900 pass: panel control headers stack at the fixed 320 px width (not only below 800 px viewport). |
+
+Deferred: **UIA-R3-07** (remaining module result-card duplication, **UX-G07**) and **UIA-R3-08**
+(export/database i18n policy, **UX-G02** / **UX-P06**).
 
 ### Near-term
 

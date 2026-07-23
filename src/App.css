@@ -2487,26 +2487,25 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
   overflow: visible;
 }
 
-@media (max-width: 800px) {
-  .panel-sheet .control-header,
-  .panel-shell .control-header {
-    row-gap: 6px;
-  }
+/* Fixed 320 px variables panel: stack headers at every viewport width. */
+.panel-sheet .control-header,
+.panel-shell .control-header {
+  row-gap: 6px;
+}
 
-  .panel-sheet .control-label,
-  .panel-shell .control-label {
-    flex-basis: 100%;
-  }
+.panel-sheet .control-label,
+.panel-shell .control-label {
+  flex-basis: 100%;
+}
 
-  .panel-sheet .control-value,
-  .panel-shell .control-value {
-    margin-left: auto;
-  }
+.panel-sheet .control-value,
+.panel-shell .control-value {
+  margin-left: auto;
+}
 
-  .panel-sheet input[type='range'],
-  .panel-shell input[type='range'] {
-    width: 100%;
-  }
+.panel-sheet input[type='range'],
+.panel-shell input[type='range'] {
+  width: 100%;
 }
 
 /* Key results sit above the plot as its metric header. */
