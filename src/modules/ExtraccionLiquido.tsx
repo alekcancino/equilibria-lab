@@ -25,7 +25,6 @@ import {
   conditionalChelateLogK, distributionD, percentE1, percentEn, nFor, sequentialExtraction, type AnalyteState,
 } from '../lib/extraction';
 import { SPECIES_COLORS } from '../lib/database';
-import { formatSci } from '../lib/format';
 import { useT } from '../hooks/useT';
 
 // ── Presets ───────────────────────────────────────────────────────────────────
@@ -586,12 +585,8 @@ export default function ExtraccionLiquido() {
 
         <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
-            { label: t('extraccionLiquido.dAtPHLabel', { ph: st.pH.toFixed(1) }), value: D1cur >= 0.001 ? D1cur.toFixed(3) : formatSci(D1cur) },
-            { label: 'log D', value: D1cur > 0 ? Math.log10(D1cur).toFixed(2) : '< −10' },
-            { label: t('extraccionLiquido.pctE1Label', { r: r.toFixed(1) }), value: `${pE1cur.toFixed(1)} %` },
             { label: `%E · n=2`, value: `${percentEn(D1cur, r, 2).toFixed(1)} %` },
             { label: `%E · n=3`, value: `${percentEn(D1cur, r, 3).toFixed(1)} %` },
-            { label: t('extraccionLiquido.extractionsFor99Label'), value: n99_1 !== null ? `${n99_1}` : '> 100' },
             ...(st.showA2 ? [
               { label: t('extraccionLiquido.pctE1DashLabel', { label: st.a2.label }), value: `${pE2cur.toFixed(1)} %` },
               { label: t('extraccionLiquido.separationFactorLabel'), value: D2cur > 0 ? (D1cur / D2cur).toFixed(2) : '∞' },

@@ -392,18 +392,9 @@ export default function Solubilidad() {
           </details>
           )}
         </PanelSection>
+        {mode !== 'ionic' && (
         <PanelSection title={t('complejos.resultSection')}>
-          <ResultCard items={mode === 'ionic' ? [
-            {
-              label: t('solubilidad.solubilityAtPH', { ph: pHPoint.toFixed(1) }),
-              value: sInvalid ? t('solubilidad.noRootKsp') : formatMolar(sAtPoint),
-            },
-            { label: t('solubilidad.equilibriumLabel'), value: `${salt.m > 1 ? `${salt.m} ` : ''}${salt.cationLabel} + ${salt.x > 1 ? `${salt.x} ` : ''}${salt.anionLabel}` },
-          ] : [
-            {
-              label: t('solubilidad.solubilityAtPH', { ph: pHPoint.toFixed(1) }),
-              value: sInvalid ? '—' : formatMolar(sAtPoint),
-            },
+          <ResultCard items={[
             { label: t('solubilidad.intrinsicSolubilityResultLabel'), value: formatMolar(molecular.S0) },
             ...(saturationState ? [{ label: t('solubilidad.saturationPHLabel'), value: saturationState.pH.toFixed(3) }] : []),
             ...(competingState ? [{
@@ -412,6 +403,7 @@ export default function Solubilidad() {
             }] : []),
           ]} />
         </PanelSection>
+        )}
         <InfoBox title={t('solubilidad.infoBoxTitle')}>
           {mode === 'ionic' ? (
             <p>
