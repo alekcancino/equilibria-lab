@@ -1158,6 +1158,10 @@ unlabeled radiogroups and touch-target gaps, then closed six actionable items. F
 Deferred: **UIA-R3-07** (remaining module result-card duplication, **UX-G07**) and **UIA-R3-08**
 (export/database i18n policy, **UX-G02** / **UX-P06**).
 
+| **UIA-R3-09** | P1 | ✅ Variables-panel slider rows no longer clip labels/values on the 320 px sidebar. |
+| **UIA-R3-10** | P2 | ✅ Mobile variables sheet uses 85 vh with scroll padding and a bottom inset affordance. |
+| **UIA-R3-11** | P2 | ✅ Constant-list sliders keep minimum track width; sidebar result lines wrap; disclosures no longer clip inline errors. |
+
 ### Near-term
 
 | Feature | Notes |

@@ -37,6 +37,9 @@ Open issue count from this pass: **0 P0, 0 P1** implemented; **2 P2** deferred (
 | **UIA-R3-06** | P2 | ✅ `ConstantList` remove buttons relied on `title` only. | Added `aria-label={t('controls.removeConstant')}`. |
 | **UIA-R3-07** | P2 | **Deferred** — Remaining modules (Complejos, Mezclas, Solubility variants, Titulación sub-modes, etc.) still duplicate a subset of plot metrics in sidebar cards. | Follow-up pass: apply the AcidoBase/plot-first pattern module-by-module without losing diagnostic depth. |
 | **UIA-R3-08** | P3 | **Deferred** — Database preset human names and export metadata remain Spanish by design (**UX-G02**, **UX-P06**). | Product decision; not a UI regression. |
+| **UIA-R3-09** | P1 | ✅ Slider/value rows clipped on the 320 px variables panel when labels carried a help tip (`control-header` overflow). | Flex-wrap headers; on mobile stack label above the value pill; widen `num-field` with `min-width`/`max-width`. |
+| **UIA-R3-10** | P2 | ✅ Tall variable sheets (e.g. Conditional constants) felt truncated at 70 vh with no scroll affordance. | Sheet `max-height` → `min(85vh, 100dvh − 48px)`; bottom inset shadow + `scroll-padding` on `.panel-body`. |
+| **UIA-R3-11** | P2 | ✅ Constant-list slider rows could compress beside remove buttons; sidebar result lines clipped long values. | `constant-slider` `flex: 1 1 120px`; `result-item` wraps; disclosure bodies no longer clip validation/errors. |
 
 ---
 
