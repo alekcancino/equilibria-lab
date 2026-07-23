@@ -252,6 +252,7 @@ export default function Actividad() {
             </div>
             <div className="control-input">
               <Segmented
+                ariaLabel={t('actividad.gammaModelLabel')}
                 options={[
                   { value: 'dh', label: t('actividad.extendedOption') },
                   { value: 'kielland', label: t('actividad.kiellandOption') },
@@ -296,6 +297,7 @@ export default function Actividad() {
             </div>
             <div className="control-input">
               <Segmented
+                ariaLabel={t('actividad.iSourceLabel')}
                 options={[
                   { value: 'impose', label: t('actividad.imposeIOption') },
                   { value: 'electrolyte', label: t('actividad.byElectrolyteOption') },

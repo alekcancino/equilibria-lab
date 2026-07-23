@@ -749,6 +749,20 @@ html, body, #root {
     height: var(--touch-min);
   }
 
+  .panel-sheet .mix-row .mini-btn,
+  .panel-sheet .mini-btn {
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+  }
+
+  .empty-plot-action {
+    min-height: var(--touch-min);
+  }
+
+  .db-item {
+    min-height: var(--touch-min);
+  }
+
   body.panel-sheet-open {
     overflow: hidden;
   }
@@ -2835,7 +2849,7 @@ input[type='range']:focus-visible { box-shadow: var(--focus-ring); }
     margin-left: 0;
   }
   .lang-toggle-btn {
-    min-width: 36px;
+    min-width: var(--touch-min);
     height: var(--touch-min);
   }
 

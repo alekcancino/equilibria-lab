@@ -431,17 +431,15 @@ export default function Pourbaix() {
           <Slider label={t('pourbaix.cursorELabel')} value={cursorE} min={-1.6} max={2.2} step={0.05} onChange={setCursorE} decimals={2} />
         </PanelSection>
 
+        {graphDominant && (
         <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
-            { label: t('pourbaix.conditionsResultLabel'), value: `pH ${cursorPH.toFixed(1)} · E ${cursorE.toFixed(2)} V` },
-            { label: t('pourbaix.predominantApproxLabel'), value: predominant },
-            ...(graphDominant ? [
-              { label: t('pourbaix.graphPredominant'), value: graphDominant },
-              { label: t('pourbaix.hessCycleError'), value: graphPoint!.maxCycleError.toExponential(1) },
-              { label: t('pourbaix.poolConservationError'), value: graphPoint!.poolError.toExponential(1) },
-            ] : []),
+            { label: t('pourbaix.graphPredominant'), value: graphDominant },
+            { label: t('pourbaix.hessCycleError'), value: graphPoint!.maxCycleError.toExponential(1) },
+            { label: t('pourbaix.poolConservationError'), value: graphPoint!.poolError.toExponential(1) },
           ]} />
         </PanelSection>
+        )}
 
         <InfoBox title={t('pourbaix.infoBoxTitle')}>
           <p>

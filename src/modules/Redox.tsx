@@ -163,9 +163,6 @@ export default function Redox() {
           <ResultCard items={[
             { label: t('redox.conditionalPE', { ox: couple1.ox, red: couple1.red }), value: `${pe01.toFixed(2)} (${(pe01 * NERNST_S).toFixed(3)} V)`, helpId: 'pe' },
             { label: t('redox.conditionalPE', { ox: couple2.ox, red: couple2.red }), value: `${pe02.toFixed(2)} (${(pe02 * NERNST_S).toFixed(3)} V)`, helpId: 'pe' },
-            { label: t('redox.spontaneousReaction'), value: reaction.equation },
-            { label: t('redox.electronsCanceled'), value: `${reaction.electrons} e⁻` },
-            { label: 'log K', value: logK.toFixed(1) },
           ]} />
         </PanelSection>
         <InfoBox title={t('complejos.howToReadTitle')}>

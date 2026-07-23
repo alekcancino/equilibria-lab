@@ -360,7 +360,7 @@ export function NumberSegmented({
         <span className="control-value">{value}{suffix}</span>
       </div>
       <div className="control-input">
-        <Segmented compact options={options.map((n) => ({ value: String(n), label: String(n) }))} value={String(value)} onChange={(v) => onChange(Number(v))} />
+        <Segmented compact ariaLabel={label} options={options.map((n) => ({ value: String(n), label: String(n) }))} value={String(value)} onChange={(v) => onChange(Number(v))} />
       </div>
       {hint && <p className="hint">{hint}</p>}
     </div>
@@ -459,6 +459,7 @@ export function ConstantList({
             type="button"
             className="mini-btn"
             title={t('controls.removeConstant')}
+            aria-label={t('controls.removeConstant')}
             onClick={() => onChange(values.filter((_, j) => j !== i))}
             disabled={values.length <= minItems}
           >

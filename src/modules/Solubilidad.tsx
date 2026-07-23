@@ -238,6 +238,7 @@ export default function Solubilidad() {
             </div>
             <div className="control-input">
               <Segmented
+                ariaLabel={t('solubilidad.solidModelLabel')}
                 options={[
                   { value: 'ionic', label: t('solubilidad.ionicSaltOption') },
                   { value: 'molecular', label: t('solubilidad.molecularAcidBaseOption') },
@@ -306,6 +307,7 @@ export default function Solubilidad() {
                 </div>
                 <div className="control-input">
                   <Segmented
+                    ariaLabel={t('solubilidad.typeLabel')}
                     options={[
                       { value: 'acid', label: t('solubilidad.weakAcidOption') },
                       { value: 'base', label: t('solubilidad.weakBaseOption') },
@@ -380,6 +382,7 @@ export default function Solubilidad() {
             <Slider label={t('complejos.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
             <div className="control-input">
               <Segmented
+                ariaLabel={t('actividad.gammaModelLabel')}
                 options={GAMMA_MODELS}
                 value={gammaModel}
                 onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}

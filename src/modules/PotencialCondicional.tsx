@@ -221,12 +221,6 @@ export default function PotencialCondicional() {
     () => st.showCouple3 ? crossoverPH(st.couple2, st.couple3) : null,
     [st.couple2, st.couple3, st.showCouple3],
   );
-  // Only the numeric (complexation-active) path can cross more than once —
-  // surface it so "the crossover" doesn't silently understate the curve.
-  const cross12HasMore = useMemo(
-    () => (st.showComplexPH1 || st.showIntrinsicPH1 ? numericCrossings(pHs, E1s, E2s).length > 1 : false),
-    [st.showComplexPH1, st.showIntrinsicPH1, pHs, E1s, E2s],
-  );
   const cross13HasMore = useMemo(
     () => ((st.showComplexPH1 || st.showIntrinsicPH1) && st.showCouple3 && E3s ? numericCrossings(pHs, E1s, E3s).length > 1 : false),
     [st.showComplexPH1, st.showIntrinsicPH1, st.showCouple3, pHs, E1s, E3s],
@@ -619,14 +613,6 @@ export default function PotencialCondicional() {
 
         <PanelSection title={t('complejos.resultSection')}>
           <ResultCard items={[
-            { label: t('potencialcond.eprimeAtPH', { name: st.couple1.name, ph: st.pH.toFixed(1) }), value: `${E1cur.toFixed(3)} V  (pe°′ ${(E1cur/S).toFixed(1)})`, helpId: 'Eprime' },
-            { label: t('potencialcond.eprimeAtPH', { name: st.couple2.name, ph: st.pH.toFixed(1) }), value: `${E2cur.toFixed(3)} V  (pe°′ ${(E2cur/S).toFixed(1)})`, helpId: 'Eprime' },
-            {
-              label: t('potencialcond.crossover12Label'),
-              value: cross12 !== null
-                ? `pH ${cross12.toFixed(2)}${cross12HasMore ? t('potencialcond.moreThanOneText') : ''}`
-                : t('potencialcond.parallelNoCrossover'),
-            },
             {
               label: t('redox.spontaneousReaction'),
               value: `${strongest.c.ox} + ${weakest.c.red} · log K′ = ${logKcur.toFixed(1)}`,

@@ -1,6 +1,48 @@
+# UI/UX Audit — Equilibria Lab (2026-07-23, sixth pass)
+
+Baseline: `main` at `21993e5` (PR #102 merge) plus sixth-pass remediation on `fix/ux-sixth-pass`.
+
+Method: live browser inspection on `localhost:5173` via gstack `/browse` (Playwright), code review
+against shared controls and the product register, plus WCAG 2.1/2.2 checks. The route matrix
+covered all 16 destinations at desktop width and a mobile smoke at 375×812; control inventory
+counted buttons, inputs, segmented groups and touch targets per route. Titulación was inspected
+across acid–base, EDTA, redox, precipitation and potentiometric sub-modes in code and on the live
+acid–base route.
+
+**Implementation update (2026-07-23):** UIA-R3-01 through UIA-R3-06 are implemented in the current
+branch. Fifth-pass evidence remains below as the acceptance record for UIA-R2-*.
+
+## Current audit health score
+
+| # | Dimension | Score | Current evidence |
+| --- | --- | ---: | --- |
+| 1 | Accessibility | 4/4 | All inspected `Segmented` / `NumberSegmented` radiogroups carry programmatic names; mixture remove buttons and constant-list remove controls are labeled; zero unlabeled radiogroups on the re-checked routes at 375×812. |
+| 2 | Performance | 3/4 | Route-level lazy loading unchanged; Plotly remains the dominant on-demand bundle. |
+| 3 | Responsive design | 4/4 | Mobile touch rules extended to mixture mini-buttons, language toggle width, empty-plot CTAs and database tiles; chart scroll behavior from fifth pass preserved. |
+| 4 | Theming | 4/4 | No regressions in light/dark contrast on inspected chrome. |
+| 5 | Anti-patterns | 4/4 | Duplicate hub assumptions removed from subnav; five modules now follow the AcidoBase pattern of plot-first result summaries with sidebar diagnostics only. |
+| **Total** |  | **19/20** | **Same release-ready score; sixth pass closes control-naming and result-duplication debt without changing the performance ceiling.** |
+
+Open issue count from this pass: **0 P0, 0 P1** implemented; **2 P2** deferred (see UIA-R3-07, UIA-R3-08).
+
+## Sixth-pass findings
+
+| ID | Priority | Finding | Resolution |
+| --- | --- | --- | --- |
+| **UIA-R3-01** | P1 | ✅ `NumberSegmented` and module `Segmented` pickers lacked `aria-label` on their radiogroups (16 routes; up to 4 unlabeled groups on Solubility / Activity). | `NumberSegmented` forwards `ariaLabel={label}`; every module segmented control now passes an explicit label key. Re-check: 0 unlabeled radiogroups on acidobase, solubilidad, titulacion, actividad, ionexchange at 375×812. |
+| **UIA-R3-02** | P1 | ✅ Mixture component remove (`✕`) had no accessible name and sub-44 px mobile target. | `mezclas.removeComponent` aria-label; mobile `.mix-row .mini-btn` and global `.panel-sheet .mini-btn` touch rules in `App.css`. |
+| **UIA-R3-03** | P1 | ✅ Redox, Pourbaix, Conditional potential, Conditional constants and Metal speciation duplicated primary metrics in sidebar `ResultCard` and plot `ResultCardRow`. | Sidebar trimmed to diagnostics only (conditional pe, graph cycle errors, feasibility window, etc.); plot strip remains the decision-oriented summary (**UX-G07** partial). |
+| **UIA-R3-04** | P2 | ✅ Hub assumptions appeared in both subnav and footer on desktop (**UX-P04** partial). | Removed subnav `hub-assumptions`; footer `assumptions-details` is the single surface on all widths. |
+| **UIA-R3-05** | P2 | ✅ Language toggle ES/EN buttons were 36 px wide on mobile; empty-plot and database tiles could fall below 44 px. | Mobile `min-width: var(--touch-min)` on language toggle; `empty-plot-action` and `.db-item` min-height bumps. |
+| **UIA-R3-06** | P2 | ✅ `ConstantList` remove buttons relied on `title` only. | Added `aria-label={t('controls.removeConstant')}`. |
+| **UIA-R3-07** | P2 | **Deferred** — Remaining modules (Complejos, Mezclas, Solubility variants, Titulación sub-modes, etc.) still duplicate a subset of plot metrics in sidebar cards. | Follow-up pass: apply the AcidoBase/plot-first pattern module-by-module without losing diagnostic depth. |
+| **UIA-R3-08** | P3 | **Deferred** — Database preset human names and export metadata remain Spanish by design (**UX-G02**, **UX-P06**). | Product decision; not a UI regression. |
+
+---
+
 # UI/UX Audit — Equilibria Lab (2026-07-22, fifth pass)
 
-Baseline: `main` at `dd9e4c0` plus the current fifth-pass remediation worktree.
+Baseline: `main` at `dd9e4c0` plus the fifth-pass remediation worktree (merged as PR #102 / `21993e5`).
 
 Method: code-level review against the product register and WCAG 2.1/2.2, plus live browser
 inspection on `localhost:5173`. The route matrix covered all 16 destinations at 1440×900,
@@ -9,11 +51,11 @@ Representative workflows were inspected in Spanish and English, light and dark t
 checks covered Home navigation, the Variables sheet, language selection and the Export menu. PNG
 and CSV were activated from live Plotly charts instead of inferred from unit tests.
 
-**Implementation update (2026-07-22):** UIA-R2-01 through UIA-R2-06 are implemented in the
-current worktree and verified through the live application. The detailed findings remain below as
-the acceptance record.
+**Implementation update (2026-07-22):** UIA-R2-01 through UIA-R2-06 are implemented in PR #102
+and verified through the live application. The detailed findings remain below as the acceptance
+record.
 
-## Current audit health score
+## Fifth-pass audit health score (historical)
 
 | # | Dimension | Score | Current evidence |
 | --- | --- | ---: | --- |
@@ -24,9 +66,9 @@ the acceptance record.
 | 5 | Anti-patterns | 4/4 | The interface remains restrained, task-oriented and visually coherent without decorative dashboard noise. |
 | **Total** |  | **19/20** | **Release-ready UI/UX; the remaining point is the intentionally lazy but large Plotly bundle.** |
 
-Open issue count from this pass: **0 P0, 0 P1, 0 P2 and 0 P3**.
+Open issue count from fifth pass: **0 P0, 0 P1, 0 P2 and 0 P3** (all closed in PR #102).
 
-## Executive summary
+## Fifth-pass executive summary
 
 The fourth-pass work is real: Home has a keyboard entry point, all former manual segmented groups
 use the shared accessible control, light selected text now reaches 7.07:1 on the soft accent

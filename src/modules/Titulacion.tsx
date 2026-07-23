@@ -699,6 +699,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
       <PanelShell title={t('titulacion.acidBaseTitle')} onReset={reset} moduleId="titulacion" guideId="titulacion-acidobase">
         <PanelSection title={t('acidoBase.systemSection')}>
           <Segmented
+            ariaLabel={t('titulacion.titrantTypeLabel')}
             options={[
               { value: 'base', label: t('titulacion.titrantBaseSeg') },
               { value: 'acid', label: t('titulacion.titrantAcidSeg') },
@@ -891,6 +892,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             <Slider label={t('acidoBase.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
             <div className="control-input">
               <Segmented
+                ariaLabel={t('actividad.gammaModelLabel')}
                 options={gammaModelsT}
                 value={gammaModel}
                 onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}
@@ -1396,6 +1398,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
         />
         <PanelSection title={t('acidoBase.systemSection')}>
           <Segmented
+            ariaLabel={t('titulacion.edtaModeLabel')}
             options={[
               { value: 'direct', label: t('titulacion.directMode') },
               { value: 'inverse', label: t('titulacion.backTitrationMode') },
@@ -1494,6 +1497,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
           {showSensor && (
             <>
               <Segmented
+                ariaLabel={t('titulacion.sensorKindLabel')}
                 options={[
                   { value: 'metal', label: t('titulacion.metalElectrodeOption') },
                   { value: 'redox-indicator', label: t('titulacion.redoxIndicatorOption') },
@@ -1825,6 +1829,7 @@ function RedoxTitration({ mode }: { mode: Mode }) {
       <PanelShell title={t('titulacion.redoxTitle')} onReset={reset} moduleId="titulacion" guideId="titulacion-redox">
         <PanelSection title={t('acidoBase.systemSection')}>
           <Segmented
+            ariaLabel={t('titulacion.redoxDirectionLabel')}
             options={[
               { value: 'oxidante', label: t('titulacion.oxidationOption') },
               { value: 'reductor', label: t('titulacion.reductionOption') },
@@ -2499,6 +2504,7 @@ function PotenciometricaTitration({ mode }: { mode: Mode }) {
       <PanelShell title={t('titulacion.potentiometricTitle')} onReset={reset} moduleId="titulacion" guideId="titulacion-potenciometrica">
         <PanelSection title={t('acidoBase.systemSection')}>
           <Segmented
+            ariaLabel={t('titulacion.titrantTypeLabel')}
             options={[
               { value: 'base', label: t('titulacion.titrantBaseSeg') },
               { value: 'acid', label: t('titulacion.titrantAcidSeg') },

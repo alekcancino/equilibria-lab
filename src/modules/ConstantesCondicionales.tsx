@@ -610,12 +610,8 @@ export default function ConstantesCondicionales() {
 
         <PanelSection title={t('complejos.resultSection')}>
         <ResultCard items={[
-          { label: t('condicionales.optimalPH'), value: pHopt.toFixed(1) },
-          { label: t('condicionales.logKmax'), value: logKmax.toFixed(1), helpId: 'logKprime' },
-          { label: t('condicionales.logKAtPH', { ph: s.evalPH.toFixed(1) }), value: logKAtEval.toFixed(2), helpId: 'logKprime' },
           { label: t('condicionales.slopeAtPH', { ph: s.evalPH.toFixed(1) }), value: slopeAtEval.toFixed(2) },
           { label: t('condicionales.optimalWindow'), value: feasWin ? `pH ${feasWin[0].toFixed(1)}–${feasWin[1].toFixed(1)}` : t('condicionales.belowThreshold') },
-          { label: t('condicionales.pctFormedAtCo', { ph: s.evalPH.toFixed(1) }), value: `${pctFormado.toFixed(1)} %` },
           { label: t('condicionales.phFor10_50_90'), value: `${fmtPH(phForPct.p10)} / ${fmtPH(phForPct.p50)} / ${fmtPH(phForPct.p90)}` },
           { label: t('condicionales.phForPctFormed', { pct: s.targetPct.toFixed(2) }), value: fmtPH(phForTarget) },
           {

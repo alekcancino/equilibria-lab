@@ -550,6 +550,7 @@ export default function Complejos() {
             </div>
             <div className="control-input">
               <Segmented
+                ariaLabel={t('complejos.treatmentLabel')}
                 options={[
                   { value: 'ninguna', label: t('complejos.sideModeNone') },
                   { value: 'ringbom', label: t('complejos.sideModeRingbom') },

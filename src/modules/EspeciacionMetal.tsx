@@ -528,22 +528,13 @@ export default function EspeciacionMetal() {
 
         <PanelSection title={t('especiacion.readingSection')}>
           <Slider label={t('especiacion.readPHLabel')} value={pHRead} min={0} max={14} step={0.1} onChange={setPHRead} decimals={1} />
-          {readValid ? (
+          {readValid && (nX > 0 || showConditionalMap) ? (
             <ResultCard items={[
-              { label: t('complejos.dominantSpecies'), value: `${labels[domIdx]} (α = ${readPoint.fractions[domIdx].toFixed(3)})` },
-              { label: t('especiacion.pLFree'), value: Number.isFinite(readPoint.pL) ? readPoint.pL.toFixed(3) : t('especiacion.pLFreeNoLigand') },
               ...(nX > 0 ? [{ label: t('especiacion.pXFree'), value: Number.isFinite(readPoint.pX) ? readPoint.pX.toFixed(3) : '∞' }] : []),
-              { label: t('especiacion.nBarLabel'), value: readPoint.nBar.toFixed(2) },
               ...(showConditionalMap ? [{ label: t('especiacion.saturationIndex'), value: conditionalRead.saturationIndex.toFixed(2) }] : []),
               ...(showConditionalMap && showFeasibility ? [{ label: t('especiacion.feasibilityResult'), value: feasibility.feasible ? t('especiacion.feasible') : t('especiacion.notFeasible') }] : []),
-              {
-                label: nX > 0 ? t('especiacion.pctBreakdownX') : t('especiacion.pctBreakdownNoX'),
-                value: nX > 0
-                  ? `${(famFree * 100).toFixed(1)} / ${(famOH * 100).toFixed(1)} / ${(famL * 100).toFixed(1)} / ${(famX * 100).toFixed(1)}`
-                  : `${(famFree * 100).toFixed(1)} / ${(famOH * 100).toFixed(1)} / ${(famL * 100).toFixed(1)}`,
-              },
             ]} />
-          ) : (
+          ) : readValid ? null : (
             <p className="hint">
               {t('especiacion.noSolutionPart1')}<sub>L</sub>{t('especiacion.noSolutionPart2')}<sub>M</sub>
               {t('especiacion.noSolutionPart3')}<sub>L</sub>{t('especiacion.noSolutionPart4')}<sub>M</sub>{t('especiacion.noSolutionPart5')}

@@ -261,10 +261,6 @@ export default function App() {
               );
             })}
           </nav>
-          <details className="hub-assumptions">
-            <summary>{t('chrome.assumptionsShort')}</summary>
-            <p>{t(hub.assumptionsKey)}</p>
-          </details>
         </div>
       )}
 

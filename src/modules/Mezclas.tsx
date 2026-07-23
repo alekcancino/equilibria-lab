@@ -231,7 +231,7 @@ export default function Mezclas() {
               <div className="mix-row-header">
                 <span className="control-label">{t('mezclas.componentN', { n: i + 1 })}</span>
                 {rows.length > 1 && (
-                  <button type="button" className="mini-btn" onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>
+                  <button type="button" className="mini-btn" aria-label={t('mezclas.removeComponent', { n: i + 1 })} onClick={() => setRows(rows.filter((_, j) => j !== i))}>✕</button>
                 )}
               </div>
               <AcidSystemEditor
@@ -298,6 +298,7 @@ export default function Mezclas() {
           <Slider label={t('complejos.ionicStrengthLabel')} helpId="ionicStrength" value={ionicStrength} min={0} max={0.5} step={0.01} onChange={setIonicStrength} decimals={2} />
           <div className="control-input">
             <Segmented
+              ariaLabel={t('actividad.gammaModelLabel')}
               options={GAMMA_MODELS}
               value={gammaModel}
               onChange={(v) => setGammaModel(isValidGammaModel(v) ? v : 'dh')}

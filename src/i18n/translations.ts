@@ -868,6 +868,7 @@ export const translations = {
   'mezclas.saltOfAnion': { es: ' (sal de {anion}{mult})', en: ' ({anion} salt{mult})' },
   'mezclas.sodiumSalt': { es: ' (sal sódica{mult})', en: ' (sodium salt{mult})' },
   'mezclas.addComponentButton': { es: '+ Agregar componente', en: '+ Add component' },
+  'mezclas.removeComponent': { es: 'Quitar componente {n}', en: 'Remove component {n}' },
   'mezclas.titrationSection': { es: 'Titulación de la mezcla', en: 'Mixture titration' },
   'mezclas.showTitrationCurve': { es: 'Mostrar curva de titulación', en: 'Show titration curve' },
   'mezclas.titrateWithStrongAcid': { es: 'Titular con ácido fuerte ({titrant})', en: 'Titrate with strong acid ({titrant})' },
@@ -1605,6 +1606,10 @@ export const translations = {
   // ── Shared fragments across sub-modes ──────────────────────────────────────
   'titulacion.titrantBaseSeg': { es: 'Titulante básico', en: 'Base titrant' },
   'titulacion.titrantAcidSeg': { es: 'Titulante ácido', en: 'Acid titrant' },
+  'titulacion.titrantTypeLabel': { es: 'Tipo de titulante', en: 'Titrant type' },
+  'titulacion.edtaModeLabel': { es: 'Modo de titulación EDTA', en: 'EDTA titration mode' },
+  'titulacion.redoxDirectionLabel': { es: 'Dirección redox', en: 'Redox direction' },
+  'titulacion.sensorKindLabel': { es: 'Tipo de sensor', en: 'Sensor type' },
   'titulacion.titrantAcidWord': { es: 'ácido', en: 'acid' },
   'titulacion.titrantBaseWord': { es: 'básico', en: 'base' },
   'titulacion.acidBaseModelBadge': { es: 'titulación ácido-base (titulante {titrant}) de {kind}', en: 'acid-base titration ({titrant} titrant) of {kind}' },
