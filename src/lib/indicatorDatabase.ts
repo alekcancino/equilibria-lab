@@ -6,6 +6,13 @@
 // deprotonated In^(n-) form of the indicator.
 // K'(MIn) at a given medium: logK'(MIn) = logK(MIn) - log αIn(H) - log αM(OH)
 
+import { catalogSource, type ConstantSource } from './provenance';
+
+const HARRIS = catalogSource('Harris, Quantitative Chemical Analysis');
+
+/** Shared citation for the metallochromic indicator table (per-indicator locators differ). */
+export const METAL_INDICATOR_CATALOG_SOURCE = catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-3' });
+
 export interface IndicatorMetal {
   metalId: string;   // matches id in EDTA_METAL_PRESETS
   logKMIn: number;   // thermodynamic log K for M-In formation
@@ -25,6 +32,7 @@ export interface MetalIndicator {
   pHRange: [number, number];
   metals: IndicatorMetal[];
   notes: string;
+  source: ConstantSource;
 }
 
 export const METAL_INDICATORS: MetalIndicator[] = [
@@ -48,6 +56,7 @@ export const METAL_INDICATORS: MetalIndicator[] = [
       { metalId: 'fe3',  logKMIn: 14.3 },
     ],
     notes: 'Clásico para Mg y Ca a pH 10 (buffer NH₃/NH₄⁺). El Cu, Ni y Fe³⁺ bloquean el indicador (logK muy alto). Añadir enmascarante (KCN) si hay interferentes.',
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-3, EBT' }),
   },
   {
     id: 'calmagite',
@@ -68,6 +77,7 @@ export const METAL_INDICATORS: MetalIndicator[] = [
       { metalId: 'cu',   logKMIn: 15.0 },
     ],
     notes: 'Similar a EBT pero más estable frente al H₂O₂ y el tiempo. Rango de pH ligeramente más alto.',
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-3, calmagite' }),
   },
   {
     id: 'murexide',
@@ -85,6 +95,7 @@ export const METAL_INDICATORS: MetalIndicator[] = [
       { metalId: 'mn',   logKMIn:  7.4 },
     ],
     notes: 'Indicador para Ca a pH 12 (NaOH) y Cu/Ni a pH 8. El cambio de color es rosa → púrpura en el punto de equivalencia.',
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-3, murexide' }),
   },
   {
     id: 'xo',
@@ -103,6 +114,7 @@ export const METAL_INDICATORS: MetalIndicator[] = [
       { metalId: 'hg',   logKMIn: 20.0 },
     ],
     notes: 'Se usa en medio ácido (pH 1–6) donde EBT no funciona. Indicado para Pb, Bi, In, Th, Fe³⁺. Cambio amarillo → rojo.',
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-3, xylenol orange' }),
   },
 ];
 
@@ -119,20 +131,21 @@ export interface EdtaMetalPreset {
   logKf: number;   // thermodynamic log Kf for M–EDTA
   logBetasOH: number[];
   group: string;
+  source: ConstantSource;
 }
 
 export const EDTA_METAL_PRESETS: EdtaMetalPreset[] = [
-  { id: 'ca',  metal: 'Ca²⁺', logKf: 10.65, logBetasOH: [],                          group: 'M²⁺' },
-  { id: 'mg',  metal: 'Mg²⁺', logKf:  8.64, logBetasOH: [],                          group: 'M²⁺' },
-  { id: 'mn',  metal: 'Mn²⁺', logKf: 13.81, logBetasOH: [3.4],                       group: 'M²⁺' },
-  { id: 'zn',  metal: 'Zn²⁺', logKf: 16.50, logBetasOH: [5.04, 10.43, 13.7, 15.2],  group: 'M²⁺' },
-  { id: 'cu',  metal: 'Cu²⁺', logKf: 18.80, logBetasOH: [6.0, 11.8],                 group: 'M²⁺' },
-  { id: 'ni',  metal: 'Ni²⁺', logKf: 18.56, logBetasOH: [4.97, 8.55],                group: 'M²⁺' },
-  { id: 'pb',  metal: 'Pb²⁺', logKf: 18.04, logBetasOH: [6.29, 10.89],               group: 'M²⁺' },
-  { id: 'hg',  metal: 'Hg²⁺', logKf: 21.70, logBetasOH: [10.60],                     group: 'M²⁺' },
-  { id: 'cd',  metal: 'Cd²⁺', logKf: 16.46, logBetasOH: [3.9, 7.7],                  group: 'M²⁺' },
-  { id: 'co',  metal: 'Co²⁺', logKf: 16.31, logBetasOH: [4.35, 8.4],                 group: 'M²⁺' },
-  { id: 'fe3', metal: 'Fe³⁺', logKf: 25.10, logBetasOH: [11.81, 21.68, 30.67],       group: 'M³⁺' },
-  { id: 'al',  metal: 'Al³⁺', logKf: 16.13, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'M³⁺' },
-  { id: 'ga',  metal: 'Ga³⁺', logKf: 20.27, logBetasOH: [11.4, 22.1, 30.7],           group: 'M³⁺' },
+  { id: 'ca',  metal: 'Ca²⁺', logKf: 10.65, logBetasOH: [],                          group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Ca²⁺' }) },
+  { id: 'mg',  metal: 'Mg²⁺', logKf:  8.64, logBetasOH: [],                          group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Mg²⁺' }) },
+  { id: 'mn',  metal: 'Mn²⁺', logKf: 13.81, logBetasOH: [3.4],                       group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Mn²⁺' }) },
+  { id: 'zn',  metal: 'Zn²⁺', logKf: 16.50, logBetasOH: [5.04, 10.43, 13.7, 15.2],  group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Zn²⁺' }) },
+  { id: 'cu',  metal: 'Cu²⁺', logKf: 18.80, logBetasOH: [6.0, 11.8],                 group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Cu²⁺' }) },
+  { id: 'ni',  metal: 'Ni²⁺', logKf: 18.56, logBetasOH: [4.97, 8.55],                group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Ni²⁺' }) },
+  { id: 'pb',  metal: 'Pb²⁺', logKf: 18.04, logBetasOH: [6.29, 10.89],               group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Pb²⁺' }) },
+  { id: 'hg',  metal: 'Hg²⁺', logKf: 21.70, logBetasOH: [10.60],                     group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Hg²⁺' }) },
+  { id: 'cd',  metal: 'Cd²⁺', logKf: 16.46, logBetasOH: [3.9, 7.7],                  group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Cd²⁺' }) },
+  { id: 'co',  metal: 'Co²⁺', logKf: 16.31, logBetasOH: [4.35, 8.4],                 group: 'M²⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Co²⁺' }) },
+  { id: 'fe3', metal: 'Fe³⁺', logKf: 25.10, logBetasOH: [11.81, 21.68, 30.67],       group: 'M³⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Fe³⁺' }) },
+  { id: 'al',  metal: 'Al³⁺', logKf: 16.13, logBetasOH: [9.01, 17.09, 23.40, 27.68], group: 'M³⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Al³⁺' }) },
+  { id: 'ga',  metal: 'Ga³⁺', logKf: 20.27, logBetasOH: [11.4, 22.1, 30.7],           group: 'M³⁺', source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 12-1, Ga³⁺' }) },
 ];

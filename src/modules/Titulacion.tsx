@@ -41,7 +41,7 @@ import {
 import { redoxNetworkTitrationCurve } from '../lib/redoxNetworks';
 import { precipTitrationCurve, mohrEndpointPAg, PRECIP_PRESETS } from '../lib/precipTitration';
 import { condLogKCurve, alphaH, alphaOH } from '../lib/conditional';
-import { METAL_INDICATORS, EDTA_METAL_PRESETS, type MetalIndicator } from '../lib/indicatorDatabase';
+import { METAL_INDICATORS, EDTA_METAL_PRESETS, METAL_INDICATOR_CATALOG_SOURCE, type MetalIndicator } from '../lib/indicatorDatabase';
 import { SYSTEM_PRESETS, sideFromPreset, systemPresetById } from '../lib/systemPresets';
 import type { ConstantSource } from '../lib/provenance';
 import { conditionalPKas } from '../lib/acidBaseConditional';
@@ -885,6 +885,7 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             }))}
             onChange={setIndicatorId}
           />
+          <SourceBadge source={indicator.source} />
           <Toggle label={t('titulacion.showTransitionRangeToggle')} checked={showIndicator} onChange={setShowIndicator} />
           <Toggle label={t('titulacion.showDerivativeDpHToggle')} checked={showDerivative} onChange={setShowDerivative} />
           <Toggle label={t('titulacion.alternativeSignalsToggle')} checked={showAlternativeSignals} onChange={setShowAlternativeSignals} />
@@ -1442,6 +1443,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
               label: p.metal,
               detail: `log Kf = ${p.logKf.toFixed(2)}`,
               group: p.group === 'M²⁺' ? t('condicionales.divalentMetals') : t('condicionales.trivalentMetals'),
+              source: p.source,
             }))}
             onSelect={applyPreset}
           />
@@ -1555,6 +1557,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
         </PanelSection>
 
         <Disclosure title={t('titulacion.metallochromicDisclosure', { ph: pH.toFixed(1) })}>
+          <SourceBadge source={METAL_INDICATOR_CATALOG_SOURCE} />
           <IndicadorBadges
             metalId={metalId}
             logBetasOH={logBetasOH}
