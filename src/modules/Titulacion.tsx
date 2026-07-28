@@ -8,7 +8,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { handleTabKeyDown } from '../lib/tabKeyboard';
 import {
   ConcSlider, ConstantList, DbPanel, Disclosure, InfoBox, LabelField, NumberSegmented, PanelSection, ResultCard, ResultCardRow,
-  Segmented, ModelBadge, SelectControl, Slider, SystemPresetPicker, Toggle,
+  Segmented, ModelBadge, SelectControl, Slider, SourceBadge, SystemPresetPicker, Toggle,
 } from '../components/Controls';
 import {
   AcidSystemEditor, CoupleEditor, SideReactionEditor,
@@ -43,6 +43,7 @@ import { precipTitrationCurve, mohrEndpointPAg, PRECIP_PRESETS } from '../lib/pr
 import { condLogKCurve, alphaH, alphaOH } from '../lib/conditional';
 import { METAL_INDICATORS, EDTA_METAL_PRESETS, type MetalIndicator } from '../lib/indicatorDatabase';
 import { SYSTEM_PRESETS, sideFromPreset, systemPresetById } from '../lib/systemPresets';
+import type { ConstantSource } from '../lib/provenance';
 import { conditionalPKas } from '../lib/acidBaseConditional';
 import {
   precipitatingAcidTitrationCurve,
@@ -1063,6 +1064,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
   const [productEpsilon, setProductEpsilon] = useState(100);
   const [lambdaSpectator, setLambdaSpectator] = useState(50);
   const [showIndicatorError, setShowIndicatorError] = useState(false);
+  const [systemSource, setSystemSource] = useState<ConstantSource | null>(null);
 
   useShareEffect('titulacion', {
     mode, metalId, label, logKf, logBetasOH, side, edtaInFlask, pH, cFlask, vFlask, cBuret, axis, traceY,
@@ -1113,11 +1115,13 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     setSensorLogKOx(8); setSensorLogKRed(2);
     setShowAlternativeSignals(false); setProductEpsilon(100); setLambdaSpectator(50);
     setShowIndicatorError(false);
+    setSystemSource(null);
   }
 
   function applyPreset(id: string) {
     const p = EDTA_METAL_PRESETS.find((x) => x.id === id);
     if (!p) return;
+    setSystemSource(null);
     setMetalId(p.id); setLabel(p.metal);
     setLogKf(p.logKf); setLogBetasOH([...p.logBetasOH]);
     setSide((prev) => ({
@@ -1139,6 +1143,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     setPH(p.pH);
     setCFlask(p.cAnalytic);
     setEdtaInFlask(false);
+    setSystemSource(p.source);
   }
 
   const vMax = (((cFlask + (showSecondMetal ? secondConc : 0)) * vFlask) / cBuret) * 1.8;
@@ -1400,9 +1405,12 @@ function EdtaTitration({ mode }: { mode: Mode }) {
     <>
       <PanelShell title={t('titulacion.edtaTitle')} onReset={reset} moduleId="titulacion" guideId="titulacion-edta">
         <SystemPresetPicker
-          items={SYSTEM_PRESETS.map((p) => ({ id: p.id, name: p.name, group: p.group, detail: p.detail }))}
+          items={SYSTEM_PRESETS.map((p) => ({
+            id: p.id, name: p.name, group: p.group, detail: p.detail, source: p.source,
+          }))}
           onSelect={applyFullSystem}
         />
+        {systemSource && <SourceBadge source={systemSource} />}
         <PanelSection title={t('acidoBase.systemSection')}>
           <Segmented
             ariaLabel={t('titulacion.edtaModeLabel')}
@@ -1417,12 +1425,12 @@ function EdtaTitration({ mode }: { mode: Mode }) {
             model={edtaInFlask ? t('titulacion.edtaModelBack') : t('titulacion.edtaModelDirect')}
             additions={[logBetasOH.length > 0 && t('titulacion.addHydrolysisIndicatorSelection'), showSecondMetal && t('titulacion.addCompetitiveMetal'), showSensor && t('titulacion.addPotentiometricSignal')]}
           />
-          <LabelField label={t('titulacion.metalIonFreeNameLabel')} value={label} onChange={setLabel} />
+          <LabelField label={t('titulacion.metalIonFreeNameLabel')} value={label} onChange={(v) => { setSystemSource(null); setLabel(v); }} />
           <Slider
             label={t('titulacion.logKfComplexLabel')}
             helpId="logKf"
             value={logKf} min={1} max={28} step={0.01}
-            onChange={(v) => setLogKf(v)}
+            onChange={(v) => { setSystemSource(null); setLogKf(v); }}
           />
           <DbPanel
             title={t('titulacion.metalsDbTitle')}
@@ -1497,7 +1505,7 @@ function EdtaTitration({ mode }: { mode: Mode }) {
           <Toggle label={t('titulacion.indicatorEndpointToggle')} checked={showIndicatorError} onChange={setShowIndicatorError} />
         </PanelSection>
         <Disclosure title={t('titulacion.sideReactionsDisclosure')}>
-          <SideReactionEditor state={side} onChange={setSide} showLigandPKas={false} />
+          <SideReactionEditor state={side} onChange={(s) => { setSystemSource(null); setSide(s); }} showLigandPKas={false} />
         </Disclosure>
         <Disclosure title={t('titulacion.potentiometricSensorDisclosure')}>
           <Toggle label={t('titulacion.showSensorSignal')} checked={showSensor} onChange={setShowSensor} />

@@ -563,7 +563,7 @@ export function DbPanel({
 export function SystemPresetPicker({
   items, onSelect, title,
 }: {
-  items: { id: string; name: string; group: string; detail: string }[];
+  items: { id: string; name: string; group: string; detail: string; source?: ConstantSource }[];
   onSelect: (id: string) => void;
   title?: string;
 }) {
@@ -585,6 +585,7 @@ export function SystemPresetPicker({
             >
               <span className="preset-item-name">{it.name}</span>
               <span className="preset-item-detail">{it.detail}</span>
+              {it.source && <SourceBadge source={it.source} compact />}
             </button>
           ))}
         </div>

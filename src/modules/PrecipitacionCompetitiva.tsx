@@ -12,6 +12,7 @@ import {
   competitiveEquilibrium, competitiveSweep, pAgAtFraction, separationWindow,
   type CompetitiveSalt,
 } from '../lib/solubilityCompetitive';
+import { catalogSource, type ConstantSource } from '../lib/provenance';
 import { formatMolar } from '../lib/format';
 import { useT } from '../hooks/useT';
 
@@ -31,27 +32,29 @@ interface Preset {
   cation: string;
   s1: CompetitiveSalt;
   s2: CompetitiveSalt;
-  reference: string;
+  source: ConstantSource;
 }
+
+const HARRIS = catalogSource('Harris, Quantitative Chemical Analysis');
 
 const PRESETS: Preset[] = [
   {
     id: 'clbr', cation: 'Ag⁺',
     s1: { label: 'Cl⁻', pKsp: 9.74, cX: 0.01 },
     s2: { label: 'Br⁻', pKsp: 12.30, cX: 0.01 },
-    reference: 'Harris — AgCl/AgBr',
+    source: { ...HARRIS, locator: 'AgCl / AgBr competitive precipitation' },
   },
   {
     id: 'bri', cation: 'Ag⁺',
     s1: { label: 'Br⁻', pKsp: 12.30, cX: 0.01 },
     s2: { label: 'I⁻', pKsp: 16.07, cX: 0.01 },
-    reference: 'Harris — AgBr/AgI',
+    source: { ...HARRIS, locator: 'AgBr / AgI competitive precipitation' },
   },
   {
     id: 'cli', cation: 'Ag⁺',
     s1: { label: 'Cl⁻', pKsp: 9.74, cX: 0.01 },
     s2: { label: 'I⁻', pKsp: 16.07, cX: 0.01 },
-    reference: 'Harris — AgCl/AgI',
+    source: { ...HARRIS, locator: 'AgCl / AgI competitive precipitation' },
   },
 ];
 
@@ -230,6 +233,7 @@ export default function PrecipitacionCompetitiva() {
               id: p.id,
               label: `${p.cation}: ${p.s1.label} / ${p.s2.label}`,
               detail: `${t('titulacion.pKspShort')} ${p.s1.pKsp.toFixed(2)} / ${p.s2.pKsp.toFixed(2)}`,
+              source: p.source,
             }))}
             onSelect={loadPreset}
           />
