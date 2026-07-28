@@ -2,7 +2,7 @@
 // The analyte may be an acid or a base; the strong titrant may be basic (NaOH)
 // or acidic (HCl) — all four combinations are valid.
 
-import { solvePH, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from './equilibrium';
+import { solvePHDetailed, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from './equilibrium';
 import type { GammaModel } from './activity';
 
 export type { GammaModel };
@@ -46,6 +46,8 @@ export interface TitrationCurve {
   pHs: number[];
   /** Theoretical equivalence volume for each titratable proton (mL) */
   equivalenceVolumes: number[];
+  /** True when any point hit a pH search boundary or failed to converge. */
+  hasOutOfDomainPH: boolean;
 }
 
 /** Number of formal acid-base steps represented by the ladder. */
@@ -78,6 +80,7 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
   const points = params.points ?? 600;
   const volumes: number[] = [];
   const pHs: number[] = [];
+  let hasOutOfDomainPH = false;
 
   // Same counter-ion accounting as AcidoBase.tsx's "pH disolución pura" —
   // see saltCounterIons/defaultStartIndex in equilibrium.ts. z0/pKas are
@@ -115,9 +118,10 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
     const titrantConc = (cTitrant * vb) / vTotal;
     if (titrantIsAcid) extraAnions += titrantConc;
     else extraCations += titrantConc;
-    const pH = solvePH(components, extraCations, extraAnions, I, model, pKw, pHRange);
+    const result = solvePHDetailed(components, extraCations, extraAnions, I, model, pKw, pHRange);
+    if (result.boundaryHit || !result.converged) hasOutOfDomainPH = true;
     volumes.push(vb);
-    pHs.push(pH);
+    pHs.push(result.pH);
   }
 
   const initialMeanIndex = initialFractions
@@ -137,7 +141,7 @@ export function titrationCurve(params: TitrationParams): TitrationCurve {
     if (veq <= vMax) equivalenceVolumes.push(veq);
   }
 
-  return { volumes, pHs, equivalenceVolumes };
+  return { volumes, pHs, equivalenceVolumes, hasOutOfDomainPH };
 }
 
 /** Numerical first derivative dpH/dV (centered differences) */

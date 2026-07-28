@@ -911,6 +911,9 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
           </details>
         </PanelSection>
         <PanelSection title={t('complejos.resultSection')}>
+          {curve.hasOutOfDomainPH && (
+            <p className="badge warn">{t('equilibrium.pHOutOfDomain')}</p>
+          )}
           {showIndicator && Number.isFinite(pHLastEq) && (
             <p className={indicatorOk ? 'badge ok' : 'badge warn'}>
               {indicatorOk
