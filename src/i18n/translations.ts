@@ -351,6 +351,7 @@ export const translations = {
   'controls.otherGroup': { es: 'Otros', en: 'Other' },
   'controls.loadFullSystem': { es: 'Cargar sistema completo', en: 'Load full system' },
   'controls.modelDetected': { es: 'Modelo detectado', en: 'Model detected' },
+  'provenance.illustrative': { es: 'Ilustrativo', en: 'Illustrative' },
   'controls.valueRange': { es: 'Usa un valor entre {min} y {max}.', en: 'Use a value from {min} to {max}.' },
   'controls.invalidNumber': { es: 'Escribe un número válido.', en: 'Enter a valid number.' },
   'controls.diagrams': { es: 'Diagramas', en: 'Diagrams' },
@@ -376,6 +377,11 @@ export const translations = {
     en: 'It reaches a minimum of {y} near {x} = {at}.',
   },
   'diagram.scrollHint': { es: 'Desliza para explorar →', en: 'Swipe to explore →' },
+  'diagram.domainRule': { es: '{min} → {max} · {axis}', en: '{min} → {max} · {axis}' },
+  'diagram.domain2d': {
+    es: '{xLabel} {xMin}–{xMax} · {yLabel} {yMin}–{yMax}',
+    en: '{xLabel} {xMin}–{xMax} · {yLabel} {yMin}–{yMax}',
+  },
   'diagram.predominanceTitle': { es: 'Diagrama de zonas de predominio frente a {axis}', en: 'Predominance zone diagram vs {axis}' },
   'diagram.predominanceDesc': {
     es: 'Escala {axis} de {min} a {max}. Zonas: {zones}.',
@@ -856,6 +862,7 @@ export const translations = {
   'mezclas.unnamedSystem': { es: 'Sistema sin nombre', en: 'Unnamed system' },
   'mezclas.mixturePH': { es: 'pH de la mezcla', en: 'Mixture pH' },
   'mezclas.noRootFound': { es: 'Sin raíz en balance de cargas', en: 'No root in the charge balance' },
+  'equilibrium.pHOutOfDomain': { es: 'pH fuera del dominio de búsqueda', en: 'pH outside the search domain' },
   'mezclas.title': { es: 'Mezclas multicomponente', en: 'Multicomponent mixtures' },
   'mezclas.systemsSection': { es: 'Sistemas', en: 'Systems' },
   'mezclas.oneSystem': { es: 'un sistema ácido-base', en: 'one acid-base system' },
@@ -1635,6 +1642,15 @@ export const translations = {
   'titulacion.solventWater': { es: 'Agua', en: 'Water' },
   'titulacion.solventEthanol': { es: 'Etanol', en: 'Ethanol' },
   'titulacion.temperatureLabel': { es: 'Temperatura', en: 'Temperature' },
+  'titulacion.temperatureScopeLabel': { es: 'Temperatura (pKw del solvente)', en: 'Temperature (solvent pKw)' },
+  'titulacion.temperatureScopeHint': {
+    es: 'Sólo se corrige la autoionización del agua; pKa del analito, Ksp y E° permanecen a 25 °C.',
+    en: 'Only water autoionization is corrected; analyte pKa, Ksp and E° stay at 25 °C.',
+  },
+  'titulacion.sensorTemperatureScopeHint': {
+    es: 'Sólo ajusta la pendiente de Nernst del sensor; pKsp y constantes del analito permanecen a 25 °C.',
+    en: 'Only adjusts the sensor Nernst slope; pKsp and analyte constants stay at 25 °C.',
+  },
   'titulacion.solventStateHint': { es: 'pKauto = {pkw}; lionio {lionium}; liato {lyate}.', en: 'pKauto = {pkw}; lyonium {lionium}; lyate {lyate}.' },
   'titulacion.precipCouplingToggle': { es: 'Precipitar la base conjugada durante la titulación', en: 'Precipitate the conjugate base during titration' },
   'titulacion.hydroxideStoichLabel': { es: 'Estequiometría OH⁻ para Gran', en: 'OH⁻ stoichiometry for Gran' },

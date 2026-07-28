@@ -217,20 +217,31 @@ export default function Predominance2D({
   }, [exportName, isDark, H]);
 
   return (
-    <div className="predom2d" role="img" aria-labelledby={titleId} aria-describedby={descId}>
+    <div className="wide-diagram predom2d" role="img" aria-labelledby={titleId} aria-describedby={descId}>
       <span id={titleId} className="sr-only">{t('diagram.map2dTitle', { x: xLabel, y: yLabel })}</span>
       <span id={descId} className="sr-only">
         {caption ? `${caption}. ` : ''}
         {t('diagram.map2dDesc', { x: xLabel, y: yLabel, species: speciesSummary })}
         {marker ? ` ${marker.label ?? `${xLabel} ${marker.x}, ${yLabel} ${marker.y}`}.` : ''}
       </span>
-      <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden="true">
-        {caption && (
-          <text x={W / 2} y={26} textAnchor="middle" fontSize={17} fill="var(--text-muted)">
-            {caption}
-          </text>
-        )}
-
+      <div className="wide-diagram-head">
+        {caption && <p className="wide-diagram-title">{caption}</p>}
+        <p className="wide-diagram-domain">
+          {t('diagram.domain2d', {
+            xLabel,
+            xMin: formatAxisLabel(grid.xRange[0]),
+            xMax: formatAxisLabel(grid.xRange[1]),
+            yLabel,
+            yMin: formatAxisLabel(grid.yRange[0]),
+            yMax: formatAxisLabel(grid.yRange[1]),
+          })}
+        </p>
+        <span className="wide-diagram-scroll-hint" aria-hidden="true">
+          <span>{t('diagram.scrollHint')}</span>
+        </span>
+      </div>
+      <div className="wide-diagram-scroll">
+        <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden="true">
         {/* Dominant-species field */}
         <image
           href={dataUrl}
@@ -317,6 +328,7 @@ export default function Predominance2D({
           </g>
         )}
       </svg>
+      </div>
       <PlotToolbar onExportPng={exportPng} onExportCsv={exportCsv} />
     </div>
   );

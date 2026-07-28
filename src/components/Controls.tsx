@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { GLOSSARY } from '../lib/glossary';
+import { formatConstantSource, type ConstantSource } from '../lib/provenance';
 import { useLanguage } from '../hooks/useLanguage';
 import { useT } from '../hooks/useT';
 
@@ -506,6 +507,7 @@ export interface DbItem {
   detail: string;
   /** Optional group for visual grouping (e.g. "Monoprotic") */
   group?: string;
+  source?: ConstantSource;
 }
 
 export function DbPanel({
@@ -535,6 +537,7 @@ export function DbPanel({
     >
       <span className="db-item-label">{it.label}</span>
       <span className="db-item-detail">{it.detail}</span>
+      {it.source && <SourceBadge source={it.source} compact />}
     </button>
   );
 
@@ -587,6 +590,24 @@ export function SystemPresetPicker({
         </div>
       ))}
     </details>
+  );
+}
+
+/** Bibliographic badge for preset constants with quality signaling. */
+export function SourceBadge({ source, compact = false }: { source: ConstantSource; compact?: boolean }) {
+  const t = useT();
+  if (source.quality === 'illustrative') {
+    return (
+      <span className={compact ? 'source-badge source-badge-compact illustrative' : 'source-badge illustrative'}>
+        {t('provenance.illustrative')}
+      </span>
+    );
+  }
+  const text = formatConstantSource(source);
+  return (
+    <span className={compact ? 'source-badge source-badge-compact' : 'source-badge'} title={text}>
+      {text}
+    </span>
   );
 }
 
@@ -652,7 +673,9 @@ export function PanelSection({
           </button>
         )
         : header}
-      {open && <div id={bodyId} className="psection-body">{children}</div>}
+      <div id={bodyId} className="psection-body" hidden={!open}>
+        {open && children}
+      </div>
     </section>
   );
 }
@@ -686,7 +709,9 @@ export function Disclosure({
         <span className="disclosure-title">{title}</span>
         <span className="ui-chevron" aria-hidden />
       </button>
-      {open && <div id={bodyId} className="disclosure-body">{children}</div>}
+      <div id={bodyId} className="disclosure-body" hidden={!open}>
+        {open && children}
+      </div>
     </section>
   );
 }

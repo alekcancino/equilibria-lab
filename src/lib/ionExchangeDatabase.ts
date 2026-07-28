@@ -1,28 +1,15 @@
-/** Ion exchange resin presets (typical capacities and selectivities). */
+import type { ConstantSource } from './provenance';
 
 export interface ResinPreset {
   id: string;
   name: string;
-  capacity: number;   // eq/L resin
-  /** Ksel for Na/Ca or documented primary pair */
+  capacity: number;
   ksel: number;
   ionA: string;
   ionB: string;
-  /**
-   * Charge magnitude of ion A/B used in the mass-action exponents. Only set
-   * to the real ion charge when zA ≠ zB — the pedagogical point (see
-   * batchIonExchange's docstring) is the concentration-valency effect that
-   * emerges from that mismatch. For a same-charge pair (chelating, ca-mg)
-   * both stay 1: the historical ksel values were calibrated against the
-   * app's original charge-blind (implicitly z=1) engine, and a properly
-   * balanced z:z reaction's mass-action exponents cancel back to the 1:1
-   * form regardless of z's magnitude — so setting both to the true z (e.g.
-   * 2 for Pb²⁺/Ca²⁺) would silently change these presets' numbers without
-   * a literature-sourced K to recalibrate against.
-   */
   zA: number;
   zB: number;
-  reference: string;
+  source: ConstantSource;
 }
 
 export const RESIN_PRESETS: ResinPreset[] = [
@@ -35,7 +22,15 @@ export const RESIN_PRESETS: ResinPreset[] = [
     ionB: 'Na⁺',
     zA: 2,
     zB: 1,
-    reference: 'Harvey, Ion Exchange; datos típicos 25 °C',
+    source: {
+      citation: 'Harvey, Ion Exchange',
+      locator: 'Typical strong-acid cation resin data',
+      temperatureC: 25,
+      medium: 'Aqueous, batch selectivity',
+      basis: 'concentration',
+      quality: 'illustrative',
+      verifiedOn: '2026-07-28',
+    },
   },
   {
     id: 'amberlite120',
@@ -46,7 +41,15 @@ export const RESIN_PRESETS: ResinPreset[] = [
     ionB: 'H⁺',
     zA: 2,
     zB: 1,
-    reference: 'Rohm & Haas technical data (aprox.)',
+    source: {
+      citation: 'Rohm & Haas technical data',
+      temperatureC: 25,
+      medium: 'Aqueous, batch selectivity',
+      basis: 'concentration',
+      quality: 'illustrative',
+      verifiedOn: '2026-07-28',
+      uncertainty: 'Approximate manufacturer summary',
+    },
   },
   {
     id: 'amberlite400',
@@ -57,7 +60,15 @@ export const RESIN_PRESETS: ResinPreset[] = [
     ionB: 'Cl⁻',
     zA: 2,
     zB: 1,
-    reference: 'Resina aniónica fuerte; Ksel orientativo',
+    source: {
+      citation: 'Strong-base anion exchange resin',
+      locator: 'Orientation value for SO₄²⁻/Cl⁻ selectivity',
+      temperatureC: 25,
+      medium: 'Aqueous, batch selectivity',
+      basis: 'concentration',
+      quality: 'illustrative',
+      verifiedOn: '2026-07-28',
+    },
   },
   {
     id: 'chelating',
@@ -68,7 +79,15 @@ export const RESIN_PRESETS: ResinPreset[] = [
     ionB: 'Ca²⁺',
     zA: 1,
     zB: 1,
-    reference: 'Chelex / IDA; alta selectividad por metales pesados',
+    source: {
+      citation: 'Chelex / iminodiacetate resin literature',
+      locator: 'Heavy-metal selectivity summary',
+      temperatureC: 25,
+      medium: 'Aqueous, batch selectivity',
+      basis: 'concentration',
+      quality: 'secondary',
+      verifiedOn: '2026-07-28',
+    },
   },
 ];
 
@@ -83,10 +102,68 @@ export interface ResinApplicationPreset {
   zA: number;
   zB: number;
   resinId: string;
+  source: ConstantSource;
 }
 
 export const APPLICATION_PRESETS: ResinApplicationPreset[] = [
-  { id: 'softening', label: 'Ablandamiento (Ca/Mg vs Na)', cA0: 0.005, cB0: 0.01, ksel: 2.5, ionA: 'Ca²⁺', ionB: 'Na⁺', zA: 2, zB: 1, resinId: 'dowex50' },
-  { id: 'pb-removal', label: 'Retención de Pb²⁺', cA0: 0.001, cB0: 0.01, ksel: 45, ionA: 'Pb²⁺', ionB: 'Ca²⁺', zA: 1, zB: 1, resinId: 'chelating' },
-  { id: 'ca-mg', label: 'Ca²⁺ / Mg²⁺ selectivo', cA0: 0.005, cB0: 0.01, ksel: 1.8, ionA: 'Ca²⁺', ionB: 'Mg²⁺', zA: 1, zB: 1, resinId: 'dowex50' },
+  {
+    id: 'softening',
+    label: 'Ablandamiento (Ca/Mg vs Na)',
+    cA0: 0.005,
+    cB0: 0.01,
+    ksel: 2.5,
+    ionA: 'Ca²⁺',
+    ionB: 'Na⁺',
+    zA: 2,
+    zB: 1,
+    resinId: 'dowex50',
+    source: {
+      citation: 'Water softening classroom scenario',
+      temperatureC: 25,
+      medium: 'Aqueous, illustrative feed composition',
+      basis: 'concentration',
+      quality: 'illustrative',
+      verifiedOn: '2026-07-28',
+    },
+  },
+  {
+    id: 'pb-removal',
+    label: 'Retención de Pb²⁺',
+    cA0: 0.001,
+    cB0: 0.01,
+    ksel: 45,
+    ionA: 'Pb²⁺',
+    ionB: 'Ca²⁺',
+    zA: 1,
+    zB: 1,
+    resinId: 'chelating',
+    source: {
+      citation: 'Chelating resin Pb²⁺ retention scenario',
+      temperatureC: 25,
+      medium: 'Aqueous, illustrative feed composition',
+      basis: 'concentration',
+      quality: 'illustrative',
+      verifiedOn: '2026-07-28',
+    },
+  },
+  {
+    id: 'ca-mg',
+    label: 'Ca²⁺ / Mg²⁺ selectivo',
+    cA0: 0.005,
+    cB0: 0.01,
+    ksel: 1.8,
+    ionA: 'Ca²⁺',
+    ionB: 'Mg²⁺',
+    zA: 1,
+    zB: 1,
+    resinId: 'dowex50',
+    source: {
+      citation: 'Ca/Mg selectivity classroom scenario',
+      temperatureC: 25,
+      medium: 'Aqueous, illustrative feed composition',
+      basis: 'concentration',
+      quality: 'illustrative',
+      verifiedOn: '2026-07-28',
+    },
+  },
 ];

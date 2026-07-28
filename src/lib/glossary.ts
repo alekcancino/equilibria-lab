@@ -84,6 +84,13 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
     },
     units: { es: 'V (vs ENH)', en: 'V (vs NHE)' },
   },
+  temperature: {
+    meaning: {
+      es: 'Corrección limitada al solvente: en titulación ácido-base sólo varía pKw; pKa del analito, Ksp y E° permanecen a 25 °C. En el sensor potenciométrico de precipitación sólo ajusta la pendiente de Nernst.',
+      en: 'Solvent-limited correction: in acid–base titration only pKw changes; analyte pKa, Ksp and E° stay at 25 °C. In the precipitation potentiometric sensor only the Nernst slope is adjusted.',
+    },
+    units: { es: '°C', en: '°C' },
+  },
   n: {
     meaning: {
       es: 'Número de electrones intercambiados en la semirreacción.',

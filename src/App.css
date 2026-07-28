@@ -1,5 +1,7 @@
 * { box-sizing: border-box; }
 
+[hidden] { display: none !important; }
+
 html, body, #root {
   margin: 0;
   height: 100%;
@@ -834,14 +836,14 @@ html, body, #root {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 32px;
+  height: 32px;
   font-family: inherit;
-  margin-left: 3px;
+  margin-left: 0;
   padding: 0;
   border: none;
   background: none;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
   color: var(--text-muted);
   cursor: help;
@@ -852,7 +854,7 @@ html, body, #root {
 .help-tip-btn::after {
   content: '';
   position: absolute;
-  inset: -13px;
+  inset: -6px;
 }
 
 .help-tip-btn:hover,
@@ -1448,6 +1450,31 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   white-space: nowrap;
 }
 
+.source-badge {
+  display: block;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.source-badge-compact {
+  margin-top: 6px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+.source-badge.illustrative {
+  color: #B45309;
+  border-color: color-mix(in srgb, #B45309 35%, var(--border));
+  background: color-mix(in srgb, #B45309 8%, var(--surface-alt));
+  font-weight: 650;
+}
+
 /* ---------- Mezclas ---------- */
 .mix-row {
   margin-bottom: 14px;
@@ -1641,6 +1668,7 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 }
 /* Band diagrams (predominance zones / redox scale) grow to fill the card so
    whitespace lives inside the card, not as an awkward void around it. */
+.diagram-tab-body > .wide-diagram,
 .diagram-tab-body > .predominance-diagram,
 .diagram-tab-body > .redox-scale,
 .diagram-tab-body > .predom2d,
@@ -1648,31 +1676,12 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   flex: 1;
 }
 
-/* ---------- Predominance zone diagram (SVG) ---------- */
-.predominance-diagram {
+/* ---------- Wide diagram shell (predominance, redox scale, 2D map) ---------- */
+.wide-diagram {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  height: auto;
-  width: 100%;
-  background: var(--surface-grad);
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  border-radius: var(--radius-2xl);
-  box-shadow: none;
-  padding: 28px 32px;
-}
-
-.predominance-diagram svg { display: block; width: 100%; height: auto; max-height: 240px; }
-
-.predominance-scroll-hint { display: none; }
-
-/* ---------- Mapa 2D de predominio (SVG + campo canvas) ---------- */
-.predom2d {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
   width: 100%;
   height: auto;
   background: var(--surface-grad);
@@ -1682,7 +1691,55 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
   padding: 20px 24px;
 }
 
-.predom2d svg { display: block; width: 100%; height: auto; max-height: 560px; }
+.wide-diagram-head {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding-right: 4px;
+}
+
+.wide-diagram-title {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.wide-diagram-domain {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-xs);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+
+.wide-diagram-scroll-hint { display: none; }
+
+.wide-diagram-scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wide-diagram-scroll svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---------- Predominance zone diagram (SVG) ---------- */
+.predominance-diagram { padding: 28px 32px; }
+
+.predominance-diagram .wide-diagram-scroll svg { max-height: 240px; }
+
+/* ---------- Mapa 2D de predominio (SVG + campo canvas) ---------- */
+.predom2d .wide-diagram-scroll svg { max-height: 560px; }
 
 .map2d-empty {
   display: flex;
@@ -1699,20 +1756,9 @@ select:focus { outline: none; border-color: var(--accent); box-shadow: var(--foc
 .map2d-empty-actionable > div { display: grid; justify-items: center; gap: 12px; }
 .map2d-empty-actionable p { margin: 0; }
 
-.redox-scale {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: auto;
-  width: 100%;
-  background: var(--surface-grad);
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  border-radius: var(--radius-2xl);
-  box-shadow: none;
-  padding: 28px 32px;
-}
+.redox-scale { padding: 28px 32px; }
 
-.redox-scale svg { display: block; width: 100%; height: auto; max-height: 260px; }
+.redox-scale .wide-diagram-scroll svg { max-height: 260px; }
 
 /* ---------- Grupos de la base de datos ---------- */
 .db-group-title {
@@ -2231,29 +2277,36 @@ textarea:disabled {
     min-height: 0;
   }
 
-  .predominance-diagram {
+  .wide-diagram {
     min-height: 260px;
-    height: 260px;
+    padding: 14px 12px 10px;
+  }
+
+  .wide-diagram-head {
+    margin-bottom: 8px;
+  }
+
+  .wide-diagram-scroll {
     justify-content: flex-start;
     overflow-x: auto;
-    padding: 18px 14px 10px;
     scrollbar-width: thin;
     scrollbar-color: var(--accent) var(--surface-alt);
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
   }
 
+  .diagram-tab-body > .wide-diagram,
   .diagram-tab-body > .predominance-diagram {
     flex: 0 0 260px;
+    height: 260px;
   }
 
-  .predominance-scroll-hint {
-    position: absolute;
-    left: 14px;
-    top: 12px;
-    z-index: 3;
+  .wide-diagram-scroll-hint {
     display: block;
+    justify-self: start;
   }
 
-  .predominance-scroll-hint > span {
+  .wide-diagram-scroll-hint > span {
     display: block;
     width: max-content;
     padding: 4px 8px;
@@ -2265,9 +2318,23 @@ textarea:disabled {
     box-shadow: var(--shadow-sm);
   }
 
-  .predominance-diagram svg {
+  .predominance-diagram .wide-diagram-scroll svg {
     width: 720px;
     min-width: 720px;
+    max-height: none;
+    height: auto;
+  }
+
+  .redox-scale .wide-diagram-scroll svg {
+    width: 720px;
+    min-width: 720px;
+    max-height: none;
+    height: auto;
+  }
+
+  .predom2d .wide-diagram-scroll svg {
+    width: 760px;
+    min-width: 760px;
     max-height: none;
     height: auto;
   }

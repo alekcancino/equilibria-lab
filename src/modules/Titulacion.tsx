@@ -820,7 +820,22 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             ]}
             onChange={(value) => setSolventId(value as 'water' | 'dmf' | 'ethanol')}
           />
-          {solventId === 'water' && <Slider label={t('titulacion.temperatureLabel')} value={temperatureC} min={10} max={100} step={5} onChange={setTemperatureC} unit="°C" decimals={0} />}
+          {solventId === 'water' && (
+            <>
+              <Slider
+                label={t('titulacion.temperatureScopeLabel')}
+                value={temperatureC}
+                min={10}
+                max={100}
+                step={5}
+                onChange={setTemperatureC}
+                unit="°C"
+                decimals={0}
+                helpId="temperature"
+              />
+              <p className="hint">{t('titulacion.temperatureScopeHint')}</p>
+            </>
+          )}
           <p className="hint">{t('titulacion.solventStateHint', { pkw: thermoState.pKw.toFixed(3), lionium: thermoState.lioniumLabel, lyate: thermoState.lyateLabel })}</p>
           <ConcSlider label={t('titulacion.analyteConcLabel')} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
           <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
@@ -2189,7 +2204,18 @@ function PrecipTitration({ mode }: { mode: Mode }) {
               <Slider label={t('titulacion.logAlphaCation')} value={logAlphaCation} min={0} max={20} step={0.1} decimals={1} onChange={setLogAlphaCation} />
               <Slider label={t('titulacion.logAlphaAnion')} value={logAlphaAnion} min={0} max={20} step={0.1} decimals={1} onChange={setLogAlphaAnion} />
               <Slider label="E° (V)" value={sensorE0} min={-1.5} max={2.5} step={0.01} decimals={2} onChange={setSensorE0} />
-              <Slider label={t('titulacion.temperatureLabel')} value={sensorTemperature} min={0} max={100} step={1} decimals={0} unit="°C" onChange={setSensorTemperature} />
+              <Slider
+                label={t('titulacion.temperatureScopeLabel')}
+                value={sensorTemperature}
+                min={0}
+                max={100}
+                step={1}
+                decimals={0}
+                unit="°C"
+                onChange={setSensorTemperature}
+                helpId="temperature"
+              />
+              <p className="hint">{t('titulacion.sensorTemperatureScopeHint')}</p>
             </>
           )}
         </PanelSection>
