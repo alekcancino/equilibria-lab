@@ -7,11 +7,11 @@ import {
 } from './helpers';
 
 for (const moduleId of STRESS_MODULE_IDS) {
-  test(`${moduleId} loads at 320px without overflow`, async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'narrow', '320px layout smoke only');
+  test(`${moduleId} loads at 768px without overflow`, async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'tablet', '768px layout smoke only');
     const errors = collectPageErrors(page);
     await openModule(page, moduleId);
     await assertNoHorizontalOverflow(page);
-    expect(errors, `uncaught errors on ${moduleId} at 320px`).toEqual([]);
+    expect(errors, `uncaught errors on ${moduleId} at 768px`).toEqual([]);
   });
 }

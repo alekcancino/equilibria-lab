@@ -22,6 +22,17 @@ export const MODULE_IDS = [
 
 export type ModuleId = (typeof MODULE_IDS)[number];
 
+/** Audit stress set: dense charts, wide diagrams, multi-tab modules. */
+export const STRESS_MODULE_IDS = [
+  'acidobase',
+  'complejos',
+  'pourbaix',
+  'solcond',
+  'titulacion',
+] as const;
+
+export type StressModuleId = (typeof STRESS_MODULE_IDS)[number];
+
 export function collectPageErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));

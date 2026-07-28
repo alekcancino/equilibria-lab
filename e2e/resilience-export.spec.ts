@@ -36,3 +36,17 @@ test('chart export menu downloads CSV data', async ({ page }, testInfo) => {
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.csv$/i);
 });
+
+test('chart export menu downloads PNG image', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'desktop-only smoke');
+  await seedLanguage(page, 'en');
+  await openModule(page, 'actividad');
+  await expect(page.locator('.js-plotly-plot')).toBeVisible({ timeout: 30_000 });
+
+  const toolbar = page.getByRole('toolbar', { name: 'Chart controls' });
+  await toolbar.getByRole('button', { name: 'Export' }).click();
+  const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
+  await page.getByRole('menuitem').filter({ hasText: 'Chart image' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.png$/i);
+});
