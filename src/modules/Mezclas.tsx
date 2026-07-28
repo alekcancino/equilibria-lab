@@ -7,7 +7,7 @@ import DiagramTabs from '../components/DiagramTabs';
 import { ConcSlider, Disclosure, InfoBox, ModelBadge, PanelSection, ResultCard, ResultCardRow, SelectControl, Segmented, Slider, Toggle } from '../components/Controls';
 import { AcidSystemEditor } from '../components/Editors';
 import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } from '../lib/editorModels';
-import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from '../lib/equilibrium';
+import { solvePH, solvePHDetailed, alphaFractions, saltCounterIons, defaultStartIndex, type AcidBaseComponent } from '../lib/equilibrium';
 import { firstDerivative } from '../lib/titration';
 import type { GammaModel } from '../lib/activity';
 import { useT } from '../hooks/useT';
@@ -134,14 +134,21 @@ export default function Mezclas() {
     'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel,
   }), [rows, ionicStrength, gammaModel, GAMMA_MODELS]);
 
-  const pHMix = useMemo(() => {
+  const pHSolution = useMemo(() => {
     const { comps, cations, anions } = buildComponents(1);
-    return solvePH(comps, cations, anions, ionicStrength, gammaModel);
+    return solvePHDetailed(comps, cations, anions, ionicStrength, gammaModel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, ionicStrength, gammaModel]);
+  const pHMix = pHSolution.pH;
   const pHInvalid = !Number.isFinite(pHMix);
+  const pHWarning = pHSolution.boundaryHit
+    ? t('equilibrium.pHOutOfDomain')
+    : null;
 
   const speciation = useMemo(() => {
+    if (pHSolution.boundaryHit) {
+      return [{ label: t('mezclas.mixturePH'), value: t('equilibrium.pHOutOfDomain') }];
+    }
     if (pHInvalid) {
       return [{ label: t('mezclas.mixturePH'), value: t('mezclas.noRootFound') }];
     }
@@ -156,7 +163,7 @@ export default function Mezclas() {
       });
     }
     return items;
-  }, [rows, pHMix, pHInvalid, t]);
+  }, [rows, pHMix, pHInvalid, pHSolution.boundaryHit, t]);
 
   const curve = useMemo(() => {
     if (!titrate) return null;
@@ -383,6 +390,7 @@ export default function Mezclas() {
           { label: t('mezclas.componentsResult'), value: String(rows.length) },
           { label: t('mezclas.titrantResult'), value: titrate ? titrantName : '—' },
         ]} />
+        {pHWarning && <p className="hint ph-warning">{pHWarning}</p>}
       </section>
     </div>
   );

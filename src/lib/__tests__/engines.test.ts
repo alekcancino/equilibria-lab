@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { solvePH, alphaFractions, saltCounterIons, defaultStartIndex } from '../equilibrium';
+import { solvePH, solvePHDetailed, alphaFractions, saltCounterIons, defaultStartIndex } from '../equilibrium';
 import {
   complexFractions, bjerrumNumber, solvePL,
   twoLigandFractions, solveTwoLigandEquilibrium, twoLigandCurve,
@@ -108,6 +108,36 @@ describe('solvePH', () => {
       solvePH([comp], 0.1, 0, I, 'guntelberg'),
     ];
     expect(new Set([dh, davies, guntelberg]).size).toBe(3);
+  });
+
+  it('solvePHDetailed flags a high-boundary hit when the root lies above the range', () => {
+    const result = solvePHDetailed([], 0.5, 0, 0, 'dh', 14, [-2, 2]);
+    expect(result.boundaryHit).toBe('high');
+    expect(result.converged).toBe(false);
+    expect(result.pH).toBe(2);
+    expect(solvePH([], 0.5, 0, 0, 'dh', 14, [-2, 2])).toBe(2);
+  });
+
+  it('solvePHDetailed flags a low-boundary hit when the root lies below the range', () => {
+    const result = solvePHDetailed([], 0, 0.5, 0, 'dh', 14, [10, 14]);
+    expect(result.boundaryHit).toBe('low');
+    expect(result.converged).toBe(false);
+    expect(result.pH).toBe(10);
+  });
+
+  it('solvePHDetailed treats an all-positive bracket as a high-boundary hit', () => {
+    const result = solvePHDetailed([], 1, 0, 0, 'dh', 14, [0, 1]);
+    expect(result.boundaryHit).toBe('high');
+    expect(result.converged).toBe(false);
+    expect(Number.isNaN(result.pH)).toBe(false);
+  });
+
+  it('solvePHDetailed converges on the same golden pH as solvePH', () => {
+    const comp: AcidBaseComponent = { c: 0.1, z0: 0, pKas: [4.76] };
+    const detailed = solvePHDetailed([comp]);
+    expect(detailed.converged).toBe(true);
+    expect(detailed.boundaryHit).toBeNull();
+    expect(detailed.pH).toBeCloseTo(solvePH([comp]), 10);
   });
 });
 

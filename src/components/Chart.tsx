@@ -4,6 +4,7 @@ import PlotToolbar from './PlotToolbar';
 import { dataUrlToBlob, downloadBlob, tracesToCSV, downloadCSV } from '../lib/export';
 import { useT } from '../hooks/useT';
 import { chartTraceFacts } from '../lib/chartAccessibility';
+import RecoverableErrorBoundary from './RecoverableErrorBoundary';
 
 const PlotChart = lazy(() => import('./PlotChart'));
 
@@ -129,9 +130,15 @@ export default function Chart(props: ChartProps) {
         <PlotToolbar onResetZoom={resetZoom} onExportPng={exportPng} onExportCsv={exportCsv} />
       </div>
       <div className="chart-plot" role="img" aria-label={chartSummary}>
-        <Suspense fallback={<div className="chart-loading">{t('chart.loading')}</div>}>
-          <PlotChart {...props} onGraphDiv={onGraphDiv} onHover={onHover} />
-        </Suspense>
+        <RecoverableErrorBoundary
+          resetKey={`${exportName}-${props.data.length}`}
+          message={t('chart.loadError')}
+          retryLabel={t('chrome.retry')}
+        >
+          <Suspense fallback={<div className="chart-loading">{t('chart.loading')}</div>}>
+            <PlotChart {...props} onGraphDiv={onGraphDiv} onHover={onHover} />
+          </Suspense>
+        </RecoverableErrorBoundary>
       </div>
       {showReadout && (
         <p className="chart-readout" aria-live="polite" aria-atomic="true">

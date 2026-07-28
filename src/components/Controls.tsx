@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { GLOSSARY } from '../lib/glossary';
+import { formatConstantSource, type ConstantSource } from '../lib/provenance';
 import { useLanguage } from '../hooks/useLanguage';
 import { useT } from '../hooks/useT';
 
@@ -433,6 +434,7 @@ export function LabelList({
  */
 export function ConstantList({
   prefix, values, onChange, min, max, maxItems = 6, minItems = 1, initialValue = 7, helpId,
+  strictlyAscending = false,
 }: {
   prefix: string;
   values: number[];
@@ -443,8 +445,13 @@ export function ConstantList({
   minItems?: number;
   initialValue?: number;
   helpId?: string;
+  /** Keep successive macroscopic constants in their thermodynamic order. */
+  strictlyAscending?: boolean;
 }) {
   const t = useT();
+  const step = 0.01;
+  const canAdd = values.length < maxItems
+    && (!strictlyAscending || values.length === 0 || (values[values.length - 1] ?? max) < max - step);
   return (
     <div className="constant-list">
       {values.map((v, i) => (
@@ -453,9 +460,9 @@ export function ConstantList({
             <Slider
               label={`${prefix}${values.length > 1 ? i + 1 : ''}`}
               value={v}
-              min={min}
-              max={max}
-              step={0.01}
+              min={strictlyAscending && i > 0 ? Math.max(min, values[i - 1] + step) : min}
+              max={strictlyAscending && i < values.length - 1 ? Math.min(max, values[i + 1] - step) : max}
+              step={step}
               helpId={i === 0 ? helpId : undefined}
               onChange={(nv) => onChange(values.map((x, j) => (j === i ? nv : x)))}
             />
@@ -472,7 +479,7 @@ export function ConstantList({
           </button>
         </div>
       ))}
-      {values.length < maxItems && (
+      {canAdd && (
         <button
           type="button"
           className="add-btn"
@@ -500,6 +507,7 @@ export interface DbItem {
   detail: string;
   /** Optional group for visual grouping (e.g. "Monoprotic") */
   group?: string;
+  source?: ConstantSource;
 }
 
 export function DbPanel({
@@ -529,6 +537,7 @@ export function DbPanel({
     >
       <span className="db-item-label">{it.label}</span>
       <span className="db-item-detail">{it.detail}</span>
+      {it.source && <SourceBadge source={it.source} compact />}
     </button>
   );
 
@@ -581,6 +590,24 @@ export function SystemPresetPicker({
         </div>
       ))}
     </details>
+  );
+}
+
+/** Bibliographic badge for preset constants with quality signaling. */
+export function SourceBadge({ source, compact = false }: { source: ConstantSource; compact?: boolean }) {
+  const t = useT();
+  if (source.quality === 'illustrative') {
+    return (
+      <span className={compact ? 'source-badge source-badge-compact illustrative' : 'source-badge illustrative'}>
+        {t('provenance.illustrative')}
+      </span>
+    );
+  }
+  const text = formatConstantSource(source);
+  return (
+    <span className={compact ? 'source-badge source-badge-compact' : 'source-badge'} title={text}>
+      {text}
+    </span>
   );
 }
 
@@ -646,7 +673,9 @@ export function PanelSection({
           </button>
         )
         : header}
-      {open && <div id={bodyId} className="psection-body">{children}</div>}
+      <div id={bodyId} className="psection-body" hidden={!open}>
+        {open && children}
+      </div>
     </section>
   );
 }
@@ -680,7 +709,9 @@ export function Disclosure({
         <span className="disclosure-title">{title}</span>
         <span className="ui-chevron" aria-hidden />
       </button>
-      {open && <div id={bodyId} className="disclosure-body">{children}</div>}
+      <div id={bodyId} className="disclosure-body" hidden={!open}>
+        {open && children}
+      </div>
     </section>
   );
 }

@@ -100,6 +100,36 @@ export function chargeBalance(
  * model: which γ convention to apply at I > 0 (default extended D-H,
  * a = 3 Å, unchanged from before this parameter existed).
  */
+export interface PHSolution {
+  pH: number;
+  converged: boolean;
+  boundaryHit: 'low' | 'high' | null;
+}
+
+export function solvePHDetailed(
+  components: AcidBaseComponent[],
+  extraCations = 0,
+  extraAnions = 0,
+  I = 0,
+  model: GammaModel = 'dh',
+  pKw = 14,
+  pHRange: [number, number] = [-2, pKw + 2],
+): PHSolution {
+  let [lo, hi] = pHRange;
+  const fLo = chargeBalance(lo, components, extraCations, extraAnions, I, model, pKw);
+  const fHi = chargeBalance(hi, components, extraCations, extraAnions, I, model, pKw);
+  if (fLo <= 0) return { pH: lo, converged: false, boundaryHit: 'low' };
+  if (fHi >= 0) return { pH: hi, converged: false, boundaryHit: 'high' };
+  if (fLo * fHi > 0) return { pH: NaN, converged: false, boundaryHit: null };
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2;
+    const f = chargeBalance(mid, components, extraCations, extraAnions, I, model, pKw);
+    if (f > 0) lo = mid;
+    else hi = mid;
+  }
+  return { pH: (lo + hi) / 2, converged: true, boundaryHit: null };
+}
+
 export function solvePH(
   components: AcidBaseComponent[],
   extraCations = 0,
@@ -109,19 +139,7 @@ export function solvePH(
   pKw = 14,
   pHRange: [number, number] = [-2, pKw + 2],
 ): number {
-  let [lo, hi] = pHRange;
-  const fLo = chargeBalance(lo, components, extraCations, extraAnions, I, model, pKw);
-  const fHi = chargeBalance(hi, components, extraCations, extraAnions, I, model, pKw);
-  if (fLo <= 0) return lo;
-  if (fHi >= 0) return hi;
-  if (fLo * fHi > 0) return NaN;
-  for (let i = 0; i < 80; i++) {
-    const mid = (lo + hi) / 2;
-    const f = chargeBalance(mid, components, extraCations, extraAnions, I, model, pKw);
-    if (f > 0) lo = mid;
-    else hi = mid;
-  }
-  return (lo + hi) / 2;
+  return solvePHDetailed(components, extraCations, extraAnions, I, model, pKw, pHRange).pH;
 }
 
 /**

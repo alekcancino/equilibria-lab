@@ -66,14 +66,16 @@ export default function ModuleGuide({ id }: { id: ModuleGuideId }) {
         <span>{t('guide.howToUse')}</span>
         <span className="ui-chevron" aria-hidden />
       </button>
-      {open && (
-        <div id={workflowId} className="module-guide-workflow">
-          <span className="module-guide-sequence" aria-hidden>
-            {t('guide.define')} → {t('guide.interpret')} → {t('guide.extend')}
-          </span>
-          <p>{t(keys.workflow)}</p>
-        </div>
-      )}
+      <div id={workflowId} className="module-guide-workflow" hidden={!open}>
+        {open && (
+          <>
+            <span className="module-guide-sequence" aria-hidden>
+              {t('guide.define')} → {t('guide.interpret')} → {t('guide.extend')}
+            </span>
+            <p>{t(keys.workflow)}</p>
+          </>
+        )}
+      </div>
     </section>
   );
 }

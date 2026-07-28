@@ -20,48 +20,17 @@ import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { Disclosure, InfoBox, ModelBadge, NumberSegmented, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow, Segmented, SelectControl } from '../components/Controls';
+import { Disclosure, InfoBox, ModelBadge, NumberSegmented, ResultCard, Slider, Toggle, ConstantList, PanelSection, ResultCardRow, Segmented, SelectControl, SourceBadge } from '../components/Controls';
 import {
   conditionalChelateLogK, distributionD, percentE1, percentEn, nFor, sequentialExtraction, type AnalyteState,
 } from '../lib/extraction';
+import { EXTRACTION_PRESETS } from '../lib/extractionDatabase';
 import { SPECIES_COLORS } from '../lib/database';
 import { useT } from '../hooks/useT';
 
 // ── Presets ───────────────────────────────────────────────────────────────────
 
-
-interface ExtractionPreset {
-  id: string;
-  label: string;
-  formula: string;
-  type: 'acid' | 'chelate';
-  logKd: number;
-  pKas: number[];
-  neutralIdx: number;
-  system: string;
-  reference?: string;
-  // quelato
-  n?: number;
-  logCHL?: number;
-}
-
-// Data note: dithizone logKd/pKa follow Harris (KL = 1.1e4, Ka = 3e-5 in CHCl3/H2O — Harris,
-// QCA 8th ed., problems 22-13/22-14), which settled a 100x discrepancy against another source
-// (see docs/testing/BOOK-QA-LOG.md finding B-7). pb_dithiz remains unreferenced.
-const PRESETS: ExtractionPreset[] = [
-  { id: 'benzoico',  label: 'Ácido benzoico',         formula: 'C₆H₅COOH', type: 'acid',    logKd:  2.22, pKas: [4.20],         neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
-  { id: 'salicilico',label: 'Ácido salicílico',       formula: 'HOC₆H₄COOH',type: 'acid',   logKd:  2.40, pKas: [3.00, 13.40], neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
-  { id: 'aspirina',  label: 'Ácido acetilsalicílico', formula: 'HC₉H₇O₄',  type: 'acid',    logKd:  1.70, pKas: [3.50],         neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
-  { id: 'acetico',   label: 'Ácido acético',           formula: 'CH₃COOH',  type: 'acid',    logKd: -0.23, pKas: [4.76],         neutralIdx: 0, system: 'Et₂O/H₂O',  reference: 'Harris, QCA' },
-  { id: '8hq',       label: '8-Hidroxiquinolina',      formula: 'HQ',        type: 'acid',    logKd:  2.70, pKas: [5.13, 9.89],  neutralIdx: 1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },
-  { id: 'dithizone', label: 'Ditizona',                formula: 'H₂Dz',     type: 'acid',    logKd:  4.04, pKas: [4.52],         neutralIdx: 0, system: 'CHCl₃/H₂O', reference: 'Harris, QCA' },
-  { id: 'I2',        label: 'Yodo molecular',          formula: 'I₂',        type: 'acid',    logKd:  2.83, pKas: [],             neutralIdx: 0, system: 'CCl₄/H₂O',  reference: 'Harris, QCA' },
-  // Metal chelates — D = K_ex · [HL]^n · 10^(n·pH)
-  { id: 'cu_8hq',    label: 'Cu²⁺ + 8-HQ',            formula: 'Cu(Ox)₂',   type: 'chelate', logKd:  9.10, pKas: [], neutralIdx: 0, n: 2, logCHL: -1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },
-  { id: 'zn_8hq',    label: 'Zn²⁺ + 8-HQ',            formula: 'Zn(Ox)₂',   type: 'chelate', logKd:  8.70, pKas: [], neutralIdx: 0, n: 2, logCHL: -1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },
-  { id: 'fe_8hq',    label: 'Fe³⁺ + 8-HQ',            formula: 'Fe(Ox)₃',   type: 'chelate', logKd: 12.10, pKas: [], neutralIdx: 0, n: 3, logCHL: -1, system: 'CHCl₃/H₂O', reference: 'Skoog, Principles of Analytical Chemistry' },
-  { id: 'pb_dithiz', label: 'Pb²⁺ + Ditizona',         formula: 'Pb(HDz)₂', type: 'chelate', logKd:  6.30, pKas: [], neutralIdx: 0, n: 2, logCHL: -2, system: 'CHCl₃/H₂O' },
-];
+const PRESETS = EXTRACTION_PRESETS;
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 
@@ -199,6 +168,10 @@ function AnalyteEditor({ a, color, additions, onChange }: {
           </button>
         ))}
       </div>
+      {(() => {
+        const activePreset = PRESETS.find((preset) => preset.formula === a.label);
+        return activePreset ? <SourceBadge source={activePreset.source} /> : null;
+      })()}
 
       {a.type === 'acid' ? (
         <>
@@ -212,6 +185,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
             maxItems={4}
             minItems={0}
             initialValue={4.76}
+            strictlyAscending
           />
           {a.pKas.length > 1 && (
             <>

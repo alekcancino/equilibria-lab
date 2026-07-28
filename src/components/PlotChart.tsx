@@ -6,6 +6,8 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { useTheme } from '../hooks/useTheme';
 import { toDarkColors } from '../lib/plotTheme';
 import { plotlySafeFontFamily } from '../lib/export';
+import { legendPlan } from '../lib/plotLegend';
+import { applySeriesEncoding } from '../lib/plotSeriesStyle';
 import type { ChartHoverPoint, ChartProps } from './Chart';
 
 const factory = (createPlotlyComponent as unknown as { default?: typeof createPlotlyComponent }).default
@@ -65,7 +67,7 @@ export default function PlotChart({
 
   // Modules build traces with the light palette; remap to validated dark twins.
   const themedData = useMemo(
-    () => (dark ? toDarkColors(data)! : data),
+    () => applySeriesEncoding(dark ? toDarkColors(data)! : data),
     [dark, data],
   );
   const themedShapes = useMemo(
@@ -96,24 +98,28 @@ export default function PlotChart({
       return entry.showlegend !== false && Boolean(entry.name);
     });
     const legendNeeded = showLegend && legendEntries.length > 1;
-    const mobileLegendAbove = mobile && legendNeeded;
     const longestLegendLabel = legendEntries.reduce((longest, trace) => {
       const name = (trace as { name?: string }).name?.replace(/<[^>]*>/g, '') ?? '';
       return Math.max(longest, name.length);
     }, 0);
-    const mobileLegendColumns = viewportWidth < 340 && longestLegendLabel > 12 ? 1 : 2;
-    const legendRows = mobileLegendAbove ? Math.ceil(legendEntries.length / mobileLegendColumns) : 0;
+    const plan = legendPlan({
+      entryCount: legendEntries.length,
+      longestLabelChars: longestLegendLabel,
+      viewportWidth,
+      mobile,
+    });
+    const mobileLegendAbove = mobile && legendNeeded && plan.rows > 0;
 
     return {
       autosize: true,
       margin: mobile
-        ? {
-          l: 46,
-          r: 14,
-          t: mobileLegendAbove ? 28 + legendRows * 20 : 10,
-          b: 48,
-        }
-        : { l: 58, r: 18, t: 14, b: legendNeeded ? 56 : 50 },
+        ? { l: 46, r: plan.margin.r, t: plan.margin.t, b: plan.margin.b }
+        : {
+          l: 58,
+          r: legendNeeded ? plan.margin.r : 18,
+          t: plan.margin.t,
+          b: legendNeeded ? plan.margin.b : 50,
+        },
       paper_bgcolor: 'transparent',
       plot_bgcolor: plotBg,
       font: { family: fontFamily, size: fontSize, color: textColor },
@@ -146,18 +152,19 @@ export default function PlotChart({
       },
       showlegend: legendNeeded,
       legend: legendNeeded ? {
-        orientation: 'h',
+        orientation: plan.orientation,
         font: { size: fontSize, family: fontFamily },
-        ...(mobileLegendAbove
+        x: plan.position.x,
+        y: plan.position.y,
+        xanchor: plan.position.xanchor,
+        yanchor: plan.position.yanchor,
+        ...(mobileLegendAbove && plan.entrywidth !== undefined
           ? {
-            y: 1.07,
-            yanchor: 'bottom',
-            x: 0,
-            xanchor: 'left',
             entrywidthmode: 'fraction' as const,
-            entrywidth: 1 / mobileLegendColumns,
+            entrywidth: plan.entrywidth,
           }
-          : { y: mobile ? -0.24 : -0.2 }),
+          : {}),
+        ...(plan.orientation === 'v' ? { tracegroupgap: 4 } : {}),
       } : undefined,
       hovermode: mobile ? 'closest' : 'x unified',
       shapes: themedShapes,

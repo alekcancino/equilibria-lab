@@ -11,7 +11,7 @@ import { defaultAcidSystem, isValidAcidSystem, systemLabels, type AcidSystem } f
 import { MARKER_COLOR, SPECIES_COLORS } from '../lib/database';
 import { ladderFractions, ladderLogC, predominanceZones } from '../lib/ladder';
 import { glycineMacroConstants, glycineMicrostateFractions } from '../lib/acidBaseMicrostates';
-import { solvePH, saltCounterIons, defaultStartIndex } from '../lib/equilibrium';
+import { solvePHDetailed, saltCounterIons, defaultStartIndex } from '../lib/equilibrium';
 import type { GammaModel } from '../lib/activity';
 import { useActivityNote } from '../context/ActivityContext';
 import { useT } from '../hooks/useT';
@@ -69,16 +69,15 @@ export default function AcidoBase() {
     'Modelo γ': GAMMA_MODELS.find((m) => m.value === gammaModel)?.label ?? gammaModel,
   }), [system.label, conc, ionicStrength, gammaModel, GAMMA_MODELS]);
 
-  const pHSystem = useMemo(() => {
-    // "pH disolución pura" dissolves the system at its default ladder index
-    // (the neutral species when one exists; the parent ion itself for an
-    // aqua-acid cation that never reaches neutral, e.g. Fe³⁺) — see
-    // saltCounterIons/defaultStartIndex in equilibrium.ts for the general
-    // derivation, shared with titration.ts's analyte handling.
+  const pHSolution = useMemo(() => {
     const { cations, anions } = saltCounterIons(system.z0, defaultStartIndex(system.z0, system.pKas.length));
-    return solvePH([{ c: conc, z0: system.z0, pKas: system.pKas }], cations * conc, anions * conc, ionicStrength, gammaModel);
+    return solvePHDetailed([{ c: conc, z0: system.z0, pKas: system.pKas }], cations * conc, anions * conc, ionicStrength, gammaModel);
   }, [system, conc, ionicStrength, gammaModel]);
+  const pHSystem = pHSolution.pH;
   const pHInvalid = !Number.isFinite(pHSystem);
+  const pHWarning = pHSolution.boundaryHit
+    ? t('equilibrium.pHOutOfDomain')
+    : (pHInvalid ? t('mezclas.noRootFound') : null);
 
   // α distribution vs pH
   const alphaTraces = useMemo<Data[]>(() => {
@@ -304,6 +303,7 @@ export default function AcidoBase() {
             { label: t('acidoBase.tautomerizationK'), value: microMacro.tautomerizationK.toExponential(2) },
           ] : []),
         ]} />
+        {pHWarning && <p className="hint ph-warning">{pHWarning}</p>}
       </section>
     </div>
   );

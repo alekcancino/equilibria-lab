@@ -35,58 +35,63 @@ export default function RedoxPredictionScale({ couples, peMin, peMax, caption }:
   );
 
   return (
-    <div className="redox-scale" role="img" aria-labelledby={titleId} aria-describedby={descId}>
+    <div className="wide-diagram redox-scale" role="img" aria-labelledby={titleId} aria-describedby={descId}>
       <span id={titleId} className="sr-only">{t('diagram.redoxScaleTitle')}</span>
       <span id={descId} className="sr-only">
         {caption ? `${caption}. ` : ''}
         {t('diagram.redoxScaleDesc', { min: formatAxisLabel(peMin), max: formatAxisLabel(peMax), couples: coupleSummary })}
       </span>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden="true">
-        {caption && (
-          <text x={W / 2} y={28} textAnchor="middle" fontSize={18} fill="var(--text-muted)">
-            {caption}
+      <div className="wide-diagram-head">
+        {caption && <p className="wide-diagram-title">{caption}</p>}
+        <p className="wide-diagram-domain">
+          {t('diagram.domainRule', { min: formatAxisLabel(peMin), max: formatAxisLabel(peMax), axis: 'pe' })}
+        </p>
+        <span className="wide-diagram-scroll-hint" aria-hidden="true">
+          <span>{t('diagram.scrollHint')}</span>
+        </span>
+      </div>
+      <div className="wide-diagram-scroll">
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden="true">
+          {couples.map((c, i) => {
+            const y = RAIL_Y[i] ?? RAIL_Y[0];
+            const px = x(c.pe0);
+            return (
+              <g key={c.label}>
+                <line x1={0} y1={y} x2={W} y2={y} stroke="var(--plot-axis)" strokeWidth={1.5} />
+                <line
+                  x1={px}
+                  y1={y - TICK_H}
+                  x2={px}
+                  y2={y + TICK_H}
+                  stroke={c.color}
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                />
+                <text x={px} y={y - TICK_H - 10} textAnchor="middle" fontSize={16} fontWeight={600} fill={c.color}>
+                  {c.ox}
+                </text>
+                <text x={px} y={y + TICK_H + 22} textAnchor="middle" fontSize={16} fontWeight={600} fill={c.color}>
+                  {c.red}
+                </text>
+                <text x={px} y={y + 5} textAnchor="middle" fontSize={14} fontWeight={600} fill="var(--text)">
+                  {formatAxisLabel(c.pe0)}
+                </text>
+              </g>
+            );
+          })}
+
+          <line x1={0} y1={H - 52} x2={W} y2={H - 52} stroke="var(--plot-axis)" strokeWidth={1.5} />
+          <text x={4} y={H - 28} textAnchor="start" fontSize={16} fill="var(--text-muted)">
+            {formatAxisLabel(peMin)}
           </text>
-        )}
-
-        {couples.map((c, i) => {
-          const y = RAIL_Y[i] ?? RAIL_Y[0];
-          const px = x(c.pe0);
-          return (
-            <g key={c.label}>
-              <line x1={0} y1={y} x2={W} y2={y} stroke="var(--plot-axis)" strokeWidth={1.5} />
-              <line
-                x1={px}
-                y1={y - TICK_H}
-                x2={px}
-                y2={y + TICK_H}
-                stroke={c.color}
-                strokeWidth={3}
-                strokeLinecap="round"
-              />
-              <text x={px} y={y - TICK_H - 10} textAnchor="middle" fontSize={16} fontWeight={600} fill={c.color}>
-                {c.ox}
-              </text>
-              <text x={px} y={y + TICK_H + 22} textAnchor="middle" fontSize={16} fontWeight={600} fill={c.color}>
-                {c.red}
-              </text>
-              <text x={px} y={y + 5} textAnchor="middle" fontSize={14} fontWeight={600} fill="var(--text)">
-                {formatAxisLabel(c.pe0)}
-              </text>
-            </g>
-          );
-        })}
-
-        <line x1={0} y1={H - 52} x2={W} y2={H - 52} stroke="var(--plot-axis)" strokeWidth={1.5} />
-        <text x={4} y={H - 28} textAnchor="start" fontSize={16} fill="var(--text-muted)">
-          {formatAxisLabel(peMin)}
-        </text>
-        <text x={W - 4} y={H - 28} textAnchor="end" fontSize={16} fill="var(--text-muted)">
-          {formatAxisLabel(peMax)}
-        </text>
-        <text x={W / 2} y={H - 6} textAnchor="middle" fontSize={20} fontWeight={600} fill="var(--text)">
-          pe
-        </text>
-      </svg>
+          <text x={W - 4} y={H - 28} textAnchor="end" fontSize={16} fill="var(--text-muted)">
+            {formatAxisLabel(peMax)}
+          </text>
+          <text x={W / 2} y={H - 6} textAnchor="middle" fontSize={20} fontWeight={600} fill="var(--text)">
+            pe
+          </text>
+        </svg>
+      </div>
     </div>
   );
 }

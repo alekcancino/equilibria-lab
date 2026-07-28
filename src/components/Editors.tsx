@@ -64,6 +64,7 @@ export function AcidSystemEditor({
         values={system.pKas}
         min={-2}
         max={35}
+        strictlyAscending
         // An aqua-acid cation (z0≥3) with zero pKas is chemically ill-defined
         // (no charge/anion convention applies) and downstream analyteKind
         // classification (Titulacion.tsx) special-cases only z0=1 as "strong
@@ -215,6 +216,7 @@ export function SideReactionEditor({
             maxItems={8}
             minItems={0}
             initialValue={4.76}
+            strictlyAscending
           />
         </details>
       )}
@@ -317,6 +319,7 @@ export function SideReactionEditor({
               maxItems={4}
               minItems={1}
               initialValue={9.2}
+              strictlyAscending
             />
             <p className="hint">{t('sideReactionEditor.nh3Hint')}</p>
           </>

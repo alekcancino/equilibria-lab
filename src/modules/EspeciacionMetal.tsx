@@ -465,6 +465,7 @@ export default function EspeciacionMetal() {
             maxItems={4}
             minItems={0}
             initialValue={9.25}
+            strictlyAscending
             onChange={(pKasL) => setSys({ ...sys, pKasL })}
           />
           <p className="hint">

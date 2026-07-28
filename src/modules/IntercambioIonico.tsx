@@ -4,7 +4,7 @@ import type { Data } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import DiagramTabs from '../components/DiagramTabs';
-import { ConcSlider, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Slider, Toggle } from '../components/Controls';
+import { ConcSlider, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Slider, SourceBadge, Toggle } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import {
   batchIonExchange, breakthroughCurve, competitiveIonExchange, craigBreakthrough, isothermCurve, selectivityFromKd,
@@ -395,6 +395,9 @@ export default function IntercambioIonico() {
             </button>
           ))}
         </div>
+        {RESIN_PRESETS.find((preset) => preset.id === resinId) && (
+          <SourceBadge source={RESIN_PRESETS.find((preset) => preset.id === resinId)!.source} />
+        )}
         <p className="hint">{t('intercambioIonico.applicationsHint')}</p>
         <div className="preset-chip-row preset-chip-row-roomy">
           {APPLICATION_PRESETS.map((p) => (

@@ -40,96 +40,100 @@ export default function PredominanceDiagram({ zones, pMin, pMax, pLabel, marker,
   );
 
   return (
-    <div className="predominance-diagram" role="img" aria-labelledby={titleId} aria-describedby={descId}>
+    <div className="wide-diagram predominance-diagram" role="img" aria-labelledby={titleId} aria-describedby={descId}>
       <span id={titleId} className="sr-only">{t('diagram.predominanceTitle', { axis: pLabel })}</span>
       <span id={descId} className="sr-only">
         {caption ? `${caption}. ` : ''}
         {t('diagram.predominanceDesc', { axis: pLabel, zones: zoneSummary, min: formatAxisLabel(pMin), max: formatAxisLabel(pMax) })}
         {marker ? ` ${marker.label ?? `${pLabel} ${marker.p.toFixed(2)}`}.` : ''}
       </span>
-      <span className="predominance-scroll-hint" aria-hidden="true"><span>{t('diagram.scrollHint')}</span></span>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden="true">
-        {caption && (
-          <text x={W / 2} y={34} textAnchor="middle" fontSize={20} fill="var(--text-muted)">
-            {caption}
-          </text>
-        )}
-
-        {zones.map((z, i) => {
-          const x0 = x(z.pStart);
-          const x1 = x(z.pEnd);
-          const w = x1 - x0;
-          const cx = (x0 + x1) / 2;
-          const fontSize = Math.min(20, Math.max(11, w / 5.5));
-          const showLabel = w > 24;
-          return (
-            <g key={i}>
-              <rect
-                x={x0}
-                y={BAND_TOP}
-                width={w}
-                height={BAND_H}
-                fill={z.color}
-                fillOpacity={0.16}
-                stroke={z.color}
-                strokeWidth={2}
-              />
-              {showLabel && (
-                <text
-                  x={cx}
-                  y={BAND_TOP + BAND_H / 2 + fontSize * 0.35}
-                  textAnchor="middle"
-                  fontSize={fontSize}
-                  fontWeight={600}
+      <div className="wide-diagram-head">
+        {caption && <p className="wide-diagram-title">{caption}</p>}
+        <p className="wide-diagram-domain">
+          {t('diagram.domainRule', { min: formatAxisLabel(pMin), max: formatAxisLabel(pMax), axis: pLabel })}
+        </p>
+        <span className="wide-diagram-scroll-hint" aria-hidden="true">
+          <span>{t('diagram.scrollHint')}</span>
+        </span>
+      </div>
+      <div className="wide-diagram-scroll">
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" width="100%" height="100%" aria-hidden="true">
+          {zones.map((z, i) => {
+            const x0 = x(z.pStart);
+            const x1 = x(z.pEnd);
+            const w = x1 - x0;
+            const cx = (x0 + x1) / 2;
+            const fontSize = Math.min(20, Math.max(11, w / 5.5));
+            const showLabel = w > 24;
+            return (
+              <g key={i}>
+                <rect
+                  x={x0}
+                  y={BAND_TOP}
+                  width={w}
+                  height={BAND_H}
                   fill={z.color}
-                >
-                  {w < 60 && z.label.length > 8 ? z.label.replace(/(\d+)/g, ' $1').trim().slice(0, 6) : z.label}
-                </text>
-              )}
-            </g>
-          );
-        })}
+                  fillOpacity={0.16}
+                  stroke={z.color}
+                  strokeWidth={2}
+                />
+                {showLabel && (
+                  <text
+                    x={cx}
+                    y={BAND_TOP + BAND_H / 2 + fontSize * 0.35}
+                    textAnchor="middle"
+                    fontSize={fontSize}
+                    fontWeight={600}
+                    fill={z.color}
+                  >
+                    {w < 60 && z.label.length > 8 ? z.label.replace(/(\d+)/g, ' $1').trim().slice(0, 6) : z.label}
+                  </text>
+                )}
+              </g>
+            );
+          })}
 
-        {zones.slice(1).map((z, i) => {
-          const px = x(z.pStart);
-          return (
-            <g key={`b${i}`}>
-              <line x1={px} y1={BAND_TOP - 8} x2={px} y2={BAND_BOTTOM + 8} stroke="var(--text)" strokeWidth={1.5} />
-              <text x={px} y={BAND_BOTTOM + 30} textAnchor="middle" fontSize={18} fill="var(--text)">
-                {formatAxisLabel(z.pStart)}
+          {zones.slice(1).map((z, i) => {
+            const px = x(z.pStart);
+            return (
+              <g key={`b${i}`}>
+                <line x1={px} y1={BAND_TOP - 8} x2={px} y2={BAND_BOTTOM + 8} stroke="var(--text)" strokeWidth={1.5} />
+                <text x={px} y={BAND_BOTTOM + 30} textAnchor="middle" fontSize={18} fill="var(--text)">
+                  {formatAxisLabel(z.pStart)}
+                </text>
+              </g>
+            );
+          })}
+
+          {marker && marker.p >= pMin && marker.p <= pMax && (
+            <g>
+              <line
+                x1={x(marker.p)}
+                y1={BAND_TOP - 26}
+                x2={x(marker.p)}
+                y2={BAND_BOTTOM}
+                stroke={MARKER_COLOR}
+                strokeWidth={2.5}
+                strokeDasharray="6 4"
+              />
+              <text x={x(marker.p)} y={BAND_TOP - 32} textAnchor="middle" fontSize={17} fontWeight={600} fill={MARKER_COLOR}>
+                {marker.label ?? `${pLabel} ${marker.p.toFixed(2)}`}
               </text>
             </g>
-          );
-        })}
+          )}
 
-        {marker && marker.p >= pMin && marker.p <= pMax && (
-          <g>
-            <line
-              x1={x(marker.p)}
-              y1={BAND_TOP - 26}
-              x2={x(marker.p)}
-              y2={BAND_BOTTOM}
-              stroke={MARKER_COLOR}
-              strokeWidth={2.5}
-              strokeDasharray="6 4"
-            />
-            <text x={x(marker.p)} y={BAND_TOP - 32} textAnchor="middle" fontSize={17} fontWeight={600} fill={MARKER_COLOR}>
-              {marker.label ?? `${pLabel} ${marker.p.toFixed(2)}`}
-            </text>
-          </g>
-        )}
-
-        <line x1={0} y1={BAND_BOTTOM} x2={W} y2={BAND_BOTTOM} stroke="var(--plot-axis)" strokeWidth={1.5} />
-        <text x={4} y={BAND_BOTTOM + 30} textAnchor="start" fontSize={18} fill="var(--text-muted)">
-          {formatAxisLabel(pMin)}
-        </text>
-        <text x={W - 4} y={BAND_BOTTOM + 30} textAnchor="end" fontSize={18} fill="var(--text-muted)">
-          {formatAxisLabel(pMax)}
-        </text>
-        <text x={W / 2} y={H - 8} textAnchor="middle" fontSize={22} fontWeight={600} fill="var(--text)">
-          {pLabel}
-        </text>
-      </svg>
+          <line x1={0} y1={BAND_BOTTOM} x2={W} y2={BAND_BOTTOM} stroke="var(--plot-axis)" strokeWidth={1.5} />
+          <text x={4} y={BAND_BOTTOM + 30} textAnchor="start" fontSize={18} fill="var(--text-muted)">
+            {formatAxisLabel(pMin)}
+          </text>
+          <text x={W - 4} y={BAND_BOTTOM + 30} textAnchor="end" fontSize={18} fill="var(--text-muted)">
+            {formatAxisLabel(pMax)}
+          </text>
+          <text x={W / 2} y={H - 8} textAnchor="middle" fontSize={22} fontWeight={600} fill="var(--text)">
+            {pLabel}
+          </text>
+        </svg>
+      </div>
     </div>
   );
 }

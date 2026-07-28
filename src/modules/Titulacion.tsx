@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -820,7 +820,22 @@ function AcidBaseTitration({ mode }: { mode: Mode }) {
             ]}
             onChange={(value) => setSolventId(value as 'water' | 'dmf' | 'ethanol')}
           />
-          {solventId === 'water' && <Slider label={t('titulacion.temperatureLabel')} value={temperatureC} min={10} max={100} step={5} onChange={setTemperatureC} unit="°C" decimals={0} />}
+          {solventId === 'water' && (
+            <>
+              <Slider
+                label={t('titulacion.temperatureScopeLabel')}
+                value={temperatureC}
+                min={10}
+                max={100}
+                step={5}
+                onChange={setTemperatureC}
+                unit="°C"
+                decimals={0}
+                helpId="temperature"
+              />
+              <p className="hint">{t('titulacion.temperatureScopeHint')}</p>
+            </>
+          )}
           <p className="hint">{t('titulacion.solventStateHint', { pkw: thermoState.pKw.toFixed(3), lionium: thermoState.lioniumLabel, lyate: thermoState.lyateLabel })}</p>
           <ConcSlider label={t('titulacion.analyteConcLabel')} value={cAnalyte} onChange={setCAnalyte} min={-4} max={0} />
           <Slider label={t('titulacion.sampleVolumeLabel')} value={vAnalyte} min={1} max={100} step={1} onChange={setVAnalyte} unit="mL" decimals={0} />
@@ -2189,7 +2204,18 @@ function PrecipTitration({ mode }: { mode: Mode }) {
               <Slider label={t('titulacion.logAlphaCation')} value={logAlphaCation} min={0} max={20} step={0.1} decimals={1} onChange={setLogAlphaCation} />
               <Slider label={t('titulacion.logAlphaAnion')} value={logAlphaAnion} min={0} max={20} step={0.1} decimals={1} onChange={setLogAlphaAnion} />
               <Slider label="E° (V)" value={sensorE0} min={-1.5} max={2.5} step={0.01} decimals={2} onChange={setSensorE0} />
-              <Slider label={t('titulacion.temperatureLabel')} value={sensorTemperature} min={0} max={100} step={1} decimals={0} unit="°C" onChange={setSensorTemperature} />
+              <Slider
+                label={t('titulacion.temperatureScopeLabel')}
+                value={sensorTemperature}
+                min={0}
+                max={100}
+                step={1}
+                decimals={0}
+                unit="°C"
+                onChange={setSensorTemperature}
+                helpId="temperature"
+              />
+              <p className="hint">{t('titulacion.sensorTemperatureScopeHint')}</p>
             </>
           )}
         </PanelSection>
@@ -2570,6 +2596,7 @@ export default function Titulacion() {
     { value: 'potenciometrica', label: t('titulacion.modePotentiometric') },
   ];
   const [mode, setMode] = useState<Mode>(initialTitulacionMode);
+  const modeTabsId = useId();
   const modeTabsRef = useRef<HTMLDivElement>(null);
   const modeLabel = MODES.find((m) => m.value === mode)?.label ?? '';
 
@@ -2589,7 +2616,9 @@ export default function Titulacion() {
               key={m.value}
               type="button"
               role="tab"
+              id={`${modeTabsId}-tab-${m.value}`}
               aria-selected={mode === m.value}
+              aria-controls={`${modeTabsId}-panel-${m.value}`}
               tabIndex={mode === m.value ? 0 : -1}
               className={mode === m.value ? 'chart-tab active' : 'chart-tab'}
               onClick={() => setMode(m.value)}
@@ -2601,11 +2630,24 @@ export default function Titulacion() {
         </div>
       </details>
       <div className="module">
-        {mode === 'acidobase' && <AcidBaseTitration mode={mode} />}
-        {mode === 'edta' && <EdtaTitration mode={mode} />}
-        {mode === 'redox' && <RedoxTitration mode={mode} />}
-        {mode === 'precip' && <PrecipTitration mode={mode} />}
-        {mode === 'potenciometrica' && <PotenciometricaTitration mode={mode} />}
+        {MODES.map((m) => {
+          const selected = mode === m.value;
+          return (
+            <div
+              key={m.value}
+              id={`${modeTabsId}-panel-${m.value}`}
+              role="tabpanel"
+              aria-labelledby={`${modeTabsId}-tab-${m.value}`}
+              hidden={!selected}
+            >
+              {selected && m.value === 'acidobase' && <AcidBaseTitration mode={m.value} />}
+              {selected && m.value === 'edta' && <EdtaTitration mode={m.value} />}
+              {selected && m.value === 'redox' && <RedoxTitration mode={m.value} />}
+              {selected && m.value === 'precip' && <PrecipTitration mode={m.value} />}
+              {selected && m.value === 'potenciometrica' && <PotenciometricaTitration mode={m.value} />}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

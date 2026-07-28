@@ -5,6 +5,7 @@ import MobileNav from './components/MobileNav';
 import Home from './components/Home';
 import ThemeToggle from './components/ThemeToggle';
 import LanguageToggle from './components/LanguageToggle';
+import RecoverableErrorBoundary from './components/RecoverableErrorBoundary';
 import { useActivityNote } from './context/ActivityContext';
 import { useT } from './hooks/useT';
 import type { TKey } from './i18n/translations';
@@ -266,9 +267,15 @@ export default function App() {
 
       <main className="content">
         {view ? (
-          <Suspense fallback={<div className="module-loading">{t('chrome.loading')}</div>}>
-            <view.component />
-          </Suspense>
+          <RecoverableErrorBoundary
+            resetKey={activeViewId ?? view.id}
+            message={t('chrome.moduleLoadError')}
+            retryLabel={t('chrome.retry')}
+          >
+            <Suspense fallback={<div className="module-loading">{t('chrome.loading')}</div>}>
+              <view.component />
+            </Suspense>
+          </RecoverableErrorBoundary>
         ) : (
           <Home hubs={HUBS.map(({ id, labelKey, descKey, views }) => ({
             id, label: t(labelKey), desc: t(descKey),
