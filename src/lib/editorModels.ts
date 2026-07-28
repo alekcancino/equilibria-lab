@@ -1,7 +1,7 @@
 import { ACIDS } from './database';
 import { REDOX_COUPLES } from './redoxDatabase';
 import type { RedoxCouple } from './redox';
-import type { ConstantSource } from './provenance';
+import { isCompleteConstantSource, type ConstantSource } from './provenance';
 import { genericSpeciesLabels } from './speciesNames';
 import type { Lang } from '../hooks/useLanguage';
 
@@ -25,7 +25,7 @@ export interface AcidSystem {
   z0: number;
   pKas: number[];
   speciesLabels: string[] | null;
-  reference: string | null;
+  source: ConstantSource | null;
 }
 
 export function defaultAcidSystem(): AcidSystem {
@@ -33,7 +33,7 @@ export function defaultAcidSystem(): AcidSystem {
   return {
     label: p.name, z0: p.z0, pKas: [...p.pKas],
     speciesLabels: [...p.speciesLabels],
-    reference: 'Harris, Quantitative Chemical Analysis',
+    source: p.source,
   };
 }
 
@@ -44,7 +44,7 @@ export function acidSystemFromPreset(id: string, strongWithoutPKa = false): Acid
     z0: strongWithoutPKa && p.strong ? (p.isBase ? 1 : 0) : p.z0,
     pKas: strongWithoutPKa && p.strong ? [] : [...p.pKas],
     speciesLabels: strongWithoutPKa && p.strong ? null : [...p.speciesLabels],
-    reference: 'Harris, Quantitative Chemical Analysis',
+    source: p.source,
   };
 }
 
@@ -54,7 +54,7 @@ export function strongAcidSystem(isBase = false, lang: Lang = 'es'): AcidSystem 
     z0: isBase ? 1 : 0,
     pKas: [],
     speciesLabels: null,
-    reference: null,
+    source: null,
   };
 }
 
@@ -96,7 +96,7 @@ export function isValidAcidSystem(x: unknown): x is AcidSystem {
     && typeof s.z0 === 'number' && Number.isInteger(s.z0) && s.z0 >= 0 && s.z0 <= 3
     && validPKas
     && (s.speciesLabels == null || (Array.isArray(s.speciesLabels) && s.speciesLabels.every((l) => typeof l === 'string')))
-    && (s.reference == null || typeof s.reference === 'string');
+    && (s.source == null || isCompleteConstantSource(s.source as ConstantSource));
 }
 
 export interface CoupleState extends RedoxCouple {

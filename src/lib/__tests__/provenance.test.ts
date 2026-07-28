@@ -5,11 +5,12 @@ import { EXTRACTION_PRESETS } from '../extractionDatabase';
 import { RESIN_PRESETS } from '../ionExchangeDatabase';
 import { SPECIATION_PRESETS } from '../speciationDatabase';
 import { REDOX_COUPLES } from '../redoxDatabase';
+import { ACIDS, SALTS } from '../database';
 
 describe('provenance metadata guard', () => {
   it('requires complete ConstantSource on all migrated preset catalogs', () => {
     const sources = migratedPresetSources();
-    expect(sources.length).toBeGreaterThanOrEqual(40);
+    expect(sources.length).toBeGreaterThanOrEqual(65);
     for (const source of sources) {
       expect(isCompleteConstantSource(source)).toBe(true);
     }
@@ -36,5 +37,15 @@ describe('provenance metadata guard', () => {
     const i2 = REDOX_COUPLES.find((couple) => couple.id === 'i2');
     expect(i2?.caveat).toBeTruthy();
     expect(i2?.source.quality).toBe('secondary');
+  });
+
+  it('tags core acid and salt presets with structured sources', () => {
+    const acetic = ACIDS.find((preset) => preset.id === 'acetic');
+    expect(acetic?.source.citation).toContain('Harris');
+    expect(isCompleteConstantSource(acetic!.source)).toBe(true);
+
+    const agcl = SALTS.find((preset) => preset.id === 'agcl');
+    expect(agcl?.source.citation).toContain('Stumm');
+    expect(agcl?.source.locator).toBe('AgCl');
   });
 });

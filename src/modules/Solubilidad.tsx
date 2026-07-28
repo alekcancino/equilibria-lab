@@ -5,13 +5,14 @@ import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
 import {
   ConcSlider, ConstantList, DbPanel, InfoBox, LabelField, ModelBadge, NumberSegmented, PanelSection,
-  ResultCard, ResultCardRow, Segmented, Slider, Toggle,
+  ResultCard, ResultCardRow, Segmented, Slider, SourceBadge, Toggle,
 } from '../components/Controls';
 import { SALTS, type SaltPreset } from '../lib/database';
 import { formatMolar } from '../lib/format';
 import { solubility } from '../lib/solubility';
 import type { GammaModel } from '../lib/activity';
 import { toSub } from '../lib/complexDatabase';
+import { catalogSource, type ConstantSource } from '../lib/provenance';
 import { useT } from '../hooks/useT';
 import {
   competingAcidBaseSolidsAtPH,
@@ -32,7 +33,7 @@ interface SaltState {
   anionPKas: number[];
   anionLabel: string;
   cationLabel: string;
-  reference: string | null;
+  source: ConstantSource | null;
 }
 
 function saltFromPreset(p: SaltPreset): SaltState {
@@ -44,7 +45,7 @@ function saltFromPreset(p: SaltPreset): SaltState {
     anionPKas: p.anionPKas ? [...p.anionPKas] : [],
     anionLabel: p.anionLabel,
     cationLabel: p.cationLabel,
-    reference: 'Harris; Stumm & Morgan (1996)',
+    source: p.source,
   };
 }
 
@@ -56,13 +57,20 @@ interface MolecularState {
   name: string;
   S0: number;
   kind: 'acid' | 'base';
-  reference: string | null;
+  source: ConstantSource | null;
   pKas: number[];
   solidFormIndex: number;
 }
 
+const BENZOIC_SOURCE = catalogSource('Martin, Physical Pharmacy', 'secondary', {
+  locator: 'Benzoic acid intrinsic solubility example',
+});
+
 function defaultMolecular(): MolecularState {
-  return { name: 'Ácido benzoico', S0: 0.0278, kind: 'acid', reference: 'Martin, Physical Pharmacy', pKas: [4.2], solidFormIndex: 0 };
+  return {
+    name: 'Ácido benzoico', S0: 0.0278, kind: 'acid', source: BENZOIC_SOURCE,
+    pKas: [4.2], solidFormIndex: 0,
+  };
 }
 
 function molecularSolubility(m: MolecularState, pH: number): number {
@@ -137,7 +145,7 @@ export default function Solubilidad() {
   }
 
   const common = useCommon ? cCommon : 0;
-  const edited = (patch: Partial<SaltState>) => setSalt({ ...salt, ...patch, reference: null });
+  const edited = (patch: Partial<SaltState>) => setSalt({ ...salt, ...patch, source: null });
 
   const saltDef = useMemo(() => ({
     id: 'custom', name: salt.label, formula: salt.label,
@@ -290,9 +298,11 @@ export default function Solubilidad() {
                   id: s.id,
                   label: s.formula,
                   detail: `${s.name} · pKps ${s.pKsp}`,
+                  source: s.source,
                 }))}
                 onSelect={(id) => setSalt(saltFromPreset(SALTS.find((s) => s.id === id)!))}
               />
+              {salt.source && <SourceBadge source={salt.source} />}
             </>
           ) : (
             <>
@@ -300,7 +310,7 @@ export default function Solubilidad() {
               <LabelField
                 label={t('solubilidad.solidLabel')}
                 value={molecular.name}
-                onChange={(name) => setMolecular({ ...molecular, name, reference: null })}
+                onChange={(name) => setMolecular({ ...molecular, name, source: null })}
               />
               <div className="control">
                 <div className="control-header">
@@ -318,7 +328,7 @@ export default function Solubilidad() {
                       ...molecular,
                       kind: v === 'base' ? 'base' : 'acid',
                       solidFormIndex: v === 'base' ? molecular.pKas.length : 0,
-                      reference: null,
+                      source: null,
                     })}
                   />
                 </div>
@@ -326,7 +336,7 @@ export default function Solubilidad() {
               <ConcSlider
                 label={t('solubilidad.intrinsicSolubilityLabel')}
                 value={molecular.S0}
-                onChange={(S0) => setMolecular({ ...molecular, S0, reference: null })}
+                onChange={(S0) => setMolecular({ ...molecular, S0, source: null })}
               />
               <ConstantList
                 prefix={molecular.kind === 'acid' ? 'pKa' : t('sideReactionEditor.conjugateAcidPrefix')}
@@ -336,7 +346,7 @@ export default function Solubilidad() {
                   ...molecular,
                   pKas,
                   solidFormIndex: Math.min(molecular.solidFormIndex ?? 0, pKas.length),
-                  reference: null,
+                  source: null,
                 })}
                 min={-2}
                 max={30}
@@ -349,11 +359,12 @@ export default function Solubilidad() {
                 label={t('solubilidad.solidFormIndexLabel')}
                 value={molecular.solidFormIndex ?? 0}
                 options={Array.from({ length: molecular.pKas.length + 1 }, (_, index) => index)}
-                onChange={(solidFormIndex) => setMolecular({ ...molecular, solidFormIndex, reference: null })}
+                onChange={(solidFormIndex) => setMolecular({ ...molecular, solidFormIndex, source: null })}
               />
               <button type="button" className="add-btn" onClick={() => setMolecular(defaultMolecular())}>
                 {t('solubilidad.loadBenzoicAcidButton')}
               </button>
+              {molecular.source && <SourceBadge source={molecular.source} />}
             </>
           )}
         </PanelSection>

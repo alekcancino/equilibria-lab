@@ -1,6 +1,8 @@
 // Database of chemical species with equilibrium constants (25 °C).
 // Sources: Harris, Quantitative Chemical Analysis; Skoog, Analytical Chemistry.
 
+import { catalogSource, type ConstantSource } from './provenance';
+
 export interface AcidPreset {
   id: string;
   /** Display name, e.g. "Ácido fosfórico" */
@@ -12,6 +14,7 @@ export interface AcidPreset {
   pKas: number[];
   /** Species labels from most to least protonated (HTML) */
   speciesLabels: string[];
+  source: ConstantSource;
   /** true if it acts as a base (titrated with a strong acid) */
   isBase?: boolean;
   /** true if it is a strong acid/base (pKa not applicable for titration) */
@@ -23,76 +26,95 @@ export interface AcidPreset {
   aquaCation?: boolean;
 }
 
+const HARRIS = catalogSource('Harris, Quantitative Chemical Analysis');
+const SKOOG = catalogSource('Skoog, Principles of Analytical Chemistry');
+const STUMM = catalogSource('Stumm & Morgan, Aquatic Chemistry', 'primary');
+
 export const ACIDS: AcidPreset[] = [
   {
     id: 'hcl', name: 'Ácido clorhídrico (fuerte)', formula: 'HCl', z0: 0, pKas: [-7],
     speciesLabels: ['HCl', 'Cl⁻'], strong: true,
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Strong acid — complete dissociation model' }),
   },
   {
     id: 'acetic', name: 'Ácido acético', formula: 'CH₃COOH', z0: 0, pKas: [4.76],
     speciesLabels: ['CH₃COOH', 'CH₃COO⁻'],
+    source: HARRIS,
   },
   {
     id: 'formic', name: 'Ácido fórmico', formula: 'HCOOH', z0: 0, pKas: [3.75],
     speciesLabels: ['HCOOH', 'HCOO⁻'],
+    source: HARRIS,
   },
   {
     id: 'hf', name: 'Ácido fluorhídrico', formula: 'HF', z0: 0, pKas: [3.17],
     speciesLabels: ['HF', 'F⁻'],
+    source: HARRIS,
   },
   {
     id: 'hocl', name: 'Ácido hipocloroso', formula: 'HOCl', z0: 0, pKas: [7.53],
     speciesLabels: ['HOCl', 'OCl⁻'],
+    source: HARRIS,
   },
   {
     id: 'carbonic', name: 'Ácido carbónico', formula: 'H₂CO₃', z0: 0, pKas: [6.35, 10.33],
     speciesLabels: ['H₂CO₃', 'HCO₃⁻', 'CO₃²⁻'],
+    source: HARRIS,
   },
   {
     id: 'oxalic', name: 'Ácido oxálico', formula: 'H₂C₂O₄', z0: 0, pKas: [1.25, 4.27],
     speciesLabels: ['H₂C₂O₄', 'HC₂O₄⁻', 'C₂O₄²⁻'],
+    source: HARRIS,
   },
   {
     id: 'sulfurous', name: 'Ácido sulfuroso', formula: 'H₂SO₃', z0: 0, pKas: [1.86, 7.17],
     speciesLabels: ['H₂SO₃', 'HSO₃⁻', 'SO₃²⁻'],
+    source: HARRIS,
   },
   {
     id: 'phosphoric', name: 'Ácido fosfórico', formula: 'H₃PO₄', z0: 0, pKas: [2.15, 7.20, 12.35],
     speciesLabels: ['H₃PO₄', 'H₂PO₄⁻', 'HPO₄²⁻', 'PO₄³⁻'],
+    source: HARRIS,
   },
   {
     id: 'citric', name: 'Ácido cítrico', formula: 'H₃Cit', z0: 0, pKas: [3.13, 4.76, 6.40],
     speciesLabels: ['H₃Cit', 'H₂Cit⁻', 'HCit²⁻', 'Cit³⁻'],
+    source: SKOOG,
   },
   {
     id: 'edta', name: 'EDTA (H₄Y)', formula: 'H₄Y', z0: 0, pKas: [2.00, 2.69, 6.13, 10.37],
     speciesLabels: ['H₄Y', 'H₃Y⁻', 'H₂Y²⁻', 'HY³⁻', 'Y⁴⁻'],
+    source: HARRIS,
   },
   {
     id: 'ammonium', name: 'Amoniaco / Amonio', formula: 'NH₃', z0: 1, pKas: [9.25],
     speciesLabels: ['NH₄⁺', 'NH₃'], isBase: true,
+    source: HARRIS,
   },
   {
     id: 'methylamine', name: 'Metilamina', formula: 'CH₃NH₂', z0: 1, pKas: [10.64],
     speciesLabels: ['CH₃NH₃⁺', 'CH₃NH₂'], isBase: true,
+    source: HARRIS,
   },
   {
     id: 'pyridine', name: 'Piridina', formula: 'C₅H₅N', z0: 1, pKas: [5.23],
     speciesLabels: ['C₅H₅NH⁺', 'C₅H₅N'], isBase: true,
+    source: HARRIS,
   },
   {
     id: 'naoh', name: 'Hidróxido de sodio (fuerte)', formula: 'NaOH', z0: 0, pKas: [15.7],
     speciesLabels: ['NaOH', 'OH⁻'], isBase: true, strong: true,
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Strong base — complete dissociation model' }),
   },
   {
-    // Aqua-acid cations: the hydrated M³⁺ ion is itself a weak acid
-    // (Fe(H₂O)₆³⁺ ⇌ Fe(H₂O)₅OH²⁺ + H⁺) — z0=+3, first hydrolysis step only.
     id: 'fe3aq', name: 'Fe³⁺ (acuo-ácido)', formula: '[Fe(H₂O)₆]³⁺', z0: 3, pKas: [2.2],
     speciesLabels: ['Fe³⁺', 'FeOH²⁺'], aquaCation: true,
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'First hydrolysis step of Fe³⁺' }),
   },
   {
     id: 'al3aq', name: 'Al³⁺ (acuo-ácido)', formula: '[Al(H₂O)₆]³⁺', z0: 3, pKas: [5.0],
     speciesLabels: ['Al³⁺', 'AlOH²⁺'], aquaCation: true,
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'First hydrolysis step of Al³⁺' }),
   },
 ];
 
@@ -122,6 +144,7 @@ export interface SaltPreset {
   /** stoichiometry M_m X_x */
   m: number;
   x: number;
+  source: ConstantSource;
   /** pKa(s) of the conjugate acid of the anion, if the anion is basic (for pH effect) */
   anionPKas?: number[];
   /** how many protons the anion can accept (index of free species in alphas) */
@@ -133,14 +156,14 @@ export interface SaltPreset {
 }
 
 export const SALTS: SaltPreset[] = [
-  { id: 'agcl', name: 'Cloruro de plata', formula: 'AgCl', pKsp: 9.74, m: 1, x: 1, anionLabel: 'Cl⁻', cationLabel: 'Ag⁺', zCation: 1, zAnion: 1 },
-  { id: 'agbr', name: 'Bromuro de plata', formula: 'AgBr', pKsp: 12.30, m: 1, x: 1, anionLabel: 'Br⁻', cationLabel: 'Ag⁺', zCation: 1, zAnion: 1 },
-  { id: 'baso4', name: 'Sulfato de bario', formula: 'BaSO₄', pKsp: 9.96, m: 1, x: 1, anionPKas: [1.99], anionLabel: 'SO₄²⁻', cationLabel: 'Ba²⁺', zCation: 2, zAnion: 2 },
-  { id: 'caco3', name: 'Carbonato de calcio', formula: 'CaCO₃', pKsp: 8.54, m: 1, x: 1, anionPKas: [6.35, 10.33], anionLabel: 'CO₃²⁻', cationLabel: 'Ca²⁺', zCation: 2, zAnion: 2 },
-  { id: 'caf2', name: 'Fluoruro de calcio', formula: 'CaF₂', pKsp: 10.50, m: 1, x: 2, anionPKas: [3.17], anionLabel: 'F⁻', cationLabel: 'Ca²⁺', zCation: 2, zAnion: 1 },
-  { id: 'mgoh2', name: 'Hidróxido de magnesio', formula: 'Mg(OH)₂', pKsp: 11.15, m: 1, x: 2, anionPKas: [15.7], anionLabel: 'OH⁻', cationLabel: 'Mg²⁺', zCation: 2, zAnion: 1 },
-  { id: 'caox', name: 'Oxalato de calcio', formula: 'CaC₂O₄', pKsp: 8.60, m: 1, x: 1, anionPKas: [1.25, 4.27], anionLabel: 'C₂O₄²⁻', cationLabel: 'Ca²⁺', zCation: 2, zAnion: 2 },
-  { id: 'pbi2', name: 'Yoduro de plomo', formula: 'PbI₂', pKsp: 8.10, m: 1, x: 2, anionLabel: 'I⁻', cationLabel: 'Pb²⁺', zCation: 2, zAnion: 1 },
+  { id: 'agcl', name: 'Cloruro de plata', formula: 'AgCl', pKsp: 9.74, m: 1, x: 1, anionLabel: 'Cl⁻', cationLabel: 'Ag⁺', zCation: 1, zAnion: 1, source: { ...STUMM, locator: 'AgCl' } },
+  { id: 'agbr', name: 'Bromuro de plata', formula: 'AgBr', pKsp: 12.30, m: 1, x: 1, anionLabel: 'Br⁻', cationLabel: 'Ag⁺', zCation: 1, zAnion: 1, source: { ...STUMM, locator: 'AgBr' } },
+  { id: 'baso4', name: 'Sulfato de bario', formula: 'BaSO₄', pKsp: 9.96, m: 1, x: 1, anionPKas: [1.99], anionLabel: 'SO₄²⁻', cationLabel: 'Ba²⁺', zCation: 2, zAnion: 2, source: { ...STUMM, locator: 'BaSO₄' } },
+  { id: 'caco3', name: 'Carbonato de calcio', formula: 'CaCO₃', pKsp: 8.54, m: 1, x: 1, anionPKas: [6.35, 10.33], anionLabel: 'CO₃²⁻', cationLabel: 'Ca²⁺', zCation: 2, zAnion: 2, source: { ...STUMM, locator: 'CaCO₃' } },
+  { id: 'caf2', name: 'Fluoruro de calcio', formula: 'CaF₂', pKsp: 10.50, m: 1, x: 2, anionPKas: [3.17], anionLabel: 'F⁻', cationLabel: 'Ca²⁺', zCation: 2, zAnion: 1, source: { ...STUMM, locator: 'CaF₂' } },
+  { id: 'mgoh2', name: 'Hidróxido de magnesio', formula: 'Mg(OH)₂', pKsp: 11.15, m: 1, x: 2, anionPKas: [15.7], anionLabel: 'OH⁻', cationLabel: 'Mg²⁺', zCation: 2, zAnion: 1, source: { ...STUMM, locator: 'Mg(OH)₂' } },
+  { id: 'caox', name: 'Oxalato de calcio', formula: 'CaC₂O₄', pKsp: 8.60, m: 1, x: 1, anionPKas: [1.25, 4.27], anionLabel: 'C₂O₄²⁻', cationLabel: 'Ca²⁺', zCation: 2, zAnion: 2, source: { ...STUMM, locator: 'CaC₂O₄' } },
+  { id: 'pbi2', name: 'Yoduro de plomo', formula: 'PbI₂', pKsp: 8.10, m: 1, x: 2, anionLabel: 'I⁻', cationLabel: 'Pb²⁺', zCation: 2, zAnion: 1, source: { ...STUMM, locator: 'PbI₂' } },
 ];
 
 /** Color for system markers (pH, pe, equilibrium lines) — Okabe-Ito pink */
