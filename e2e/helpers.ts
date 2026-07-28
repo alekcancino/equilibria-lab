@@ -48,6 +48,14 @@ export async function seedLanguage(page: Page, lang: 'es' | 'en'): Promise<void>
   }, lang);
 }
 
+/** Pin theme before navigation — avoids prefers-color-scheme drift in CI. */
+export async function seedTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
+  await page.addInitScript((value: string) => {
+    localStorage.setItem('equilibria-theme', value);
+    document.documentElement.dataset.theme = value;
+  }, theme);
+}
+
 export async function openVariablesPanel(page: Page): Promise<void> {
   if (!isMobileViewport(page)) return;
   await page.locator('.panel-fab').click();

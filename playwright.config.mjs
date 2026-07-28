@@ -31,6 +31,15 @@ export default defineConfig({
         hasTouch: true,
       },
     },
+    {
+      name: 'narrow',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 320, height: 640 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
   ],
   webServer: {
     command: `npm run preview -- --host ${previewHost} --port ${previewPort}`,
