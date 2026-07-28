@@ -160,6 +160,7 @@ function SalEditor({ sal, onChange }: {
         values={sal.pKas}
         onChange={(pKas) => onChange({ pKas })}
         min={0} max={14} maxItems={4} minItems={0} initialValue={7}
+        strictlyAscending
       />
       {sal.pKas.length > 0 && (
         <button type="button" className="mini-btn mini-btn-offset" onClick={() => onChange({ pKas: [] })}>

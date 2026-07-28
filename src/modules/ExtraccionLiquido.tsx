@@ -212,6 +212,7 @@ function AnalyteEditor({ a, color, additions, onChange }: {
             maxItems={4}
             minItems={0}
             initialValue={4.76}
+            strictlyAscending
           />
           {a.pKas.length > 1 && (
             <>

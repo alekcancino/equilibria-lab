@@ -267,6 +267,7 @@ export default function Solubilidad() {
                   min={-2}
                   max={16}
                   maxItems={3}
+                  strictlyAscending
                   onChange={(anionPKas) => edited({ anionPKas })}
                 />
               ) : (
@@ -342,6 +343,7 @@ export default function Solubilidad() {
                 maxItems={4}
                 minItems={1}
                 initialValue={4.2}
+                strictlyAscending
               />
               <NumberSegmented
                 label={t('solubilidad.solidFormIndexLabel')}

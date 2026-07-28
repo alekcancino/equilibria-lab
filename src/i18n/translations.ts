@@ -181,6 +181,8 @@ export const translations = {
   'chrome.tagline': { es: 'Simulador de equilibrio químico', en: 'Chemical equilibrium simulator' },
   'chrome.topics': { es: 'Temas', en: 'Topics' },
   'chrome.loading': { es: 'Cargando…', en: 'Loading…' },
+  'chrome.moduleLoadError': { es: 'No se pudo cargar este módulo. Verifica tu conexión e inténtalo de nuevo.', en: 'This module could not be loaded. Check your connection and try again.' },
+  'chrome.retry': { es: 'Reintentar', en: 'Retry' },
   'chrome.assumptionsShort': { es: 'ⓘ Supuestos', en: 'ⓘ Assumptions' },
   'chrome.assumptionsLong': { es: 'Supuestos y opciones', en: 'Assumptions and options' },
   // Split around the <sub>w</sub> in "Kw" — no Unicode subscript "w" exists.
@@ -353,6 +355,7 @@ export const translations = {
   'controls.invalidNumber': { es: 'Escribe un número válido.', en: 'Enter a valid number.' },
   'controls.diagrams': { es: 'Diagramas', en: 'Diagrams' },
   'chart.loading': { es: 'Cargando gráfica…', en: 'Loading chart…' },
+  'chart.loadError': { es: 'No se pudo cargar la gráfica.', en: 'The chart could not be loaded.' },
   'chart.readoutHint': { es: 'Pasa el cursor o desliza sobre la curva para leer valores exactos', en: 'Hover or drag over the curve to read exact values' },
   'chart.readoutValue': { es: '{xLabel} = {x} · {series} = {y}', en: '{xLabel} = {x} · {series} = {y}' },
   'chart.a11ySummary': {

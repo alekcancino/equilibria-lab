@@ -27,6 +27,7 @@ describe('isValidAcidSystem', () => {
     expect(isValidAcidSystem({ ...base, z0: 5 })).toBe(false);
     expect(isValidAcidSystem({ ...base, label: 42 })).toBe(false);
     expect(isValidAcidSystem({ ...base, speciesLabels: [1, 2] })).toBe(false);
+    expect(isValidAcidSystem({ ...base, pKas: [8, 4] })).toBe(false);
   });
 });
 

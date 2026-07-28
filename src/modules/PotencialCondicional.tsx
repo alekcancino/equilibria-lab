@@ -678,7 +678,7 @@ export default function PotencialCondicional() {
               {st.showPXPrime && (
                 <div className="mask-section">
                   <Slider label={t('complejos.fixedPHLabel')} value={st.pxPHFixed} min={0} max={14} step={0.1} onChange={(v) => set('pxPHFixed', v)} decimals={1} />
-                  <ConstantList prefix={t('potencialcond.conjugateAcidXPrefix')} helpId="pKa" values={st.pxPKasX} onChange={(v) => set('pxPKasX', v)} min={0} max={14} maxItems={4} minItems={1} initialValue={9.25} />
+                  <ConstantList prefix={t('potencialcond.conjugateAcidXPrefix')} helpId="pKa" values={st.pxPKasX} onChange={(v) => set('pxPKasX', v)} min={0} max={14} maxItems={4} minItems={1} initialValue={9.25} strictlyAscending />
                   <p className="hint">{t('potencialcond.pxPrimeHint')}</p>
                 </div>
               )}

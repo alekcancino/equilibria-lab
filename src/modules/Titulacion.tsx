@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { Data, Shape, Annotations } from 'plotly.js';
 import Chart from '../components/Chart';
 import PanelShell from '../components/PanelShell';
@@ -2570,6 +2570,7 @@ export default function Titulacion() {
     { value: 'potenciometrica', label: t('titulacion.modePotentiometric') },
   ];
   const [mode, setMode] = useState<Mode>(initialTitulacionMode);
+  const modeTabsId = useId();
   const modeTabsRef = useRef<HTMLDivElement>(null);
   const modeLabel = MODES.find((m) => m.value === mode)?.label ?? '';
 
@@ -2589,7 +2590,9 @@ export default function Titulacion() {
               key={m.value}
               type="button"
               role="tab"
+              id={`${modeTabsId}-tab-${m.value}`}
               aria-selected={mode === m.value}
+              aria-controls={`${modeTabsId}-panel-${m.value}`}
               tabIndex={mode === m.value ? 0 : -1}
               className={mode === m.value ? 'chart-tab active' : 'chart-tab'}
               onClick={() => setMode(m.value)}
@@ -2601,11 +2604,24 @@ export default function Titulacion() {
         </div>
       </details>
       <div className="module">
-        {mode === 'acidobase' && <AcidBaseTitration mode={mode} />}
-        {mode === 'edta' && <EdtaTitration mode={mode} />}
-        {mode === 'redox' && <RedoxTitration mode={mode} />}
-        {mode === 'precip' && <PrecipTitration mode={mode} />}
-        {mode === 'potenciometrica' && <PotenciometricaTitration mode={mode} />}
+        {MODES.map((m) => {
+          const selected = mode === m.value;
+          return (
+            <div
+              key={m.value}
+              id={`${modeTabsId}-panel-${m.value}`}
+              role="tabpanel"
+              aria-labelledby={`${modeTabsId}-tab-${m.value}`}
+              hidden={!selected}
+            >
+              {selected && m.value === 'acidobase' && <AcidBaseTitration mode={m.value} />}
+              {selected && m.value === 'edta' && <EdtaTitration mode={m.value} />}
+              {selected && m.value === 'redox' && <RedoxTitration mode={m.value} />}
+              {selected && m.value === 'precip' && <PrecipTitration mode={m.value} />}
+              {selected && m.value === 'potenciometrica' && <PotenciometricaTitration mode={m.value} />}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

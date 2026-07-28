@@ -433,6 +433,7 @@ export function LabelList({
  */
 export function ConstantList({
   prefix, values, onChange, min, max, maxItems = 6, minItems = 1, initialValue = 7, helpId,
+  strictlyAscending = false,
 }: {
   prefix: string;
   values: number[];
@@ -443,8 +444,13 @@ export function ConstantList({
   minItems?: number;
   initialValue?: number;
   helpId?: string;
+  /** Keep successive macroscopic constants in their thermodynamic order. */
+  strictlyAscending?: boolean;
 }) {
   const t = useT();
+  const step = 0.01;
+  const canAdd = values.length < maxItems
+    && (!strictlyAscending || values.length === 0 || (values[values.length - 1] ?? max) < max - step);
   return (
     <div className="constant-list">
       {values.map((v, i) => (
@@ -453,9 +459,9 @@ export function ConstantList({
             <Slider
               label={`${prefix}${values.length > 1 ? i + 1 : ''}`}
               value={v}
-              min={min}
-              max={max}
-              step={0.01}
+              min={strictlyAscending && i > 0 ? Math.max(min, values[i - 1] + step) : min}
+              max={strictlyAscending && i < values.length - 1 ? Math.min(max, values[i + 1] - step) : max}
+              step={step}
               helpId={i === 0 ? helpId : undefined}
               onChange={(nv) => onChange(values.map((x, j) => (j === i ? nv : x)))}
             />
@@ -472,7 +478,7 @@ export function ConstantList({
           </button>
         </div>
       ))}
-      {values.length < maxItems && (
+      {canAdd && (
         <button
           type="button"
           className="add-btn"

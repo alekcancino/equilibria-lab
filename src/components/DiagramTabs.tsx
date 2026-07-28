@@ -49,14 +49,21 @@ export default function DiagramTabs({ tabs, initialId }: { tabs: DiagramTab[]; i
           );
         })}
       </div>
-      <div
-        id={`${baseId}-panel-${current.id}`}
-        role="tabpanel"
-        aria-labelledby={`${baseId}-tab-${current.id}`}
-        className="diagram-tab-body"
-      >
-        {current.node}
-      </div>
+      {tabs.map((tab) => {
+        const selected = tab.id === current.id;
+        return (
+          <div
+            key={tab.id}
+            id={`${baseId}-panel-${tab.id}`}
+            role="tabpanel"
+            aria-labelledby={`${baseId}-tab-${tab.id}`}
+            className="diagram-tab-body"
+            hidden={!selected}
+          >
+            {selected && tab.node}
+          </div>
+        );
+      })}
     </div>
   );
 }
