@@ -14,7 +14,7 @@ for (const moduleId of STRESS_MODULE_IDS) {
       await seedLanguage(page, lang);
       await openModule(page, moduleId);
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-      await expect(page.locator('.plot-area, .predominance-diagram, .module')).first().toBeVisible();
+      await expect(page.locator('.plot-area, .predominance-diagram, .module').first()).toBeVisible();
       const tablistLocator = page.getByRole('tablist', { name: tablist });
       if (await tablistLocator.count() > 0) {
         await expect(tablistLocator).toBeVisible();
