@@ -4,7 +4,7 @@ import { assertNoHorizontalOverflow, collectPageErrors, openModule } from './hel
 const STRESS_MODULES = ['acidobase', 'pourbaix', 'titulacion', 'solcond'] as const;
 
 test.describe('320px stress modules', () => {
-  test.beforeEach(({}, testInfo) => {
+  test.beforeEach((_fixtures, testInfo) => {
     test.skip(testInfo.project.name !== 'narrow', '320px layout smoke only');
   });
 

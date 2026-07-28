@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { openModule, seedLanguage, seedTheme } from './helpers';
 
 test.describe('resilience and export', () => {
-  test.beforeEach(({}, testInfo) => {
+  test.beforeEach((_fixtures, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'desktop-only smoke');
   });
 
