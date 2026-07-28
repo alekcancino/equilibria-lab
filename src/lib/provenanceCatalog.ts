@@ -1,4 +1,5 @@
 import type { ConstantSource } from './provenance';
+import { ACIDS, SALTS } from './database';
 import { RESIN_PRESETS, APPLICATION_PRESETS } from './ionExchangeDatabase';
 import { EXTRACTION_PRESETS } from './extractionDatabase';
 import { COMPLEX_PRESETS } from './complexDatabase';
@@ -7,6 +8,8 @@ import { SPECIATION_PRESETS } from './speciationDatabase';
 import { SYSTEM_PRESETS } from './systemPresets';
 
 export {
+  ACIDS,
+  SALTS,
   RESIN_PRESETS,
   APPLICATION_PRESETS,
   EXTRACTION_PRESETS,
@@ -25,5 +28,7 @@ export function migratedPresetSources(): ConstantSource[] {
     ...REDOX_COUPLES.map((preset) => preset.source),
     ...SPECIATION_PRESETS.map((preset) => preset.source),
     ...SYSTEM_PRESETS.map((preset) => preset.source),
+    ...ACIDS.map((preset) => preset.source),
+    ...SALTS.map((preset) => preset.source),
   ];
 }

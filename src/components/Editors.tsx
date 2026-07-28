@@ -79,7 +79,7 @@ export function AcidSystemEditor({
             pKas,
             // if the number of constants changed, database labels no longer apply
             speciesLabels: pKas.length === system.pKas.length ? system.speciesLabels : null,
-            reference: null,
+            source: null,
           });
         }}
       />
@@ -103,7 +103,7 @@ export function AcidSystemEditor({
                 ? inferredSystemLabel(z0, system.pKas, lang)
                 : system.label,
               speciesLabels: null,
-              reference: null,
+              source: null,
             });
           }}
         />
@@ -123,9 +123,11 @@ export function AcidSystemEditor({
               : a.pKas.length > 1
                 ? t('acidSystemEditor.groupPolyprotic')
                 : t('acidSystemEditor.groupMonoprotic'),
+          source: a.source,
         }))}
         onSelect={(id) => onChange(acidSystemFromPreset(id, allowNoConstants))}
       />
+      {system.source && <SourceBadge source={system.source} />}
     </div>
   );
 }

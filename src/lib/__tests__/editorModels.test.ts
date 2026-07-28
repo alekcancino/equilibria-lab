@@ -5,7 +5,7 @@ describe('isValidAcidSystem', () => {
   it('acepta sistemas construidos por la app', () => {
     expect(isValidAcidSystem(defaultAcidSystem())).toBe(true);
     expect(isValidAcidSystem(acidSystemFromPreset('phosphoric'))).toBe(true);
-    expect(isValidAcidSystem({ label: 'X', z0: 3, pKas: [2.2], speciesLabels: null, reference: null })).toBe(true);
+    expect(isValidAcidSystem({ label: 'X', z0: 3, pKas: [2.2], speciesLabels: null, source: null })).toBe(true);
   });
 
   it('rechaza valores no-objeto y la forma vieja de Mezclas ({acidId})', () => {

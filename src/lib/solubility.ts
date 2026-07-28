@@ -7,11 +7,16 @@ import type { SaltPreset } from './database';
 
 export type { GammaModel };
 
+/** Calculation input — omits catalog metadata (id, name, source). */
+export type SaltSolubilityParams = Pick<SaltPreset,
+  'pKsp' | 'm' | 'x' | 'anionPKas' | 'anionLabel' | 'cationLabel' | 'zCation' | 'zAnion'
+>;
+
 /**
  * Ksp corrected for ionic strength: Ksp_app = Ksp / (γ_M^m · γ_X^x)
  * ion charges default to 1 if not present in SaltPreset.
  */
-function correctedKsp(salt: SaltPreset, I: number, model: GammaModel = 'dh'): number {
+function correctedKsp(salt: SaltSolubilityParams, I: number, model: GammaModel = 'dh'): number {
   if (I <= 0) return Math.pow(10, -salt.pKsp);
   const zM = salt.zCation ?? 1;
   const zX = salt.zAnion ?? 1;
@@ -25,7 +30,7 @@ function correctedKsp(salt: SaltPreset, I: number, model: GammaModel = 'dh'): nu
  * Fraction of the anion that remains as the free (fully deprotonated) species
  * at a given pH. Returns 1 if the anion is not basic.
  */
-export function anionFreeFraction(salt: SaltPreset, pH: number): number {
+export function anionFreeFraction(salt: SaltSolubilityParams, pH: number): number {
   if (!salt.anionPKas || salt.anionPKas.length === 0) return 1;
   const h = Math.pow(10, -pH);
   const alphas = alphaFractions(h, salt.anionPKas);
@@ -39,7 +44,7 @@ export function anionFreeFraction(salt: SaltPreset, pH: number): number {
  * Ksp = [M]^m · [X_free]^x, with [M] = m·s and [X_free] = α · (x·s + cCommon).
  * Solved by bisection on log10(s).
  */
-export function solubility(salt: SaltPreset, pH: number, cCommon = 0, I = 0, model: GammaModel = 'dh'): number {
+export function solubility(salt: SaltSolubilityParams, pH: number, cCommon = 0, I = 0, model: GammaModel = 'dh'): number {
   const ksp = correctedKsp(salt, I, model);
   const alpha = anionFreeFraction(salt, pH);
 
@@ -72,7 +77,7 @@ export function solubility(salt: SaltPreset, pH: number, cCommon = 0, I = 0, mod
  * αM(L) = 1 + Σ βᵢ[X]ⁱ corrects for the free cation concentration.
  */
 export function solubilityVsPX(
-  salt: SaltPreset,
+  salt: SaltSolubilityParams,
   pH: number,
   logBetasM: number[],
   pX: number,
@@ -130,7 +135,7 @@ export function baseSolidSolubility(S0: number, pKa: number, pH: number): number
 
 /** log s = f(pX) curve over a pX sweep. */
 export function solubilityPXCurve(
-  salt: SaltPreset,
+  salt: SaltSolubilityParams,
   pH: number,
   logBetasM: number[],
   pXMin: number,
