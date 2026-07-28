@@ -85,6 +85,7 @@ npm run dev      # http://localhost:5173
 npm run build    # static build in dist/
 npm run test     # unit tests (vitest)
 npm run check    # lint + test + build
+npm run test:e2e # browser smoke (requires: npm run build && npx playwright install chromium)
 ```
 
 **Stack:** Vite · React · TypeScript · Plotly (basic dist). Static build — deployable to Vercel, GitHub Pages, or any static host.

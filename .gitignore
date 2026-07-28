@@ -34,6 +34,12 @@ AGENTS.md
 # Deployment
 .vercel
 
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Internal working notes
 docs/testing/
 AUDITORIA_INTEGRAL_*.md
