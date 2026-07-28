@@ -125,14 +125,30 @@ export interface Indicator {
   range: [number, number];
   /** Colors: acid form → basic form */
   colors: [string, string];
+  source: ConstantSource;
 }
 
 export const INDICATORS: Indicator[] = [
-  { id: 'methyl_orange', name: 'Naranja de metilo', range: [3.1, 4.4], colors: ['#e74c3c', '#f1c40f'] },
-  { id: 'methyl_red', name: 'Rojo de metilo', range: [4.2, 6.3], colors: ['#e74c3c', '#f1c40f'] },
-  { id: 'bromothymol', name: 'Azul de bromotimol', range: [6.0, 7.6], colors: ['#f1c40f', '#2980b9'] },
-  { id: 'phenolphthalein', name: 'Fenolftaleína', range: [8.2, 10.0], colors: ['#ffffff', '#e84393'] },
-  { id: 'thymolphthalein', name: 'Timolftaleína', range: [9.3, 10.5], colors: ['#ffffff', '#2980b9'] },
+  {
+    id: 'methyl_orange', name: 'Naranja de metilo', range: [3.1, 4.4], colors: ['#e74c3c', '#f1c40f'],
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 11-3, methyl orange' }),
+  },
+  {
+    id: 'methyl_red', name: 'Rojo de metilo', range: [4.2, 6.3], colors: ['#e74c3c', '#f1c40f'],
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 11-3, methyl red' }),
+  },
+  {
+    id: 'bromothymol', name: 'Azul de bromotimol', range: [6.0, 7.6], colors: ['#f1c40f', '#2980b9'],
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 11-3, bromothymol blue' }),
+  },
+  {
+    id: 'phenolphthalein', name: 'Fenolftaleína', range: [8.2, 10.0], colors: ['#ffffff', '#e84393'],
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 11-3, phenolphthalein' }),
+  },
+  {
+    id: 'thymolphthalein', name: 'Timolftaleína', range: [9.3, 10.5], colors: ['#ffffff', '#2980b9'],
+    source: catalogSource(HARRIS.citation, 'secondary', { locator: 'Table 11-3, thymolphthalein' }),
+  },
 ];
 
 export interface SaltPreset {

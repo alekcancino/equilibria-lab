@@ -1,5 +1,6 @@
 import type { ConstantSource } from './provenance';
-import { ACIDS, SALTS } from './database';
+import { ACIDS, INDICATORS, SALTS } from './database';
+import { METAL_INDICATORS, EDTA_METAL_PRESETS } from './indicatorDatabase';
 import { RESIN_PRESETS, APPLICATION_PRESETS } from './ionExchangeDatabase';
 import { EXTRACTION_PRESETS } from './extractionDatabase';
 import { COMPLEX_PRESETS } from './complexDatabase';
@@ -9,7 +10,10 @@ import { SYSTEM_PRESETS } from './systemPresets';
 
 export {
   ACIDS,
+  INDICATORS,
   SALTS,
+  METAL_INDICATORS,
+  EDTA_METAL_PRESETS,
   RESIN_PRESETS,
   APPLICATION_PRESETS,
   EXTRACTION_PRESETS,
@@ -30,5 +34,8 @@ export function migratedPresetSources(): ConstantSource[] {
     ...SYSTEM_PRESETS.map((preset) => preset.source),
     ...ACIDS.map((preset) => preset.source),
     ...SALTS.map((preset) => preset.source),
+    ...INDICATORS.map((preset) => preset.source),
+    ...METAL_INDICATORS.map((preset) => preset.source),
+    ...EDTA_METAL_PRESETS.map((preset) => preset.source),
   ];
 }

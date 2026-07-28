@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isCompleteConstantSource } from '../provenance';
-import { migratedPresetSources } from '../provenanceCatalog';
+import { migratedPresetSources, INDICATORS, METAL_INDICATORS, EDTA_METAL_PRESETS } from '../provenanceCatalog';
 import { EXTRACTION_PRESETS } from '../extractionDatabase';
 import { RESIN_PRESETS } from '../ionExchangeDatabase';
 import { SPECIATION_PRESETS } from '../speciationDatabase';
@@ -10,7 +10,7 @@ import { ACIDS, SALTS } from '../database';
 describe('provenance metadata guard', () => {
   it('requires complete ConstantSource on all migrated preset catalogs', () => {
     const sources = migratedPresetSources();
-    expect(sources.length).toBeGreaterThanOrEqual(65);
+    expect(sources.length).toBeGreaterThanOrEqual(87);
     for (const source of sources) {
       expect(isCompleteConstantSource(source)).toBe(true);
     }
@@ -47,5 +47,18 @@ describe('provenance metadata guard', () => {
     const agcl = SALTS.find((preset) => preset.id === 'agcl');
     expect(agcl?.source.citation).toContain('Stumm');
     expect(agcl?.source.locator).toBe('AgCl');
+  });
+
+  it('tags titration indicator catalogs with Harris table locators', () => {
+    const phenol = INDICATORS.find((preset) => preset.id === 'phenolphthalein');
+    expect(phenol?.source.locator).toContain('phenolphthalein');
+    expect(isCompleteConstantSource(phenol!.source)).toBe(true);
+
+    const ebt = METAL_INDICATORS.find((preset) => preset.id === 'ebt');
+    expect(ebt?.source.locator).toContain('EBT');
+
+    const ca = EDTA_METAL_PRESETS.find((preset) => preset.id === 'ca');
+    expect(ca?.source.locator).toContain('Ca');
+    expect(isCompleteConstantSource(ca!.source)).toBe(true);
   });
 });
