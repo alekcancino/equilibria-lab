@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openModule } from './helpers';
+import { openModule, seedLanguage } from './helpers';
 
 test('diagram tabs respond to ArrowRight keyboard navigation', async ({ page }) => {
   await openModule(page, 'acidobase');
@@ -19,14 +19,15 @@ test('diagram tabs respond to ArrowRight keyboard navigation', async ({ page }) 
 });
 
 test('language toggle switches panel copy ES → EN', async ({ page }) => {
-  await openModule(page, 'acidobase');
+  await seedLanguage(page, 'es');
+  await openModule(page, 'acidobase', { openPanel: true });
   await expect(page.getByText('Sistema', { exact: true })).toBeVisible();
   await page.getByRole('radio', { name: 'EN' }).click();
   await expect(page.getByText('System', { exact: true })).toBeVisible();
 });
 
 test('module guide keeps aria-controls target mounted when collapsed', async ({ page }) => {
-  await openModule(page, 'acidobase');
+  await openModule(page, 'acidobase', { openPanel: true });
   const toggle = page.locator('.module-guide-toggle');
   await expect(toggle).toBeVisible();
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');

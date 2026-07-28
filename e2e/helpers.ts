@@ -35,8 +35,37 @@ export async function assertNoHorizontalOverflow(page: Page): Promise<void> {
   expect(hasOverflow, 'document should not overflow horizontally').toBe(false);
 }
 
-export async function openModule(page: Page, moduleId: ModuleId): Promise<void> {
+function isMobileViewport(page: Page): boolean {
+  const width = page.viewportSize()?.width;
+  return width !== undefined && width <= 800;
+}
+
+/** Pin language before navigation — CI runners default to EN via navigator.language. */
+export async function seedLanguage(page: Page, lang: 'es' | 'en'): Promise<void> {
+  await page.addInitScript((value: string) => {
+    localStorage.setItem('equilibria-lang', value);
+    document.documentElement.lang = value;
+  }, lang);
+}
+
+export async function openVariablesPanel(page: Page): Promise<void> {
+  if (!isMobileViewport(page)) return;
+  await page.locator('.panel-fab').click();
+  await expect(page.locator('.panel-sheet.open')).toBeVisible();
+}
+
+export async function openModule(
+  page: Page,
+  moduleId: ModuleId,
+  options?: { openPanel?: boolean },
+): Promise<void> {
   await page.goto(`/?m=${moduleId}`);
   await expect(page.locator('.module')).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('.panel-shell')).toBeVisible();
+
+  if (isMobileViewport(page)) {
+    await expect(page.locator('.panel-fab')).toBeVisible();
+    if (options?.openPanel) await openVariablesPanel(page);
+  } else {
+    await expect(page.locator('.panel-shell')).toBeVisible();
+  }
 }
