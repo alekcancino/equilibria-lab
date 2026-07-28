@@ -51,19 +51,17 @@ function isMobileViewport(page: Page): boolean {
   return width !== undefined && width <= 800;
 }
 
-/** Pin language before navigation — CI runners default to EN via navigator.language. */
+/** Pin language before navigation — index.html inline script reads localStorage on load. */
 export async function seedLanguage(page: Page, lang: 'es' | 'en'): Promise<void> {
   await page.addInitScript((value: string) => {
     localStorage.setItem('equilibria-lang', value);
-    document.documentElement.lang = value;
   }, lang);
 }
 
-/** Pin theme before navigation — avoids prefers-color-scheme drift in CI. */
+/** Pin theme before navigation — index.html inline script reads localStorage on load. */
 export async function seedTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
   await page.addInitScript((value: string) => {
     localStorage.setItem('equilibria-theme', value);
-    document.documentElement.dataset.theme = value;
   }, theme);
 }
 
