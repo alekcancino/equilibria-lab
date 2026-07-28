@@ -18,12 +18,12 @@ test('diagram tabs respond to ArrowRight keyboard navigation', async ({ page }) 
   await expect(second).toHaveAttribute('aria-controls', /.+/);
 });
 
-test('language toggle switches panel copy ES → EN', async ({ page }) => {
+test('language toggle switches UI copy ES → EN', async ({ page }) => {
   await seedLanguage(page, 'es');
-  await openModule(page, 'acidobase', { openPanel: true });
-  await expect(page.getByText('Sistema', { exact: true })).toBeVisible();
+  await openModule(page, 'acidobase');
+  await expect(page.getByRole('tablist', { name: 'Diagramas' })).toBeVisible();
   await page.getByRole('radio', { name: 'EN' }).click();
-  await expect(page.getByText('System', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tablist', { name: 'Diagrams' })).toBeVisible();
 });
 
 test('module guide keeps aria-controls target mounted when collapsed', async ({ page }) => {
