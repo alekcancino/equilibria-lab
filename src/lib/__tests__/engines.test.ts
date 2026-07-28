@@ -1040,6 +1040,25 @@ describe('titrationCurve', () => {
     tol(halfEqIdx('davies'), 4.76 - 3 * -0.126998, 0.005);
     tol(halfEqIdx('guntelberg'), 4.76 - 3 * -0.154508, 0.005);
   });
+
+  it('sets hasOutOfDomainPH when the search range cannot bracket the mixture', () => {
+    const curve = titrationCurve({
+      analyte: { z0: 0, pKas: [4.76] },
+      titrantIsAcid: false,
+      cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 50, points: 20,
+      pHRange: [10, 14],
+    });
+    expect(curve.hasOutOfDomainPH).toBe(true);
+  });
+
+  it('keeps hasOutOfDomainPH false for a normal weak-acid titration', () => {
+    const curve = titrationCurve({
+      analyte: { z0: 0, pKas: [4.76] },
+      titrantIsAcid: false,
+      cAnalyte: 0.1, vAnalyte: 25, cTitrant: 0.1, vMax: 50, points: 50,
+    });
+    expect(curve.hasOutOfDomainPH).toBe(false);
+  });
 });
 
 describe('firstDerivative', () => {
