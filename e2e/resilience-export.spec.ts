@@ -2,10 +2,12 @@ import { test, expect } from '@playwright/test';
 import { openModule, seedLanguage, seedTheme } from './helpers';
 
 test.describe('resilience and export', () => {
-  test.skip(({ project }) => project.name !== 'desktop', 'desktop-only smoke');
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'desktop-only smoke');
+  });
 
 test('failed module chunk shows recoverable error and reloads after unblock', async ({ page }) => {
-  await page.route('**/*AcidoBase*.js', (route) => route.abort('failed'));
+  await page.route('**/*AcidoBase*.js', (route) => route.abort('connectionfailed'));
   await page.goto('/?m=acidobase');
   await expect(page.locator('.recoverable-error')).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('alert')).toContainText(/could not be loaded|No se pudo cargar/);
