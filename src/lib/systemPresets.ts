@@ -7,6 +7,9 @@
 
 import { EDTA_PKAS } from './edta';
 import { defaultSideEditorState, type SideReactionEditorState } from './sideReactions';
+import { catalogSource, type ConstantSource } from './provenance';
+
+const HARRIS = catalogSource('Harris, Quantitative Chemical Analysis');
 
 export interface SystemPreset {
   id: string;
@@ -15,7 +18,7 @@ export interface SystemPreset {
   group: string;
   /** Short description (displayed in the selector). */
   detail: string;
-  reference: string;
+  source: ConstantSource;
   /** Convention/approximation note (e.g. sign of β OH). */
   note?: string;
 
@@ -83,7 +86,7 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
     name: 'Zn²⁺ – EDTA – NH₃',
     group: 'Complejometría EDTA',
     detail: 'Enmascaramiento con NH₃ 2 M, pH 10',
-    reference: 'Harris, QCA',
+    source: HARRIS,
     note: 'β Zn(OH)ₖ son constantes de formación (positivas); algunos textos las dan con signo negativo (convenio de descomposición).',
     metalLabel: 'Zn²⁺',
     metalId: 'zn',
@@ -103,7 +106,7 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
     name: 'Ni²⁺ – EDTA (intercambio iónico)',
     group: 'Complejometría EDTA',
     detail: 'Recuperación de Ni²⁺ con EDTA, 0.1 mM, pH 6',
-    reference: 'Harris, QCA',
+    source: HARRIS,
     metalLabel: 'Ni²⁺',
     metalId: 'ni',
     logKf: 18.56,
@@ -119,7 +122,7 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
     name: 'Ca²⁺ – EDTA',
     group: 'Complejometría EDTA',
     detail: 'Dureza del agua · sin hidrólisis, pH 10',
-    reference: 'Harris, QCA',
+    source: HARRIS,
     metalLabel: 'Ca²⁺',
     metalId: 'ca',
     logKf: 10.65,
@@ -134,7 +137,7 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
     name: 'Mg²⁺ – EDTA',
     group: 'Complejometría EDTA',
     detail: 'Titulación directa · pH 10',
-    reference: 'Harris, QCA',
+    source: HARRIS,
     metalLabel: 'Mg²⁺',
     metalId: 'mg',
     logKf: 8.64,
@@ -149,7 +152,7 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
     name: 'Cu²⁺ – EDTA – NH₃',
     group: 'Complejometría EDTA',
     detail: 'Enmascaramiento NH₃ · pH 10',
-    reference: 'Harris, QCA',
+    source: HARRIS,
     metalLabel: 'Cu²⁺',
     metalId: 'cu',
     logKf: 18.80,
@@ -167,7 +170,7 @@ export const SYSTEM_PRESETS: SystemPreset[] = [
     name: 'Fe³⁺ – EDTA',
     group: 'Complejometría EDTA',
     detail: 'Medio ácido · pH 2–3',
-    reference: 'Harris, QCA',
+    source: HARRIS,
     metalLabel: 'Fe³⁺',
     metalId: 'fe3',
     logKf: 25.10,

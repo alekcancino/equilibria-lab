@@ -1,6 +1,7 @@
 import { ACIDS } from './database';
 import { REDOX_COUPLES } from './redoxDatabase';
 import type { RedoxCouple } from './redox';
+import type { ConstantSource } from './provenance';
 import { genericSpeciesLabels } from './speciesNames';
 import type { Lang } from '../hooks/useLanguage';
 
@@ -100,9 +101,10 @@ export function isValidAcidSystem(x: unknown): x is AcidSystem {
 
 export interface CoupleState extends RedoxCouple {
   reference: string;
+  source?: ConstantSource;
 }
 
 export function coupleFromPreset(id: string): CoupleState {
-  const c = REDOX_COUPLES.find((x) => x.id === id)!;
-  return { ...c };
+  const { source, ...c } = REDOX_COUPLES.find((x) => x.id === id)!;
+  return { ...c, source };
 }

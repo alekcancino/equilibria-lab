@@ -8,7 +8,7 @@ import PredominanceDiagram from '../components/PredominanceDiagram';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, DbPanel, Disclosure, InfoBox, LabelField,
-  ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Segmented, Slider, Toggle,
+  ModelBadge, NumberSegmented, PanelSection, ResultCard, ResultCardRow, Segmented, Slider, SourceBadge, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import Predominance2D from '../components/Predominance2D';
@@ -27,6 +27,7 @@ import {
   composeAlphas, defaultSideEditorState, sideStackFromEditor,
   type SideReactionEditorState,
 } from '../lib/sideReactions';
+import type { ConstantSource } from '../lib/provenance';
 import {
   COMPLEX_PRESETS, genericComplexLabels, type ComplexPreset,
 } from '../lib/complexDatabase';
@@ -47,7 +48,7 @@ interface ComplexState {
   ligandLabel: string;
   logBetas: number[];
   speciesLabels: string[] | null;
-  reference: string | null;
+  source: ConstantSource | null;
 }
 
 function defaultState(): ComplexState {
@@ -56,7 +57,7 @@ function defaultState(): ComplexState {
     ligandLabel: 'L',
     logBetas: [8],
     speciesLabels: null,
-    reference: null,
+    source: null,
   };
 }
 
@@ -77,7 +78,7 @@ function fromPreset(p: ComplexPreset): ComplexState {
     ligandLabel: p.ligandLabel,
     logBetas: [...p.logBetas],
     speciesLabels: [...p.speciesLabels],
-    reference: p.reference,
+    source: p.source,
   };
 }
 
@@ -490,12 +491,12 @@ export default function Complejos() {
           <LabelField
             label={t('complejos.metalLabel')}
             value={sys.metalLabel}
-            onChange={(metalLabel) => setSys({ ...sys, metalLabel, speciesLabels: null, reference: null })}
+            onChange={(metalLabel) => setSys({ ...sys, metalLabel, speciesLabels: null, source: null })}
           />
           <LabelField
             label={t('complejos.ligandLabel')}
             value={sys.ligandLabel}
-            onChange={(ligandLabel) => setSys({ ...sys, ligandLabel, speciesLabels: null, reference: null })}
+            onChange={(ligandLabel) => setSys({ ...sys, ligandLabel, speciesLabels: null, source: null })}
           />
           <ConstantList
             prefix="log β"
@@ -504,7 +505,7 @@ export default function Complejos() {
             min={0}
             max={30}
             maxItems={8}
-            onChange={(logBetas) => setSys({ ...sys, logBetas, speciesLabels: null, reference: null })}
+            onChange={(logBetas) => setSys({ ...sys, logBetas, speciesLabels: null, source: null })}
           />
           <DbPanel
             title={t('complejos.dbExamples')}
@@ -515,12 +516,14 @@ export default function Complejos() {
               group: p.group === 'Metal / etilendiamina'
                 ? t('complejos.groupEthylenediamine')
                 : p.group,
+              source: p.source,
             }))}
             onSelect={(id) => {
               const p = COMPLEX_PRESETS.find((x) => x.id === id)!;
               setSys(fromPreset(p));
             }}
           />
+          {sys.source && <SourceBadge source={sys.source} />}
         </PanelSection>
 
         <PanelSection title={t('complejos.conditionsSection')}>

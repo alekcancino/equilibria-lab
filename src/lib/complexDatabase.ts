@@ -1,6 +1,8 @@
 // Database of coordination complex systems with overall stability constants β (25 °C, μ ≈ 0).
 // Sources: Harris, QCA; Skoog, Principles of Analytical Chemistry.
 
+import { catalogSource, type ConstantSource } from './provenance';
+
 export interface ComplexPreset {
   id: string;
   metalLabel: string;
@@ -9,9 +11,12 @@ export interface ComplexPreset {
   logBetas: number[];
   /** Labels for the n+1 species: M, ML, ML₂, ... */
   speciesLabels: string[];
-  reference: string;
+  source: ConstantSource;
   group: string;
 }
+
+const HARRIS = catalogSource('Harris, Quantitative Chemical Analysis');
+const SKOOG = catalogSource('Skoog, Principles of Analytical Chemistry');
 
 export const COMPLEX_PRESETS: ComplexPreset[] = [
   {
@@ -19,7 +24,7 @@ export const COMPLEX_PRESETS: ComplexPreset[] = [
     metalLabel: 'Cu²⁺', ligandLabel: 'NH₃',
     logBetas: [4.04, 7.47, 10.27, 12.03],
     speciesLabels: ['Cu²⁺', 'Cu(NH₃)²⁺', 'Cu(NH₃)₂²⁺', 'Cu(NH₃)₃²⁺', 'Cu(NH₃)₄²⁺'],
-    reference: 'Harris, QCA',
+    source: HARRIS,
     group: 'Metal / NH₃',
   },
   {
@@ -27,7 +32,7 @@ export const COMPLEX_PRESETS: ComplexPreset[] = [
     metalLabel: 'Zn²⁺', ligandLabel: 'NH₃',
     logBetas: [2.37, 4.81, 7.31, 9.46],
     speciesLabels: ['Zn²⁺', 'Zn(NH₃)²⁺', 'Zn(NH₃)₂²⁺', 'Zn(NH₃)₃²⁺', 'Zn(NH₃)₄²⁺'],
-    reference: 'Harris, QCA',
+    source: HARRIS,
     group: 'Metal / NH₃',
   },
   {
@@ -35,7 +40,7 @@ export const COMPLEX_PRESETS: ComplexPreset[] = [
     metalLabel: 'Cd²⁺', ligandLabel: 'NH₃',
     logBetas: [2.65, 4.75, 6.19, 7.12],
     speciesLabels: ['Cd²⁺', 'Cd(NH₃)²⁺', 'Cd(NH₃)₂²⁺', 'Cd(NH₃)₃²⁺', 'Cd(NH₃)₄²⁺'],
-    reference: 'Harris, QCA',
+    source: HARRIS,
     group: 'Metal / NH₃',
   },
   {
@@ -43,7 +48,7 @@ export const COMPLEX_PRESETS: ComplexPreset[] = [
     metalLabel: 'Ni²⁺', ligandLabel: 'NH₃',
     logBetas: [2.80, 5.04, 6.77, 7.96, 8.71, 8.74],
     speciesLabels: ['Ni²⁺', 'Ni(NH₃)²⁺', 'Ni(NH₃)₂²⁺', 'Ni(NH₃)₃²⁺', 'Ni(NH₃)₄²⁺', 'Ni(NH₃)₅²⁺', 'Ni(NH₃)₆²⁺'],
-    reference: 'Harris, QCA',
+    source: HARRIS,
     group: 'Metal / NH₃',
   },
   {
@@ -51,7 +56,7 @@ export const COMPLEX_PRESETS: ComplexPreset[] = [
     metalLabel: 'Ag⁺', ligandLabel: 'NH₃',
     logBetas: [3.24, 7.05],
     speciesLabels: ['Ag⁺', 'Ag(NH₃)⁺', 'Ag(NH₃)₂⁺'],
-    reference: 'Harris, QCA',
+    source: HARRIS,
     group: 'Metal / NH₃',
   },
   {
@@ -59,7 +64,7 @@ export const COMPLEX_PRESETS: ComplexPreset[] = [
     metalLabel: 'Cu²⁺', ligandLabel: 'en',
     logBetas: [10.72, 19.92],
     speciesLabels: ['Cu²⁺', 'Cu(en)²⁺', 'Cu(en)₂²⁺'],
-    reference: 'Skoog, Analytical Chemistry',
+    source: SKOOG,
     group: 'Metal / etilendiamina',
   },
   {
@@ -67,7 +72,7 @@ export const COMPLEX_PRESETS: ComplexPreset[] = [
     metalLabel: 'Co²⁺', ligandLabel: 'en',
     logBetas: [5.91, 10.61, 13.91],
     speciesLabels: ['Co²⁺', 'Co(en)²⁺', 'Co(en)₂²⁺', 'Co(en)₃²⁺'],
-    reference: 'Skoog, Analytical Chemistry',
+    source: SKOOG,
     group: 'Metal / etilendiamina',
   },
 ];

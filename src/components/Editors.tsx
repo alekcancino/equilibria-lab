@@ -2,7 +2,7 @@
 // PRIMARY = free label + editable constants with ± buttons.
 // SECONDARY = collapsible database that auto-fills and closes.
 
-import { ConstantList, DbPanel, HelpTip, LabelField, ModelBadge, Segmented, SelectControl, Slider, ConcSlider } from './Controls';
+import { ConstantList, DbPanel, HelpTip, LabelField, ModelBadge, Segmented, SelectControl, Slider, ConcSlider, SourceBadge } from './Controls';
 import { useT } from '../hooks/useT';
 import { useLanguage } from '../hooks/useLanguage';
 import type { TKey } from '../i18n/translations';
@@ -139,7 +139,14 @@ export function CoupleEditor({
 }) {
   const t = useT();
   const edited = (patch: Partial<CoupleState>) =>
-    onChange({ ...couple, ...patch, reference: '', caveat: undefined, name: patch.name ?? couple.name });
+    onChange({
+      ...couple,
+      ...patch,
+      reference: '',
+      source: undefined,
+      caveat: undefined,
+      name: patch.name ?? couple.name,
+    });
   return (
     <div className="editor">
       <p className="editor-title">{title}</p>
@@ -152,11 +159,13 @@ export function CoupleEditor({
       <Slider label={t('coupleEditor.nLabel')} value={couple.n} min={1} max={6} step={1} onChange={(n) => edited({ n })} decimals={0} helpId="n" />
       <Slider label={t('coupleEditor.mHLabel')} value={couple.mH} min={0} max={14} step={1} onChange={(mH) => edited({ mH })} decimals={0} helpId="mH" />
       {couple.caveat && <p className="badge warn">⚠ {couple.caveat}</p>}
+      {couple.source && <SourceBadge source={couple.source} />}
       <DbPanel
         items={REDOX_COUPLES.map((c) => ({
           id: c.id,
           label: `${c.ox}/${c.red}`,
           detail: `E° ${c.E0.toFixed(3)} V · n=${c.n}${c.mH ? ` · ${c.mH}H⁺` : ''}`,
+          source: c.source,
         }))}
         onSelect={(id) => onChange(coupleFromPreset(id))}
       />

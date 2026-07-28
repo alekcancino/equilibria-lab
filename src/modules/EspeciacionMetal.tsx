@@ -8,7 +8,7 @@ import PredominanceDiagram from '../components/PredominanceDiagram';
 import DiagramTabs from '../components/DiagramTabs';
 import {
   ConcSlider, ConstantList, Disclosure, InfoBox, LabelField, LabelList,
-  ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider, SystemPresetPicker, Toggle,
+  ModelBadge, PanelSection, ResultCard, ResultCardRow, Slider, SourceBadge, SystemPresetPicker, Toggle,
 } from '../components/Controls';
 import { SideReactionEditor } from '../components/Editors';
 import Predominance2D from '../components/Predominance2D';
@@ -20,6 +20,7 @@ import { predominanceGrid } from '../lib/predominance2D';
 import { SPECIATION_PRESETS, speciationPresetById } from '../lib/speciationDatabase';
 import { toSub } from '../lib/complexDatabase';
 import { useT } from '../hooks/useT';
+import type { ConstantSource } from '../lib/provenance';
 import { alphaH } from '../lib/conditional';
 import { conditionalPhaseMap, conditionalPhasePoint, type ConditionalMapSpecies } from '../lib/conditionalPhaseMap';
 import { evaluateFeasibility } from '../lib/multisystemFeasibility';
@@ -40,7 +41,7 @@ interface SpeciationState {
   showX: boolean;
   side: SideReactionEditorState;
   speciesLabels: string[] | null;
-  reference: string | null;
+  source: ConstantSource | null;
 }
 
 function defaultState(): SpeciationState {
@@ -50,7 +51,7 @@ function defaultState(): SpeciationState {
     // false) — 0 would feed Math.log10(0) = -Infinity into ConcSlider's range input.
     ligandLabel: 'L', logBetasL: [], pKasL: [], cL: 1e-3,
     showX: false, side: defaultSideEditorState(),
-    speciesLabels: null, reference: null,
+    speciesLabels: null, source: null,
   };
 }
 
@@ -68,7 +69,7 @@ function fromPreset(id: string): SpeciationState {
     showX: false,
     side: defaultSideEditorState(),
     speciesLabels: [...p.speciesLabels],
-    reference: p.reference,
+    source: p.source,
   };
 }
 
@@ -390,7 +391,7 @@ export default function EspeciacionMetal() {
               showX: true,
               side: { ...current.side, showAux: true },
               speciesLabels: null,
-              reference: null,
+              source: null,
             }))}>
               {t('especiacion.activateMap2D')}
             </button>
@@ -414,7 +415,7 @@ export default function EspeciacionMetal() {
           <LabelField
             label={t('complejos.metalLabel')}
             value={sys.metalLabel}
-            onChange={(metalLabel) => setSys({ ...sys, metalLabel, speciesLabels: null, reference: null })}
+            onChange={(metalLabel) => setSys({ ...sys, metalLabel, speciesLabels: null, source: null })}
           />
           <ConcSlider label={t('complejos.cmLabel')} value={sys.cM} onChange={(cM) => setSys({ ...sys, cM })} />
           <ConstantList
@@ -426,13 +427,16 @@ export default function EspeciacionMetal() {
             maxItems={6}
             minItems={0}
             initialValue={5}
-            onChange={(logBetasOH) => setSys({ ...sys, logBetasOH, speciesLabels: null, reference: null })}
+            onChange={(logBetasOH) => setSys({ ...sys, logBetasOH, speciesLabels: null, source: null })}
           />
           <SystemPresetPicker
             title={t('especiacion.exampleSystems')}
-            items={SPECIATION_PRESETS.map((p) => ({ id: p.id, name: p.name, group: p.group, detail: p.detail }))}
+            items={SPECIATION_PRESETS.map((p) => ({
+              id: p.id, name: p.name, group: p.group, detail: p.detail, source: p.source,
+            }))}
             onSelect={(id) => setSys(fromPreset(id))}
           />
+          {sys.source && <SourceBadge source={sys.source} />}
         </PanelSection>
 
         <Disclosure
@@ -443,7 +447,7 @@ export default function EspeciacionMetal() {
           <LabelField
             label={t('especiacion.auxLigandFieldLabel')}
             value={sys.ligandLabel}
-            onChange={(ligandLabel) => setSys({ ...sys, ligandLabel, speciesLabels: null, reference: null })}
+            onChange={(ligandLabel) => setSys({ ...sys, ligandLabel, speciesLabels: null, source: null })}
           />
           <ConstantList
             prefix="log β"
@@ -453,7 +457,7 @@ export default function EspeciacionMetal() {
             max={25}
             maxItems={6}
             minItems={0}
-            onChange={(logBetasL) => setSys({ ...sys, logBetasL, showAux: true, speciesLabels: null, reference: null })}
+            onChange={(logBetasL) => setSys({ ...sys, logBetasL, showAux: true, speciesLabels: null, source: null })}
           />
           <ConcSlider label={t('complejos.clLabel')} value={sys.cL} onChange={(cL) => setSys({ ...sys, cL })} min={-6} max={1} />
           <ConstantList
@@ -496,12 +500,12 @@ export default function EspeciacionMetal() {
             // behind a second click — same UX as Complejos' coupled mode.
             side: showX ? { ...sys.side, showAux: true } : sys.side,
             speciesLabels: null,
-            reference: null,
+            source: null,
           })}
         >
           <SideReactionEditor
             state={sys.side}
-            onChange={(side) => setSys({ ...sys, side, speciesLabels: null, reference: null })}
+            onChange={(side) => setSys({ ...sys, side, speciesLabels: null, source: null })}
             showLigandPKas={false}
             showComplexSection={false}
             showHydrolysisSection={false}

@@ -22,6 +22,24 @@ export function isCompleteConstantSource(source: ConstantSource): boolean {
   return true;
 }
 
+export const PROVENANCE_VERIFIED_ON = '2026-07-28';
+
+export function catalogSource(
+  citation: string,
+  quality: SourceQuality = 'secondary',
+  overrides: Partial<Omit<ConstantSource, 'citation' | 'quality'>> = {},
+): ConstantSource {
+  return {
+    citation,
+    temperatureC: 25,
+    medium: 'I → 0 (thermodynamic)',
+    basis: 'concentration',
+    quality,
+    verifiedOn: PROVENANCE_VERIFIED_ON,
+    ...overrides,
+  };
+}
+
 export function formatConstantSource(source: ConstantSource): string {
   const parts = [source.citation];
   if (source.locator) parts.push(source.locator);

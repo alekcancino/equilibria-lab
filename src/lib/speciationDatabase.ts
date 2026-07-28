@@ -5,13 +5,14 @@
 // across hubs.
 
 import type { MetalSpeciationSystem } from './speciation';
+import { catalogSource, type ConstantSource } from './provenance';
 
 export interface SpeciationPreset {
   id: string;
   name: string;
   group: string;
   detail: string;
-  reference: string;
+  source: ConstantSource;
   /** Set when a constant (e.g. an anionic hydroxo-complex) hasn't been
    * cross-checked against a primary source for this specific feature. */
   needsVerification?: boolean;
@@ -19,6 +20,10 @@ export interface SpeciationPreset {
   /** Species labels in the fixed [M, MOH…, ML…] order (see speciation.ts). */
   speciesLabels: string[];
 }
+
+const BURGOT = catalogSource('Burgot, Ionic Equilibria in Analytical Chemistry');
+const HARRIS = catalogSource('Harris, Quantitative Chemical Analysis');
+const STUMM = catalogSource('Stumm & Morgan, Aquatic Chemistry', 'primary');
 
 const NH3_PKA = [9.25]; // NH4+ ⇌ NH3 + H+ (Harris, QCA)
 
@@ -28,7 +33,7 @@ export const SPECIATION_PRESETS: SpeciationPreset[] = [
     name: 'Hg²⁺ — hidrólisis',
     group: 'Hg²⁺',
     detail: 'Solo hidrólisis, sin ligando auxiliar',
-    reference: 'Burgot, Ionic Equilibria in Analytical Chemistry',
+    source: BURGOT,
     system: {
       metalLabel: 'Hg²⁺', cM: 1e-4,
       logBetasOH: [10.3, 21.7],
@@ -41,7 +46,7 @@ export const SPECIATION_PRESETS: SpeciationPreset[] = [
     name: 'Hg²⁺ — Cl⁻',
     group: 'Hg²⁺',
     detail: 'Hidrólisis acoplada con complejación por cloruro',
-    reference: 'Burgot, Ionic Equilibria in Analytical Chemistry',
+    source: BURGOT,
     system: {
       metalLabel: 'Hg²⁺', cM: 0.1,
       logBetasOH: [10.3, 21.7],
@@ -54,7 +59,7 @@ export const SPECIATION_PRESETS: SpeciationPreset[] = [
     name: 'Zn²⁺ — NH₃',
     group: 'Enmascaramiento con NH₃',
     detail: 'Hidrólisis + amino-complejos, típico de enmascaramiento',
-    reference: 'Harris, QCA',
+    source: HARRIS,
     system: {
       metalLabel: 'Zn²⁺', cM: 0.01,
       logBetasOH: [5.04, 10.43, 13.7, 15.2],
@@ -70,7 +75,7 @@ export const SPECIATION_PRESETS: SpeciationPreset[] = [
     name: 'Cu²⁺ — NH₃',
     group: 'Enmascaramiento con NH₃',
     detail: 'Hidrólisis + amino-complejos, típico de enmascaramiento',
-    reference: 'Harris, QCA',
+    source: HARRIS,
     system: {
       metalLabel: 'Cu²⁺', cM: 0.01,
       logBetasOH: [6.0, 11.8],
@@ -86,7 +91,7 @@ export const SPECIATION_PRESETS: SpeciationPreset[] = [
     name: 'Fe³⁺ — hidrólisis',
     group: 'Cationes M³⁺ (precipitan a pH ácido)',
     detail: 'Serie de hidrólisis completa hasta Fe(OH)₃',
-    reference: 'Harris, QCA',
+    source: HARRIS,
     system: {
       metalLabel: 'Fe³⁺', cM: 0.01,
       logBetasOH: [11.81, 21.68, 30.67],
@@ -99,7 +104,9 @@ export const SPECIATION_PRESETS: SpeciationPreset[] = [
     name: 'Al³⁺ — hidrólisis',
     group: 'Cationes M³⁺ (precipitan a pH ácido)',
     detail: 'Serie de hidrólisis, incluye el complejo aniónico Al(OH)₄⁻',
-    reference: 'Stumm & Morgan, Aquatic Chemistry',
+    source: catalogSource(STUMM.citation, 'illustrative', {
+      uncertainty: 'Al(OH)₄⁻ constant not cross-checked for this feature',
+    }),
     needsVerification: true,
     system: {
       metalLabel: 'Al³⁺', cM: 0.01,
